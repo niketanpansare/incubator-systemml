@@ -166,6 +166,7 @@ import org.apache.spark.sql.SQLContext;
  * <pre><code>  
  * synchronized(MLContext.class) { ml.execute(...); }
  * </code></pre>
+ * 
  */
 public class MLContext {
 	
