@@ -106,6 +106,8 @@ public class DMLScript
 	public static String DML_FILE_PATH_ANTLR_PARSER = null;
 	public static ExplainType EXPLAIN = ExplainType.NONE; //default explain
 	
+	public static boolean IS_TENSOR_IN_ROW_MAJOR = true;
+	
 	// flag that indicates whether or not to suppress any prints to stdout
 	public static boolean _suppressPrint2Stdout = false;
 	

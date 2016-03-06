@@ -31,6 +31,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONObject;
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.DataGenOp;
 import org.apache.sysml.parser.LanguageException.LanguageErrorCodes;
@@ -133,6 +134,52 @@ public class DataExpression extends DataIdentifier
 	public void setCheckMetadata(boolean checkMetadata) {
 		_checkMetadata = checkMetadata;
 	}
+
+	private static ArrayList<ParameterExpression> getMatrixParametersForTensorFn(DataExpression dataExpr, ArrayList<ParameterExpression> passedParamExprs,
+			String filename, int blp, int bcp, int elp, int ecp) throws DMLParseException {
+		ArrayList<ParameterExpression> newPassedParamExprs = new ArrayList<ParameterExpression>();
+		for(ParameterExpression currExpr : passedParamExprs) {
+			if(currExpr.getName() != null && currExpr.getName().equals("shape")) {
+				if(currExpr.getExpr() instanceof ExpressionList) {
+					// Replace shape by rows and columns
+					if(DMLScript.IS_TENSOR_IN_ROW_MAJOR) {
+						ArrayList<Expression> shape = ((ExpressionList) currExpr.getExpr()).getValue();
+						if(shape.size() < 2) {
+							throw new DMLParseException(filename, dataExpr.printErrorLocation(blp, bcp) 
+									+ "only tensors of shape > 1 supported");
+						}
+						
+						Expression rows = shape.get(0);
+						for(int i = 1; i < shape.size()-1; i++) {
+							BinaryExpression temp = new BinaryExpression(BinaryOp.MULT, 
+									filename, blp, bcp, elp, ecp);
+							temp.setLeft(rows);
+							temp.setRight(shape.get(i));
+							rows = temp;
+						}
+						newPassedParamExprs.add(new ParameterExpression("rows", rows));
+						
+						Expression lastDim = shape.get(shape.size()-1);
+						newPassedParamExprs.add(new ParameterExpression("cols", lastDim));
+						
+						// DMLScript.tensorsShape.put(targetName, shape);
+					}
+					else {
+						throw new DMLParseException(filename, dataExpr.printErrorLocation(blp, bcp) 
+								+ "only row major format supported for tensor");
+					}
+				}
+				else {
+					throw new DMLParseException(filename, dataExpr.printErrorLocation(blp, bcp) 
+							+ "tensor method must have at least shape parameter");
+				}
+			}
+			else {
+				newPassedParamExprs.add(currExpr);
+			}
+		}
+		return newPassedParamExprs;
+	}
 	
 	public static DataExpression getDataExpression(String functionName, ArrayList<ParameterExpression> passedParamExprs, 
 				String filename, int blp, int bcp, int elp, int ecp) throws DMLParseException {
@@ -213,11 +260,16 @@ public class DataExpression extends DataIdentifier
 			dataExpr.setRandDefault();
 		}
 		
-		else if (functionName.equals("matrix")){
+		else if (functionName.equals("matrix") || functionName.equals("tensor")){
+			
 			dop = Expression.DataOp.MATRIX;
 			dataExpr = new DataExpression(dop, new HashMap<String,Expression>(),
 					filename, blp, bcp, elp, ecp);
 		
+			if(functionName.equals("tensor")) {
+				passedParamExprs = getMatrixParametersForTensorFn(dataExpr, passedParamExprs, filename, blp, bcp, elp, ecp); 
+			}
+			
 			int namedParamCount = 0, unnamedParamCount = 0;
 			for (ParameterExpression currExpr : passedParamExprs) {
 				if (currExpr.getName() == null)

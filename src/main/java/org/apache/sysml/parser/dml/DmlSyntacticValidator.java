@@ -32,10 +32,12 @@ import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.sysml.parser.AParserWrapper;
 import org.apache.sysml.parser.AssignmentStatement;
+import org.apache.sysml.parser.BinaryExpression;
 import org.apache.sysml.parser.ConditionalPredicate;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DataIdentifier;
 import org.apache.sysml.parser.Expression;
+import org.apache.sysml.parser.Expression.BinaryOp;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.parser.ExternalFunctionStatement;
@@ -47,6 +49,7 @@ import org.apache.sysml.parser.ImportStatement;
 import org.apache.sysml.parser.IntIdentifier;
 import org.apache.sysml.parser.IterablePredicate;
 import org.apache.sysml.parser.LanguageException;
+import org.apache.sysml.parser.ExpressionList;
 import org.apache.sysml.parser.ParForStatement;
 import org.apache.sysml.parser.ParameterExpression;
 import org.apache.sysml.parser.ParseException;
@@ -92,6 +95,8 @@ import org.apache.sysml.parser.dml.DmlParser.MatrixMulExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.Ml_typeContext;
 import org.apache.sysml.parser.dml.DmlParser.ModIntDivExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.MultDivExpressionContext;
+import org.apache.sysml.parser.dml.DmlParser.MultiIdExpressionContext;
+import org.apache.sysml.parser.dml.DmlParser.OptionalUpperIndexExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.ParForStatementContext;
 import org.apache.sysml.parser.dml.DmlParser.ParameterizedExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.PathStatementContext;
@@ -102,6 +107,7 @@ import org.apache.sysml.parser.dml.DmlParser.SimpleDataIdentifierExpressionConte
 import org.apache.sysml.parser.dml.DmlParser.StatementContext;
 import org.apache.sysml.parser.dml.DmlParser.StrictParameterizedExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.StrictParameterizedKeyValueStringContext;
+import org.apache.sysml.parser.dml.DmlParser.TensorIndexedExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.TypedArgNoAssignContext;
 import org.apache.sysml.parser.dml.DmlParser.UnaryExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.ValueTypeContext;
@@ -110,6 +116,8 @@ import org.apache.sysml.parser.dml.DmlParser.WhileStatementContext;
 
 public class DmlSyntacticValidator extends CommonSyntacticValidator implements DmlListener {
 
+	public static boolean DEBUG_TENSOR = true;
+	
 	public DmlSyntacticValidator(CustomErrorListener errorListener, HashMap<String,String> argVals) {
 		super(errorListener, argVals);
 	}
@@ -959,5 +967,143 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 	@Override public void enterSimpleDataIdentifierExpression(SimpleDataIdentifierExpressionContext ctx) {}
 
 	@Override public void enterBooleanOrExpression(BooleanOrExpressionContext ctx) {}
+
+	@Override
+	public void enterMultiIdExpression(MultiIdExpressionContext ctx) { }
+	
+	@Override
+	public void enterOptionalUpperIndexExpression(OptionalUpperIndexExpressionContext ctx) { }
+
+	@Override
+	public void exitOptionalUpperIndexExpression(OptionalUpperIndexExpressionContext ctx) { }
+
+	@Override
+	public void exitMultiIdExpression(MultiIdExpressionContext ctx) {
+		ArrayList<Expression> values = new ArrayList<Expression>();
+		for(ExpressionContext elem : ctx.targetList) {
+			values.add(elem.info.expr);
+		}
+		ctx.info.expr = new ExpressionList(values);
+	}
+
+	@Override
+	public void enterTensorIndexedExpression(TensorIndexedExpressionContext ctx) { }
+
+	private boolean isLowerEmpty(OptionalUpperIndexExpressionContext index) {
+		if(index != null && index.lowerIndex != null && !index.lowerIndex.isEmpty()) {
+			return false;
+		}
+		return true;
+	}
+	
+	private boolean isUpperEmpty(OptionalUpperIndexExpressionContext index) {
+		if(index != null && index.upperIndex != null && !index.upperIndex.isEmpty()) {
+			return false;
+		}
+		return true;
+	}
+	
+	private IntIdentifier createIntIdentifier(long val, ParserRuleContext ctx) {
+		IntIdentifier tmp = new IntIdentifier(val, currentFile, ctx.start.getLine(),
+				ctx.start.getCharPositionInLine(), ctx.stop.getLine(), ctx.stop.getCharPositionInLine());
+		return tmp;
+	}
+	
+	private BinaryExpression createBinaryExpression(BinaryOp bop, ParserRuleContext ctx,
+			Expression left, Expression right) {
+		BinaryExpression tmp = new BinaryExpression(bop, currentFile, ctx.start.getLine(),
+				ctx.start.getCharPositionInLine(), ctx.stop.getLine(), ctx.stop.getCharPositionInLine());
+		tmp.setLeft(left);
+		tmp.setRight(right);
+		return tmp;
+	}
+	
+	// Special case when indexing only using first dimension
+	private Expression getMatrixRowIndex(Expression tensorFirstDimRowIndex, ArrayList<Expression> shape, ParserRuleContext ctx, boolean isLower) {
+		Expression expr = null;
+		if(isLower) {
+			expr = createBinaryExpression(BinaryOp.MINUS, ctx, tensorFirstDimRowIndex, createIntIdentifier(1, ctx));
+			for(int i = 1; i < shape.size()-1; i++) {
+				expr = createBinaryExpression(BinaryOp.MULT, ctx, expr, shape.get(i));
+			}
+			expr = createBinaryExpression(BinaryOp.PLUS, ctx, expr, createIntIdentifier(1, ctx));
+		}
+		else {
+			expr = tensorFirstDimRowIndex;
+			for(int i = 1; i < shape.size()-1; i++) {
+				expr = createBinaryExpression(BinaryOp.MULT, ctx, expr, shape.get(i));
+			}
+		}
+		return expr;
+	}
+
+	@Override
+	public void exitTensorIndexedExpression(TensorIndexedExpressionContext ctx) {
+		if(!ctx.shapeName.getText().equals("shape")) {
+			notifyErrorListeners("incorrect parameter \"" + ctx.shapeName.getText() + "\" in tensor indexing", ctx.shapeName);
+			return;
+		}
+		ArrayList<Expression> shape = new ArrayList<Expression>();
+		for(ExpressionContext dim : ctx.dimensions) {
+			shape.add(dim.info.expr);
+		}
+		
+		ExpressionInfo rowLower = null;
+		ExpressionInfo rowUpper = null;
+		ExpressionInfo colLower = null;
+		ExpressionInfo colUpper = null;
+		boolean isSupported = false;
+		
+		// ------------------------------------------------------------
+		// Special case: Indexing on only first dimension
+		OptionalUpperIndexExpressionContext firstIndex = ctx.indexes.get(0);
+		if(!isLowerEmpty(firstIndex) || !isUpperEmpty(firstIndex)) {
+			isSupported = true;
+			for(int i = 1; i < ctx.indexes.size(); i++) {
+				OptionalUpperIndexExpressionContext otherIndex = ctx.indexes.get(i);
+				if(!isLowerEmpty(otherIndex) && !isUpperEmpty(otherIndex)) {
+					isSupported = false;
+					break;
+				}
+			}
+			
+			if(isSupported) {
+				rowLower = new ExpressionInfo();
+				rowUpper = new ExpressionInfo();
+				if(!isLowerEmpty(firstIndex)) {
+					rowLower.expr = getMatrixRowIndex(firstIndex.lowerIndex.info.expr, shape, ctx, true);
+				}
+				else {
+					rowLower.expr = getMatrixRowIndex(createIntIdentifier(1, ctx), shape, ctx, true);
+				}
+				if(!isUpperEmpty(firstIndex)) {
+					rowUpper.expr = getMatrixRowIndex(firstIndex.upperIndex.info.expr, shape, ctx, false); 
+				}
+				else {
+					rowUpper.expr = getMatrixRowIndex(shape.get(0), shape, ctx, false);
+				}
+				if(DEBUG_TENSOR)
+					System.out.println("[" + (!isLowerEmpty(firstIndex) ? firstIndex.lowerIndex.getText() : "") + ":" 
+						+ (!isUpperEmpty(firstIndex) ? firstIndex.upperIndex.getText() : "") + 
+						", ] => [" + rowLower.expr + ":" + rowUpper.expr + ", ]");
+			}
+		}
+		// ------------------------------------------------------------
+		if(!isSupported) {
+			notifyErrorListeners("the given tensor indexing is not supported", ctx.start);
+			return;
+		}
+		
+		boolean isRowLower = (rowLower != null);
+		boolean isRowUpper = (rowUpper != null);
+		boolean isColLower = (colLower != null);
+		boolean isColUpper = (colUpper != null);
+		String name = ctx.name.getText();
+		exitIndexedExpressionHelper(ctx, name, ctx.dataInfo,
+				isRowLower ? rowLower : null,
+				isRowUpper ? rowUpper : null,
+				isColLower ? colLower : null,
+				isColUpper ? colUpper : null);
+	}	
 
 }

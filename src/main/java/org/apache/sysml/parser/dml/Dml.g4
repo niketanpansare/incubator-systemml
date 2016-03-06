@@ -113,7 +113,8 @@ dataIdentifier returns [ org.apache.sysml.parser.common.ExpressionInfo dataInfo 
 } :
     // ------------------------------------------
     // IndexedIdentifier
-    name=ID '[' (rowLower=expression (':' rowUpper=expression)?)? ',' (colLower=expression (':' colUpper=expression)?)? ']' # IndexedExpression
+    name=ID '[' indexes+=optionalUpperIndexExpression (',' indexes+=optionalUpperIndexExpression)* ',' shapeName=ID '=' '[' dimensions+=expression (','  dimensions+=expression)*  ']' ']' # TensorIndexedExpression
+    | name=ID '[' (rowLower=expression (':' rowUpper=expression)?)? ',' (colLower=expression (':' colUpper=expression)?)? ']' # IndexedExpression
     // ------------------------------------------
     | ID                                            # SimpleDataIdentifierExpression
     | COMMANDLINE_NAMED_ID                          # CommandlineParamExpression
@@ -161,7 +162,7 @@ expression returns [ org.apache.sysml.parser.common.ExpressionInfo info ]
     | '(' left=expression ')'                       # AtomicExpression
 
     // Should you allow indexed expression here ?
-    // | '[' targetList+=expression (',' targetList+=expression)* ']'  # MultiIdExpression
+    | '[' targetList+=expression (',' targetList+=expression)* ']'  # MultiIdExpression
 
     // | BOOLEAN                                       # ConstBooleanIdExpression
     | 'TRUE'                                        # ConstTrueExpression
@@ -178,6 +179,8 @@ typedArgNoAssign : paramType=ml_type paramName=ID;
 parameterizedExpression : (paramName=ID '=')? paramVal=expression;
 strictParameterizedExpression : paramName=ID '=' paramVal=expression ;
 strictParameterizedKeyValueString : paramName=ID '=' paramVal=STRING ;
+optionalUpperIndexExpression: (lowerIndex=expression)?  ':' (upperIndex=expression)?;
+
 ID : (ALPHABET (ALPHABET|DIGIT|'_')*  '::')? ALPHABET (ALPHABET|DIGIT|'_')*
     // Special ID cases:
    // | 'matrix' // --> This is a special case which causes lot of headache
