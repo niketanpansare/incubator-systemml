@@ -727,9 +727,10 @@ public class LibMatrixMult
 		ret.allocateDenseOrSparseBlock();
 		
 		//core weighted div mm computation
-		if( !mW.sparse && !mU.sparse && !mV.sparse && (mX==null || !mX.sparse) && !mU.isEmptyBlock() && !mV.isEmptyBlock() )
+		boolean scalarX = wt.hasScalar();
+		if( !mW.sparse && !mU.sparse && !mV.sparse && (mX==null || !mX.sparse || scalarX) && !mU.isEmptyBlock() && !mV.isEmptyBlock() )
 			matrixMultWDivMMDense(mW, mU, mV, mX, ret, wt, 0, mW.rlen, 0, mW.clen);
-		else if( mW.sparse && !mU.sparse && !mV.sparse && (mX==null || mX.sparse) && !mU.isEmptyBlock() && !mV.isEmptyBlock())
+		else if( mW.sparse && !mU.sparse && !mV.sparse && (mX==null || mX.sparse || scalarX) && !mU.isEmptyBlock() && !mV.isEmptyBlock())
 			matrixMultWDivMMSparseDense(mW, mU, mV, mX, ret, wt, 0, mW.rlen, 0, mW.clen);
 		else
 			matrixMultWDivMMGeneric(mW, mU, mV, mX, ret, wt, 0, mW.rlen, 0, mW.clen);
@@ -1255,12 +1256,9 @@ public class LibMatrixMult
 			}
 			else if( n==1 )            //MATRIX-VECTOR
 			{
-				for( int i=rl; i<Math.min(ru, a.numRows()); i++ )
-				{
-					if( !a.isEmpty(i) ) {
+				for( int i=rl; i<ru; i++ )
+					if( !a.isEmpty(i) )
 						c[i] = dotProduct(a.values(i), b, a.indexes(i), a.pos(i), 0, a.size(i));							
-					}
-				}
 			}
 			else if( pm2 && m==1 )     //VECTOR-MATRIX
 			{
@@ -1283,7 +1281,8 @@ public class LibMatrixMult
 			}
 			else if( pm2 && m<=16 )    //MATRIX-MATRIX (short lhs) 
 			{
-				for( int i=0, cix=0; i<a.numRows(); i++, cix+=n )
+				int arlen = a.numRows();
+				for( int i=0, cix=0; i<arlen; i++, cix+=n )
 					if( !a.isEmpty(i) ) 
 					{
 						int apos = a.pos(i);
@@ -1313,7 +1312,7 @@ public class LibMatrixMult
 			}
 			else                       //MATRIX-MATRIX
 			{
-				for( int i=rl, cix=rl*n; i<Math.min(ru, a.numRows()); i++, cix+=n )
+				for( int i=rl, cix=rl*n; i<ru; i++, cix+=n )
 				{
 					if( !a.isEmpty(i) ) 
 					{
@@ -1350,7 +1349,7 @@ public class LibMatrixMult
 		else
 		{
 			SparseBlock a = m1.sparseBlock;
-			for( int i=rl, cix=rl*n; i<Math.min(ru, a.numRows()); i++, cix+=n )
+			for( int i=rl, cix=rl*n; i<ru; i++, cix+=n )
 			{
 				if( !a.isEmpty(i) ) 
 				{
@@ -1413,7 +1412,7 @@ public class LibMatrixMult
 			}	
 			else                       //MATRIX-MATRIX
 			{
-				for( int i=rl, cix=rl*n; i<Math.min(ru, a.numRows()); i++, cix+=n )
+				for( int i=rl, cix=rl*n; i<ru; i++, cix+=n )
 				{
 					if( !a.isEmpty(i) ) 
 					{
@@ -1847,7 +1846,8 @@ public class LibMatrixMult
 			//algorithm: scan rows, foreach row self join (KIJ)
 			if( LOW_LEVEL_OPTIMIZATION )
 			{
-				for( int r=0; r<a.numRows(); r++ )
+				int arlen = a.numRows();
+				for( int r=0; r<arlen; r++ )
 					if( !a.isEmpty(r) ) 
 					{
 						int apos = a.pos(r);
@@ -1910,7 +1910,8 @@ public class LibMatrixMult
 				//algorithm: scan rows, foreach row self join (KIJ)
 				if( LOW_LEVEL_OPTIMIZATION )
 				{
-					for( int r=0; r<a.numRows(); r++ )
+					int arlen = a.numRows();
+					for( int r=0; r<arlen; r++ )
 						if( !a.isEmpty(r) ) 
 						{
 							int apos = a.pos(r);
@@ -2663,17 +2664,14 @@ public class LibMatrixMult
 					k = (k>=0) ? k : wpos+wlen;
 					//checking alignment per row is ok because early abort if false, 
 					//row nnz likely fit in L1/L2 cache, and asymptotically better if aligned
-					if( w.isAligned(i, x) ) {
+					if( !scalar && w.isAligned(i, x) ) {
 						//O(n) where n is nnz in w/x 
 						double[] xvals = x.values(i);
 						for( ; k<wpos+wlen && wix[k]<cu; k++ )
-							if (scalar)
-								wdivmm(wval[k], eps, u, v, c, uix, wix[k]*cd, left, scalar, cd);
-							else
-								wdivmm(wval[k], xvals[k], u, v, c, uix, wix[k]*cd, left, scalar, cd);
+							wdivmm(wval[k], xvals[k], u, v, c, uix, wix[k]*cd, left, scalar, cd);
 					}
 					else {
-						//O(n log m) where n/m are nnz in w/x
+						//scalar or O(n log m) where n/m are nnz in w/x
 						for( ; k<wpos+wlen && wix[k]<cu; k++ )
 							if (scalar)
 								wdivmm(wval[k], eps, u, v, c, uix, wix[k]*cd, left, scalar, cd);
@@ -4333,9 +4331,10 @@ public class LibMatrixMult
 		public Object call() throws DMLRuntimeException
 		{
 			//core weighted div mm computation
-			if( !_mW.sparse && !_mU.sparse && !_mV.sparse && (_mX==null || !_mX.sparse) && !_mU.isEmptyBlock() && !_mV.isEmptyBlock() )
+			boolean scalarX = _wt.hasScalar();
+			if( !_mW.sparse && !_mU.sparse && !_mV.sparse && (_mX==null || !_mX.sparse || scalarX) && !_mU.isEmptyBlock() && !_mV.isEmptyBlock() )
 				matrixMultWDivMMDense(_mW, _mU, _mV, _mX, _ret, _wt, _rl, _ru, _cl, _cu);
-			else if( _mW.sparse && !_mU.sparse && !_mV.sparse && (_mX==null || _mX.sparse) && !_mU.isEmptyBlock() && !_mV.isEmptyBlock())
+			else if( _mW.sparse && !_mU.sparse && !_mV.sparse && (_mX==null || _mX.sparse || scalarX) && !_mU.isEmptyBlock() && !_mV.isEmptyBlock())
 				matrixMultWDivMMSparseDense(_mW, _mU, _mV, _mX, _ret, _wt, _rl, _ru, _cl, _cu);
 			else
 				matrixMultWDivMMGeneric(_mW, _mU, _mV, _mX, _ret, _wt, _rl, _ru, _cl, _cu);

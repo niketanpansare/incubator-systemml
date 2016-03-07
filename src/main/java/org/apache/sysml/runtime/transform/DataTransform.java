@@ -1411,16 +1411,19 @@ public class DataTransform {
 		}
 	}
 	
-	private static void checkIfOutputOverlapsWithTxMtd(String txMtdPath, String outputPath, FileSystem fs) throws DMLRuntimeException {
+	@SuppressWarnings("deprecation")
+	private static void checkIfOutputOverlapsWithTxMtd(String txMtdPath, String outputPath, FileSystem fs) 
+		throws DMLRuntimeException 
+	{
 		Path path1 = new Path(txMtdPath).makeQualified(fs);
 		Path path2 = new Path(outputPath).makeQualified(fs);
 		
 		String fullTxMtdPath = path1.toString();
 		String fullOutputPath = path2.toString();
 		
-		if(path1.getParent().toString().compareTo(path2.getParent().toString()) == 0) {
+		if(path1.getParent().toString().equals(path2.getParent().toString())) {
 			// Both txMtdPath and outputPath are in same folder, but outputPath can have suffix 
-			if(fullTxMtdPath.compareTo(fullOutputPath) == 0) {
+			if(fullTxMtdPath.equals(fullOutputPath)) {
 				throw new DMLRuntimeException("The transform path \'" + txMtdPath 
 						+ "\' cannot overlap with the output path \'" + outputPath + "\'");
 			}
