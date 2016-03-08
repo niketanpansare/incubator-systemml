@@ -20,9 +20,11 @@
 package org.apache.sysml.test.integration.functions.tensor;
 
 import java.util.HashMap;
+
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.api.DMLScript.TensorLayout;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -46,22 +48,30 @@ public class RightIndexingMatrixTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testRightIndexingDenseCP() 
+	public void testRightIndexingDenseCPW_XYZ() 
 	{
-		runRightIndexingTest(ExecType.CP);
+		runRightIndexingTest(ExecType.CP, TensorLayout.W_XYZ);
 	}
 	
+	@Test
+	public void testRightIndexingDenseCPWXY_Z() 
+	{
+		runRightIndexingTest(ExecType.CP, TensorLayout.WXY_Z);
+	}
 	
 	/**
 	 * 
 	 * @param et
 	 * @param sparse
 	 */
-	public void runRightIndexingTest( ExecType et) 
+	public void runRightIndexingTest( ExecType et, TensorLayout layout) 
 	{
 		RUNTIME_PLATFORM oldRTP = rtplatform;
 			
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		
+		TensorLayout layoutOld = DMLScript.layout;
+		DMLScript.layout = layout;
 		
 		try
 		{
@@ -93,22 +103,37 @@ public class RightIndexingMatrixTest extends AutomatedTestBase
 			// C = A[1:, :,:][0:1, :,:]
 			
 			HashMap<CellIndex, Double> bHM = new HashMap<CellIndex, Double>();
-			bHM.put(new CellIndex(1, 1), 1.0); bHM.put(new CellIndex(1, 2), 2.0);
-			bHM.put(new CellIndex(2, 1), 3.0); bHM.put(new CellIndex(2, 2), 4.0);
-			bHM.put(new CellIndex(3, 1), 5.0); bHM.put(new CellIndex(3, 2), 6.0);
-			bHM.put(new CellIndex(4, 1), 7.0); bHM.put(new CellIndex(4, 2), 8.0);
+			if(DMLScript.layout == TensorLayout.WXY_Z) {
+				bHM.put(new CellIndex(1, 1), 1.0); bHM.put(new CellIndex(1, 2), 2.0);
+				bHM.put(new CellIndex(2, 1), 3.0); bHM.put(new CellIndex(2, 2), 4.0);
+				bHM.put(new CellIndex(3, 1), 5.0); bHM.put(new CellIndex(3, 2), 6.0);
+				bHM.put(new CellIndex(4, 1), 7.0); bHM.put(new CellIndex(4, 2), 8.0);
+			}
+			else if(DMLScript.layout == TensorLayout.W_XYZ) {
+				bHM.put(new CellIndex(2, 2), 6.0); bHM.put(new CellIndex(1, 1), 1.0);
+				bHM.put(new CellIndex(2, 3), 7.0); bHM.put(new CellIndex(1, 3), 3.0);
+				bHM.put(new CellIndex(2, 1), 5.0); bHM.put(new CellIndex(1, 2), 2.0);
+				bHM.put(new CellIndex(1, 4), 4.0); bHM.put(new CellIndex(2, 4), 8.0);
+			}
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("B");
 			TestUtils.compareMatrices(dmlfile, bHM, epsilon, "B-DML", "NumPy");
 			
 			HashMap<CellIndex, Double> cHM = new HashMap<CellIndex, Double>();
-			cHM.put(new CellIndex(1, 1), 5.0); cHM.put(new CellIndex(1, 2), 6.0);
-			cHM.put(new CellIndex(2, 1), 7.0); cHM.put(new CellIndex(2, 2), 8.0);
+			if(DMLScript.layout == TensorLayout.WXY_Z) {
+				cHM.put(new CellIndex(1, 1), 5.0); cHM.put(new CellIndex(1, 2), 6.0);
+				cHM.put(new CellIndex(2, 1), 7.0); cHM.put(new CellIndex(2, 2), 8.0);
+			}
+			else if(DMLScript.layout == TensorLayout.W_XYZ) {
+				cHM.put(new CellIndex(1, 1), 5.0); cHM.put(new CellIndex(1, 3), 7.0);
+				cHM.put(new CellIndex(1, 2), 6.0); cHM.put(new CellIndex(1, 4), 8.0);
+			}
 			dmlfile = readDMLMatrixFromHDFS("C");
 			TestUtils.compareMatrices(dmlfile, cHM, epsilon, "C-DML", "NumPy");
 			
 		}
 		finally
 		{
+			DMLScript.layout = layoutOld;
 			rtplatform = oldRTP;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}

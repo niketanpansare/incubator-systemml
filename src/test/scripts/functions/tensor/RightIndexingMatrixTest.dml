@@ -24,7 +24,7 @@ A=tensor("1 2 3 4 5 6 7 8 9 10 11 12", shape=[3, 2, 2]) # A = np.array([1, 2, 3,
 B=A[1:2, shape=[3, 2, 2]] 								# B = A[0:2, :, :]
 C=A[2:, shape=[3, 2, 2]]								# C = A[1:, :,:][0:1, :,:]
 C=C[1:1, shape=[3, 2, 2]] 
-D=A[:2,:, shape=[3, 2, 2]]								# D = A[:2,:,:]
+D=A[1:2, shape=[3, 2, 2]]								# D = A[:2,:,:]
 write(B, $1, format="text")
 write(C, $2, format="text")
 write(D, $3, format="text")

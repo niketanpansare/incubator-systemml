@@ -32,6 +32,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONObject;
 import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.DMLScript.TensorLayout;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.DataGenOp;
 import org.apache.sysml.parser.LanguageException.LanguageErrorCodes;
@@ -142,7 +143,25 @@ public class DataExpression extends DataIdentifier
 			if(currExpr.getName() != null && currExpr.getName().equals("shape")) {
 				if(currExpr.getExpr() instanceof ExpressionList) {
 					// Replace shape by rows and columns
-					if(DMLScript.IS_TENSOR_IN_ROW_MAJOR) {
+					if(DMLScript.layout == TensorLayout.W_XYZ) {
+						ArrayList<Expression> shape = ((ExpressionList) currExpr.getExpr()).getValue();
+						if(shape.size() < 2) {
+							throw new DMLParseException(filename, dataExpr.printErrorLocation(blp, bcp) 
+									+ "only tensors of shape > 1 supported");
+						}
+						
+						Expression cols = shape.get(1);
+						for(int i = 2; i < shape.size(); i++) {
+							BinaryExpression temp = new BinaryExpression(BinaryOp.MULT, 
+									filename, blp, bcp, elp, ecp);
+							temp.setLeft(cols);
+							temp.setRight(shape.get(i));
+							cols = temp;
+						}
+						newPassedParamExprs.add(new ParameterExpression("rows", shape.get(0)));
+						newPassedParamExprs.add(new ParameterExpression("cols", cols));
+					}
+					else if(DMLScript.layout == TensorLayout.WXY_Z) {
 						ArrayList<Expression> shape = ((ExpressionList) currExpr.getExpr()).getValue();
 						if(shape.size() < 2) {
 							throw new DMLParseException(filename, dataExpr.printErrorLocation(blp, bcp) 
@@ -161,12 +180,10 @@ public class DataExpression extends DataIdentifier
 						
 						Expression lastDim = shape.get(shape.size()-1);
 						newPassedParamExprs.add(new ParameterExpression("cols", lastDim));
-						
-						// DMLScript.tensorsShape.put(targetName, shape);
 					}
 					else {
 						throw new DMLParseException(filename, dataExpr.printErrorLocation(blp, bcp) 
-								+ "only row major format supported for tensor");
+								+ "the tensor layout is not supported:" + DMLScript.layout.name());
 					}
 				}
 				else {
