@@ -75,6 +75,7 @@ public abstract class Expression
 		CUMSUM,
 		DIAG,
 		EIGEN,
+		CONV2D,
 		EXP,
 		FLOOR,
 		INTERQUANTILE,

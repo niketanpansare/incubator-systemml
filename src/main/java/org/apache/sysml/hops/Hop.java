@@ -1084,6 +1084,10 @@ public abstract class Hop
 		//DIAG_V2M, DIAG_M2V, 
 	};
 	
+	public enum ConvOp {
+		IM2COL, RESHAPE_COL 
+	};
+	
 	public enum DataGenMethod {
 		RAND, SEQ, SINIT, SAMPLE, INVALID
 	};
@@ -1144,9 +1148,17 @@ public abstract class Hop
 		HopsTransf2Lops.put(ReOrgOp.DIAG, org.apache.sysml.lops.Transform.OperationTypes.Diag);
 		HopsTransf2Lops.put(ReOrgOp.RESHAPE, org.apache.sysml.lops.Transform.OperationTypes.Reshape);
 		HopsTransf2Lops.put(ReOrgOp.SORT, org.apache.sysml.lops.Transform.OperationTypes.Sort);
-
 	}
 
+	
+	protected static final HashMap<ConvOp, org.apache.sysml.lops.ConvolutionTransform.OperationTypes> HopsConv2Lops;
+	static {
+		HopsConv2Lops = new HashMap<ConvOp, org.apache.sysml.lops.ConvolutionTransform.OperationTypes>();
+		HopsConv2Lops.put(ConvOp.IM2COL, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.IM2COL);
+		HopsConv2Lops.put(ConvOp.RESHAPE_COL, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.RESHAPE_COL);
+
+	}
+	
 	protected static final HashMap<Hop.Direction, org.apache.sysml.lops.PartialAggregate.DirectionTypes> HopsDirection2Lops;
 	static {
 		HopsDirection2Lops = new HashMap<Hop.Direction, org.apache.sysml.lops.PartialAggregate.DirectionTypes>();

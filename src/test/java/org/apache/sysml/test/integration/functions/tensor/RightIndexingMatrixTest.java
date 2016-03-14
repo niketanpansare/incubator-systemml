@@ -70,8 +70,8 @@ public class RightIndexingMatrixTest extends AutomatedTestBase
 			
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		
-		TensorLayout layoutOld = DMLScript.layout;
-		DMLScript.layout = layout;
+		TensorLayout layoutOld = DMLScript.tensorLayout;
+		DMLScript.tensorLayout = layout;
 		
 		try
 		{
@@ -103,13 +103,13 @@ public class RightIndexingMatrixTest extends AutomatedTestBase
 			// C = A[1:, :,:][0:1, :,:]
 			
 			HashMap<CellIndex, Double> bHM = new HashMap<CellIndex, Double>();
-			if(DMLScript.layout == TensorLayout.WXY_Z) {
+			if(DMLScript.tensorLayout == TensorLayout.WXY_Z) {
 				bHM.put(new CellIndex(1, 1), 1.0); bHM.put(new CellIndex(1, 2), 2.0);
 				bHM.put(new CellIndex(2, 1), 3.0); bHM.put(new CellIndex(2, 2), 4.0);
 				bHM.put(new CellIndex(3, 1), 5.0); bHM.put(new CellIndex(3, 2), 6.0);
 				bHM.put(new CellIndex(4, 1), 7.0); bHM.put(new CellIndex(4, 2), 8.0);
 			}
-			else if(DMLScript.layout == TensorLayout.W_XYZ) {
+			else if(DMLScript.tensorLayout == TensorLayout.W_XYZ) {
 				bHM.put(new CellIndex(2, 2), 6.0); bHM.put(new CellIndex(1, 1), 1.0);
 				bHM.put(new CellIndex(2, 3), 7.0); bHM.put(new CellIndex(1, 3), 3.0);
 				bHM.put(new CellIndex(2, 1), 5.0); bHM.put(new CellIndex(1, 2), 2.0);
@@ -119,11 +119,11 @@ public class RightIndexingMatrixTest extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlfile, bHM, epsilon, "B-DML", "NumPy");
 			
 			HashMap<CellIndex, Double> cHM = new HashMap<CellIndex, Double>();
-			if(DMLScript.layout == TensorLayout.WXY_Z) {
+			if(DMLScript.tensorLayout == TensorLayout.WXY_Z) {
 				cHM.put(new CellIndex(1, 1), 5.0); cHM.put(new CellIndex(1, 2), 6.0);
 				cHM.put(new CellIndex(2, 1), 7.0); cHM.put(new CellIndex(2, 2), 8.0);
 			}
-			else if(DMLScript.layout == TensorLayout.W_XYZ) {
+			else if(DMLScript.tensorLayout == TensorLayout.W_XYZ) {
 				cHM.put(new CellIndex(1, 1), 5.0); cHM.put(new CellIndex(1, 3), 7.0);
 				cHM.put(new CellIndex(1, 2), 6.0); cHM.put(new CellIndex(1, 4), 8.0);
 			}
@@ -133,7 +133,7 @@ public class RightIndexingMatrixTest extends AutomatedTestBase
 		}
 		finally
 		{
-			DMLScript.layout = layoutOld;
+			DMLScript.tensorLayout = layoutOld;
 			rtplatform = oldRTP;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}

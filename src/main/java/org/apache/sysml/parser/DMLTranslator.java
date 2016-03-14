@@ -26,7 +26,8 @@ import java.util.Iterator;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.DMLScript.TensorLayout;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.AggBinaryOp;
@@ -45,6 +46,7 @@ import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.Hop.OpOp3;
 import org.apache.sysml.hops.Hop.ParamBuiltinOp;
 import org.apache.sysml.hops.Hop.ReOrgOp;
+import org.apache.sysml.hops.ConvolutionOp;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.LeftIndexingOp;
@@ -56,6 +58,7 @@ import org.apache.sysml.hops.ReorgOp;
 import org.apache.sysml.hops.TernaryOp;
 import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.hops.ipa.InterProceduralAnalysis;
+import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.hops.rewrite.ProgramRewriter;
 import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.lops.Lop;
@@ -2727,6 +2730,42 @@ public class DMLTranslator
 			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), op, expr, expr2);
 			((BinaryOp)currBuiltinOp).setOuterVectorOperation(true); //flag op as specific outer vector operation
 			currBuiltinOp.refreshSizeInformation(); //force size reevaluation according to 'outer' flag otherwise danger of incorrect dims
+			break;
+		
+		case CONV2D:
+			if(DMLScript.tensorLayout == TensorLayout.W_XYZ && DMLScript.imageLayout == DMLScript.ImageLayout.NCHW) {
+				Hop filter = expr2;
+				// Step 1: IM2COL
+				Hop image = expr;
+				ArrayList<Hop> infoIM2COL = new ArrayList<Hop>();
+				infoIM2COL.add(image);
+				Expression[] allExpr = source.getAllExpr();
+				for(int i = 2; i < allExpr.length; i++) {
+					infoIM2COL.add(processExpression(allExpr[i], null, hops));
+				}
+				Hop loweredMat = new ConvolutionOp(image.getName(), image.getDataType(), image.getValueType(), Hop.ConvOp.IM2COL, infoIM2COL);
+				HopRewriteUtils.setOutputBlocksizes(loweredMat, image.getRowsInBlock(), image.getColsInBlock());
+				HopRewriteUtils.copyLineNumbers(image, loweredMat);
+				loweredMat.refreshSizeInformation();
+				// Step 2: Matrix multiplication
+				Hop temp = new AggBinaryOp("temp" + target.getName(), target.getDataType(), target.getValueType(), OpOp2.MULT, AggOp.SUM, filter, loweredMat);
+				HopRewriteUtils.setOutputBlocksizes(temp, image.getRowsInBlock(), image.getColsInBlock());
+				HopRewriteUtils.copyLineNumbers(image, temp);
+				temp.refreshSizeInformation();
+				// Step 3: Reshape col
+				ArrayList<Hop> infoIM2COL1 = new ArrayList<Hop>();
+				infoIM2COL1.add(temp);
+				for(int i = 2; i < allExpr.length; i++) {
+					infoIM2COL1.add(processExpression(allExpr[i], null, hops));
+				}
+				currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(), Hop.ConvOp.RESHAPE_COL, infoIM2COL1);
+				HopRewriteUtils.setOutputBlocksizes(currBuiltinOp, image.getRowsInBlock(), image.getColsInBlock());
+				HopRewriteUtils.copyLineNumbers(image, currBuiltinOp);
+				currBuiltinOp.refreshSizeInformation();
+			}
+			else {
+				throw new HopsException("conv2d implemented only for W_XYZ + NCHW layouts");
+			}
 			break;
 			
 		default:

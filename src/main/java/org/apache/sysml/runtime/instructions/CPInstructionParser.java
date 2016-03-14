@@ -37,6 +37,7 @@ import org.apache.sysml.runtime.instructions.cp.BuiltinBinaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.BuiltinUnaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction;
 import org.apache.sysml.runtime.instructions.cp.CentralMomentCPInstruction;
+import org.apache.sysml.runtime.instructions.cp.ConvolutionCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.CovarianceCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.DataGenCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.DataPartitionCPInstruction;
@@ -204,6 +205,10 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "rdiag"       , CPINSTRUCTION_TYPE.Reorg);
 		String2CPInstructionType.put( "rshape"      , CPINSTRUCTION_TYPE.MatrixReshape);
 		String2CPInstructionType.put( "rsort"      , CPINSTRUCTION_TYPE.Reorg);
+		
+		// Opcodes related to convolutions
+		String2CPInstructionType.put( "im2col"      , CPINSTRUCTION_TYPE.Convolution);
+		String2CPInstructionType.put( "reshape_col"      , CPINSTRUCTION_TYPE.Convolution);
 	
 		// Quaternary instruction opcodes
 		String2CPInstructionType.put( "wsloss"  , CPINSTRUCTION_TYPE.Quaternary);
@@ -310,6 +315,9 @@ public class CPInstructionParser extends InstructionParser
 				
 			case Reorg:
 				return ReorgCPInstruction.parseInstruction(str);
+			
+			case Convolution:
+				return ConvolutionCPInstruction.parseInstruction(str);
 				
 			case UaggOuterChain:
 				return UaggOuterChainCPInstruction.parseInstruction(str);

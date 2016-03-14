@@ -108,10 +108,14 @@ public class DMLScript
 	
 	// For Tensor[W, X, Y, Z]
 	public enum TensorLayout {
-		W_XYZ,
-		WXY_Z
+		W_XYZ, WXY_Z
 	};
-	public static TensorLayout layout = TensorLayout.W_XYZ;
+	public static TensorLayout tensorLayout = TensorLayout.W_XYZ;
+	public enum ImageLayout {
+		NCHW, NHWC
+	};
+	public static ImageLayout imageLayout = ImageLayout.NCHW;
+	public static boolean DEBUG_TENSOR = true;
 	
 	// flag that indicates whether or not to suppress any prints to stdout
 	public static boolean _suppressPrint2Stdout = false;
@@ -1001,4 +1005,6 @@ public class DMLScript
 			throw new DMLException("Failed to run SystemML workspace cleanup.", ex);
 		}
 	}
+
+	
 }  

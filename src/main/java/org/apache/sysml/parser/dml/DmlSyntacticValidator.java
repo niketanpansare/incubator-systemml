@@ -48,6 +48,7 @@ import org.apache.sysml.parser.FunctionCallIdentifier;
 import org.apache.sysml.parser.FunctionStatement;
 import org.apache.sysml.parser.IfStatement;
 import org.apache.sysml.parser.ImportStatement;
+import org.apache.sysml.parser.IndexedIdentifier;
 import org.apache.sysml.parser.IntIdentifier;
 import org.apache.sysml.parser.IterablePredicate;
 import org.apache.sysml.parser.LanguageException;
@@ -118,8 +119,6 @@ import org.apache.sysml.parser.dml.DmlParser.WhileStatementContext;
 
 public class DmlSyntacticValidator extends CommonSyntacticValidator implements DmlListener {
 
-	public static boolean DEBUG_TENSOR = true;
-	
 	public DmlSyntacticValidator(CustomErrorListener errorListener, HashMap<String,String> argVals) {
 		super(errorListener, argVals);
 	}
@@ -415,8 +414,15 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		}
 		String namespace = fnNames[0];
 		String functionName = fnNames[1];
+		
 		ArrayList<ParameterExpression> paramExpression = getParameterExpressionList(ctx.paramExprs);
 
+		if(functionName.equals("conv2d")) {
+			HashSet<String> expand = new HashSet<String>();
+			expand.add("input_shape"); expand.add("filter_shape"); expand.add("stride"); expand.add("padding");
+			paramExpression = expandListParams(paramExpression, expand, ctx);
+		}
+		
 		boolean hasLHS = ctx.targetList != null;
 		functionCallAssignmentStatementHelper(ctx, printStatements, outputStatements, hasLHS ? ctx.targetList.dataInfo.expr : null, ctx.info, ctx.name,
 	 			hasLHS ? ctx.targetList.start : null, namespace, functionName, paramExpression, hasLHS);
@@ -449,6 +455,11 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		Action f = new Action() {
 			@Override public void execute(Expression e) { info.expr = e; }
 		};
+		
+		if(functionName.equals("conv2d")) {
+			notifyErrorListeners("conv2d is not allowed as part of expression", ctx.start);
+		}
+		
 		boolean validBIF = buildForBuiltInFunction(ctx, functionName, paramExpression, f);
 		if (validBIF)
 			return;
@@ -500,12 +511,36 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 			Action f = new Action() {
 				@Override public void execute(Expression e) { setMultiAssignmentStatement(targetList, e, fctx, fctx.info); }
 			};
+			
 			boolean validBIF = buildForBuiltInFunction(ctx, functionName, paramExpression, f);
 			if (validBIF)
 				return;
 		}
 
 		setMultiAssignmentStatement(targetList, functCall, ctx, ctx.info);
+	}
+	
+	private ArrayList<ParameterExpression> expandListParams(ArrayList<ParameterExpression> paramExpression, 
+			HashSet<String> paramsToExpand, ParserRuleContext ctx) {
+		ArrayList<ParameterExpression> newParamExpressions = new ArrayList<ParameterExpression>();
+		for(ParameterExpression expr : paramExpression) {
+			if(paramsToExpand.contains(expr.getName())) {
+				if(expr.getExpr() instanceof ExpressionList) {
+					int i = 1;
+					for(Expression e : ((ExpressionList)expr.getExpr()).getValue()) {
+						newParamExpressions.add(new ParameterExpression(expr.getName() + i, e));
+						i++;
+					}
+				}
+			}
+			else if(expr.getExpr() instanceof ExpressionList) {
+				notifyErrorListeners("the parameter " + expr.getName() + " cannot be list", ctx.start);
+			}
+			else {
+				newParamExpressions.add(expr);
+			}
+		}
+		return newParamExpressions;
 	}
 
 
@@ -1057,7 +1092,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		boolean isSupported = false;
 		
 		// ------------------------------------------------------------
-		if(DMLScript.layout == TensorLayout.W_XYZ) {
+		if(DMLScript.tensorLayout == TensorLayout.W_XYZ) {
 			// Special case: Indexing on only first two dimensions
 			OptionalUpperIndexExpressionContext firstIndex = (ctx.indexes != null && ctx.indexes.size() >= 1) ? ctx.indexes.get(0) : null;
 			OptionalUpperIndexExpressionContext secondIndex = (ctx.indexes != null && ctx.indexes.size() >= 2) ? ctx.indexes.get(1) : null;
@@ -1089,15 +1124,19 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 					if(!isSecondLowerEmpty) {
 						colLower = new ExpressionInfo();
 						// TODO:
+						notifyErrorListeners("the given tensor indexing is not supported yet", ctx.start);
+						return;
 					}
 					if(!isSecondUpperEmpty) {
 						colUpper = new ExpressionInfo();
 						// TODO:
+						notifyErrorListeners("the given tensor indexing is not supported yet", ctx.start);
+						return;
 					}
 				}
 			}
 		}
-		else if(DMLScript.layout == TensorLayout.WXY_Z) {
+		else if(DMLScript.tensorLayout == TensorLayout.WXY_Z) {
 			// Special case: Indexing on only first dimension
 			OptionalUpperIndexExpressionContext firstIndex = ctx.indexes.get(0);
 			if(!isLowerEmpty(firstIndex) || !isUpperEmpty(firstIndex)) {
@@ -1125,7 +1164,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 					else {
 						rowUpper.expr = getMatrixRowIndex(shape.get(0), shape, ctx, false);
 					}
-					if(DEBUG_TENSOR)
+					if(DMLScript.DEBUG_TENSOR)
 						System.out.println("[" + (!isLowerEmpty(firstIndex) ? firstIndex.lowerIndex.getText() : "") + ":" 
 							+ (!isUpperEmpty(firstIndex) ? firstIndex.upperIndex.getText() : "") + 
 							", ] => [" + rowLower.expr + ":" + rowUpper.expr + ", ]");
@@ -1133,7 +1172,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 			}
 		}
 		else {
-			notifyErrorListeners("the tensor layout is not supported:" + DMLScript.layout.name(), ctx.start);
+			notifyErrorListeners("the tensor layout is not supported:" + DMLScript.tensorLayout.name(), ctx.start);
 			return;
 		}
 		// ------------------------------------------------------------
@@ -1147,6 +1186,9 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		boolean isColLower = (colLower != null);
 		boolean isColUpper = (colUpper != null);
 		String name = ctx.name.getText();
+		
+		ctx.dataInfo.expr = new IndexedIdentifier(name, false, false);
+		
 		exitIndexedExpressionHelper(ctx, name, ctx.dataInfo,
 				isRowLower ? rowLower : null,
 				isRowUpper ? rowUpper : null,

@@ -143,7 +143,7 @@ public class DataExpression extends DataIdentifier
 			if(currExpr.getName() != null && currExpr.getName().equals("shape")) {
 				if(currExpr.getExpr() instanceof ExpressionList) {
 					// Replace shape by rows and columns
-					if(DMLScript.layout == TensorLayout.W_XYZ) {
+					if(DMLScript.tensorLayout == TensorLayout.W_XYZ) {
 						ArrayList<Expression> shape = ((ExpressionList) currExpr.getExpr()).getValue();
 						if(shape.size() < 2) {
 							throw new DMLParseException(filename, dataExpr.printErrorLocation(blp, bcp) 
@@ -161,7 +161,7 @@ public class DataExpression extends DataIdentifier
 						newPassedParamExprs.add(new ParameterExpression("rows", shape.get(0)));
 						newPassedParamExprs.add(new ParameterExpression("cols", cols));
 					}
-					else if(DMLScript.layout == TensorLayout.WXY_Z) {
+					else if(DMLScript.tensorLayout == TensorLayout.WXY_Z) {
 						ArrayList<Expression> shape = ((ExpressionList) currExpr.getExpr()).getValue();
 						if(shape.size() < 2) {
 							throw new DMLParseException(filename, dataExpr.printErrorLocation(blp, bcp) 
@@ -183,7 +183,7 @@ public class DataExpression extends DataIdentifier
 					}
 					else {
 						throw new DMLParseException(filename, dataExpr.printErrorLocation(blp, bcp) 
-								+ "the tensor layout is not supported:" + DMLScript.layout.name());
+								+ "the tensor layout is not supported:" + DMLScript.tensorLayout.name());
 					}
 				}
 				else {
