@@ -19,13 +19,14 @@
 #
 #-------------------------------------------------------------
 
+X = read($X, data_type="frame", format="csv"); #new data
+M = read($M, data_type="frame", format="csv"); #existing recode maps
+specJson = $TRANSFORM_SPEC
 
-raw = read($DATA);
-specJson = read($TFSPEC, data_type="scalar", value_type="string")
+Xt = transformapply(target=X, meta=M, spec=specJson);
 
-A = transform(target = raw, 
-              transformPath = $TFMTD, 
-              spec = specJson);
+V = matrix(Xt, rows=nrow(Xt)*ncol(Xt), cols=1);
+Y = as.matrix(sum(table(V, 1) != 0))
 
-write(A, $TFDATA, format=$OFMT);
+write(Y, $Y);
 

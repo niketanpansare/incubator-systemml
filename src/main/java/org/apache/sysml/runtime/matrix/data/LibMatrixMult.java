@@ -22,9 +22,12 @@ package org.apache.sysml.runtime.matrix.data;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.apache.commons.math3.util.FastMath;
 import org.apache.sysml.lops.MapMultChain.ChainType;
@@ -582,16 +585,16 @@ public class LibMatrixMult
 		try 
 		{			
 			ExecutorService pool = Executors.newFixedThreadPool(k);
-			ArrayList<ScalarResultTask> tasks = new ArrayList<ScalarResultTask>();
+			ArrayList<MatrixMultWSLossTask> tasks = new ArrayList<MatrixMultWSLossTask>();
 			int blklen = (int)(Math.ceil((double)mX.rlen/k));
 			for( int i=0; i<k & i*blklen<mX.rlen; i++ )
 				tasks.add(new MatrixMultWSLossTask(mX, mU, mV, mW, wt, i*blklen, Math.min((i+1)*blklen, mX.rlen)));
-			pool.invokeAll(tasks);
+			List<Future<Double>> taskret = pool.invokeAll(tasks);
 			pool.shutdown();
 			//aggregate partial results
-			sumScalarResults(tasks, ret);
+			sumScalarResults(taskret, ret);
 		} 
-		catch (InterruptedException e) {
+		catch( Exception e ) {
 			throw new DMLRuntimeException(e);
 		}
 
@@ -769,7 +772,7 @@ public class LibMatrixMult
 			ret.examSparsity(); //turn empty dense into sparse
 			return; 
 		}
-
+		
 		//Timing time = new Timing(true);
 
 		//pre-processing
@@ -793,16 +796,16 @@ public class LibMatrixMult
 					tasks.add(new MatrixMultWDivTask(mW, mU, mV, mX, ret, wt, i*blklen, Math.min((i+1)*blklen, mW.rlen), 0, mW.clen));
 			}
 			//execute tasks
-			pool.invokeAll(tasks);
+			List<Future<Long>> taskret = pool.invokeAll(tasks);
 			pool.shutdown();
-			//aggregate partial nnz 
+			//aggregate partial nnz and check for errors
 			ret.nonZeros = 0;  //reset after execute
-			for( MatrixMultWDivTask task : tasks )
-				ret.nonZeros += task.getPartialNnz();
+			for( Future<Long> task : taskret )
+				ret.nonZeros += task.get();
 		} 
-		catch (InterruptedException e) {
+		catch (Exception e) {
 			throw new DMLRuntimeException(e);
-		}
+		} 
 
 		//post-processing
 		ret.examSparsity();
@@ -875,16 +878,16 @@ public class LibMatrixMult
 		try 
 		{			
 			ExecutorService pool = Executors.newFixedThreadPool(k);
-			ArrayList<ScalarResultTask> tasks = new ArrayList<ScalarResultTask>();
+			ArrayList<MatrixMultWCeTask> tasks = new ArrayList<MatrixMultWCeTask>();
 			int blklen = (int)(Math.ceil((double)mW.rlen/k));
 			for( int i=0; i<k & i*blklen<mW.rlen; i++ )
 				tasks.add(new MatrixMultWCeTask(mW, mU, mV, wt, i*blklen, Math.min((i+1)*blklen, mW.rlen)));
-			pool.invokeAll(tasks);
+			List<Future<Double>> taskret = pool.invokeAll(tasks);
 			pool.shutdown();
 			//aggregate partial results
-			sumScalarResults(tasks, ret);
+			sumScalarResults(taskret, ret);
 		} 
-		catch (InterruptedException e) {
+		catch( Exception e ) {
 			throw new DMLRuntimeException(e);
 		}
 		
@@ -2228,17 +2231,34 @@ public class LibMatrixMult
 		else if( wt==WeightsType.POST_NZ )
 		{
 			// approach: iterate over W, point-wise in order to exploit sparsity
-			for( int i=rl, uix=rl*cd; i<ru; i++, uix+=cd )
-				if( !x.isEmpty(i) ) {
-					int xpos = x.pos(i);
-					int xlen = x.size(i);
-					int[] xix = x.indexes(i);
-					double[] xval = x.values(i);
-					for( int k=xpos; k<xpos+xlen; k++ ) {
-						double uvij = dotProduct(u, v, uix, xix[k]*cd, cd);
-						wsloss += (xval[k]-uvij)*(xval[k]-uvij);
+			// blocked over ij, while maintaining front of column indexes, where the
+			// blocksize is chosen such that we reuse each vector on average 8 times.
+			final int blocksizeIJ = (int) (8L*mX.rlen*mX.clen/mX.nonZeros); 
+			int[] curk = new int[blocksizeIJ];			
+			
+			for( int bi=rl; bi<ru; bi+=blocksizeIJ ) {
+				int bimin = Math.min(ru, bi+blocksizeIJ);
+				//prepare starting indexes for block row
+				Arrays.fill(curk, 0); 
+				//blocked execution over column blocks
+				for( int bj=0; bj<n; bj+=blocksizeIJ ) {
+					int bjmin = Math.min(n, bj+blocksizeIJ);
+					for( int i=bi, uix=bi*cd; i<bimin; i++, uix+=cd ) {
+						if( !x.isEmpty(i) ) {
+							int xpos = x.pos(i);
+							int xlen = x.size(i);
+							int[] xix = x.indexes(i);
+							double[] xval = x.values(i);
+							int k = xpos + curk[i-bi];
+							for( ; k<xpos+xlen && xix[k]<bjmin; k++ ) {
+								double uvij = dotProduct(u, v, uix, xix[k]*cd, cd);
+								wsloss += (xval[k]-uvij)*(xval[k]-uvij);
+							}
+							curk[i-bi] = k - xpos;
+						}
 					}
-				}	
+				}
+			}
 		}
 		// Pattern 2) sum ((X - W * (U %*% t(V))) ^ 2) (pre weighting)
 		else if( wt==WeightsType.PRE )
@@ -2648,42 +2668,64 @@ public class LibMatrixMult
 		SparseBlock x = (mX==null) ? null : mX.sparseBlock;
 		
 		//approach: iterate over non-zeros of w, selective mm computation
-		for( int i=rl, uix=rl*cd; i<ru; i++, uix+=cd ) {
-			if( !w.isEmpty(i) ) {
-				int wpos = w.pos(i);
-				int wlen = w.size(i);
-				int[] wix = w.indexes(i);
-				double[] wval = w.values(i);
-			
-				if( basic ) {
-					for( int k=wpos; k<wpos+wlen; k++ )
-						ret.appendValue( i, wix[k], wval[k] * dotProduct(u, v, uix, wix[k]*cd, cd));
-				}
-				else if( four ) { //left/right
-					int k = (cl==0) ? wpos : w.posFIndexGTE(i,cl);
-					k = (k>=0) ? k : wpos+wlen;
-					//checking alignment per row is ok because early abort if false, 
-					//row nnz likely fit in L1/L2 cache, and asymptotically better if aligned
-					if( !scalar && w.isAligned(i, x) ) {
-						//O(n) where n is nnz in w/x 
-						double[] xvals = x.values(i);
-						for( ; k<wpos+wlen && wix[k]<cu; k++ )
-							wdivmm(wval[k], xvals[k], u, v, c, uix, wix[k]*cd, left, scalar, cd);
+		//blocked over ij, while maintaining front of column indexes, where the
+		//blocksize is chosen such that we reuse each vector on average 8 times.
+		final int blocksizeIJ = (int) (8L*mW.rlen*mW.clen/mW.nonZeros); 
+		int[] curk = new int[blocksizeIJ];		
+		boolean[] aligned = (four&&!scalar) ? new boolean[blocksizeIJ] : null;
+		
+		for( int bi = rl; bi < ru; bi+=blocksizeIJ ) 
+		{
+			int bimin = Math.min(ru, bi+blocksizeIJ);
+			//prepare starting indexes for block row
+			for( int i=bi; i<bimin; i++ ) {
+				int k = (cl==0||w.isEmpty(i)) ? 0 : w.posFIndexGTE(i,cl);
+				curk[i-bi] = (k>=0) ? k : mW.clen;
+			}
+			//prepare alignment info if necessary
+			if( four && !scalar )
+				for( int i=bi; i<bimin; i++ )
+					aligned[i-bi] = w.isAligned(i-bi, x);
+			//blocked execution over column blocks
+			for( int bj = cl; bj < cu; bj+=blocksizeIJ ) 
+			{
+				int bjmin = Math.min(cu, bj+blocksizeIJ);
+				for( int i=bi, uix=bi*cd; i<bimin; i++, uix+=cd ) {
+					if( !w.isEmpty(i) ) {
+						int wpos = w.pos(i);
+						int wlen = w.size(i);
+						int[] wix = w.indexes(i);
+						double[] wval = w.values(i);				
+						
+						int k = wpos + curk[i-bi];
+						if( basic ) {
+							for( ; k<wpos+wlen && wix[k]<bjmin; k++ )
+								ret.appendValue( i, wix[k], wval[k] * dotProduct(u, v, uix, wix[k]*cd, cd));
+						}
+						else if( four ) { //left/right
+							//checking alignment per row is ok because early abort if false, 
+							//row nnz likely fit in L1/L2 cache, and asymptotically better if aligned
+							if( !scalar && w.isAligned(i, x) ) {
+								//O(n) where n is nnz in w/x 
+								double[] xvals = x.values(i);
+								for( ; k<wpos+wlen && wix[k]<bjmin; k++ )
+									wdivmm(wval[k], xvals[k], u, v, c, uix, wix[k]*cd, left, scalar, cd);
+							}
+							else {
+								//scalar or O(n log m) where n/m are nnz in w/x
+								for( ; k<wpos+wlen && wix[k]<bjmin; k++ )
+									if (scalar)
+										wdivmm(wval[k], eps, u, v, c, uix, wix[k]*cd, left, scalar, cd);
+									else
+										wdivmm(wval[k], x.get(i, wix[k]), u, v, c, uix, wix[k]*cd, left, scalar, cd);
+							}
+						}
+						else { //left/right minus default
+							for( ; k<wpos+wlen && wix[k]<bjmin; k++ )
+								wdivmm(wval[k], u, v, c, uix, wix[k]*cd, left, mult, minus, cd);
+						}
+						curk[i-bi] = k - wpos;
 					}
-					else {
-						//scalar or O(n log m) where n/m are nnz in w/x
-						for( ; k<wpos+wlen && wix[k]<cu; k++ )
-							if (scalar)
-								wdivmm(wval[k], eps, u, v, c, uix, wix[k]*cd, left, scalar, cd);
-							else
-								wdivmm(wval[k], x.get(i, wix[k]), u, v, c, uix, wix[k]*cd, left, scalar, cd);
-					}
-				}
-				else { //left/right minus default
-					int k = (cl==0) ? wpos : w.posFIndexGTE(i,cl);
-					k = (k>=0) ? k : wpos+wlen;
-					for( ; k<wpos+wlen && wix[k]<cu; k++ )
-						wdivmm(wval[k], u, v, c, uix, wix[k]*cd, left, mult, minus, cd);
 				}
 			}
 		}
@@ -3961,13 +4003,16 @@ public class LibMatrixMult
 	 * 
 	 * @param tasks
 	 * @param ret
+	 * @throws ExecutionException 
+	 * @throws InterruptedException 
 	 */
-	private static void sumScalarResults(ArrayList<ScalarResultTask> tasks, MatrixBlock ret)
+	private static void sumScalarResults(List<Future<Double>> tasks, MatrixBlock ret) 
+		throws InterruptedException, ExecutionException
 	{
-		//aggregate partial results
+		//aggregate partial results and check for errors
 		double val = 0;
-		for(ScalarResultTask task : tasks)
-			val += task.getScalarResult();
+		for(Future<Double> task : tasks)
+			val += task.get();
 		ret.quickSetValue(0, 0, val);
 	}
 	
@@ -4183,19 +4228,12 @@ public class LibMatrixMult
 			return null;
 		}
 	}
-
-	/**
-	 * 
-	 */
-	private static interface ScalarResultTask extends Callable<Object>{
-		public double getScalarResult();
-	}
 	
 	/**
 	 * 
 	 * 
 	 */
-	private static class MatrixMultWSLossTask implements ScalarResultTask
+	private static class MatrixMultWSLossTask implements Callable<Double>
 	{
 		private MatrixBlock _mX = null;
 		private MatrixBlock _mU = null;
@@ -4223,7 +4261,7 @@ public class LibMatrixMult
 		}
 		
 		@Override
-		public Object call() throws DMLRuntimeException
+		public Double call() throws DMLRuntimeException
 		{
 			if( !_mX.sparse && !_mU.sparse && !_mV.sparse && (_mW==null || !_mW.sparse) 
 				&& !_mX.isEmptyBlock() && !_mU.isEmptyBlock() && !_mV.isEmptyBlock() 
@@ -4236,11 +4274,6 @@ public class LibMatrixMult
 			else
 				matrixMultWSLossGeneric(_mX, _mU, _mV, _mW, _ret, _wt, _rl, _ru);
 
-			return null;
-		}
-		
-		@Override
-		public double getScalarResult() {
 			return _ret.quickGetValue(0, 0);
 		}
 	}
@@ -4298,7 +4331,7 @@ public class LibMatrixMult
 	 * 
 	 * 
 	 */
-	private static class MatrixMultWDivTask implements Callable<Object> 
+	private static class MatrixMultWDivTask implements Callable<Long> 
 	{
 		private MatrixBlock _mW = null;
 		private MatrixBlock _mU = null;
@@ -4310,7 +4343,6 @@ public class LibMatrixMult
 		private int _ru = -1;
 		private int _cl = -1;
 		private int _cu = -1;
-		private long _nnz = -1;
 		
 		protected MatrixMultWDivTask(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, MatrixBlock mX, MatrixBlock ret, WDivMMType wt, int rl, int ru, int cl, int cu) 
 			throws DMLRuntimeException
@@ -4328,7 +4360,7 @@ public class LibMatrixMult
 		}
 		
 		@Override
-		public Object call() throws DMLRuntimeException
+		public Long call() throws DMLRuntimeException
 		{
 			//core weighted div mm computation
 			boolean scalarX = _wt.hasScalar();
@@ -4342,21 +4374,11 @@ public class LibMatrixMult
 			//maintain partial nnz for right (upper bounds inclusive)
 			int rl = _wt.isLeft() ? _cl : _rl;
 			int ru = _wt.isLeft() ? _cu : _ru;
-			_nnz = _ret.recomputeNonZeros(rl, ru-1, 0, _ret.getNumColumns()-1);
-				
-			return null;
-		}
-		
-		/**
-		 * For wdivmm right.
-		 * @return
-		 */
-		public long getPartialNnz(){
-			return _nnz;
+			return _ret.recomputeNonZeros(rl, ru-1, 0, _ret.getNumColumns()-1);
 		}
 	}
 	
-	private static class MatrixMultWCeTask implements ScalarResultTask
+	private static class MatrixMultWCeTask implements Callable<Double>
 	{
 		private MatrixBlock _mW = null;
 		private MatrixBlock _mU = null;
@@ -4382,7 +4404,7 @@ public class LibMatrixMult
 		}
 		
 		@Override
-		public Object call() throws DMLRuntimeException
+		public Double call() throws DMLRuntimeException
 		{
 			//core weighted div mm computation
 			if( !_mW.sparse && !_mU.sparse && !_mV.sparse && !_mU.isEmptyBlock() && !_mV.isEmptyBlock() )
@@ -4393,11 +4415,6 @@ public class LibMatrixMult
 				matrixMultWCeMMGeneric(_mW, _mU, _mV, _ret, _wt, _rl, _ru);
 			
 			
-			return null;
-		}
-		
-		@Override
-		public double getScalarResult() {
 			return _ret.quickGetValue(0, 0);
 		}
 	}
