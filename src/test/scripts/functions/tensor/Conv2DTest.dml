@@ -19,13 +19,13 @@
 #
 #-------------------------------------------------------------
 imgSize=$1
-numImg=5
-imgFormat=$2
-numChannels=$3
-numFilters=$4
-filterSize=$5
-stride=$6
-pad=$7
+numImg=$2
+imgFormat=$3
+numChannels=$4
+numFilters=$5
+filterSize=$6
+stride=$7
+pad=$8
 
 # Assumption: NCHW image format
 if(imgFormat == "NCHW") {
@@ -36,4 +36,4 @@ if(imgFormat == "NCHW") {
 else {
 	print("Not implemented")
 }
-write(output, $8, format="text")
+write(output, $9, format="text")

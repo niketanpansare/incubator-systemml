@@ -28,7 +28,6 @@ import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.ConvolutionTransform;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopsException;
-import org.apache.sysml.lops.Transform;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;

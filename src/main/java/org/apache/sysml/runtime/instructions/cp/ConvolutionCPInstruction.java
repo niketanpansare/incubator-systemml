@@ -76,8 +76,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			return new ConvolutionCPInstruction(in, out, opcode, str, stride,
 					padding, input_shape, filter_shape);
 		} else {
-			throw new DMLRuntimeException(
-					"Unknown opcode while parsing a ReorgInstruction: " + str);
+			throw new DMLRuntimeException("Unknown opcode while parsing a ReorgInstruction: " + str);
 		}
 	}
 
@@ -93,7 +92,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		// acquire inputs
 		MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
-		MatrixBlock soresBlock = null;
+		MatrixBlock outputBlock = null;
 		if (instOpcode.equalsIgnoreCase("im2col")
 				|| instOpcode.equalsIgnoreCase("reshape_col")) {
 			pad_h = getScalarInput(ec, _padding, 0);
@@ -109,8 +108,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 
 				K = getScalarInput(ec, _filter_shape, 0);
 				if (getScalarInput(ec, _filter_shape, 1) != C) {
-					throw new DMLRuntimeException(
-							"The number of channels of input and filter should match");
+					throw new DMLRuntimeException("The number of channels of input and filter should match");
 				}
 				R = getScalarInput(ec, _filter_shape, 2);
 				S = getScalarInput(ec, _filter_shape, 3);
@@ -124,15 +122,15 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				R = getScalarInput(ec, _filter_shape, 1);
 				S = getScalarInput(ec, _filter_shape, 2);
 				if (getScalarInput(ec, _filter_shape, 3) != C) {
-					throw new DMLRuntimeException(
-							"The number of channels of input and filter should match");
+					throw new DMLRuntimeException("The number of channels of input and filter should match");
 				}
 			}
-
+			
 			if (instOpcode.equalsIgnoreCase("im2col")) {
-				soresBlock = im2col(matBlock);
+				checkInputDimension(matBlock);
+				outputBlock = im2col(matBlock);
 			} else {
-				soresBlock = reshape_col(matBlock);
+				outputBlock = reshape_col(matBlock);
 			}
 		} else {
 			throw new DMLRuntimeException("Unsupported op code " + instOpcode);
@@ -140,7 +138,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 
 		// release inputs/outputs
 		ec.releaseMatrixInput(input1.getName());
-		ec.setMatrixOutput(output.getName(), soresBlock);
+		ec.setMatrixOutput(output.getName(), outputBlock);
 	}
 	
 	int N; int C; int H; int W;
@@ -150,17 +148,17 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	long outNNZ = 0;
 	// These are used to iterate
 	int i;  int row;
+
 	
 	private MatrixBlock init(int numRowsOutput) throws DMLRuntimeException {
 		P = (int) ConvolutionUtils.getP(H, R, stride_h, pad_h);
 		Q = (int) ConvolutionUtils.getQ(W, S, stride_w, pad_w);
 		
-		if((W + 2 * pad_w - Q) % stride_w != 0) {
-			throw new DMLRuntimeException("The width does not work: (" + W + "+" + "2 * " + pad_w + "-" +  Q +")" + " % " + stride_w + "!= 0");
+		if((W + 2 * pad_w - S) % stride_w != 0) {
+			throw new DMLRuntimeException("The width does not work (Hint: (W + 2 * pad_w - S) % stride_w should be 0 [ ==> (" + W + "+" + " 2*" + pad_w + "-" +  S + ") % " + stride_w + "!= 0] ");
 		}
-		
-		if((H + 2 * pad_h - P) % stride_h != 0) {
-			throw new DMLRuntimeException("The height does not work: (" + W + "+" + "2 * " + pad_w + "-" +  Q +")" + " % " + stride_w + "!= 0");
+		if((H + 2 * pad_h - R) % stride_h != 0) {
+			throw new DMLRuntimeException("The height does not work (Hint: (H + 2 * pad_h - R) % stride_h should be 0 [ ==> (" + H + "+" + " 2*" + pad_h + "-" +  R + ") % " + stride_h + "!= 0] ");
 		}
 		
 		int numColsOutput = N * P * Q;
@@ -285,4 +283,24 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		}
 	}
 
+	
+	
+	private void checkInputDimension(MatrixBlock matBlock) throws DMLRuntimeException {
+		if(DMLScript.tensorLayout == TensorLayout.W_XYZ && DMLScript.imageLayout == ImageLayout.NCHW 
+				&& (N != matBlock.getNumRows() || C*H*W != matBlock.getNumColumns())) {
+			throw new DMLRuntimeException("Incorrect input shape in conv2d");
+		}
+		else if(DMLScript.tensorLayout == TensorLayout.WXY_Z  && DMLScript.imageLayout == ImageLayout.NCHW 
+				&& (N*C*H != matBlock.getNumRows() || W != matBlock.getNumColumns())) {
+			throw new DMLRuntimeException("Incorrect input shape in conv2d");
+		}
+		if(DMLScript.tensorLayout == TensorLayout.W_XYZ && DMLScript.imageLayout == ImageLayout.NHWC 
+				&& (N != matBlock.getNumRows() || C*H*W != matBlock.getNumColumns())) {
+			throw new DMLRuntimeException("Incorrect input shape in conv2d");
+		}
+		else if(DMLScript.tensorLayout == TensorLayout.WXY_Z  && DMLScript.imageLayout == ImageLayout.NHWC 
+				&& (N*H*W != matBlock.getNumRows() || C != matBlock.getNumColumns())) {
+			throw new DMLRuntimeException("Incorrect input shape in conv2d");
+		}
+	}
 }

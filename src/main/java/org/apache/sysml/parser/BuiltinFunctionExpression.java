@@ -22,9 +22,6 @@ package org.apache.sysml.parser;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.api.DMLScript.ImageLayout;
-import org.apache.sysml.api.DMLScript.TensorLayout;
 import org.apache.sysml.parser.LanguageException.LanguageErrorCodes;
 
 public class BuiltinFunctionExpression extends DataIdentifier 
@@ -53,7 +50,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	private void add4DTensorShape(HashMap<String, Expression> oldArgs, Expression [] ret, int startingIndex,
 			String inputStr, ParameterExpression expr, String fname, int blp, int bcp, int elp, int ecp) {
 		if(expr.getExpr() instanceof DataIdentifier) {
-			DataIdentifier input = (DataIdentifier) expr.getExpr();
+//			DataIdentifier input = (DataIdentifier) expr.getExpr();
 			int i = startingIndex; // 6 for input and 10 for shape
 			if(isPresent(oldArgs, inputStr + "_shape", 4)) {
 				ret[i++] = getMultiIdArgument(oldArgs, inputStr + "_shape", 1, -1L, fname, blp, bcp, elp, ecp);
