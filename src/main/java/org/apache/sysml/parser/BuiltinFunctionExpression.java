@@ -1536,6 +1536,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.EIGEN;
 		else if (functionName.equals("conv2d"))
 			bifop = Expression.BuiltinFunctionOp.CONV2D;
+		else if (functionName.equals("conv2d_backward"))
+			bifop = Expression.BuiltinFunctionOp.CONV2D_BACKWARD;
 		else if (functionName.equals("solve"))
 			bifop = Expression.BuiltinFunctionOp.SOLVE;
 		else if (functionName.equals("ceil"))

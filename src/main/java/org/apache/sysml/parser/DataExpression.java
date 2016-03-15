@@ -32,7 +32,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONObject;
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.api.DMLScript.TensorLayout;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.DataGenOp;
 import org.apache.sysml.parser.LanguageException.LanguageErrorCodes;
@@ -143,48 +142,22 @@ public class DataExpression extends DataIdentifier
 			if(currExpr.getName() != null && currExpr.getName().equals("shape")) {
 				if(currExpr.getExpr() instanceof ExpressionList) {
 					// Replace shape by rows and columns
-					if(DMLScript.tensorLayout == TensorLayout.W_XYZ) {
-						ArrayList<Expression> shape = ((ExpressionList) currExpr.getExpr()).getValue();
-						if(shape.size() < 2) {
-							throw new DMLParseException(filename, dataExpr.printErrorLocation(blp, bcp) 
-									+ "only tensors of shape > 1 supported");
-						}
-						
-						Expression cols = shape.get(1);
-						for(int i = 2; i < shape.size(); i++) {
-							BinaryExpression temp = new BinaryExpression(BinaryOp.MULT, 
-									filename, blp, bcp, elp, ecp);
-							temp.setLeft(cols);
-							temp.setRight(shape.get(i));
-							cols = temp;
-						}
-						newPassedParamExprs.add(new ParameterExpression("rows", shape.get(0)));
-						newPassedParamExprs.add(new ParameterExpression("cols", cols));
-					}
-					else if(DMLScript.tensorLayout == TensorLayout.WXY_Z) {
-						ArrayList<Expression> shape = ((ExpressionList) currExpr.getExpr()).getValue();
-						if(shape.size() < 2) {
-							throw new DMLParseException(filename, dataExpr.printErrorLocation(blp, bcp) 
-									+ "only tensors of shape > 1 supported");
-						}
-						
-						Expression rows = shape.get(0);
-						for(int i = 1; i < shape.size()-1; i++) {
-							BinaryExpression temp = new BinaryExpression(BinaryOp.MULT, 
-									filename, blp, bcp, elp, ecp);
-							temp.setLeft(rows);
-							temp.setRight(shape.get(i));
-							rows = temp;
-						}
-						newPassedParamExprs.add(new ParameterExpression("rows", rows));
-						
-						Expression lastDim = shape.get(shape.size()-1);
-						newPassedParamExprs.add(new ParameterExpression("cols", lastDim));
-					}
-					else {
+					ArrayList<Expression> shape = ((ExpressionList) currExpr.getExpr()).getValue();
+					if(shape.size() < 2) {
 						throw new DMLParseException(filename, dataExpr.printErrorLocation(blp, bcp) 
-								+ "the tensor layout is not supported:" + DMLScript.tensorLayout.name());
+								+ "only tensors of shape > 1 supported");
 					}
+					
+					Expression cols = shape.get(1);
+					for(int i = 2; i < shape.size(); i++) {
+						BinaryExpression temp = new BinaryExpression(BinaryOp.MULT, 
+								filename, blp, bcp, elp, ecp);
+						temp.setLeft(cols);
+						temp.setRight(shape.get(i));
+						cols = temp;
+					}
+					newPassedParamExprs.add(new ParameterExpression("rows", shape.get(0)));
+					newPassedParamExprs.add(new ParameterExpression("cols", cols));
 				}
 				else {
 					throw new DMLParseException(filename, dataExpr.printErrorLocation(blp, bcp) 

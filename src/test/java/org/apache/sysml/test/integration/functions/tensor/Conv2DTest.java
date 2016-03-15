@@ -4,7 +4,6 @@ import java.util.HashMap;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
-import org.apache.sysml.api.DMLScript.TensorLayout;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -33,7 +32,7 @@ public class Conv2DTest extends AutomatedTestBase
 	{
 		int numImg = 5; int imgSize = 3; int numChannels = 3; int numFilters = 6; int filterSize = 2; int stride = 1; int pad = 0;
 		fillTest1HM();
-		runConv2DTest(ExecType.CP, TensorLayout.W_XYZ, "NCHW", imgSize, numImg, numChannels, numFilters, filterSize, stride, pad);
+		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad);
 	}
 	
 	@Test
@@ -41,7 +40,7 @@ public class Conv2DTest extends AutomatedTestBase
 	{
 		int numImg = 1; int imgSize = 10; int numChannels = 4; int numFilters = 3; int filterSize = 4; int stride = 2; int pad = 0;
 		fillTest2HM();
-		runConv2DTest(ExecType.CP, TensorLayout.W_XYZ, "NCHW", imgSize, numImg, numChannels, numFilters, filterSize, stride, pad);
+		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad);
 	}
 	
 	@Test
@@ -49,7 +48,7 @@ public class Conv2DTest extends AutomatedTestBase
 	{
 		int numImg = 1; int imgSize = 10; int numChannels = 4; int numFilters = 3; int filterSize = 4; int stride = 2; int pad = 1;
 		fillTest3HM();
-		runConv2DTest(ExecType.CP, TensorLayout.W_XYZ, "NCHW", imgSize, numImg, numChannels, numFilters, filterSize, stride, pad);
+		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad);
 	}
 	
 	@Test
@@ -57,7 +56,7 @@ public class Conv2DTest extends AutomatedTestBase
 	{
 		int numImg = 3; int imgSize = 10; int numChannels = 1; int numFilters = 3; int filterSize = 2; int stride = 2; int pad = 1;
 		fillTest4HM();
-		runConv2DTest(ExecType.CP, TensorLayout.W_XYZ, "NCHW", imgSize, numImg, numChannels, numFilters, filterSize, stride, pad);
+		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad);
 	}
 	
 	/**
@@ -65,15 +64,12 @@ public class Conv2DTest extends AutomatedTestBase
 	 * @param et
 	 * @param sparse
 	 */
-	public void runConv2DTest( ExecType et, TensorLayout layout, String imgFormat, int imgSize, int numImg, int numChannels, int numFilters, 
+	public void runConv2DTest( ExecType et, int imgSize, int numImg, int numChannels, int numFilters, 
 			int filterSize, int stride, int pad) 
 	{
 		RUNTIME_PLATFORM oldRTP = rtplatform;
 			
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		
-		TensorLayout layoutOld = DMLScript.tensorLayout;
-		DMLScript.tensorLayout = layout;
 		
 		try
 		{
@@ -94,7 +90,7 @@ public class Conv2DTest extends AutomatedTestBase
 			fullDMLScriptName = RI_HOME + TEST_NAME + ".dml";
 			
 			programArgs = new String[]{"-args",  "" + imgSize, "" + numImg, 
-					imgFormat, "" + numChannels, "" + numFilters, 
+					"" + numChannels, "" + numFilters, 
 					"" + filterSize, "" + stride, "" + pad, 
 					output("B")};
 			        
@@ -108,7 +104,6 @@ public class Conv2DTest extends AutomatedTestBase
 		}
 		finally
 		{
-			DMLScript.tensorLayout = layoutOld;
 			rtplatform = oldRTP;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 			bHM.clear();

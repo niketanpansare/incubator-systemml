@@ -31,7 +31,6 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.api.DMLScript.TensorLayout;
 import org.apache.sysml.parser.AParserWrapper;
 import org.apache.sysml.parser.AssignmentStatement;
 import org.apache.sysml.parser.BinaryExpression;
@@ -1092,89 +1091,50 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		boolean isSupported = false;
 		
 		// ------------------------------------------------------------
-		if(DMLScript.tensorLayout == TensorLayout.W_XYZ) {
-			// Special case: Indexing on only first two dimensions
-			OptionalUpperIndexExpressionContext firstIndex = (ctx.indexes != null && ctx.indexes.size() >= 1) ? ctx.indexes.get(0) : null;
-			OptionalUpperIndexExpressionContext secondIndex = (ctx.indexes != null && ctx.indexes.size() >= 2) ? ctx.indexes.get(1) : null;
-			
-			boolean isFirstLowerEmpty = firstIndex == null || isLowerEmpty(firstIndex);
-			boolean isFirstUpperEmpty = firstIndex == null || isUpperEmpty(firstIndex);
-			boolean isSecondLowerEmpty = secondIndex == null || isLowerEmpty(secondIndex);
-			boolean isSecondUpperEmpty = secondIndex == null || isUpperEmpty(secondIndex);
-			
-			if(!isFirstLowerEmpty || !isFirstUpperEmpty || !isSecondLowerEmpty || !isSecondUpperEmpty) {
-				isSupported = true;
-				for(int i = 2; i < ctx.indexes.size(); i++) {
-					OptionalUpperIndexExpressionContext otherIndex = ctx.indexes.get(i);
-					if(!isLowerEmpty(otherIndex) && !isUpperEmpty(otherIndex)) {
-						isSupported = false;
-						break;
-					}
-				}
-				
-				if(isSupported) {
-					if(!isFirstLowerEmpty) {
-						rowLower = new ExpressionInfo();
-						rowLower.expr = firstIndex.lowerIndex.info.expr;
-					}
-					if(!isFirstUpperEmpty) {
-						rowUpper = new ExpressionInfo();
-						rowUpper.expr = firstIndex.upperIndex.info.expr;
-					}
-					if(!isSecondLowerEmpty) {
-						colLower = new ExpressionInfo();
-						// TODO:
-						notifyErrorListeners("the given tensor indexing is not supported yet", ctx.start);
-						return;
-					}
-					if(!isSecondUpperEmpty) {
-						colUpper = new ExpressionInfo();
-						// TODO:
-						notifyErrorListeners("the given tensor indexing is not supported yet", ctx.start);
-						return;
-					}
+		
+		// Special case: Indexing on only first two dimensions
+		OptionalUpperIndexExpressionContext firstIndex = (ctx.indexes != null && ctx.indexes.size() >= 1) ? ctx.indexes.get(0) : null;
+		OptionalUpperIndexExpressionContext secondIndex = (ctx.indexes != null && ctx.indexes.size() >= 2) ? ctx.indexes.get(1) : null;
+		
+		boolean isFirstLowerEmpty = firstIndex == null || isLowerEmpty(firstIndex);
+		boolean isFirstUpperEmpty = firstIndex == null || isUpperEmpty(firstIndex);
+		boolean isSecondLowerEmpty = secondIndex == null || isLowerEmpty(secondIndex);
+		boolean isSecondUpperEmpty = secondIndex == null || isUpperEmpty(secondIndex);
+		
+		if(!isFirstLowerEmpty || !isFirstUpperEmpty || !isSecondLowerEmpty || !isSecondUpperEmpty) {
+			isSupported = true;
+			for(int i = 2; i < ctx.indexes.size(); i++) {
+				OptionalUpperIndexExpressionContext otherIndex = ctx.indexes.get(i);
+				if(!isLowerEmpty(otherIndex) && !isUpperEmpty(otherIndex)) {
+					isSupported = false;
+					break;
 				}
 			}
-		}
-		else if(DMLScript.tensorLayout == TensorLayout.WXY_Z) {
-			// Special case: Indexing on only first dimension
-			OptionalUpperIndexExpressionContext firstIndex = ctx.indexes.get(0);
-			if(!isLowerEmpty(firstIndex) || !isUpperEmpty(firstIndex)) {
-				isSupported = true;
-				for(int i = 1; i < ctx.indexes.size(); i++) {
-					OptionalUpperIndexExpressionContext otherIndex = ctx.indexes.get(i);
-					if(!isLowerEmpty(otherIndex) && !isUpperEmpty(otherIndex)) {
-						isSupported = false;
-						break;
-					}
-				}
-				
-				if(isSupported) {
+			
+			if(isSupported) {
+				if(!isFirstLowerEmpty) {
 					rowLower = new ExpressionInfo();
+					rowLower.expr = firstIndex.lowerIndex.info.expr;
+				}
+				if(!isFirstUpperEmpty) {
 					rowUpper = new ExpressionInfo();
-					if(!isLowerEmpty(firstIndex)) {
-						rowLower.expr = getMatrixRowIndex(firstIndex.lowerIndex.info.expr, shape, ctx, true);
-					}
-					else {
-						rowLower.expr = getMatrixRowIndex(createIntIdentifier(1, ctx), shape, ctx, true);
-					}
-					if(!isUpperEmpty(firstIndex)) {
-						rowUpper.expr = getMatrixRowIndex(firstIndex.upperIndex.info.expr, shape, ctx, false); 
-					}
-					else {
-						rowUpper.expr = getMatrixRowIndex(shape.get(0), shape, ctx, false);
-					}
-					if(DMLScript.DEBUG_TENSOR)
-						System.out.println("[" + (!isLowerEmpty(firstIndex) ? firstIndex.lowerIndex.getText() : "") + ":" 
-							+ (!isUpperEmpty(firstIndex) ? firstIndex.upperIndex.getText() : "") + 
-							", ] => [" + rowLower.expr + ":" + rowUpper.expr + ", ]");
+					rowUpper.expr = firstIndex.upperIndex.info.expr;
+				}
+				if(!isSecondLowerEmpty) {
+					colLower = new ExpressionInfo();
+					// TODO:
+					notifyErrorListeners("the given tensor indexing is not supported yet", ctx.start);
+					return;
+				}
+				if(!isSecondUpperEmpty) {
+					colUpper = new ExpressionInfo();
+					// TODO:
+					notifyErrorListeners("the given tensor indexing is not supported yet", ctx.start);
+					return;
 				}
 			}
 		}
-		else {
-			notifyErrorListeners("the tensor layout is not supported:" + DMLScript.tensorLayout.name(), ctx.start);
-			return;
-		}
+		
 		// ------------------------------------------------------------
 		if(!isSupported) {
 			notifyErrorListeners("the given tensor indexing is not supported", ctx.start);

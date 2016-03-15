@@ -107,14 +107,7 @@ public class DMLScript
 	public static ExplainType EXPLAIN = ExplainType.NONE; //default explain
 	
 	// For Tensor[W, X, Y, Z]
-	public enum TensorLayout {
-		W_XYZ, WXY_Z
-	};
-	public static TensorLayout tensorLayout = TensorLayout.W_XYZ;
-	public enum ImageLayout {
-		NCHW, NHWC
-	};
-	public static ImageLayout imageLayout = ImageLayout.NCHW;
+	// Only supported NCHW image layout and W_XYZ tensor layout
 	public static boolean DEBUG_TENSOR = true;
 	
 	// flag that indicates whether or not to suppress any prints to stdout

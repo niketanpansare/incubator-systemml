@@ -22,8 +22,6 @@ package org.apache.sysml.hops;
 import java.util.ArrayList;
 
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.api.DMLScript.ImageLayout;
-import org.apache.sysml.api.DMLScript.TensorLayout;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.ConvolutionTransform;
 import org.apache.sysml.lops.Lop;
@@ -263,26 +261,15 @@ public class ConvolutionOp extends Hop
 					long N = -1; long C = -1; long H = -1; long W = -1;
 					long K = -1; long R = -1; long S = -1;
 					
-					if(DMLScript.imageLayout == ImageLayout.NCHW) {
-						N = extractValue(getInput().get(5));
-						C = extractValue(getInput().get(6));
-						H = extractValue(getInput().get(7));
-						W = extractValue(getInput().get(8));
-						K = extractValue(getInput().get(9));
-						C = (C <= 0) ? extractValue(getInput().get(10)) : C;
-						R = extractValue(getInput().get(11));
-						S = extractValue(getInput().get(12));
-					}
-					else if(DMLScript.imageLayout == ImageLayout.NHWC) {
-						N = extractValue(getInput().get(5));
-						H = extractValue(getInput().get(6));
-						W = extractValue(getInput().get(7));
-						C = extractValue(getInput().get(8));
-						K = extractValue(getInput().get(9));
-						R = extractValue(getInput().get(10));
-						S = extractValue(getInput().get(11));
-						C = (C <= 0) ? extractValue(getInput().get(12)) : C;
-					}
+					N = extractValue(getInput().get(5));
+					C = extractValue(getInput().get(6));
+					H = extractValue(getInput().get(7));
+					W = extractValue(getInput().get(8));
+					K = extractValue(getInput().get(9));
+					C = (C <= 0) ? extractValue(getInput().get(10)) : C;
+					R = extractValue(getInput().get(11));
+					S = extractValue(getInput().get(12));
+					
 					
 					// Set _dim1, _dim2 and if possible _nnz (use input1.getNnz())
 					_dim1 = C*R*S;
@@ -316,50 +303,23 @@ public class ConvolutionOp extends Hop
 					long K = -1; long R = -1; long S = -1;
 					
 					// Set _dim1, _dim2 and if possible _nnz (use input1.getNnz())
-					if(DMLScript.imageLayout == ImageLayout.NCHW) {
-						N = extractValue(getInput().get(5));
-						C = extractValue(getInput().get(6));
-						H = extractValue(getInput().get(7));
-						W = extractValue(getInput().get(8));
-						K = extractValue(getInput().get(9));
-						C = (C <= 0) ? extractValue(getInput().get(10)) : C;
-						R = extractValue(getInput().get(11));
-						S = extractValue(getInput().get(12));
-					}
-					else if(DMLScript.imageLayout == ImageLayout.NHWC) {
-						N = extractValue(getInput().get(5));
-						H = extractValue(getInput().get(6));
-						W = extractValue(getInput().get(7));
-						C = extractValue(getInput().get(8));
-						K = extractValue(getInput().get(9));
-						R = extractValue(getInput().get(10));
-						S = extractValue(getInput().get(11));
-						C = (C <= 0) ? extractValue(getInput().get(12)) : C;
-					}
+					N = extractValue(getInput().get(5));
+					C = extractValue(getInput().get(6));
+					H = extractValue(getInput().get(7));
+					W = extractValue(getInput().get(8));
+					K = extractValue(getInput().get(9));
+					C = (C <= 0) ? extractValue(getInput().get(10)) : C;
+					R = extractValue(getInput().get(11));
+					S = extractValue(getInput().get(12));
 					
 					long P = ConvolutionUtils.getP(H, R, stride1, padding1);
 					long Q = ConvolutionUtils.getQ(W, S, stride2, padding2);
-					if(DMLScript.tensorLayout == TensorLayout.W_XYZ) {
-						_dim1 = N;
-						_dim2 = K * P * Q;
-						// TODO: nnz
-						_nnz = _dim1*_dim2;
-					}
-					else if(DMLScript.tensorLayout == TensorLayout.WXY_Z && DMLScript.imageLayout == ImageLayout.NCHW) {
-						_dim1 = N * K * P;
-						_dim2 = Q;
-						// TODO: nnz
-						_nnz = _dim1*_dim2;
-					}
-					else if(DMLScript.tensorLayout == TensorLayout.WXY_Z && DMLScript.imageLayout == ImageLayout.NHWC) {
-						_dim1 = N * P * Q;
-						_dim2 = K;
-						// TODO: nnz
-						_nnz = _dim1*_dim2;
-					}
-					else {
-						System.out.println("Incorrect layout");
-					}
+					
+					_dim1 = N;
+					_dim2 = K * P * Q;
+					// TODO: nnz
+					_nnz = _dim1*_dim2;
+					
 				}
 				catch(DMLRuntimeException e) {}
 				break;

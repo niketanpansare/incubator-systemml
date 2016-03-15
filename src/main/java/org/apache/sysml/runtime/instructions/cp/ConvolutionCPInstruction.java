@@ -5,8 +5,6 @@ import java.util.ArrayList;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.api.DMLScript.ImageLayout;
-import org.apache.sysml.api.DMLScript.TensorLayout;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -100,31 +98,18 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			stride_h = getScalarInput(ec, _stride, 0);
 			stride_w = getScalarInput(ec, _stride, 1);
 
-			if (DMLScript.imageLayout == ImageLayout.NCHW) {
-				N = getScalarInput(ec, _input_shape, 0);
-				C = getScalarInput(ec, _input_shape, 1);
-				H = getScalarInput(ec, _input_shape, 2);
-				W = getScalarInput(ec, _input_shape, 3);
+			N = getScalarInput(ec, _input_shape, 0);
+			C = getScalarInput(ec, _input_shape, 1);
+			H = getScalarInput(ec, _input_shape, 2);
+			W = getScalarInput(ec, _input_shape, 3);
 
-				K = getScalarInput(ec, _filter_shape, 0);
-				if (getScalarInput(ec, _filter_shape, 1) != C) {
-					throw new DMLRuntimeException("The number of channels of input and filter should match");
-				}
-				R = getScalarInput(ec, _filter_shape, 2);
-				S = getScalarInput(ec, _filter_shape, 3);
-			} else if (DMLScript.imageLayout == ImageLayout.NHWC) {
-				N = getScalarInput(ec, _input_shape, 0);
-				H = getScalarInput(ec, _input_shape, 1);
-				W = getScalarInput(ec, _input_shape, 2);
-				C = getScalarInput(ec, _input_shape, 3);
-
-				K = getScalarInput(ec, _filter_shape, 0);
-				R = getScalarInput(ec, _filter_shape, 1);
-				S = getScalarInput(ec, _filter_shape, 2);
-				if (getScalarInput(ec, _filter_shape, 3) != C) {
-					throw new DMLRuntimeException("The number of channels of input and filter should match");
-				}
+			K = getScalarInput(ec, _filter_shape, 0);
+			if (getScalarInput(ec, _filter_shape, 1) != C) {
+				throw new DMLRuntimeException("The number of channels of input and filter should match");
 			}
+			R = getScalarInput(ec, _filter_shape, 2);
+			S = getScalarInput(ec, _filter_shape, 3);
+			
 			
 			if (instOpcode.equalsIgnoreCase("im2col")) {
 				checkInputDimension(matBlock);
@@ -175,7 +160,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		return output;
 	}
 	
-	// Reshape to 4D tensor (N, K, P, Q)
+	// Reshape a matrix of dimension (K, NPQ) to 4D tensor of dimension (N, K, P, Q)
 	private MatrixBlock reshape_col(MatrixBlock input) throws DMLRuntimeException {
 		long start = System.nanoTime();
 		
@@ -198,26 +183,20 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			throw new DMLRuntimeException("Incorrect input dimensions in col2im:" + input.getNumRows() + " " + input.getNumColumns());
 		}
 		
-		if (DMLScript.imageLayout != ImageLayout.NCHW) {
-			throw new DMLRuntimeException("col2im is not implemented for layout:" + DMLScript.imageLayout);
-		}
-
-		if (DMLScript.imageLayout == ImageLayout.NCHW) {
-			for (int n = 0; n < N; n++) { 
-				for (int k = 0; k < K; k++) { 
-					for (int p = 0; p < P; p++) { 
-						for (int q = 0; q < Q; q++) {
-							if (DMLScript.tensorLayout == TensorLayout.W_XYZ) {
-								if(inputArray != null)
-									outputArray[n*K*P*Q + k*P*Q + p*Q + q] = inputArray[k*N*P*Q + n*P*Q + p*Q + q];
-								else
-									outputArray[n*K*P*Q + k*P*Q + p*Q + q] = input.getValue(k, n*P*Q + p*Q + q);
-							}
-						}
+		
+		for (int n = 0; n < N; n++) { 
+			for (int k = 0; k < K; k++) { 
+				for (int p = 0; p < P; p++) { 
+					for (int q = 0; q < Q; q++) {
+						if(inputArray != null)
+							outputArray[n*K*P*Q + k*P*Q + p*Q + q] = inputArray[k*N*P*Q + n*P*Q + p*Q + q];
+						else
+							outputArray[n*K*P*Q + k*P*Q + p*Q + q] = input.getValue(k, n*P*Q + p*Q + q);
 					}
 				}
 			}
 		}
+		
 
 		double execTime = (System.nanoTime() - start) / 1000000000;
 		if (DMLScript.DEBUG_TENSOR && execTime > 5)
@@ -226,29 +205,23 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	}
 		
 
+	// Outputs a matrix of dimension (CRS, NPQ)
 	private MatrixBlock im2col(MatrixBlock input) throws DMLRuntimeException {
 		long start = System.nanoTime();
 		
 		this.input = input;
 		MatrixBlock output = init(C * R * S);
 		
-		if (DMLScript.imageLayout != ImageLayout.NCHW) {
-			throw new DMLRuntimeException("im2col is not implemented for layout:" + DMLScript.imageLayout);
-		}
-
-		if (DMLScript.imageLayout == ImageLayout.NCHW) {
-
-			for (int c = 0; c < C; c++) { // Since format is NCHW
-				for (int r = 0; r < R; r++) { // Get an input patch of size R X S
-					for (int s = 0; s < S; s++) {
-						for (int n = 0; n < N; n++) { // Do following for all images
-							doIm2colOverInputPath_NCHW(n, c, r, s);
-						}
+		for (int c = 0; c < C; c++) { // Since format is NCHW
+			for (int r = 0; r < R; r++) { // Get an input patch of size R X S
+				for (int s = 0; s < S; s++) {
+					for (int n = 0; n < N; n++) { // Do following for all images
+						doIm2colOverInputPath_NCHW(n, c, r, s);
 					}
 				}
 			}
 		}
-
+		
 		double execTime = (System.nanoTime() - start) / 1000000000;
 		if (DMLScript.DEBUG_TENSOR && execTime > 5)
 			LOG.info("Time for im2col:" + execTime + " seconds.");
@@ -264,15 +237,10 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				for (int q = Q; q > 0; q--, i++) {
 					if (input_col >= 0 && input_col < W) {
 						// Copy from [channel c, height input_row, width input_col]
-						if (DMLScript.tensorLayout == TensorLayout.W_XYZ) {
-							if (inputArray != null)
-								outputArray[i] = inputArray[n*C*H*W + c*H*W + input_row*W + input_col];
-							else
-								outputArray[i] = input.getValue(n + 1, c*H*W + input_row*W + input_col + 1);
-						} else if (DMLScript.tensorLayout == TensorLayout.WXY_Z) {
-							outputArray[i] = input
-									.getValue(n + 1, c*H*W + input_row*W + input_col + 1);
-						}
+						if (inputArray != null)
+							outputArray[i] = inputArray[n*C*H*W + c*H*W + input_row*W + input_col];
+						else
+							outputArray[i] = input.getValue(n + 1, c*H*W + input_row*W + input_col + 1);
 					}
 					input_col += stride_w;
 				}
@@ -286,20 +254,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	
 	
 	private void checkInputDimension(MatrixBlock matBlock) throws DMLRuntimeException {
-		if(DMLScript.tensorLayout == TensorLayout.W_XYZ && DMLScript.imageLayout == ImageLayout.NCHW 
-				&& (N != matBlock.getNumRows() || C*H*W != matBlock.getNumColumns())) {
-			throw new DMLRuntimeException("Incorrect input shape in conv2d");
-		}
-		else if(DMLScript.tensorLayout == TensorLayout.WXY_Z  && DMLScript.imageLayout == ImageLayout.NCHW 
-				&& (N*C*H != matBlock.getNumRows() || W != matBlock.getNumColumns())) {
-			throw new DMLRuntimeException("Incorrect input shape in conv2d");
-		}
-		if(DMLScript.tensorLayout == TensorLayout.W_XYZ && DMLScript.imageLayout == ImageLayout.NHWC 
-				&& (N != matBlock.getNumRows() || C*H*W != matBlock.getNumColumns())) {
-			throw new DMLRuntimeException("Incorrect input shape in conv2d");
-		}
-		else if(DMLScript.tensorLayout == TensorLayout.WXY_Z  && DMLScript.imageLayout == ImageLayout.NHWC 
-				&& (N*H*W != matBlock.getNumRows() || C != matBlock.getNumColumns())) {
+		if((N != matBlock.getNumRows() || C*H*W != matBlock.getNumColumns())) {
 			throw new DMLRuntimeException("Incorrect input shape in conv2d");
 		}
 	}
