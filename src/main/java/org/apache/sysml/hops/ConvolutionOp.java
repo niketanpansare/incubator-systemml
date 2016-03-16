@@ -99,6 +99,7 @@ public class ConvolutionOp extends Hop
 			case IM2COL:
 			case RESHAPE_COL:
 			case ROTATE180:
+			case COL2IM:
 			{
 				if( et==ExecType.CP)
 				{
@@ -192,6 +193,8 @@ public class ConvolutionOp extends Hop
 //			}
 			case IM2COL:
 			case RESHAPE_COL:
+			case ROTATE180:
+			case COL2IM:
 				// TODO:
 		}	
 		
@@ -284,6 +287,45 @@ public class ConvolutionOp extends Hop
 						// Worst-case estimates (assuming only nnz are replicated):
 						// TODO:
 						_nnz = _dim1*_dim2 - numZerosInOriginalImage; 
+					}
+				}
+				catch(DMLRuntimeException e) {}
+				
+				break;
+			}
+			case COL2IM:
+			{
+				try {
+					// stride1, stride2, padding1, padding2  
+					// input_shape1, input_shape2, input_shape3, input_shape4, 
+					// filter_shape1, filter_shape2, filter_shape3, filter_shape4
+					long stride1 = extractValue(getInput().get(1));
+					long stride2 = extractValue(getInput().get(2));
+					long padding1 = extractValue(getInput().get(3));
+					long padding2 = extractValue(getInput().get(4));
+					long N = -1; long C = -1; long H = -1; long W = -1;
+					long K = -1; long R = -1; long S = -1;
+					
+					N = extractValue(getInput().get(5));
+					C = extractValue(getInput().get(6));
+					H = extractValue(getInput().get(7));
+					W = extractValue(getInput().get(8));
+					K = extractValue(getInput().get(9));
+					C = (C <= 0) ? extractValue(getInput().get(10)) : C;
+					R = extractValue(getInput().get(11));
+					S = extractValue(getInput().get(12));
+					
+					
+					// Set _dim1, _dim2 and if possible _nnz (use input1.getNnz())
+					_dim1 = N;
+					_dim2 = C*R*S;
+					if(input1.getNnz() >= 0) {
+						// long approxNumPaddedZeros = N*C*(2*(P*R + Q*S));
+						// long numZerosInOriginalImage = (N*C*H*W - input1.getNnz());
+						// long conservativeEstNumZeros = (numZerosInOriginalImage + approxNumPaddedZeros);
+						// Worst-case estimates (assuming only nnz are replicated):
+						// TODO:
+						_nnz = _dim1*_dim2; 
 					}
 				}
 				catch(DMLRuntimeException e) {}

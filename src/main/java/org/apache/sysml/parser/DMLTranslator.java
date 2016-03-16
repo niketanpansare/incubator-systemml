@@ -2778,6 +2778,24 @@ public class DMLTranslator
 			currBuiltinOp.refreshSizeInformation();
 			break;
 		}
+		case CONV2D_BACKWARD_DATA:
+		{
+			Hop filter = expr;
+			Hop dout = expr2;
+			Hop filter_T = new ReorgOp("tempTranspose" + filter.getName(), filter.getDataType(), filter.getValueType(), Hop.ReOrgOp.TRANSPOSE, filter);
+			
+			ArrayList<Hop> inHops1 = getALHopsForConvOp(dout, source, 2, hops);
+			Hop dout_reshaped = new ConvolutionOp(dout.getName(), dout.getDataType(), dout.getValueType(), Hop.ConvOp.ROTATE180, inHops1);
+			
+			Hop temp1 = new AggBinaryOp("temp" + target.getName(), target.getDataType(), target.getValueType(), OpOp2.MULT, AggOp.SUM, filter_T, dout_reshaped);
+			
+			ArrayList<Hop> inHops2 = getALHopsForConvOp(temp1, source, 2, hops);
+			currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(), Hop.ConvOp.COL2IM, inHops2);
+			HopRewriteUtils.setOutputBlocksizes(currBuiltinOp, filter.getRowsInBlock(), filter.getColsInBlock());
+			HopRewriteUtils.copyLineNumbers(filter, currBuiltinOp);
+			currBuiltinOp.refreshSizeInformation();
+			break;
+		}
 		default:
 			throw new ParseException("Unsupported builtin function type: "+source.getOpCode());
 		}
