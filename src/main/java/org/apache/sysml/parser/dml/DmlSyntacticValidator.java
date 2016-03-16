@@ -416,7 +416,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		
 		ArrayList<ParameterExpression> paramExpression = getParameterExpressionList(ctx.paramExprs);
 
-		if(functionName.equals("conv2d")) {
+		if(functionName.equals("conv2d") || functionName.equals("conv2d_backward_filter")) {
 			HashSet<String> expand = new HashSet<String>();
 			expand.add("input_shape"); expand.add("filter_shape"); expand.add("stride"); expand.add("padding");
 			paramExpression = expandListParams(paramExpression, expand, ctx);

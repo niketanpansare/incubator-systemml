@@ -75,7 +75,7 @@ public abstract class Expression
 		CUMSUM,
 		DIAG,
 		EIGEN,
-		CONV2D, CONV2D_BACKWARD,
+		CONV2D, CONV2D_BACKWARD_FILTER,
 		EXP,
 		FLOOR,
 		INTERQUANTILE,

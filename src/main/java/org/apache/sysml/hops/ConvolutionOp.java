@@ -98,8 +98,9 @@ public class ConvolutionOp extends Hop
 		{
 			case IM2COL:
 			case RESHAPE_COL:
+			case ROTATE180:
 			{
-				if( et==ExecType.CP || et == ExecType.SPARK)
+				if( et==ExecType.CP)
 				{
 					setLops(constructIm2colOrReshapeColLOP(et));
 					break;
@@ -121,7 +122,7 @@ public class ConvolutionOp extends Hop
 	
 	private Lop constructIm2colOrReshapeColLOP(ExecType et) throws HopsException, LopsException {
 		if(getInput().size() != 13) {
-			throw new HopsException("Incorrect number of inputs for im2col/col2im");
+			throw new HopsException("Incorrect number of inputs for " + op.name());
 		}
 		
 		Lop in = getInput().get(0).constructLops();
@@ -317,6 +318,42 @@ public class ConvolutionOp extends Hop
 					
 					_dim1 = N;
 					_dim2 = K * P * Q;
+					// TODO: nnz
+					_nnz = _dim1*_dim2;
+					
+				}
+				catch(DMLRuntimeException e) {}
+				break;
+			}
+			case ROTATE180:
+			{
+				try {
+					// stride1, stride2, padding1, padding2  
+					// input_shape1, input_shape2, input_shape3, input_shape4, 
+					// filter_shape1, filter_shape2, filter_shape3, filter_shape4
+					long stride1 = extractValue(getInput().get(1));
+					long stride2 = extractValue(getInput().get(2));
+					long padding1 = extractValue(getInput().get(3));
+					long padding2 = extractValue(getInput().get(4));
+					long N = -1; long C = -1; long H = -1; long W = -1;
+					long K = -1; long R = -1; long S = -1;
+					
+					// Set _dim1, _dim2 and if possible _nnz (use input1.getNnz())
+					N = extractValue(getInput().get(5));
+					C = extractValue(getInput().get(6));
+					H = extractValue(getInput().get(7));
+					W = extractValue(getInput().get(8));
+					K = extractValue(getInput().get(9));
+					C = (C <= 0) ? extractValue(getInput().get(10)) : C;
+					R = extractValue(getInput().get(11));
+					S = extractValue(getInput().get(12));
+					
+					long P = ConvolutionUtils.getP(H, R, stride1, padding1);
+					long Q = ConvolutionUtils.getQ(W, S, stride2, padding2);
+					
+					// Reshape a 4D tensor of dimension (N, K, P, Q) to matrix of dimension (K, NPQ)
+					_dim1 = K;
+					_dim2 = N * P * Q;
 					// TODO: nnz
 					_nnz = _dim1*_dim2;
 					

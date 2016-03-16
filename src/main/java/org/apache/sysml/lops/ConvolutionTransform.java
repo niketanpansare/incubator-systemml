@@ -31,7 +31,8 @@ public class ConvolutionTransform extends Lop
 	
 	public enum OperationTypes {
 		IM2COL,
-		RESHAPE_COL
+		RESHAPE_COL,
+		ROTATE180
 	};
 	
 	private OperationTypes operation = null;
@@ -101,6 +102,9 @@ public class ConvolutionTransform extends Lop
 		case RESHAPE_COL:
 			return "reshape_col";
 		
+		case ROTATE180:
+			return "rotate180";
+			
 		default:
 			throw new UnsupportedOperationException(this.printErrorLocation() + "Instruction is not defined for Transform operation " + operation);
 				

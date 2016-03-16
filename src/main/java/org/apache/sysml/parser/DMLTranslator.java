@@ -2739,16 +2739,12 @@ public class DMLTranslator
 			break;
 		
 		case CONV2D:
+		{
 			Hop filter = expr2;
 			// Step 1: IM2COL
 			Hop image = expr;
-			ArrayList<Hop> infoIM2COL = new ArrayList<Hop>();
-			infoIM2COL.add(image);
-			Expression[] allExpr = source.getAllExpr();
-			for(int i = 2; i < allExpr.length; i++) {
-				infoIM2COL.add(processExpression(allExpr[i], null, hops));
-			}
-			Hop loweredMat = new ConvolutionOp(image.getName(), image.getDataType(), image.getValueType(), Hop.ConvOp.IM2COL, infoIM2COL);
+			ArrayList<Hop> inHops1 = getALHopsForConvOp(image, source, 2, hops);
+			Hop loweredMat = new ConvolutionOp(image.getName(), image.getDataType(), image.getValueType(), Hop.ConvOp.IM2COL, inHops1);
 			HopRewriteUtils.setOutputBlocksizes(loweredMat, image.getRowsInBlock(), image.getColsInBlock());
 			HopRewriteUtils.copyLineNumbers(image, loweredMat);
 			loweredMat.refreshSizeInformation();
@@ -2758,17 +2754,30 @@ public class DMLTranslator
 			HopRewriteUtils.copyLineNumbers(image, temp);
 			temp.refreshSizeInformation();
 			// Step 3: Reshape col
-			ArrayList<Hop> infoIM2COL1 = new ArrayList<Hop>();
-			infoIM2COL1.add(temp);
-			for(int i = 2; i < allExpr.length; i++) {
-				infoIM2COL1.add(processExpression(allExpr[i], null, hops));
-			}
-			currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(), Hop.ConvOp.RESHAPE_COL, infoIM2COL1);
+			ArrayList<Hop> inHops2 = getALHopsForConvOp(temp, source, 2, hops);
+			currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(), Hop.ConvOp.RESHAPE_COL, inHops2);
 			HopRewriteUtils.setOutputBlocksizes(currBuiltinOp, image.getRowsInBlock(), image.getColsInBlock());
 			HopRewriteUtils.copyLineNumbers(image, currBuiltinOp);
 			currBuiltinOp.refreshSizeInformation();
 			break;
+		}
+		case CONV2D_BACKWARD_FILTER:
+		{
+			Hop image = expr;
+			Hop dout = expr2;
+			ArrayList<Hop> inHops1 = getALHopsForConvOp(image, source, 2, hops);
+			Hop x_col = new ConvolutionOp(image.getName(), image.getDataType(), image.getValueType(), Hop.ConvOp.IM2COL, inHops1);
+			Hop x_col_T = new ReorgOp("tempTranspose" + image.getName(), image.getDataType(), image.getValueType(), Hop.ReOrgOp.TRANSPOSE, x_col);
 			
+			ArrayList<Hop> inHops2 = getALHopsForConvOp(dout, source, 2, hops);
+			Hop dout_reshaped = new ConvolutionOp(dout.getName(), dout.getDataType(), dout.getValueType(), Hop.ConvOp.ROTATE180, inHops2);
+			
+			currBuiltinOp = new AggBinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.MULT, AggOp.SUM, dout_reshaped, x_col_T);
+			HopRewriteUtils.setOutputBlocksizes(currBuiltinOp, image.getRowsInBlock(), image.getColsInBlock());
+			HopRewriteUtils.copyLineNumbers(image, currBuiltinOp);
+			currBuiltinOp.refreshSizeInformation();
+			break;
+		}
 		default:
 			throw new ParseException("Unsupported builtin function type: "+source.getOpCode());
 		}
@@ -2776,6 +2785,16 @@ public class DMLTranslator
 		setIdentifierParams(currBuiltinOp, source.getOutput());
 		currBuiltinOp.setAllPositions(source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
 		return currBuiltinOp;
+	}
+	
+	private ArrayList<Hop> getALHopsForConvOp(Hop first, BuiltinFunctionExpression source, int skip, HashMap<String, Hop> hops) throws ParseException {
+		ArrayList<Hop> ret = new ArrayList<Hop>();
+		ret.add(first);
+		Expression[] allExpr = source.getAllExpr();
+		for(int i = skip; i < allExpr.length; i++) {
+			ret.add(processExpression(allExpr[i], null, hops));
+		}
+		return ret;
 	}
 		
 	public void setIdentifierParams(Hop h, Identifier id) {

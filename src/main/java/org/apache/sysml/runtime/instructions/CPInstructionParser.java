@@ -210,6 +210,7 @@ public class CPInstructionParser extends InstructionParser
 		// Opcodes related to convolutions
 		String2CPInstructionType.put( "im2col"      , CPINSTRUCTION_TYPE.Convolution);
 		String2CPInstructionType.put( "reshape_col"      , CPINSTRUCTION_TYPE.Convolution);
+		String2CPInstructionType.put( "rotate180"      , CPINSTRUCTION_TYPE.Convolution);
 	
 		// Quaternary instruction opcodes
 		String2CPInstructionType.put( "wsloss"  , CPINSTRUCTION_TYPE.Quaternary);

@@ -46,6 +46,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		if (opcode.equalsIgnoreCase("reshape_col")
+				|| opcode.equalsIgnoreCase("rotate180")
 				|| opcode.equalsIgnoreCase("im2col")) {
 			InstructionUtils.checkNumFields(parts, 14);
 			// stride1, stride2, padding1, padding2
@@ -89,10 +90,12 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	public void processInstruction(ExecutionContext ec)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		// acquire inputs
-		MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
 		MatrixBlock outputBlock = null;
 		if (instOpcode.equalsIgnoreCase("im2col")
-				|| instOpcode.equalsIgnoreCase("reshape_col")) {
+				|| instOpcode.equalsIgnoreCase("reshape_col")
+				|| instOpcode.equalsIgnoreCase("rotate180")) {
+			
+			MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
 			pad_h = getScalarInput(ec, _padding, 0);
 			pad_w = getScalarInput(ec, _padding, 1);
 			stride_h = getScalarInput(ec, _stride, 0);
@@ -114,8 +117,12 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			if (instOpcode.equalsIgnoreCase("im2col")) {
 				checkInputDimension(matBlock);
 				outputBlock = im2col(matBlock);
-			} else {
+			} 
+			else if (instOpcode.equalsIgnoreCase("reshape_col")) {
 				outputBlock = reshape_col(matBlock);
+			}
+			else if (instOpcode.equalsIgnoreCase("rotate180")) {
+				outputBlock = rotate180(matBlock);
 			}
 		} else {
 			throw new DMLRuntimeException("Unsupported op code " + instOpcode);
@@ -160,6 +167,50 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		return output;
 	}
 	
+	// Reshape a 4D tensor of dimension (N, K, P, Q) to matrix of dimension (K, PQN)
+	private MatrixBlock rotate180(MatrixBlock input) throws DMLRuntimeException {
+		long start = System.nanoTime();
+		
+		this.input = input;
+		P = (int) ConvolutionUtils.getP(H, R, stride_h, pad_h);
+		Q = (int) ConvolutionUtils.getQ(W, S, stride_w, pad_w);
+		int numRowsOutput = K;
+		int numColsOutput = N * P * Q;
+		MatrixBlock output = new MatrixBlock(numRowsOutput, numColsOutput, numRowsOutput * numColsOutput);
+		output.allocateDenseBlock();
+		outputArray = output.getDenseBlock();
+		output.setNonZeros(numRowsOutput * numColsOutput);
+		inputArray = null;
+
+		if (!input.isInSparseFormat())
+			inputArray = input.getDenseBlock();
+		i = 0; row = 0; 
+		
+		if(input.getNumColumns() != K*P*Q || input.getNumRows() != N) {
+			throw new DMLRuntimeException("Incorrect input dimensions in reshape_col_rev:" + input.getNumRows() + " " + input.getNumColumns() + " " + N + " " + K*P*Q);
+		}
+		
+		
+		for (int k = 0; k < K; k++) {
+			for (int n = 0; n < N; n++) {
+				for (int p = 0; p < P; p++) {
+					for (int q = 0; q < Q; q++) {		
+						if(inputArray != null)
+							outputArray[k*N*P*Q + n*P*Q + p*P + q] = inputArray[n*K*P*Q + k*P*Q + p*Q + q];
+						else
+							outputArray[k*N*P*Q + n*P*Q + p*P + q] = input.getValue(n, k*P*Q + p*Q + q);
+					}
+				}
+			}
+		}
+		
+
+		double execTime = (System.nanoTime() - start) / 1000000000;
+		if (DMLScript.DEBUG_TENSOR && execTime > 5)
+			LOG.info("Time for reshape_col_rev:" + execTime + " seconds.");
+		return output;
+	}
+	
 	// Reshape a matrix of dimension (K, NPQ) to 4D tensor of dimension (N, K, P, Q)
 	private MatrixBlock reshape_col(MatrixBlock input) throws DMLRuntimeException {
 		long start = System.nanoTime();
@@ -180,7 +231,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		i = 0; row = 0; 
 		
 		if(input.getNumColumns() != N*P*Q || input.getNumRows() != K) {
-			throw new DMLRuntimeException("Incorrect input dimensions in col2im:" + input.getNumRows() + " " + input.getNumColumns());
+			throw new DMLRuntimeException("Incorrect input dimensions in reshape_col:" + input.getNumRows() + " " + input.getNumColumns());
 		}
 		
 		
@@ -200,12 +251,12 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 
 		double execTime = (System.nanoTime() - start) / 1000000000;
 		if (DMLScript.DEBUG_TENSOR && execTime > 5)
-			LOG.info("Time for col2im:" + execTime + " seconds.");
+			LOG.info("Time for reshape_col:" + execTime + " seconds.");
 		return output;
 	}
 		
 
-	// Outputs a matrix of dimension (CRS, NPQ)
+	// Converts a 4D tensor (N, C, R, S) to a matrix of dimension (CRS, NPQ)
 	private MatrixBlock im2col(MatrixBlock input) throws DMLRuntimeException {
 		long start = System.nanoTime();
 		
