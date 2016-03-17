@@ -21,14 +21,18 @@
 imgSize=$1
 numImg=$2
 numChannels=$3
-numFilters=$4
-filterSize=$5
+poolSize1=$4
+poolSize2=$5
 stride=$6
 pad=$7
+poolMode=$8
 
 # Assumption: NCHW image format
 x=tensor(seq(1, numImg*numChannels*imgSize*imgSize), shape=[numImg, numChannels, imgSize, imgSize])
-w=tensor(seq(1, numFilters*numChannels*filterSize*filterSize), shape=[numFilters, numChannels, filterSize, filterSize])
-output = conv2d(x, w, padding=[pad, pad], stride=[stride, stride], input_shape=[numImg, numChannels, imgSize, imgSize], filter_shape=[numFilters, numChannels, filterSize, filterSize])
-
-write(output, $8, format="text")
+if(poolMode == "max") {
+	output = max_pool2d(x, stride=[stride, stride], padding=[pad, pad], input_shape=[numImg, numChannels, imgSize, imgSize], pool_size=[poolSize1, poolSize2])
+}
+else {
+	output = avg_pool2d(x, stride=[stride, stride], padding=[pad, pad], input_shape=[numImg, numChannels, imgSize, imgSize], pool_size=[poolSize1, poolSize2])
+}
+write(output, $9, format="text")

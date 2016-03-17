@@ -33,7 +33,8 @@ public class ConvolutionTransform extends Lop
 		IM2COL,
 		RESHAPE_COL,
 		ROTATE180,
-		COL2IM
+		COL2IM,
+		POOLING_PRE_RESHAPE, POOLING_POST_RESHAPE
 	};
 	
 	private OperationTypes operation = null;
@@ -108,6 +109,12 @@ public class ConvolutionTransform extends Lop
 		
 		case COL2IM:
 			return "col2im";
+		
+		case POOLING_PRE_RESHAPE:
+			return "pooling_pre_reshape";
+		
+		case POOLING_POST_RESHAPE:
+			return "pooling_post_reshape";
 			
 		default:
 			throw new UnsupportedOperationException(this.printErrorLocation() + "Instruction is not defined for Transform operation " + operation);

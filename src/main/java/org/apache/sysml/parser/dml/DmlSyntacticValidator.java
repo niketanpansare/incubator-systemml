@@ -30,15 +30,12 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.parser.AParserWrapper;
 import org.apache.sysml.parser.AssignmentStatement;
-import org.apache.sysml.parser.BinaryExpression;
 import org.apache.sysml.parser.ConditionalPredicate;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DataIdentifier;
 import org.apache.sysml.parser.Expression;
-import org.apache.sysml.parser.Expression.BinaryOp;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.parser.ExternalFunctionStatement;
@@ -420,13 +417,71 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 			HashSet<String> expand = new HashSet<String>();
 			expand.add("input_shape"); expand.add("filter_shape"); expand.add("stride"); expand.add("padding");
 			paramExpression = expandListParams(paramExpression, expand, ctx);
+			paramExpression = orderConvolutionParams(paramExpression, 2, ctx);
 		}
+		else if(functionName.equals("max_pool2d") || functionName.equals("avg_pool2d")) {
+			HashSet<String> expand = new HashSet<String>();
+			expand.add("input_shape"); expand.add("pool_size"); expand.add("stride"); expand.add("padding");
+			paramExpression = expandListParams(paramExpression, expand, ctx);
+			paramExpression.add(new ParameterExpression("filter_shape1", new IntIdentifier(1, currentFile, ctx.start.getLine(), ctx.start.getCharPositionInLine(), 
+					ctx.stop.getLine(), ctx.stop.getCharPositionInLine())));
+			paramExpression.add(new ParameterExpression("filter_shape2", new IntIdentifier(1, currentFile, ctx.start.getLine(), ctx.start.getCharPositionInLine(), 
+					ctx.stop.getLine(), ctx.stop.getCharPositionInLine())));
+			paramExpression = replaceListParams(paramExpression, "pool_size", "filter_shape", ctx, 3);
+			paramExpression = orderConvolutionParams(paramExpression, 1, ctx);
+		}
+		
 		
 		boolean hasLHS = ctx.targetList != null;
 		functionCallAssignmentStatementHelper(ctx, printStatements, outputStatements, hasLHS ? ctx.targetList.dataInfo.expr : null, ctx.info, ctx.name,
 	 			hasLHS ? ctx.targetList.start : null, namespace, functionName, paramExpression, hasLHS);
 	}
+	
+	private ArrayList<ParameterExpression> orderConvolutionParams(ArrayList<ParameterExpression> paramExpression, 
+			int skip, ParserRuleContext ctx) {
+		ArrayList<ParameterExpression> newParams = new ArrayList<ParameterExpression>();
+		
+		for(int i = 0; i < skip; i++)
+			newParams.add(paramExpression.get(i));
+		
+		String [] orderedParams = {
+				"stride1", "stride2", "padding1", "padding2",  
+				"input_shape1", "input_shape2", "input_shape3", "input_shape4", 
+				"filter_shape1", "filter_shape2", "filter_shape3", "filter_shape4"	
+		};
+		for(int i = 0; i < orderedParams.length; i++) {
+			boolean found = false;
+			for(ParameterExpression param : paramExpression) {
+				if(param.getName() != null &&  param.getName().equals(orderedParams[i])) {
+					found = true;
+					newParams.add(param);
+				}
+			}
+			if(!found) {
+				notifyErrorListeners("Incorrect parameters. Expected " + orderedParams[i] + " to be expanded.", ctx.start);
+			}
+		}
+		
+		return newParams;
+	}
 
+	private ArrayList<ParameterExpression>  replaceListParams(ArrayList<ParameterExpression> paramExpression,
+			String inputVarName, String outputVarName, ParserRuleContext ctx, int startIndex) {
+		ArrayList<ParameterExpression> newParamExpression = new ArrayList<ParameterExpression>();
+		int i = startIndex;
+		int j = 1; // Assumption: sequential ordering pool_size1, pool_size2 
+		for (ParameterExpression expr : paramExpression) {
+			if(expr.getName() != null && expr.getName().equals(inputVarName + j)) {
+				newParamExpression.add(new ParameterExpression(outputVarName + i, expr.getExpr()));
+				i++; j++;
+			}
+			else {
+				newParamExpression.add(expr);
+			}
+		}
+		return newParamExpression;
+	}
+			
 
 
 	@Override
@@ -454,10 +509,6 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		Action f = new Action() {
 			@Override public void execute(Expression e) { info.expr = e; }
 		};
-		
-		if(functionName.equals("conv2d")) {
-			notifyErrorListeners("conv2d is not allowed as part of expression", ctx.start);
-		}
 		
 		boolean validBIF = buildForBuiltInFunction(ctx, functionName, paramExpression, f);
 		if (validBIF)
@@ -533,7 +584,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 				}
 			}
 			else if(expr.getExpr() instanceof ExpressionList) {
-				notifyErrorListeners("the parameter " + expr.getName() + " cannot be list", ctx.start);
+				notifyErrorListeners("the parameter " + expr.getName() + " cannot be list or is not supported for the given function", ctx.start);
 			}
 			else {
 				newParamExpressions.add(expr);
@@ -1039,40 +1090,6 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		return true;
 	}
 	
-	private IntIdentifier createIntIdentifier(long val, ParserRuleContext ctx) {
-		IntIdentifier tmp = new IntIdentifier(val, currentFile, ctx.start.getLine(),
-				ctx.start.getCharPositionInLine(), ctx.stop.getLine(), ctx.stop.getCharPositionInLine());
-		return tmp;
-	}
-	
-	private BinaryExpression createBinaryExpression(BinaryOp bop, ParserRuleContext ctx,
-			Expression left, Expression right) {
-		BinaryExpression tmp = new BinaryExpression(bop, currentFile, ctx.start.getLine(),
-				ctx.start.getCharPositionInLine(), ctx.stop.getLine(), ctx.stop.getCharPositionInLine());
-		tmp.setLeft(left);
-		tmp.setRight(right);
-		return tmp;
-	}
-	
-	// Special case when indexing only using first dimension
-	private Expression getMatrixRowIndex(Expression tensorFirstDimRowIndex, ArrayList<Expression> shape, ParserRuleContext ctx, boolean isLower) {
-		Expression expr = null;
-		if(isLower) {
-			expr = createBinaryExpression(BinaryOp.MINUS, ctx, tensorFirstDimRowIndex, createIntIdentifier(1, ctx));
-			for(int i = 1; i < shape.size()-1; i++) {
-				expr = createBinaryExpression(BinaryOp.MULT, ctx, expr, shape.get(i));
-			}
-			expr = createBinaryExpression(BinaryOp.PLUS, ctx, expr, createIntIdentifier(1, ctx));
-		}
-		else {
-			expr = tensorFirstDimRowIndex;
-			for(int i = 1; i < shape.size()-1; i++) {
-				expr = createBinaryExpression(BinaryOp.MULT, ctx, expr, shape.get(i));
-			}
-		}
-		return expr;
-	}
-
 	@Override
 	public void exitTensorIndexedExpression(TensorIndexedExpressionContext ctx) {
 		if(!ctx.shapeName.getText().equals("shape")) {

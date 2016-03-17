@@ -61,6 +61,7 @@ import org.apache.sysml.hops.rewrite.ProgramRewriter;
 import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopsException;
+import org.apache.sysml.parser.Expression.BuiltinFunctionOp;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.FormatType;
 import org.apache.sysml.parser.Expression.ParameterizedBuiltinFunctionOp;
@@ -2745,20 +2746,36 @@ public class DMLTranslator
 			Hop image = expr;
 			ArrayList<Hop> inHops1 = getALHopsForConvOp(image, source, 2, hops);
 			Hop loweredMat = new ConvolutionOp(image.getName(), image.getDataType(), image.getValueType(), Hop.ConvOp.IM2COL, inHops1);
-			HopRewriteUtils.setOutputBlocksizes(loweredMat, image.getRowsInBlock(), image.getColsInBlock());
-			HopRewriteUtils.copyLineNumbers(image, loweredMat);
-			loweredMat.refreshSizeInformation();
+			
 			// Step 2: Matrix multiplication
 			Hop temp = new AggBinaryOp("temp" + target.getName(), target.getDataType(), target.getValueType(), OpOp2.MULT, AggOp.SUM, filter, loweredMat);
-			HopRewriteUtils.setOutputBlocksizes(temp, image.getRowsInBlock(), image.getColsInBlock());
-			HopRewriteUtils.copyLineNumbers(image, temp);
-			temp.refreshSizeInformation();
+			
 			// Step 3: Reshape col
 			ArrayList<Hop> inHops2 = getALHopsForConvOp(temp, source, 2, hops);
 			currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(), Hop.ConvOp.RESHAPE_COL, inHops2);
-			HopRewriteUtils.setOutputBlocksizes(currBuiltinOp, image.getRowsInBlock(), image.getColsInBlock());
-			HopRewriteUtils.copyLineNumbers(image, currBuiltinOp);
-			currBuiltinOp.refreshSizeInformation();
+			setBlockSizeAndRefreshSizeInfo(image, currBuiltinOp);
+			break;
+		}
+		case AVG_POOL2D:
+		case MAX_POOL2D:
+		{
+			Hop image = expr;
+			ArrayList<Hop> inHops1 = getALHopsForConvOp(image, source, 1, hops);
+			Hop preReshapeMat = new ConvolutionOp("preReshape" + image.getName(), image.getDataType(), image.getValueType(), Hop.ConvOp.POOLING_PRE_RESHAPE, inHops1);
+			
+			ArrayList<Hop> inHops2 = getALHopsForConvOpPoolingIM2COL(preReshapeMat, source, 1, hops);
+			Hop loweredMat = new ConvolutionOp("im2ColReshaped" + image.getName(), image.getDataType(), image.getValueType(), Hop.ConvOp.IM2COL, inHops2);
+			
+			Hop pooledMat = null;
+			if(source.getOpCode() == BuiltinFunctionOp.MAX_POOL2D)
+				pooledMat = new AggUnaryOp(target.getName(), target.getDataType(), target.getValueType(), AggOp.MAX, Direction.Col, loweredMat);
+			else
+				pooledMat = new AggUnaryOp(target.getName(), target.getDataType(), target.getValueType(), AggOp.MEAN, Direction.Col, loweredMat);
+			
+			
+			ArrayList<Hop> inHops3 = getALHopsForConvOp(pooledMat, source, 1, hops);
+			currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(), Hop.ConvOp.POOLING_POST_RESHAPE, inHops3);
+			setBlockSizeAndRefreshSizeInfo(image, currBuiltinOp);
 			break;
 		}
 		case CONV2D_BACKWARD_FILTER:
@@ -2773,9 +2790,7 @@ public class DMLTranslator
 			Hop dout_reshaped = new ConvolutionOp(dout.getName(), dout.getDataType(), dout.getValueType(), Hop.ConvOp.ROTATE180, inHops2);
 			
 			currBuiltinOp = new AggBinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.MULT, AggOp.SUM, dout_reshaped, x_col_T);
-			HopRewriteUtils.setOutputBlocksizes(currBuiltinOp, image.getRowsInBlock(), image.getColsInBlock());
-			HopRewriteUtils.copyLineNumbers(image, currBuiltinOp);
-			currBuiltinOp.refreshSizeInformation();
+			setBlockSizeAndRefreshSizeInfo(image, currBuiltinOp);
 			break;
 		}
 		case CONV2D_BACKWARD_DATA:
@@ -2791,9 +2806,7 @@ public class DMLTranslator
 			
 			ArrayList<Hop> inHops2 = getALHopsForConvOp(temp1, source, 2, hops);
 			currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(), Hop.ConvOp.COL2IM, inHops2);
-			HopRewriteUtils.setOutputBlocksizes(currBuiltinOp, filter.getRowsInBlock(), filter.getColsInBlock());
-			HopRewriteUtils.copyLineNumbers(filter, currBuiltinOp);
-			currBuiltinOp.refreshSizeInformation();
+			setBlockSizeAndRefreshSizeInfo(filter, currBuiltinOp);
 			break;
 		}
 		default:
@@ -2803,6 +2816,35 @@ public class DMLTranslator
 		setIdentifierParams(currBuiltinOp, source.getOutput());
 		currBuiltinOp.setAllPositions(source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
 		return currBuiltinOp;
+	}
+	
+	private void setBlockSizeAndRefreshSizeInfo(Hop in, Hop out) {
+		HopRewriteUtils.setOutputBlocksizes(out, in.getRowsInBlock(), in.getColsInBlock());
+		HopRewriteUtils.copyLineNumbers(in, out);
+		out.refreshSizeInformation();
+	}
+	
+	private ArrayList<Hop> getALHopsForConvOpPoolingIM2COL(Hop first, BuiltinFunctionExpression source, int skip, HashMap<String, Hop> hops) throws ParseException {
+		ArrayList<Hop> ret = new ArrayList<Hop>();
+		ret.add(first);
+		Expression[] allExpr = source.getAllExpr();
+		for(int i = skip; i < allExpr.length; i++) {
+			if(i == 5) {
+				Expression numImg = allExpr[5];
+				Expression numChannels = allExpr[6];
+				BinaryExpression tmp = new BinaryExpression(org.apache.sysml.parser.Expression.BinaryOp.MULT, 
+						numImg.getFilename(), numImg.getBeginLine(), numImg.getBeginColumn(), numImg.getEndLine(), numImg.getEndColumn());
+				tmp.setLeft(numImg);
+				tmp.setRight(numChannels);
+				ret.add(processTempIntExpression(tmp, hops));
+				ret.add(processExpression(new IntIdentifier(1, numImg.getFilename(), numImg.getBeginLine(), numImg.getBeginColumn(), 
+						numImg.getEndLine(), numImg.getEndColumn()), null, hops));
+				i++;
+			}
+			else
+				ret.add(processExpression(allExpr[i], null, hops));
+		}
+		return ret;
 	}
 	
 	private ArrayList<Hop> getALHopsForConvOp(Hop first, BuiltinFunctionExpression source, int skip, HashMap<String, Hop> hops) throws ParseException {

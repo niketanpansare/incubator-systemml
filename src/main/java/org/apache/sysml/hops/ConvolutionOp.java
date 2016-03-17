@@ -21,7 +21,6 @@ package org.apache.sysml.hops;
 
 import java.util.ArrayList;
 
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.ConvolutionTransform;
 import org.apache.sysml.lops.Lop;
@@ -100,6 +99,8 @@ public class ConvolutionOp extends Hop
 			case RESHAPE_COL:
 			case ROTATE180:
 			case COL2IM:
+			case POOLING_PRE_RESHAPE:
+			case POOLING_POST_RESHAPE:
 			{
 				if( et==ExecType.CP)
 				{

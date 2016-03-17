@@ -48,7 +48,9 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		if (opcode.equalsIgnoreCase("reshape_col")
 				|| opcode.equalsIgnoreCase("rotate180")
 				|| opcode.equalsIgnoreCase("im2col")
-				|| opcode.equalsIgnoreCase("col2im")) {
+				|| opcode.equalsIgnoreCase("col2im")
+				|| opcode.equalsIgnoreCase("pooling_pre_reshape")
+				|| opcode.equalsIgnoreCase("pooling_post_reshape")) {
 			InstructionUtils.checkNumFields(parts, 14);
 			// stride1, stride2, padding1, padding2
 			// input_shape1, input_shape2, input_shape3, input_shape4,
@@ -95,7 +97,9 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		if (instOpcode.equalsIgnoreCase("im2col")
 				|| instOpcode.equalsIgnoreCase("reshape_col")
 				|| instOpcode.equalsIgnoreCase("rotate180")
-				|| instOpcode.equalsIgnoreCase("col2im")) {
+				|| instOpcode.equalsIgnoreCase("col2im")
+				|| instOpcode.equalsIgnoreCase("pooling_pre_reshape")
+				|| instOpcode.equalsIgnoreCase("pooling_post_reshape")) {
 			
 			MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
 			pad_h = getScalarInput(ec, _padding, 0);
@@ -109,42 +113,37 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			W = getScalarInput(ec, _input_shape, 3);
 
 			K = getScalarInput(ec, _filter_shape, 0);
-			if (getScalarInput(ec, _filter_shape, 1) != C) {
-				throw new DMLRuntimeException("The number of channels of input and filter should match");
-			}
+			
 			R = getScalarInput(ec, _filter_shape, 2);
 			S = getScalarInput(ec, _filter_shape, 3);
 			
 			P = (int) ConvolutionUtils.getP(H, R, stride_h, pad_h);
 			Q = (int) ConvolutionUtils.getQ(W, S, stride_w, pad_w);
 			
-			if((W + 2 * pad_w - S) % stride_w != 0) {
-				throw new DMLRuntimeException("The width does not work (Hint: (W + 2 * pad_w - S) % stride_w should be 0 [ ==> (" + W + "+" + " 2*" + pad_w + "-" +  S + ") % " + stride_w + "!= 0] ");
-			}
-			if((H + 2 * pad_h - R) % stride_h != 0) {
-				throw new DMLRuntimeException("The height does not work (Hint: (H + 2 * pad_h - R) % stride_h should be 0 [ ==> (" + H + "+" + " 2*" + pad_h + "-" +  R + ") % " + stride_h + "!= 0] ");
-			}
-			if(H <= 0) {
-				throw new DMLRuntimeException("Height of output patch should be zero");
-			}
-			if(Q <= 0) {
-				throw new DMLRuntimeException("Width of output patch should be zero");
-			}
-			
 			
 			if (instOpcode.equalsIgnoreCase("im2col")) {
+				checkHeightWidth(ec);
 				checkInputDimensionForIm2col(matBlock);
 				outputBlock = im2col(matBlock);
 			}
 			else if (instOpcode.equalsIgnoreCase("reshape_col")) {
+				checkHeightWidth(ec);
 				outputBlock = reshape_col(matBlock);
 			}
 			else if (instOpcode.equalsIgnoreCase("rotate180")) {
+				checkHeightWidth(ec);
 				outputBlock = rotate180(matBlock);
 			}
 			else if (instOpcode.equalsIgnoreCase("col2im")) {
+				checkHeightWidth(ec);
 				checkInputDimensionForCol2im(matBlock);
 				outputBlock = col2im(matBlock);
+			}
+			else if (instOpcode.equalsIgnoreCase("pooling_pre_reshape")) {
+				outputBlock = pooling_pre_reshape(matBlock);
+			}
+			else if (instOpcode.equalsIgnoreCase("pooling_post_reshape")) {
+				outputBlock = pooling_post_reshape(matBlock);
 			}
 			else {
 				throw new DMLRuntimeException("Unsupported op code " + instOpcode);
@@ -166,6 +165,25 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	// These are used to iterate
 	int i;  int row;
 
+	private void checkHeightWidth(ExecutionContext ec) throws DMLRuntimeException {
+		int numChannelsInFilter = getScalarInput(ec, _filter_shape, 1);
+		
+		if (numChannelsInFilter != C) { 
+			throw new DMLRuntimeException("The number of channels of input and filter should match");
+		}
+		if((W + 2 * pad_w - S) % stride_w != 0) {
+			throw new DMLRuntimeException("The width does not work (Hint: (W + 2 * pad_w - S) % stride_w should be 0 [ ==> (" + W + "+" + " 2*" + pad_w + "-" +  S + ") % " + stride_w + "!= 0] ");
+		}
+		if((H + 2 * pad_h - R) % stride_h != 0) {
+			throw new DMLRuntimeException("The height does not work (Hint: (H + 2 * pad_h - R) % stride_h should be 0 [ ==> (" + H + "+" + " 2*" + pad_h + "-" +  R + ") % " + stride_h + "!= 0] ");
+		}
+		if(H <= 0) {
+			throw new DMLRuntimeException("Height of output patch should be zero");
+		}
+		if(Q <= 0) {
+			throw new DMLRuntimeException("Width of output patch should be zero");
+		}
+	}
 	
 	private MatrixBlock init(int numRowsOutput, int numColsOutput) throws DMLRuntimeException {
 		// int numColsOutput = N * P * Q;
@@ -182,10 +200,78 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		return output;
 	}
 	
+	// Reshape a matrix of dimension (1, N*C*P*Q) of dimension a 4D tensor of dimension (N, C, P, Q)
+	private MatrixBlock pooling_post_reshape(MatrixBlock input) throws DMLRuntimeException {
+		this.input = input;
+		int numRowsOutput = N;
+		int numColsOutput = C*P*Q;
+		MatrixBlock output = new MatrixBlock(numRowsOutput, numColsOutput, numRowsOutput * numColsOutput);
+		output.allocateDenseBlock();
+		outputArray = output.getDenseBlock();
+		output.setNonZeros(numRowsOutput * numColsOutput);
+		
+		if(!input.isInSparseFormat()) {
+			// TODO: Do in-place update
+			double [] inputArray = input.getDenseBlock();
+			for(int i = 0; i < inputArray.length; i++) {
+				outputArray[i] = inputArray[i];
+			}
+			return output;			
+		}
+		
+		if(input.getNumColumns() != N*C*P*Q || input.getNumRows() != 1) {
+			throw new DMLRuntimeException("Incorrect input dimensions in pooling_post_reshape:" + input.getNumRows() + " " + input.getNumColumns() + " " + N + " " + K*P*Q);
+		}
+		
+		for (int n = 0; n < N; n++) {
+			for (int c = 0; c < C; c++) {
+				for (int p = 0; p < P; p++) {
+					for (int q = 0; q < Q; q++) {
+						outputArray[n*C*P*Q + c*P*Q + p*Q + q] = input.getValue(1, n*C*P*Q + c*P*Q + p*Q + q);
+					}
+				}
+			}
+		}
+		
+		return output;
+	}
+
+	// Reshape a 4D tensor of dimension (N, C, H, W) to a 4D tensor of dimension of dimension (N*C, 1, H, W)
+	private MatrixBlock pooling_pre_reshape(MatrixBlock input) throws DMLRuntimeException {
+		this.input = input;
+		int numRowsOutput = N*C;
+		int numColsOutput = H*W;
+		MatrixBlock output = new MatrixBlock(numRowsOutput, numColsOutput, numRowsOutput * numColsOutput);
+		output.allocateDenseBlock();
+		outputArray = output.getDenseBlock();
+		output.setNonZeros(numRowsOutput * numColsOutput);
+		inputArray = null;
+		if (!input.isInSparseFormat())
+			inputArray = input.getDenseBlock();
+		
+		if(input.getNumColumns() != C*H*W || input.getNumRows() != N) {
+			throw new DMLRuntimeException("Incorrect input dimensions in pooling_pre_reshape:" + input.getNumRows() + " " + input.getNumColumns() + " " + N + " " + K*P*Q);
+		}
+		
+		for (int n = 0; n < N; n++) {
+			for (int c = 0; c < C; c++) {
+				for (int h = 0; h < H; h++) {
+					for (int w = 0; w < W; w++) {		
+						if(inputArray != null)
+							outputArray[(n*C + c)*H*W + h*H + w] = inputArray[n*C*H*W + c*H*W + h*W + w];
+						else
+							outputArray[(n*C + c)*H*W + h*H + w] = input.getValue(n, c*H*W + h*W + w);
+					}
+				}
+			}
+		}
+		
+		return output;
+	}
+	
 	// Reshape a 4D tensor of dimension (N, K, P, Q) to matrix of dimension (K, NPQ)
 	private MatrixBlock rotate180(MatrixBlock input) throws DMLRuntimeException {
 		long start = System.nanoTime();
-		
 		this.input = input;
 		int numRowsOutput = K;
 		int numColsOutput = N * P * Q;

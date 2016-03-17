@@ -29,87 +29,14 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	
 	protected Expression[] 	  _args = null;
 	private BuiltinFunctionOp _opcode;
-
-	private Expression getMultiIdArgument(HashMap<String, Expression> oldArgs, String argName, int id, long defaultVal, 
-			String fname, int blp, int bcp, int elp, int ecp) {
-		if(oldArgs.containsKey(argName + id))
-			return oldArgs.get(argName + id);
-		else
-			return new IntIdentifier(defaultVal, fname, blp, bcp, elp, ecp);
-	}
-	
-	private boolean isPresent(HashMap<String, Expression> oldArgs, String argName, int expectedNumDimensions) {
-		for(int i = 1; i <= expectedNumDimensions; i++) {
-			if(!oldArgs.containsKey(argName + i)) {
-				return false;
-			}
-		}
-		return true;
-	}
-	
-	private void add4DTensorShape(HashMap<String, Expression> oldArgs, Expression [] ret, int startingIndex,
-			String inputStr, ParameterExpression expr, String fname, int blp, int bcp, int elp, int ecp) {
-		if(expr.getExpr() instanceof DataIdentifier) {
-//			DataIdentifier input = (DataIdentifier) expr.getExpr();
-			int i = startingIndex; // 6 for input and 10 for shape
-			if(isPresent(oldArgs, inputStr + "_shape", 4)) {
-				ret[i++] = getMultiIdArgument(oldArgs, inputStr + "_shape", 1, -1L, fname, blp, bcp, elp, ecp);
-				ret[i++] = getMultiIdArgument(oldArgs, inputStr + "_shape", 2, -1L, fname, blp, bcp, elp, ecp);
-				ret[i++] = getMultiIdArgument(oldArgs, inputStr + "_shape", 3, -1L, fname, blp, bcp, elp, ecp);
-				ret[i++] = getMultiIdArgument(oldArgs, inputStr + "_shape", 4, -1L, fname, blp, bcp, elp, ecp);
-			}
-			// TODO: Add shape to DataIdentifier
-//			else if(input.shape != null && input.shape.size() == 4) {
-//				ret[i++] = input.shape.get(0);
-//				ret[i++] = input.shape.get(1);
-//				ret[i++] = input.shape.get(2);
-//				ret[i++] = input.shape.get(3);
-//			}
-			else {
-				// TODO: Handle this automatically by using shape into DataOp
-				// For now, we will ask users to provide shape and create 14 Hops
-				throw new RuntimeException("Argument input_shape (specifying shape of 4D Tensor) is needed for conv2d");
-			}
-		}
-		else {
-			throw new RuntimeException("Expected a data identifier for " + inputStr);
-		}
-	}
-	
-	private Expression[] fillDefaultValuesForConv2D(ArrayList<ParameterExpression> args, String fname, int blp, int bcp, int elp, int ecp) {
-		// Extract in following order:
-		// No dim_ordering !!! => only supported NCHW
-		// input, filter, stride1, stride2, padding1, padding2  
-		// input_shape1, input_shape2, input_shape3, input_shape4, 
-		// filter_shape1, filter_shape2, filter_shape3, filter_shape4,
-		HashMap<String, Expression> oldArgs = new HashMap<String, Expression>();
-		for(ParameterExpression expr : args) {
-			oldArgs.put(expr.getName(), expr.getExpr());
-		}
-		Expression [] ret = new Expression[14];
-		ret[0] = args.get(0).getExpr(); // input
-		ret[1] = args.get(1).getExpr(); // filter
-		ret[2] = getMultiIdArgument(oldArgs, "stride", 1, 1L, fname, blp, bcp, elp, ecp);
-		ret[3] = getMultiIdArgument(oldArgs, "stride", 2, 1L, fname, blp, bcp, elp, ecp);
-		ret[4] = getMultiIdArgument(oldArgs, "padding", 2, 1L, fname, blp, bcp, elp, ecp);
-		ret[5] = getMultiIdArgument(oldArgs, "padding", 2, 1L, fname, blp, bcp, elp, ecp);
-		add4DTensorShape(oldArgs, ret, 6, "input", args.get(0), fname, blp, bcp, elp, ecp);
-		add4DTensorShape(oldArgs, ret, 10, "filter", args.get(1), fname, blp, bcp, elp, ecp);
-		return ret;
-	}
 	
 	public BuiltinFunctionExpression(BuiltinFunctionOp bifop, ArrayList<ParameterExpression> args, String fname, int blp, int bcp, int elp, int ecp) {
 		_kind = Kind.BuiltinFunctionOp;
 		_opcode = bifop;
 		
-		if(bifop == BuiltinFunctionOp.CONV2D) {
-			_args = fillDefaultValuesForConv2D(args, fname, blp, bcp, elp, ecp);
-		}
-		else {
-			_args = new Expression[args.size()];
-			for(int i=0; i < args.size(); i++) {
-				_args[i] = args.get(i).getExpr();
-			}
+		_args = new Expression[args.size()];
+		for(int i=0; i < args.size(); i++) {
+			_args[i] = args.get(i).getExpr();
 		}
 		this.setAllPositions(fname, blp, bcp, elp, ecp);
 	}
@@ -280,13 +207,6 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	
 	
 	
-	private void checkNumDimensions(String var, long dimension, long expectedDimension, boolean conditional) throws LanguageException {
-		// TODO:
-//		if(dimension != expectedDimension) {
-//			raiseValidateError("Incorrect layout or " + var + " : " + dimension + " != " + expectedDimension, conditional);
-//		}
-	}
-
 	/**
 	 * Validate parse tree : Process BuiltinFunction Expression in an assignment
 	 * statement
@@ -1074,6 +994,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case CONV2D:
 		case CONV2D_BACKWARD_FILTER:
 		case CONV2D_BACKWARD_DATA:
+		case MAX_POOL2D:
+		case AVG_POOL2D:
 		{
 			// At DML level:
 			// output = conv2d(input, filter, input_shape=[3, 2, 2], filter_shape=[3, 2, 2], 
@@ -1087,13 +1009,16 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			// Similarly,
 			// conv2d_backward_filter and conv2d_backward_data
 			Expression input = _args[0];			// For conv2d_backward_filter, this is input and for conv2d_backward_data, this is filter
-			Expression filter = _args[1];			// For conv2d_backward functions, this is dout
+			
+			if(!(this.getOpCode() == BuiltinFunctionOp.MAX_POOL2D || this.getOpCode() == BuiltinFunctionOp.AVG_POOL2D)) {
+				Expression filter = _args[1];			// For conv2d_backward functions, this is dout
+				checkMatrixParam(filter);
+			}
 			output.setDataType(DataType.MATRIX);
 			output.setValueType(ValueType.DOUBLE);
 			output.setBlockDimensions(input.getOutput().getRowsInBlock(), input.getOutput().getColumnsInBlock());
 			
 			checkMatrixParam(input);
-			checkMatrixParam(filter);
 			break;
 		}
 		default:
@@ -1546,6 +1471,10 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.CONV2D_BACKWARD_FILTER;
 		else if (functionName.equals("conv2d_backward_data"))
 			bifop = Expression.BuiltinFunctionOp.CONV2D_BACKWARD_DATA;
+		else if (functionName.equals("max_pool2d"))
+			bifop = Expression.BuiltinFunctionOp.MAX_POOL2D;
+		else if (functionName.equals("avg_pool2d"))
+			bifop = Expression.BuiltinFunctionOp.AVG_POOL2D;
 		else if (functionName.equals("solve"))
 			bifop = Expression.BuiltinFunctionOp.SOLVE;
 		else if (functionName.equals("ceil"))
