@@ -419,7 +419,8 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 			paramExpression = expandListParams(paramExpression, expand, ctx);
 			paramExpression = orderConvolutionParams(paramExpression, 2, ctx);
 		}
-		else if(functionName.equals("max_pool2d") || functionName.equals("avg_pool2d")) {
+		else if(functionName.equals("max_pool2d") || functionName.equals("avg_pool2d") 
+				|| functionName.equals("max_pool2d_backward")) {
 			HashSet<String> expand = new HashSet<String>();
 			expand.add("input_shape"); expand.add("pool_size"); expand.add("stride"); expand.add("padding");
 			paramExpression = expandListParams(paramExpression, expand, ctx);
@@ -428,7 +429,10 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 			paramExpression.add(new ParameterExpression("filter_shape2", new IntIdentifier(1, currentFile, ctx.start.getLine(), ctx.start.getCharPositionInLine(), 
 					ctx.stop.getLine(), ctx.stop.getCharPositionInLine())));
 			paramExpression = replaceListParams(paramExpression, "pool_size", "filter_shape", ctx, 3);
-			paramExpression = orderConvolutionParams(paramExpression, 1, ctx);
+			if(functionName.equals("max_pool2d_backward"))
+				paramExpression = orderConvolutionParams(paramExpression, 2, ctx);
+			else
+				paramExpression = orderConvolutionParams(paramExpression, 1, ctx);
 		}
 		
 		

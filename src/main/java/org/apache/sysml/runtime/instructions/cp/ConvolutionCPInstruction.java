@@ -39,6 +39,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	
 	private static final Log LOG = LogFactory.getLog(ConvolutionCPInstruction.class.getName());
 
+	private CPOperand _in2; // used for pooling backward
 	private ArrayList<CPOperand> _input_shape;
 	private ArrayList<CPOperand> _filter_shape;
 	private ArrayList<CPOperand> _stride = new ArrayList<CPOperand>();
@@ -50,6 +51,20 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			ArrayList<CPOperand> filter_shape) {
 		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out,
 				opcode, istr);
+		_cptype = CPINSTRUCTION_TYPE.Convolution;
+		_stride = stride;
+		_padding = padding;
+		_input_shape = input_shape;
+		_filter_shape = filter_shape;
+	}
+	
+	public ConvolutionCPInstruction(CPOperand in, CPOperand in2, CPOperand out, String opcode,
+			String istr, ArrayList<CPOperand> stride,
+			ArrayList<CPOperand> padding, ArrayList<CPOperand> input_shape,
+			ArrayList<CPOperand> filter_shape) {
+		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out,
+				opcode, istr);
+		_in2 = in2;
 		_cptype = CPINSTRUCTION_TYPE.Convolution;
 		_stride = stride;
 		_padding = padding;
@@ -96,8 +111,39 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 
 			return new ConvolutionCPInstruction(in, out, opcode, str, stride,
 					padding, input_shape, filter_shape);
-		} else {
-			throw new DMLRuntimeException("Unknown opcode while parsing a ReorgInstruction: " + str);
+		} 
+		else if (opcode.equalsIgnoreCase("pooling_backward_reshape")) {
+			InstructionUtils.checkNumFields(parts, 15);
+			// dout, stride1, stride2, padding1, padding2
+			// input_shape1, input_shape2, input_shape3, input_shape4,
+			// filter_shape1, filter_shape2, filter_shape3, filter_shape4,
+			in.split(parts[1]);
+			CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
+			in2.split(parts[2]);
+			out.split(parts[15]);
+
+			ArrayList<CPOperand> stride = new ArrayList<CPOperand>();
+			ArrayList<CPOperand> padding = new ArrayList<CPOperand>();
+			ArrayList<CPOperand> input_shape = new ArrayList<CPOperand>();
+			ArrayList<CPOperand> filter_shape = new ArrayList<CPOperand>();
+			stride.add(new CPOperand(parts[3]));
+			stride.add(new CPOperand(parts[4]));
+			padding.add(new CPOperand(parts[5]));
+			padding.add(new CPOperand(parts[6]));
+			input_shape.add(new CPOperand(parts[7]));
+			input_shape.add(new CPOperand(parts[8]));
+			input_shape.add(new CPOperand(parts[9]));
+			input_shape.add(new CPOperand(parts[10]));
+			filter_shape.add(new CPOperand(parts[11]));
+			filter_shape.add(new CPOperand(parts[12]));
+			filter_shape.add(new CPOperand(parts[13]));
+			filter_shape.add(new CPOperand(parts[14]));
+
+			return new ConvolutionCPInstruction(in, in2, out, opcode, str, stride,
+					padding, input_shape, filter_shape);
+		} 
+		else {
+			throw new DMLRuntimeException("Unknown opcode while parsing a ConvolutionCPInstruction: " + str);
 		}
 	}
 
@@ -118,7 +164,8 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				|| instOpcode.equalsIgnoreCase("rotate180")
 				|| instOpcode.equalsIgnoreCase("col2im")
 				|| instOpcode.equalsIgnoreCase("pooling_pre_reshape")
-				|| instOpcode.equalsIgnoreCase("pooling_post_reshape")) {
+				|| instOpcode.equalsIgnoreCase("pooling_post_reshape")
+				|| instOpcode.equalsIgnoreCase("pooling_backward_reshape")) {
 			
 			MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
 			pad_h = getScalarInput(ec, _padding, 0);
@@ -163,6 +210,11 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			}
 			else if (instOpcode.equalsIgnoreCase("pooling_post_reshape")) {
 				outputBlock = pooling_post_reshape(matBlock);
+			}
+			else if (instOpcode.equalsIgnoreCase("pooling_backward_reshape")) {
+				MatrixBlock dout = ec.getMatrixInput(_in2.getName());
+				outputBlock = pooling_backward_reshape(matBlock, dout);
+				ec.releaseMatrixInput(_in2.getName());
 			}
 			else {
 				throw new DMLRuntimeException("Unsupported op code " + instOpcode);
@@ -216,6 +268,45 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			inputArray = input.getDenseBlock();
 		
 		i = 0; row = 0; 
+		return output;
+	}
+	
+	// Using indices (matrix of dimension 1 X NCPQ) and values (tensor of shape [N, C, P, Q])
+	// output a sparse matrix of dimension CRS X NPQ ... which is followed by col2im to output tensor of shape [N, C, H, W]
+	// TODO: Fuse these two operations together for pooling.
+	private MatrixBlock pooling_backward_reshape(MatrixBlock indices, MatrixBlock values) throws DMLRuntimeException {
+		this.input = values;
+		int numRowsOutput = C*R*S;
+		int numColsOutput = N*P*Q;
+		long nnz = indices.getNonZeros();
+		MatrixBlock output = new MatrixBlock(numRowsOutput, numColsOutput, nnz);
+		// output.allocateDenseOrSparseBlock();
+		output.setNonZeros(nnz);
+		inputArray = null;
+		if (!input.isInSparseFormat())
+			inputArray = input.getDenseBlock();
+		
+		if(indices.getNumRows() != N*C*P*Q || indices.getNumColumns() != 1) {
+			throw new DMLRuntimeException("Incorrect indices in pooling_backward_reshape");
+		}
+		if(values.getNumRows() != N || values.getNumColumns() != C*P*Q) {
+			throw new DMLRuntimeException("Incorrect values in pooling_backward_reshape");
+		}
+		
+		for (int n = 0; n < N; n++) {
+			for (int c = 0; c < C; c++) {
+				for (int p = 0; p < P; p++) {
+					for (int q = 0; q < Q; q++) {
+						// index will have range [1, pool_height*pool_width]
+						int row_index = (int) (c*R*S + indices.getValue(n*C*P*Q + c*P*Q + p*Q + q, 0)-1);
+						double currentVal = output.getValue(row_index, n*P*Q + p*Q + q);
+						double updatedVal = currentVal + input.getValue(n, c*P*Q + p*Q + q);
+						output.setValue(row_index, n*P*Q + p*Q + q, updatedVal);
+					}
+				}
+			}
+		}
+		
 		return output;
 	}
 	

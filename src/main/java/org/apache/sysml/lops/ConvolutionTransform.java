@@ -34,7 +34,8 @@ public class ConvolutionTransform extends Lop
 		RESHAPE_COL,
 		ROTATE180,
 		COL2IM,
-		POOLING_PRE_RESHAPE, POOLING_POST_RESHAPE
+		POOLING_PRE_RESHAPE, POOLING_POST_RESHAPE,
+		POOLING_BACKWARD_RESHAPE
 	};
 	
 	private OperationTypes operation = null;
@@ -116,6 +117,9 @@ public class ConvolutionTransform extends Lop
 		case POOLING_POST_RESHAPE:
 			return "pooling_post_reshape";
 			
+		case POOLING_BACKWARD_RESHAPE:
+			return "pooling_backward_reshape";
+			
 		default:
 			throw new UnsupportedOperationException(this.printErrorLocation() + "Instruction is not defined for Transform operation " + operation);
 				
@@ -141,6 +145,35 @@ public class ConvolutionTransform extends Lop
 		
 		//rows, cols, byrow
 		String[] inputX = new String[]{stride1, stride2, padding1, padding2, 
+			 input_shape1, input_shape2, input_shape3, input_shape4,
+			 filter_shape1, filter_shape2, filter_shape3, filter_shape4};
+		for( int i=1; i<=(inputX.length); i++ ) {
+			Lop ltmp = getInputs().get(i);
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( ltmp.prepScalarInputOperand(getExecType()));
+		}
+		
+		//output
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( this.prepOutputOperand(output));
+		
+		return sb.toString();
+	}
+	
+	public String getInstructions(String input, String dout, String stride1, String stride2, String padding1, String padding2, 
+			String input_shape1, String input_shape2, String input_shape3, String input_shape4,
+			String filter_shape1, String filter_shape2, String filter_shape3, String filter_shape4,
+			String output) throws LopsException {
+		//only used for im2col and col2im
+		StringBuilder sb = new StringBuilder();
+		sb.append( getExecType() );
+		
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( getOpcode() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( getInputs().get(0).prepInputOperand(input));
+		
+		String[] inputX = new String[]{dout, stride1, stride2, padding1, padding2, 
 			 input_shape1, input_shape2, input_shape3, input_shape4,
 			 filter_shape1, filter_shape2, filter_shape3, filter_shape4};
 		for( int i=1; i<=(inputX.length); i++ ) {

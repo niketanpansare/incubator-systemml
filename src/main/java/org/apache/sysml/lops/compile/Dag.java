@@ -1506,6 +1506,25 @@ public class Dag<N extends Lop>
 								node.getInputs().get(12).getOutputParameters().getLabel(),
 								node.getOutputParameters().getLabel());
 					}
+					else if (node.getInputs().size() == 14) {
+						// USed for pooling_backward
+						inst_string = node.getInstructions(
+								node.getInputs().get(0).getOutputParameters().getLabel(),
+								node.getInputs().get(1).getOutputParameters().getLabel(),
+								node.getInputs().get(2).getOutputParameters().getLabel(),
+								node.getInputs().get(3).getOutputParameters().getLabel(),
+								node.getInputs().get(4).getOutputParameters().getLabel(),
+								node.getInputs().get(5).getOutputParameters().getLabel(),
+								node.getInputs().get(6).getOutputParameters().getLabel(),
+								node.getInputs().get(7).getOutputParameters().getLabel(),
+								node.getInputs().get(8).getOutputParameters().getLabel(),
+								node.getInputs().get(9).getOutputParameters().getLabel(),
+								node.getInputs().get(10).getOutputParameters().getLabel(),
+								node.getInputs().get(11).getOutputParameters().getLabel(),
+								node.getInputs().get(12).getOutputParameters().getLabel(),
+								node.getInputs().get(13).getOutputParameters().getLabel(),
+								node.getOutputParameters().getLabel());
+					}
 
 					else {
 						throw new LopsException(node.printErrorLocation() + "Node with " + node.getInputs().size() + " inputs is not supported in CP yet! \n");

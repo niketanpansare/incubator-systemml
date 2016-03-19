@@ -2775,13 +2775,44 @@ public class DMLTranslator
 			
 			Hop pooledMat = null;
 			if(source.getOpCode() == BuiltinFunctionOp.MAX_POOL2D)
-				pooledMat = new AggUnaryOp(target.getName(), target.getDataType(), target.getValueType(), AggOp.MAX, Direction.Col, loweredMat);
+				pooledMat = new AggUnaryOp("colMax" + target.getName(), target.getDataType(), target.getValueType(), AggOp.MAX, Direction.Col, loweredMat);
 			else
-				pooledMat = new AggUnaryOp(target.getName(), target.getDataType(), target.getValueType(), AggOp.MEAN, Direction.Col, loweredMat);
+				pooledMat = new AggUnaryOp("colAvg" + target.getName(), target.getDataType(), target.getValueType(), AggOp.MEAN, Direction.Col, loweredMat);
 			
 			
 			ArrayList<Hop> inHops3 = getALHopsForConvOp(pooledMat, source, 1, hops);
 			currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(), Hop.ConvOp.POOLING_POST_RESHAPE, inHops3);
+			setBlockSizeAndRefreshSizeInfo(image, currBuiltinOp);
+			break;
+		}
+		case MAX_POOL2D_BACKWARD:
+		{
+			Hop image = expr;
+			
+			ArrayList<Hop> inHops1 = getALHopsForConvOp(image, source, 2, hops);
+			Hop preReshapeMat = new ConvolutionOp("preReshape" + image.getName(), image.getDataType(), image.getValueType(), Hop.ConvOp.POOLING_PRE_RESHAPE, inHops1);
+			
+			ArrayList<Hop> inHops2 = getALHopsForConvOpPoolingIM2COL(preReshapeMat, source, 2, hops);
+			Hop loweredMat = new ConvolutionOp("im2ColReshaped" + image.getName(), image.getDataType(), image.getValueType(), Hop.ConvOp.IM2COL, inHops2);
+			
+			// Add transpose since we donot have colIndexMax
+			Hop pooledMat = null;
+			Hop loweredMat_T = new ReorgOp("tempTranspose" + image.getName(), image.getDataType(), image.getValueType(), Hop.ReOrgOp.TRANSPOSE, loweredMat);
+			if(source.getOpCode() == BuiltinFunctionOp.MAX_POOL2D_BACKWARD)
+				pooledMat = new AggUnaryOp("rowIndexMax" + target.getName(), target.getDataType(), target.getValueType(), AggOp.MAXINDEX, Direction.Row, loweredMat_T);
+			else {
+				throw new HopsException("Unsupported operation: " + source.getOpCode().name());
+			}
+//			else
+//				pooledMat = new AggUnaryOp(target.getName(), target.getDataType(), target.getValueType(), AggOp.MEAN, Direction.Col, loweredMat);
+			
+			// You now have NCPQ X 1 matrix => pooledMat and (N, C, P, Q) tensor => dout
+			// which has to be placed in (N, C, H, W) matrix
+			// TODO: This can be merged together
+			ArrayList<Hop> inHops3 = getALHopsForConvOp(pooledMat, source, 1, hops); // process dout as well
+			Hop temp1 =  new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(), Hop.ConvOp.POOLING_BACKWARD_RESHAPE, inHops3);
+			ArrayList<Hop> inHops4 = getALHopsForConvOpPoolingCOL2IM(temp1, source, 2, hops);
+			currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(), Hop.ConvOp.COL2IM, inHops4);
 			setBlockSizeAndRefreshSizeInfo(image, currBuiltinOp);
 			break;
 		}
@@ -2831,14 +2862,40 @@ public class DMLTranslator
 		out.refreshSizeInformation();
 	}
 	
+	private ArrayList<Hop> getALHopsForConvOpPoolingCOL2IM(Hop first, BuiltinFunctionExpression source, int skip, HashMap<String, Hop> hops) throws ParseException {
+		ArrayList<Hop> ret = new ArrayList<Hop>();
+		ret.add(first);
+		Expression[] allExpr = source.getAllExpr();
+		
+		for(int i = skip; i < allExpr.length; i++) {
+			if(i == 11) {
+				ret.add(processExpression(allExpr[7], null, hops)); // Make number of channels of images and filter the same
+			}
+			else
+				ret.add(processExpression(allExpr[i], null, hops));
+		}
+		return ret;
+	}
+	
 	private ArrayList<Hop> getALHopsForConvOpPoolingIM2COL(Hop first, BuiltinFunctionExpression source, int skip, HashMap<String, Hop> hops) throws ParseException {
 		ArrayList<Hop> ret = new ArrayList<Hop>();
 		ret.add(first);
 		Expression[] allExpr = source.getAllExpr();
+		int numImgIndex = -1;
+		if(skip == 1) {
+			numImgIndex = 5;
+		}
+		else if(skip == 2) {
+			numImgIndex = 6;
+		}
+		else {
+			throw new ParseException("Unsupported skip");
+		}
+		
 		for(int i = skip; i < allExpr.length; i++) {
-			if(i == 5) {
-				Expression numImg = allExpr[5];
-				Expression numChannels = allExpr[6];
+			if(i == numImgIndex) { // skip=1 ==> i==5  and skip=2 => i==6
+				Expression numImg = allExpr[numImgIndex];
+				Expression numChannels = allExpr[numImgIndex+1];
 				BinaryExpression tmp = new BinaryExpression(org.apache.sysml.parser.Expression.BinaryOp.MULT, 
 						numImg.getFilename(), numImg.getBeginLine(), numImg.getBeginColumn(), numImg.getEndLine(), numImg.getEndColumn());
 				tmp.setLeft(numImg);

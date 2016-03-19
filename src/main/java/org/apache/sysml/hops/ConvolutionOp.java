@@ -101,6 +101,7 @@ public class ConvolutionOp extends Hop
 			case COL2IM:
 			case POOLING_PRE_RESHAPE:
 			case POOLING_POST_RESHAPE:
+			case POOLING_BACKWARD_RESHAPE:
 			{
 				if( et==ExecType.CP)
 				{
@@ -108,7 +109,7 @@ public class ConvolutionOp extends Hop
 					break;
 				}
 				else {
-					throw new HopsException("Unimplemented col2im/im2col for execution type: " + et.name());
+					throw new HopsException("Unimplemented ConvolutionOp for execution type: " + et.name());
 				}
 				// break;
 			}
@@ -123,7 +124,12 @@ public class ConvolutionOp extends Hop
 	}
 	
 	private Lop constructIm2colOrReshapeColLOP(ExecType et) throws HopsException, LopsException {
-		if(getInput().size() != 13) {
+		int expectedNumInputs = 13;
+		if(op == ConvOp.POOLING_BACKWARD_RESHAPE) {
+			expectedNumInputs = 14;
+		}
+		
+		if(getInput().size() != expectedNumInputs) {
 			throw new HopsException("Incorrect number of inputs for " + op.name());
 		}
 		
@@ -136,7 +142,7 @@ public class ConvolutionOp extends Hop
 		// stride1, stride2, padding1, padding2  
 		// input_shape1, input_shape2, input_shape3, input_shape4, 
 		// filter_shape1, filter_shape2, filter_shape3, filter_shape4
-		for( int i=1; i<=12; i++ )
+		for( int i=1; i <= (expectedNumInputs-1); i++ )
 		{
 			Lop ltmp = getInput().get(i).constructLops();
 			transform1.addInput(ltmp);

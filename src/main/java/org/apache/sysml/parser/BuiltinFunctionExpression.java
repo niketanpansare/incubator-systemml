@@ -996,6 +996,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case CONV2D_BACKWARD_DATA:
 		case MAX_POOL2D:
 		case AVG_POOL2D:
+		case MAX_POOL2D_BACKWARD:
 		{
 			// At DML level:
 			// output = conv2d(input, filter, input_shape=[3, 2, 2], filter_shape=[3, 2, 2], 
@@ -1473,6 +1474,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.CONV2D_BACKWARD_DATA;
 		else if (functionName.equals("max_pool2d"))
 			bifop = Expression.BuiltinFunctionOp.MAX_POOL2D;
+		else if (functionName.equals("max_pool2d_backward"))
+			bifop = Expression.BuiltinFunctionOp.MAX_POOL2D_BACKWARD;
 		else if (functionName.equals("avg_pool2d"))
 			bifop = Expression.BuiltinFunctionOp.AVG_POOL2D;
 		else if (functionName.equals("solve"))
