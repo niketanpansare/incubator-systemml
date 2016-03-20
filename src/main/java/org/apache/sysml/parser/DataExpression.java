@@ -31,7 +31,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONObject;
-import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.DataGenOp;
 import org.apache.sysml.parser.LanguageException.LanguageErrorCodes;
@@ -44,11 +44,6 @@ import org.apache.sysml.utils.JSONHelper;
 
 public class DataExpression extends DataIdentifier 
 {
-	//internal configuration (modified by mlcontext, jmlc apis) 
-	//no read of meta data on mlcontext (local) /jmlc (global); ignore unknowns on jmlc
-	public static boolean IGNORE_READ_WRITE_METADATA = false; // global skip meta data reads
-	public static boolean REJECT_READ_WRITE_UNKNOWNS = true;  // ignore missing meta data
-	
 	public static final String RAND_ROWS 	=  "rows";	 
 	public static final String RAND_COLS 	=  "cols";
 	public static final String RAND_MIN  	=  "min";
@@ -134,42 +129,6 @@ public class DataExpression extends DataIdentifier
 	public void setCheckMetadata(boolean checkMetadata) {
 		_checkMetadata = checkMetadata;
 	}
-
-	private static ArrayList<ParameterExpression> getMatrixParametersForTensorFn(DataExpression dataExpr, ArrayList<ParameterExpression> passedParamExprs,
-			String filename, int blp, int bcp, int elp, int ecp) throws DMLParseException {
-		ArrayList<ParameterExpression> newPassedParamExprs = new ArrayList<ParameterExpression>();
-		for(ParameterExpression currExpr : passedParamExprs) {
-			if(currExpr.getName() != null && currExpr.getName().equals("shape")) {
-				if(currExpr.getExpr() instanceof ExpressionList) {
-					// Replace shape by rows and columns
-					ArrayList<Expression> shape = ((ExpressionList) currExpr.getExpr()).getValue();
-					if(shape.size() < 2) {
-						throw new DMLParseException(filename, dataExpr.printErrorLocation(blp, bcp) 
-								+ "only tensors of shape > 1 supported");
-					}
-					
-					Expression cols = shape.get(1);
-					for(int i = 2; i < shape.size(); i++) {
-						BinaryExpression temp = new BinaryExpression(BinaryOp.MULT, 
-								filename, blp, bcp, elp, ecp);
-						temp.setLeft(cols);
-						temp.setRight(shape.get(i));
-						cols = temp;
-					}
-					newPassedParamExprs.add(new ParameterExpression("rows", shape.get(0)));
-					newPassedParamExprs.add(new ParameterExpression("cols", cols));
-				}
-				else {
-					throw new DMLParseException(filename, dataExpr.printErrorLocation(blp, bcp) 
-							+ "tensor method must have at least shape parameter");
-				}
-			}
-			else {
-				newPassedParamExprs.add(currExpr);
-			}
-		}
-		return newPassedParamExprs;
-	}
 	
 	public static DataExpression getDataExpression(String functionName, ArrayList<ParameterExpression> passedParamExprs, 
 				String filename, int blp, int bcp, int elp, int ecp) throws DMLParseException {
@@ -250,16 +209,11 @@ public class DataExpression extends DataIdentifier
 			dataExpr.setRandDefault();
 		}
 		
-		else if (functionName.equals("matrix") || functionName.equals("tensor")){
-			
+		else if (functionName.equals("matrix")){
 			dop = Expression.DataOp.MATRIX;
 			dataExpr = new DataExpression(dop, new HashMap<String,Expression>(),
 					filename, blp, bcp, elp, ecp);
 		
-			if(functionName.equals("tensor")) {
-				passedParamExprs = getMatrixParametersForTensorFn(dataExpr, passedParamExprs, filename, blp, bcp, elp, ecp); 
-			}
-			
 			int namedParamCount = 0, unnamedParamCount = 0;
 			for (ParameterExpression currExpr : passedParamExprs) {
 				if (currExpr.getName() == null)
@@ -666,7 +620,8 @@ public class DataExpression extends DataIdentifier
 			String mtdFileName = getMTDFileName(inputFileName);
 
 			// track whether should attempt to read MTD file or not
-			boolean shouldReadMTD = _checkMetadata && !IGNORE_READ_WRITE_METADATA;
+			boolean shouldReadMTD = _checkMetadata && !ConfigurationManager
+					.getCompilerConfigFlag(ConfigType.IGNORE_READ_WRITE_METADATA);
 
 			// Check for file existence (before metadata parsing for meaningful error messages)
 			if( shouldReadMTD //skip check for jmlc/mlcontext
@@ -936,7 +891,8 @@ public class DataExpression extends DataIdentifier
 				// initialize size of target data identifier to UNKNOWN
 				getOutput().setDimensions(-1, -1);
 				
-				if ( !isCSV && REJECT_READ_WRITE_UNKNOWNS //skip check for csv format / jmlc api
+				if ( !isCSV && ConfigurationManager.getCompilerConfig()
+						.getBool(ConfigType.REJECT_READ_WRITE_UNKNOWNS) //skip check for csv format / jmlc api
 					&& (getVarParam(READROWPARAM) == null || getVarParam(READCOLPARAM) == null) ) {
 						raiseValidateError("Missing or incomplete dimension information in read statement: " 
 								+ mtdFileName, conditional, LanguageErrorCodes.INVALID_PARAMETERS);				
@@ -948,7 +904,8 @@ public class DataExpression extends DataIdentifier
 					// these are strings that are long values
 					Long dim1 = (getVarParam(READROWPARAM) == null) ? null : Long.valueOf( getVarParam(READROWPARAM).toString());
 					Long dim2 = (getVarParam(READCOLPARAM) == null) ? null : Long.valueOf( getVarParam(READCOLPARAM).toString());					
-					if ( !isCSV && (dim1 <= 0 || dim2 <= 0) && REJECT_READ_WRITE_UNKNOWNS ) {
+					if ( !isCSV && (dim1 <= 0 || dim2 <= 0) && ConfigurationManager
+							.getCompilerConfig().getBool(ConfigType.REJECT_READ_WRITE_UNKNOWNS) ) {
 						raiseValidateError("Invalid dimension information in read statement", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 					}
 					
@@ -1107,7 +1064,7 @@ public class DataExpression extends DataIdentifier
 			if (getVarParam(FORMAT_TYPE) == null || getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase("text"))
 				getOutput().setBlockDimensions(-1, -1);
 			else if (getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase("binary"))
-				getOutput().setBlockDimensions(DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
+				getOutput().setBlockDimensions(ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize());
 			else if (getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FORMAT_TYPE_VALUE_MATRIXMARKET) || (getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FORMAT_TYPE_VALUE_CSV)))
 				getOutput().setBlockDimensions(-1, -1);
 			
