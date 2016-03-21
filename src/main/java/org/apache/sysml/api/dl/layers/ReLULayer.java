@@ -37,7 +37,6 @@ public class ReLULayer extends Layer {
 
 	@Override
 	public String getForwardDML() throws DMLRuntimeException {
-		// TODO Auto-generated method stub
 		return outputVar + " = max(0, " + bottom.get(0).outputVar + ")";
 	}
 
@@ -55,8 +54,11 @@ public class ReLULayer extends Layer {
 
 	@Override
 	public void updateOutputShape() throws DMLRuntimeException {
-		// TODO Auto-generated method stub
-
+		output_shape.clear();
+		output_shape.add(getBottomLayerOutputShape(0));
+		output_shape.add(getBottomLayerOutputShape(1));
+		output_shape.add(getBottomLayerOutputShape(2));
+		output_shape.add(getBottomLayerOutputShape(3));
 	}
 
 }
