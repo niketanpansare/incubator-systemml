@@ -2746,8 +2746,8 @@ public class DMLTranslator
 			setBlockSizeAndRefreshSizeInfo(image, currBuiltinOp);
 			break;
 		}
-		case AVG_POOL2D:
-		case MAX_POOL2D:
+		case AVG_POOL:
+		case MAX_POOL:
 		{
 			Hop image = expr;
 			ArrayList<Hop> inHops1 = getALHopsForConvOp(image, source, 1, hops);
@@ -2757,7 +2757,7 @@ public class DMLTranslator
 			Hop loweredMat = new ConvolutionOp("im2ColReshaped" + image.getName(), image.getDataType(), image.getValueType(), Hop.ConvOp.IM2COL, inHops2);
 			
 			Hop pooledMat = null;
-			if(source.getOpCode() == BuiltinFunctionOp.MAX_POOL2D)
+			if(source.getOpCode() == BuiltinFunctionOp.MAX_POOL)
 				pooledMat = new AggUnaryOp("colMax" + target.getName(), target.getDataType(), target.getValueType(), AggOp.MAX, Direction.Col, loweredMat);
 			else
 				pooledMat = new AggUnaryOp("colAvg" + target.getName(), target.getDataType(), target.getValueType(), AggOp.MEAN, Direction.Col, loweredMat);
@@ -2768,7 +2768,7 @@ public class DMLTranslator
 			setBlockSizeAndRefreshSizeInfo(image, currBuiltinOp);
 			break;
 		}
-		case MAX_POOL2D_BACKWARD:
+		case MAX_POOL_BACKWARD:
 		{
 			Hop image = expr;
 			
@@ -2781,7 +2781,7 @@ public class DMLTranslator
 			// Add transpose since we donot have colIndexMax
 			Hop pooledMat = null;
 			Hop loweredMat_T = new ReorgOp("tempTranspose" + image.getName(), image.getDataType(), image.getValueType(), Hop.ReOrgOp.TRANSPOSE, loweredMat);
-			if(source.getOpCode() == BuiltinFunctionOp.MAX_POOL2D_BACKWARD)
+			if(source.getOpCode() == BuiltinFunctionOp.MAX_POOL_BACKWARD)
 				pooledMat = new AggUnaryOp("rowIndexMax" + target.getName(), target.getDataType(), target.getValueType(), AggOp.MAXINDEX, Direction.Row, loweredMat_T);
 			else {
 				throw new HopsException("Unsupported operation: " + source.getOpCode().name());

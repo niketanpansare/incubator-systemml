@@ -11,10 +11,10 @@ import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 import org.junit.Test;
 
-public class Pool2DTest extends AutomatedTestBase
+public class PoolTest extends AutomatedTestBase
 {
 	
-	private final static String TEST_NAME = "Pool2DTest";
+	private final static String TEST_NAME = "PoolTest";
 	private final static String TEST_DIR = "functions/tensor/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + Conv2DTest.class.getSimpleName() + "/";
 	private final static double epsilon=0.0000000001;

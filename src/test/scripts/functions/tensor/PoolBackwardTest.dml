@@ -34,10 +34,10 @@ Q = $10
 x=tensor(seq(1, numImg*numChannels*imgSize*imgSize), shape=[numImg, numChannels, imgSize, imgSize])
 dout=tensor(seq(1, numImg*numChannels*P*Q), shape=[numImg, numChannels, P, Q])
 if(poolMode == "max") {
-	output = max_pool2d_backward(x, dout, stride=[stride, stride], padding=[pad, pad], input_shape=[numImg, numChannels, imgSize, imgSize], pool_size=[poolSize1, poolSize2])
+	output = max_pool_backward(x, dout, stride=[stride, stride], padding=[pad, pad], input_shape=[numImg, numChannels, imgSize, imgSize], pool_size=[poolSize1, poolSize2])
 }
 else {
 	# Not supported yet
-	# output = avg_pool2d_backward(x, dout, stride=[stride, stride], padding=[pad, pad], input_shape=[numImg, numChannels, imgSize, imgSize], pool_size=[poolSize1, poolSize2])
+	# output = avg_pool_backward(x, dout, stride=[stride, stride], padding=[pad, pad], input_shape=[numImg, numChannels, imgSize, imgSize], pool_size=[poolSize1, poolSize2])
 }
 write(output, $11, format="text")

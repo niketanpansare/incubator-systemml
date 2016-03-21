@@ -84,7 +84,7 @@ public class ConvolutionLayer extends Layer {
 			System.out.println(warn);
 		}
 		checkInput();
-		String numChannels = getBottomLayerOutputShape(2);
+		String numChannels = getBottomLayerOutputShape(1);
 		String fShape = "shape=[" + numFilter + "," + numChannels + "," + kernel_h + "," + kernel_w + "]";
 		filterShape = "filter_" + fShape;
 		if(warn.equals(""))

@@ -16,7 +16,7 @@ The images are assumed to be stored NCHW format, where N = batch size, C = #chan
 This prototype also contains initial implementation of forward/backward functions for 2D convolution and pooling:
 * conv2d(x, w, ...)
 * conv2d_backward_filter(x, dout, ...) and conv2d_backward_data(w, dout, ...)
-* max_pool2d(x, ...), avg_pool2d(x, ...)
+* max_pool(x, ...), avg_pool(x, ...)
 
 The required arguments for all above functions are:
 * stride=[stride_h, stride_w]
@@ -26,5 +26,5 @@ The required arguments for all above functions are:
 The additional required argument for conv2d/conv2d_backward_filter/conv2d_backward_data functions is:
 * filter_shape=[numFilters, numChannels, height_filter, width_filter]
 
-The additional required argument for max_pool2d/avg_pool2d functions is:
+The additional required argument for max_pool/avg_pool functions is:
 * pool_size=[height_pool, width_pool]

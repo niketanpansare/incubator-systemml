@@ -72,7 +72,7 @@ public class PoolingLayer extends Layer {
 	@Override
 	public String getForwardDML() throws DMLRuntimeException {
 		if(poolingParam.getPool() == PoolingParameter.PoolMethod.MAX) {
-			return outputVar + " = max_pool2d(" + bottom.get(0).outputVar + ", " + getInputShape()
+			return outputVar + " = max_pool(" + bottom.get(0).outputVar + ", " + getInputShape()
 				+ ", padding=[" + pad_h + "," + pad_w + "], "
 				+ "stride=[" + stride_h + "," + stride_w + "], "
 				+ "pool_size=[" + kernel_h + "," + kernel_w + "])";
