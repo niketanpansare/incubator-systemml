@@ -20,10 +20,12 @@
 package org.apache.sysml.runtime.instructions.cp;
 
 import java.util.ArrayList;
-
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -39,6 +41,9 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	
 	private static final Log LOG = LogFactory.getLog(ConvolutionCPInstruction.class.getName());
 
+	private static boolean ALWAYS_ALLOCATE_OUTPUT = false;
+	private static boolean ALLOW_MULTI_THREADED_OPS = true;
+	
 	private CPOperand _in2; // used for pooling backward
 	private ArrayList<CPOperand> _input_shape;
 	private ArrayList<CPOperand> _filter_shape;
@@ -190,30 +195,44 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			if (instOpcode.equalsIgnoreCase("im2col")) {
 				checkHeightWidth(ec);
 				checkInputDimensionForIm2col(matBlock);
-				outputBlock = im2col(matBlock);
+				this.input = matBlock;
+				outputBlock = allocateDenseOutputBlock(ec, C * R * S, N * P * Q);
+				im2col(matBlock, outputBlock);
 			}
 			else if (instOpcode.equalsIgnoreCase("reshape_col")) {
 				checkHeightWidth(ec);
-				outputBlock = reshape_col(matBlock);
+				this.input = matBlock;
+				outputBlock = allocateDenseOutputBlock(ec, N, K * P * Q);
+				reshape_col(matBlock, outputBlock);
 			}
 			else if (instOpcode.equalsIgnoreCase("rotate180")) {
 				checkHeightWidth(ec);
-				outputBlock = rotate180(matBlock);
+				this.input = matBlock;
+				outputBlock = allocateDenseOutputBlock(ec, K, N * P * Q);
+				rotate180(matBlock, outputBlock);
 			}
 			else if (instOpcode.equalsIgnoreCase("col2im")) {
 				checkHeightWidth(ec);
 				checkInputDimensionForCol2im(matBlock);
-				outputBlock = col2im(matBlock);
+				this.input = matBlock;
+				outputBlock = allocateDenseOutputBlock(ec, N, C * H * W);
+				col2im(matBlock, outputBlock);
 			}
 			else if (instOpcode.equalsIgnoreCase("pooling_pre_reshape")) {
-				outputBlock = pooling_pre_reshape(matBlock);
+				this.input = matBlock;
+				outputBlock = allocateDenseOutputBlock(ec, N*C, H*W); 
+				pooling_pre_reshape(matBlock, outputBlock);
 			}
 			else if (instOpcode.equalsIgnoreCase("pooling_post_reshape")) {
-				outputBlock = pooling_post_reshape(matBlock);
+				this.input = matBlock;
+				outputBlock = allocateDenseOutputBlock(ec, N, C*P*Q);
+				pooling_post_reshape(matBlock, outputBlock);
 			}
 			else if (instOpcode.equalsIgnoreCase("pooling_backward_reshape")) {
 				MatrixBlock dout = ec.getMatrixInput(_in2.getName());
-				outputBlock = pooling_backward_reshape(matBlock, dout);
+				this.input = dout;
+				outputBlock = allocateOutputBlock(ec, C*R*S, N*P*Q, matBlock.getNonZeros());
+				pooling_backward_reshape(matBlock, dout, outputBlock);
 				ec.releaseMatrixInput(_in2.getName());
 			}
 			else {
@@ -234,7 +253,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	double[] outputArray; double[] inputArray; MatrixBlock input;
 	long outNNZ = 0;
 	// These are used to iterate
-	int i;  int row;
+	int globalIndex;  int row;
 
 	private void checkHeightWidth(ExecutionContext ec) throws DMLRuntimeException {
 		int numChannelsInFilter = getScalarInput(ec, _filter_shape, 1);
@@ -256,32 +275,53 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		}
 	}
 	
-	private MatrixBlock init(int numRowsOutput, int numColsOutput) throws DMLRuntimeException {
-		// int numColsOutput = N * P * Q;
-		MatrixBlock output = new MatrixBlock(numRowsOutput, numColsOutput, numRowsOutput * numColsOutput);
-		output.allocateDenseBlock();
-		outputArray = output.getDenseBlock();
-		output.setNonZeros(numRowsOutput * numColsOutput);
-		inputArray = null;
-
-		if (!input.isInSparseFormat())
-			inputArray = input.getDenseBlock();
-		
-		i = 0; row = 0; 
-		return output;
+	private MatrixBlock allocateOutputBlock(ExecutionContext ec, int numRowsOutput, int numColsOutput, long nnz) throws DMLRuntimeException {
+		MatrixBlock preAllocatedMatrixBlock = ec.getMatrixObject(output.getName())._data;
+		if(ALWAYS_ALLOCATE_OUTPUT || preAllocatedMatrixBlock == null) {
+			MatrixBlock outputBlock = new MatrixBlock(numRowsOutput, numColsOutput, nnz);
+			outputBlock.setNonZeros(nnz);
+			return outputBlock;
+		}
+		else if(preAllocatedMatrixBlock.getNumRows() == numRowsOutput && preAllocatedMatrixBlock.getNumColumns() == numColsOutput) {
+			// Reuse only if dimensions matches
+			preAllocatedMatrixBlock.setNonZeros(nnz);
+			return preAllocatedMatrixBlock;
+		}
+		else {
+			MatrixBlock outputBlock = new MatrixBlock(numRowsOutput, numColsOutput, nnz);
+			outputBlock.setNonZeros(nnz);
+			return outputBlock;
+		}
+	}
+	
+	private MatrixBlock allocateDenseOutputBlock(ExecutionContext ec, int numRowsOutput, int numColsOutput) throws DMLRuntimeException {
+		MatrixBlock preAllocatedMatrixBlock = ec.getMatrixObject(output.getName())._data;
+		if(ALWAYS_ALLOCATE_OUTPUT || preAllocatedMatrixBlock == null) {
+			MatrixBlock outputBlock = new MatrixBlock(numRowsOutput, numColsOutput, numRowsOutput * numColsOutput);
+			outputBlock.allocateDenseBlock();
+			outputArray = outputBlock.getDenseBlock();
+			outputBlock.setNonZeros(numRowsOutput * numColsOutput);
+			return outputBlock;
+		}
+		else if(preAllocatedMatrixBlock.getNumRows() == numRowsOutput && preAllocatedMatrixBlock.getNumColumns() == numColsOutput
+				&& !preAllocatedMatrixBlock.isInSparseFormat()) {
+			// Reuse only if dimensions matches and in dense format
+			preAllocatedMatrixBlock.setNonZeros(numRowsOutput * numColsOutput); // Reset nnz
+			return preAllocatedMatrixBlock;
+		}
+		else {
+			MatrixBlock outputBlock = new MatrixBlock(numRowsOutput, numColsOutput, numRowsOutput * numColsOutput);
+			outputBlock.allocateDenseBlock();
+			outputArray = outputBlock.getDenseBlock();
+			outputBlock.setNonZeros(numRowsOutput * numColsOutput);
+			return outputBlock;
+		}
 	}
 	
 	// Using indices (matrix of dimension 1 X NCPQ) and values (tensor of shape [N, C, P, Q])
 	// output a sparse matrix of dimension CRS X NPQ ... which is followed by col2im to output tensor of shape [N, C, H, W]
 	// TODO: Fuse these two operations together for pooling.
-	private MatrixBlock pooling_backward_reshape(MatrixBlock indices, MatrixBlock values) throws DMLRuntimeException {
-		this.input = values;
-		int numRowsOutput = C*R*S;
-		int numColsOutput = N*P*Q;
-		long nnz = indices.getNonZeros();
-		MatrixBlock output = new MatrixBlock(numRowsOutput, numColsOutput, nnz);
-		// output.allocateDenseOrSparseBlock();
-		output.setNonZeros(nnz);
+	private void pooling_backward_reshape(MatrixBlock indices, MatrixBlock values, MatrixBlock outputBlock) throws DMLRuntimeException {
 		inputArray = null;
 		if (!input.isInSparseFormat())
 			inputArray = input.getDenseBlock();
@@ -299,34 +339,24 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 					for (int q = 0; q < Q; q++) {
 						// index will have range [1, pool_height*pool_width]
 						int row_index = (int) (c*R*S + indices.getValue(n*C*P*Q + c*P*Q + p*Q + q, 0)-1);
-						double currentVal = output.getValue(row_index, n*P*Q + p*Q + q);
+						double currentVal = outputBlock.getValue(row_index, n*P*Q + p*Q + q);
 						double updatedVal = currentVal + input.getValue(n, c*P*Q + p*Q + q);
-						output.setValue(row_index, n*P*Q + p*Q + q, updatedVal);
+						outputBlock.setValue(row_index, n*P*Q + p*Q + q, updatedVal);
 					}
 				}
 			}
 		}
-		
-		return output;
 	}
 	
 	// Reshape a matrix of dimension (1, N*C*P*Q) of dimension a 4D tensor of dimension (N, C, P, Q)
-	private MatrixBlock pooling_post_reshape(MatrixBlock input) throws DMLRuntimeException {
-		this.input = input;
-		int numRowsOutput = N;
-		int numColsOutput = C*P*Q;
-		MatrixBlock output = new MatrixBlock(numRowsOutput, numColsOutput, numRowsOutput * numColsOutput);
-		output.allocateDenseBlock();
-		outputArray = output.getDenseBlock();
-		output.setNonZeros(numRowsOutput * numColsOutput);
-		
+	private void pooling_post_reshape(MatrixBlock input, MatrixBlock outputBlock) throws DMLRuntimeException {
 		if(!input.isInSparseFormat()) {
 			// TODO: Do in-place update
 			double [] inputArray = input.getDenseBlock();
 			for(int i = 0; i < inputArray.length; i++) {
 				outputArray[i] = inputArray[i];
 			}
-			return output;			
+			return;			
 		}
 		
 		if(input.getNumColumns() != N*C*P*Q || input.getNumRows() != 1) {
@@ -342,19 +372,11 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				}
 			}
 		}
-		
-		return output;
 	}
 
 	// Reshape a 4D tensor of dimension (N, C, H, W) to a 4D tensor of dimension of dimension (N*C, 1, H, W)
-	private MatrixBlock pooling_pre_reshape(MatrixBlock input) throws DMLRuntimeException {
-		this.input = input;
-		int numRowsOutput = N*C;
-		int numColsOutput = H*W;
-		MatrixBlock output = new MatrixBlock(numRowsOutput, numColsOutput, numRowsOutput * numColsOutput);
-		output.allocateDenseBlock();
-		outputArray = output.getDenseBlock();
-		output.setNonZeros(numRowsOutput * numColsOutput);
+	private void pooling_pre_reshape(MatrixBlock input, MatrixBlock outputBlock) throws DMLRuntimeException {
+		
 		inputArray = null;
 		if (!input.isInSparseFormat())
 			inputArray = input.getDenseBlock();
@@ -375,25 +397,15 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				}
 			}
 		}
-		
-		return output;
 	}
 	
 	// Reshape a 4D tensor of dimension (N, K, P, Q) to matrix of dimension (K, NPQ)
-	private MatrixBlock rotate180(MatrixBlock input) throws DMLRuntimeException {
-		long start = System.nanoTime();
-		this.input = input;
-		int numRowsOutput = K;
-		int numColsOutput = N * P * Q;
-		MatrixBlock output = new MatrixBlock(numRowsOutput, numColsOutput, numRowsOutput * numColsOutput);
-		output.allocateDenseBlock();
-		outputArray = output.getDenseBlock();
-		output.setNonZeros(numRowsOutput * numColsOutput);
+	private void rotate180(MatrixBlock input, MatrixBlock outputBlock) throws DMLRuntimeException {
 		inputArray = null;
 
 		if (!input.isInSparseFormat())
 			inputArray = input.getDenseBlock();
-		i = 0; row = 0; 
+		globalIndex = 0; row = 0; 
 		
 		if(input.getNumColumns() != K*P*Q || input.getNumRows() != N) {
 			throw new DMLRuntimeException("Incorrect input dimensions in reshape_col_rev:" + input.getNumRows() + " " + input.getNumColumns() + " " + N + " " + K*P*Q);
@@ -412,30 +424,16 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				}
 			}
 		}
-		
 
-		double execTime = (System.nanoTime() - start) / 1000000000;
-		if (DMLScript.DEBUG_TENSOR && execTime > 5)
-			LOG.info("Time for reshape_col_rev:" + execTime + " seconds.");
-		return output;
 	}
 	
 	// Reshape a matrix of dimension (K, NPQ) to 4D tensor of dimension (N, K, P, Q)
-	private MatrixBlock reshape_col(MatrixBlock input) throws DMLRuntimeException {
-		long start = System.nanoTime();
-		
-		this.input = input;
-		int numRowsOutput = N;
-		int numColsOutput = K * P * Q;
-		MatrixBlock output = new MatrixBlock(numRowsOutput, numColsOutput, numRowsOutput * numColsOutput);
-		output.allocateDenseBlock();
-		outputArray = output.getDenseBlock();
-		output.setNonZeros(numRowsOutput * numColsOutput);
+	private void reshape_col(MatrixBlock input, MatrixBlock outputBlock) throws DMLRuntimeException {
 		inputArray = null;
 
 		if (!input.isInSparseFormat())
 			inputArray = input.getDenseBlock();
-		i = 0; row = 0; 
+		globalIndex = 0; row = 0; 
 		
 		if(input.getNumColumns() != N*P*Q || input.getNumRows() != K) {
 			throw new DMLRuntimeException("Incorrect input dimensions in reshape_col:" + input.getNumRows() + " " + input.getNumColumns());
@@ -455,48 +453,162 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			}
 		}
 		
-
-		double execTime = (System.nanoTime() - start) / 1000000000;
-		if (DMLScript.DEBUG_TENSOR && execTime > 5)
-			LOG.info("Time for reshape_col:" + execTime + " seconds.");
-		return output;
 	}
 	
-	// Converts a matrix of dimension (CRS, NPQ) to a 4D tensor (N, C, H, W)
-	private MatrixBlock col2im(MatrixBlock input) throws DMLRuntimeException {
-		long start = System.nanoTime();
+	// Converts a 4D tensor (N, C, R, S) to a matrix of dimension (CRS, NPQ)
+	private void im2col(MatrixBlock input, MatrixBlock outputBlock) throws DMLRuntimeException {
+		inputArray = null;
+		if (!input.isInSparseFormat())
+			inputArray = input.getDenseBlock();
+		globalIndex = 0; row = 0;
 		
-		this.input = input;
-		MatrixBlock output = init(N, C * H * W);
-		
-		for (int c = 0; c < C; c++) { // Since format is NCHW
-			for (int r = 0; r < R; r++) { // Get an input patch of size R X S
-				for (int s = 0; s < S; s++) {
-					for (int n = 0; n < N; n++) { // Do following for all images
-						doCol2imOverInputPath_NCHW(n, c, r, s);
+		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(-1);
+		if(!ALLOW_MULTI_THREADED_OPS || constrainedNumThreads <= 1) {
+			for (int c = 0; c < C; c++) { // Since format is NCHW
+				for (int r = 0; r < R; r++) { // Get an input patch of size R X S
+					for (int s = 0; s < S; s++) {
+						for (int n = 0; n < N; n++) { // Do following for all images
+							doIm2colOverInputPath_NCHW(n, c, r, s, this);
+						}
 					}
 				}
 			}
 		}
+		else {
+			// Parallel im2col
+			runParallelTask(constrainedNumThreads, true);
+		}
 		
-		double execTime = (System.nanoTime() - start) / 1000000000;
-		if (DMLScript.DEBUG_TENSOR && execTime > 5)
-			LOG.info("Time for col2im:" + execTime + " seconds.");
-		return output;
 	}
 	
-	// TODO:
-	private void doCol2imOverInputPath_NCHW(int n, int c, int r, int s) {
+	private void runParallelTask(int constrainedNumThreads, boolean isIm2Col) throws DMLRuntimeException {
+		ArrayList<Im2ColOrCol2ImTask> tasks = new ArrayList<Im2ColOrCol2ImTask>();
+		if(C*R >= constrainedNumThreads) {
+			for (int c = 0; c < C; c++) { // Since format is NCHW
+				for (int r = 0; r < R; r++) { // Get an input patch of size R X S
+					tasks.add(new Im2ColOrCol2ImTask(this, c, r, -1, -1, isIm2Col));
+				}
+			}
+		}
+		else if(C*R*S >= constrainedNumThreads) {
+			for (int c = 0; c < C; c++) { // Since format is NCHW
+				for (int r = 0; r < R; r++) { // Get an input patch of size R X S
+					for (int s = 0; s < S; s++) {
+						tasks.add(new Im2ColOrCol2ImTask(this, c, r, s, -1, isIm2Col));
+					}
+				}
+			}
+		}
+		else  {
+			for (int c = 0; c < C; c++) { // Since format is NCHW
+				for (int r = 0; r < R; r++) { // Get an input patch of size R X S
+					for (int s = 0; s < S; s++) {
+						for (int n = 0; n < N; n++) {
+							tasks.add(new Im2ColOrCol2ImTask(this, c, r, s, n, isIm2Col));
+						}
+					}
+				}
+			}
+		}
+		ExecutorService pool = Executors.newFixedThreadPool( constrainedNumThreads );
+		try {
+			pool.invokeAll(tasks);
+		} catch (InterruptedException e) {
+			throw new DMLRuntimeException("Error while executing multi-threaded im2col/col2im", e);
+		}	
+		pool.shutdown();
+	}
+	
+	private static class Im2ColOrCol2ImTask implements Callable<Object> {
+		ConvolutionCPInstruction curr; int c; int r; int s1; int n1; boolean isIm2Col;
+		
+		public Im2ColOrCol2ImTask(ConvolutionCPInstruction curr, int c, int r, int s, int n, boolean isIm2Col) {
+			this.curr = curr; 
+			this.c = c;
+			this.r = r;
+			this.s1 = s;
+			this.n1 = n;
+			this.isIm2Col = isIm2Col;
+		}
+
+		@Override
+		public Object call() throws Exception {
+			if(s1 == -1) {
+				for (int s = 0; s < curr.S; s++) {
+					for (int n = 0; n < curr.N; n++) {
+						if(isIm2Col)
+							doIm2colOverInputPath_NCHW(n, c, r, s, curr);
+						else
+							doCol2imOverInputPath_NCHW(n, c, r, s, curr);
+					}
+				}
+			}
+			else if(n1 == -1) {
+				for (int n = 0; n < curr.N; n++) {
+					if(isIm2Col)
+						doIm2colOverInputPath_NCHW(n, c, r, s1, curr);
+					else
+						doCol2imOverInputPath_NCHW(n, c, r, s1, curr);
+				}
+			}
+			else {
+				if(isIm2Col)
+					doIm2colOverInputPath_NCHW(n1, c, r, s1, curr);
+				else
+					doCol2imOverInputPath_NCHW(n1, c, r, s1, curr);
+			}
+			return null;
+		}
+		
+	}
+
+	
+	// Converts a matrix of dimension (CRS, NPQ) to a 4D tensor (N, C, H, W)
+	private void col2im(MatrixBlock input, MatrixBlock outputBlock) throws DMLRuntimeException {
+		inputArray = null;
+		if (!input.isInSparseFormat())
+			inputArray = input.getDenseBlock();
+		globalIndex = 0; row = 0;
+		
+		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(-1);
+		if(!ALLOW_MULTI_THREADED_OPS || constrainedNumThreads <= 1) {
+			// Sequential col2im
+			for (int c = 0; c < C; c++) { // Since format is NCHW
+				for (int r = 0; r < R; r++) { // Get an input patch of size R X S
+					for (int s = 0; s < S; s++) {
+						for (int n = 0; n < N; n++) { // Do following for all images
+							doCol2imOverInputPath_NCHW(n, c, r, s, this);
+						}
+					}
+				}
+			}
+		}
+		else {
+			// Parallel col2im
+			runParallelTask(constrainedNumThreads, false);
+		}
+	}
+	
+		
+	private static void doCol2imOverInputPath_NCHW(int n, int c, int r, int s, ConvolutionCPInstruction inst) {
+		int N = inst.N; int C = inst.C; int H = inst.H; int W = inst.W;
+		int R = inst.R; int S = inst.S; int P = inst.P; int Q = inst.Q;
+		int pad_h = inst.pad_h; int pad_w = inst.pad_w; int stride_h = inst.stride_h; int stride_w = inst.stride_w;
+		int localIndex = ((c*R*S*N + r*S*N + s*N + n)*P*Q);
+		
 		int input_row = r - pad_h;
 		// And copy it to outputArray[i] (taking care of padding & striding)
 		for (int p = P; p > 0; p--) {
 			if (input_row >= 0 && input_row < H) {
 				int input_col = s - pad_w;
-				for (int q = Q; q > 0; q--, i++) {
+				for (int q = Q; q > 0; q--, localIndex++) {
 					if (input_col >= 0 && input_col < W) {
 						// Copy from [channel c, height input_row, width input_col]
-						if (inputArray != null) {
-							outputArray[n*C*H*W + c*H*W + input_row*W + input_col] += inputArray[i];
+						int index = n*C*H*W + c*H*W + input_row*W + input_col;
+						if (inst.inputArray != null) {
+							synchronized(inst) {
+								inst.outputArray[index] += inst.inputArray[localIndex];
+							}
 						}
 						else {
 							// TODO: Validate this
@@ -504,65 +616,48 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 							// 0 1 2  3
 							// 4 5 6  7
 							// 8 9 10 11
-							int row = i / (N*P*Q);
-							int col = i % (N*P*Q);
-							outputArray[n*C*H*W + c*H*W + input_row*W + input_col] = input.getValue(row + 1, col + 1);
+							int row = localIndex / (N*P*Q);
+							int col = localIndex % (N*P*Q);
+							double val = inst.input.getValue(row + 1, col + 1);
+							synchronized(inst) {
+								inst.outputArray[index] += val; 
+							}
 						}
 					}
 					input_col += stride_w;
 				}
 			} else {
-				i += Q;
+				localIndex += Q;
 			}
 			input_row += stride_h;
 		}
-	}
 		
-
-	// Converts a 4D tensor (N, C, R, S) to a matrix of dimension (CRS, NPQ)
-	private MatrixBlock im2col(MatrixBlock input) throws DMLRuntimeException {
-		long start = System.nanoTime();
-		
-		this.input = input;
-		MatrixBlock output = init(C * R * S, N * P * Q);
-		
-		for (int c = 0; c < C; c++) { // Since format is NCHW
-			for (int r = 0; r < R; r++) { // Get an input patch of size R X S
-				for (int s = 0; s < S; s++) {
-					for (int n = 0; n < N; n++) { // Do following for all images
-						doIm2colOverInputPath_NCHW(n, c, r, s);
-					}
-				}
-			}
-		}
-		
-		double execTime = (System.nanoTime() - start) / 1000000000;
-		if (DMLScript.DEBUG_TENSOR && execTime > 5)
-			LOG.info("Time for im2col:" + execTime + " seconds.");
-		return output;
-	}
+	}	
 	
-	private void doIm2colOverInputPath_NCHW(int n, int c, int r, int s) {
-		int input_row = r - pad_h;
+	private static void doIm2colOverInputPath_NCHW(int n, int c, int r, int s, ConvolutionCPInstruction inst) {
+		int localIndex = ((c*inst.R*inst.S*inst.N + r*inst.S*inst.N + s*inst.N + n)*inst.P*inst.Q);
+		
+		int input_row = r - inst.pad_h;
 		// And copy it to outputArray[i] (taking care of padding & striding)
-		for (int p = P; p > 0; p--) {
-			if (input_row >= 0 && input_row < H) {
-				int input_col = s - pad_w;
-				for (int q = Q; q > 0; q--, i++) {
-					if (input_col >= 0 && input_col < W) {
+		for (int p = inst.P; p > 0; p--) {
+			if (input_row >= 0 && input_row < inst.H) {
+				int input_col = s - inst.pad_w;
+				for (int q = inst.Q; q > 0; q--, localIndex++) {
+					if (input_col >= 0 && input_col < inst.W) {
 						// Copy from [channel c, height input_row, width input_col]
-						if (inputArray != null)
-							outputArray[i] = inputArray[n*C*H*W + c*H*W + input_row*W + input_col];
+						if (inst.inputArray != null)
+							inst.outputArray[localIndex] = inst.inputArray[n*inst.C*inst.H*inst.W + c*inst.H*inst.W + input_row*inst.W + input_col];
 						else
-							outputArray[i] = input.getValue(n + 1, c*H*W + input_row*W + input_col + 1);
+							inst.outputArray[localIndex] = inst.input.getValue(n + 1, c*inst.H*inst.W + input_row*inst.W + input_col + 1);
 					}
-					input_col += stride_w;
+					input_col += inst.stride_w;
 				}
 			} else {
-				i += Q;
+				localIndex += inst.Q;
 			}
-			input_row += stride_h;
+			input_row += inst.stride_h;
 		}
+		
 	}
 
 	

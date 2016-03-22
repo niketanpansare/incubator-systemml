@@ -79,7 +79,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	/**
 	 * Container object that holds the actual data.
 	 */
-	private MatrixBlock _data = null;
+	public MatrixBlock _data = null;
 
 	/**
 	 * The name of HDFS file in which the data is backed up.

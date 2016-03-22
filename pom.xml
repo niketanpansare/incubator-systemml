@@ -706,10 +706,7 @@
 			<groupId>com.google.protobuf</groupId>
 			<artifactId>protobuf-java</artifactId>
 			<version>2.6.1</version>
-			<!--  TODO: Only while initial testing. If this fork ever gets merged into trunk, we will make this provided as it is only required
-				for Caffe support and is not used anywhere else + it adds ~ 1MB to the jar.
-				<scope>provided</scope>  
-			-->
+			<scope>provided</scope>  
 		</dependency>
 		
 		<dependency>
