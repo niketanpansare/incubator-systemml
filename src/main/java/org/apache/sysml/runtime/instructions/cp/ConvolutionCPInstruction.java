@@ -41,7 +41,6 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	
 	private static final Log LOG = LogFactory.getLog(ConvolutionCPInstruction.class.getName());
 
-	private static boolean ALWAYS_ALLOCATE_OUTPUT = false;
 	private static boolean ALLOW_MULTI_THREADED_OPS = true;
 	
 	private CPOperand _in2; // used for pooling backward
@@ -276,46 +275,17 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	}
 	
 	private MatrixBlock allocateOutputBlock(ExecutionContext ec, int numRowsOutput, int numColsOutput, long nnz) throws DMLRuntimeException {
-		MatrixBlock preAllocatedMatrixBlock = ec.getMatrixObject(output.getName())._data;
-		if(ALWAYS_ALLOCATE_OUTPUT || preAllocatedMatrixBlock == null) {
-			MatrixBlock outputBlock = new MatrixBlock(numRowsOutput, numColsOutput, nnz);
-			outputBlock.setNonZeros(nnz);
-			return outputBlock;
-		}
-		else if(preAllocatedMatrixBlock.getNumRows() == numRowsOutput && preAllocatedMatrixBlock.getNumColumns() == numColsOutput) {
-			// Reuse only if dimensions matches
-			preAllocatedMatrixBlock.setNonZeros(nnz);
-			return preAllocatedMatrixBlock;
-		}
-		else {
-			MatrixBlock outputBlock = new MatrixBlock(numRowsOutput, numColsOutput, nnz);
-			outputBlock.setNonZeros(nnz);
-			return outputBlock;
-		}
+		MatrixBlock outputBlock = new MatrixBlock(numRowsOutput, numColsOutput, nnz);
+		outputBlock.setNonZeros(nnz);
+		return outputBlock;
 	}
 	
 	private MatrixBlock allocateDenseOutputBlock(ExecutionContext ec, int numRowsOutput, int numColsOutput) throws DMLRuntimeException {
-		MatrixBlock preAllocatedMatrixBlock = ec.getMatrixObject(output.getName())._data;
-		if(ALWAYS_ALLOCATE_OUTPUT || preAllocatedMatrixBlock == null) {
-			MatrixBlock outputBlock = new MatrixBlock(numRowsOutput, numColsOutput, numRowsOutput * numColsOutput);
-			outputBlock.allocateDenseBlock();
-			outputArray = outputBlock.getDenseBlock();
-			outputBlock.setNonZeros(numRowsOutput * numColsOutput);
-			return outputBlock;
-		}
-		else if(preAllocatedMatrixBlock.getNumRows() == numRowsOutput && preAllocatedMatrixBlock.getNumColumns() == numColsOutput
-				&& !preAllocatedMatrixBlock.isInSparseFormat()) {
-			// Reuse only if dimensions matches and in dense format
-			preAllocatedMatrixBlock.setNonZeros(numRowsOutput * numColsOutput); // Reset nnz
-			return preAllocatedMatrixBlock;
-		}
-		else {
-			MatrixBlock outputBlock = new MatrixBlock(numRowsOutput, numColsOutput, numRowsOutput * numColsOutput);
-			outputBlock.allocateDenseBlock();
-			outputArray = outputBlock.getDenseBlock();
-			outputBlock.setNonZeros(numRowsOutput * numColsOutput);
-			return outputBlock;
-		}
+		MatrixBlock outputBlock = new MatrixBlock(numRowsOutput, numColsOutput, numRowsOutput * numColsOutput);
+		outputBlock.allocateDenseBlock();
+		outputArray = outputBlock.getDenseBlock();
+		outputBlock.setNonZeros(numRowsOutput * numColsOutput);
+		return outputBlock;
 	}
 	
 	// Using indices (matrix of dimension 1 X NCPQ) and values (tensor of shape [N, C, P, Q])
