@@ -35,7 +35,8 @@ public class ConvolutionTransform extends Lop
 		ROTATE180,
 		COL2IM,
 		POOLING_PRE_RESHAPE, POOLING_POST_RESHAPE,
-		POOLING_BACKWARD_RESHAPE
+		POOLING_BACKWARD_RESHAPE,
+		MAX_POOLING
 	};
 	
 	private OperationTypes operation = null;
@@ -113,7 +114,10 @@ public class ConvolutionTransform extends Lop
 		
 		case POOLING_PRE_RESHAPE:
 			return "pooling_pre_reshape";
-		
+			
+		case MAX_POOLING:
+			return "maxpooling";
+			
 		case POOLING_POST_RESHAPE:
 			return "pooling_post_reshape";
 			

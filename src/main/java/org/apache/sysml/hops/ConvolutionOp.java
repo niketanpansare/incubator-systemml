@@ -103,6 +103,7 @@ public class ConvolutionOp extends Hop
 			case POOLING_PRE_RESHAPE:
 			case POOLING_POST_RESHAPE:
 			case POOLING_BACKWARD_RESHAPE:
+			case MAX_POOLING:
 			{
 				if( et==ExecType.CP)
 				{

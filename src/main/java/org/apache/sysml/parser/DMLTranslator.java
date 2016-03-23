@@ -67,6 +67,7 @@ import org.apache.sysml.parser.Expression.ParameterizedBuiltinFunctionOp;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.parser.PrintStatement.PRINTTYPE;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.instructions.cp.ConvolutionCPInstruction;
 
 
 public class DMLTranslator 
@@ -2750,22 +2751,30 @@ public class DMLTranslator
 		case MAX_POOL:
 		{
 			Hop image = expr;
-			ArrayList<Hop> inHops1 = getALHopsForConvOp(image, source, 1, hops);
-			Hop preReshapeMat = new ConvolutionOp("preReshape" + image.getName(), image.getDataType(), image.getValueType(), Hop.ConvOp.POOLING_PRE_RESHAPE, inHops1);
-			
-			ArrayList<Hop> inHops2 = getALHopsForConvOpPoolingIM2COL(preReshapeMat, source, 1, hops);
-			Hop loweredMat = new ConvolutionOp("im2ColReshaped" + image.getName(), image.getDataType(), image.getValueType(), Hop.ConvOp.IM2COL, inHops2);
-			
-			Hop pooledMat = null;
-			if(source.getOpCode() == BuiltinFunctionOp.MAX_POOL)
-				pooledMat = new AggUnaryOp("colMax" + target.getName(), target.getDataType(), target.getValueType(), AggOp.MAX, Direction.Col, loweredMat);
-			else
-				pooledMat = new AggUnaryOp("colAvg" + target.getName(), target.getDataType(), target.getValueType(), AggOp.MEAN, Direction.Col, loweredMat);
-			
-			
-			ArrayList<Hop> inHops3 = getALHopsForConvOp(pooledMat, source, 1, hops);
-			currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(), Hop.ConvOp.POOLING_POST_RESHAPE, inHops3);
-			setBlockSizeAndRefreshSizeInfo(image, currBuiltinOp);
+			if(!ConvolutionCPInstruction.USE_IM2COL_POOLING) {
+				ArrayList<Hop> inHops1 = getALHopsForPoolingForwardIM2COL(image, source, 1, hops);
+				if(source.getOpCode() == BuiltinFunctionOp.MAX_POOL)
+					currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(), Hop.ConvOp.MAX_POOLING, inHops1);
+				else
+					throw new HopsException("Average pooling is not implemented");
+				setBlockSizeAndRefreshSizeInfo(image, currBuiltinOp);
+			}
+			else {
+				ArrayList<Hop> inHops1 = getALHopsForConvOp(image, source, 1, hops);
+				Hop preReshapeMat = new ConvolutionOp("preReshape" + image.getName(), image.getDataType(), image.getValueType(), Hop.ConvOp.POOLING_PRE_RESHAPE, inHops1);
+				
+				ArrayList<Hop> inHops2 = getALHopsForConvOpPoolingIM2COL(preReshapeMat, source, 1, hops);
+				Hop loweredMat = new ConvolutionOp("im2ColReshaped" + image.getName(), image.getDataType(), image.getValueType(), Hop.ConvOp.IM2COL, inHops2);
+				
+				Hop pooledMat = null;
+				if(source.getOpCode() == BuiltinFunctionOp.MAX_POOL)
+					pooledMat = new AggUnaryOp("colMax" + target.getName(), target.getDataType(), target.getValueType(), AggOp.MAX, Direction.Col, loweredMat);
+				else
+					pooledMat = new AggUnaryOp("colAvg" + target.getName(), target.getDataType(), target.getValueType(), AggOp.MEAN, Direction.Col, loweredMat);
+				ArrayList<Hop> inHops3 = getALHopsForConvOp(pooledMat, source, 1, hops);
+				currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(), Hop.ConvOp.POOLING_POST_RESHAPE, inHops3);
+				setBlockSizeAndRefreshSizeInfo(image, currBuiltinOp);
+			}
 			break;
 		}
 		case MAX_POOL_BACKWARD:
@@ -2853,6 +2862,26 @@ public class DMLTranslator
 		for(int i = skip; i < allExpr.length; i++) {
 			if(i == 11) {
 				ret.add(processExpression(allExpr[7], null, hops)); // Make number of channels of images and filter the same
+			}
+			else
+				ret.add(processExpression(allExpr[i], null, hops));
+		}
+		return ret;
+	}
+	
+	private ArrayList<Hop> getALHopsForPoolingForwardIM2COL(Hop first, BuiltinFunctionExpression source, int skip, HashMap<String, Hop> hops) throws ParseException {
+		ArrayList<Hop> ret = new ArrayList<Hop>();
+		ret.add(first);
+		Expression[] allExpr = source.getAllExpr();
+		if(skip != 1) {
+			throw new ParseException("Unsupported skip");
+		}
+		
+		Expression numChannels = allExpr[6];
+		
+		for(int i = skip; i < allExpr.length; i++) {
+			if(i == 10) { 
+				ret.add(processExpression(numChannels, null, hops));
 			}
 			else
 				ret.add(processExpression(allExpr[i], null, hops));

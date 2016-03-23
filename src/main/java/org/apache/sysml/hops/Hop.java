@@ -1084,7 +1084,8 @@ public abstract class Hop
 	};
 	
 	public enum ConvOp {
-		IM2COL, RESHAPE_COL, ROTATE180, COL2IM, POOLING_PRE_RESHAPE, POOLING_POST_RESHAPE, POOLING_BACKWARD_RESHAPE
+		IM2COL, RESHAPE_COL, ROTATE180, COL2IM, POOLING_PRE_RESHAPE, POOLING_POST_RESHAPE, POOLING_BACKWARD_RESHAPE, 
+		MAX_POOLING
 	};
 	
 	public enum DataGenMethod {
@@ -1161,6 +1162,7 @@ public abstract class Hop
 		HopsConv2Lops.put(ConvOp.POOLING_PRE_RESHAPE, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.POOLING_PRE_RESHAPE);
 		HopsConv2Lops.put(ConvOp.POOLING_POST_RESHAPE, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.POOLING_POST_RESHAPE);
 		HopsConv2Lops.put(ConvOp.POOLING_BACKWARD_RESHAPE, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.POOLING_BACKWARD_RESHAPE);
+		HopsConv2Lops.put(ConvOp.MAX_POOLING, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.MAX_POOLING);
 	}
 	
 	protected static final HashMap<Hop.Direction, org.apache.sysml.lops.PartialAggregate.DirectionTypes> HopsDirection2Lops;
