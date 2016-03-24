@@ -41,8 +41,8 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	
 	private static final Log LOG = LogFactory.getLog(ConvolutionCPInstruction.class.getName());
 
-	public static boolean ALLOW_MULTI_THREADED_OPS = true;
-	public static boolean USE_IM2COL_POOLING = false;
+	public static boolean ALLOW_MULTI_THREADED_OPS = false;
+	public static boolean USE_IM2COL_POOLING = false; // TODO: Remove im2col-based pooling instruction
 	
 	private CPOperand _in2; // used for pooling backward
 	private ArrayList<CPOperand> _input_shape;
@@ -118,7 +118,8 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			return new ConvolutionCPInstruction(in, out, opcode, str, stride,
 					padding, input_shape, filter_shape);
 		} 
-		else if (opcode.equalsIgnoreCase("pooling_backward_reshape")) {
+		else if (opcode.equalsIgnoreCase("pooling_backward_reshape")
+				|| opcode.equalsIgnoreCase("maxpooling_backward")) {
 			InstructionUtils.checkNumFields(parts, 15);
 			// dout, stride1, stride2, padding1, padding2
 			// input_shape1, input_shape2, input_shape3, input_shape4,
@@ -172,7 +173,8 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				|| instOpcode.equalsIgnoreCase("pooling_pre_reshape")
 				|| instOpcode.equalsIgnoreCase("pooling_post_reshape")
 				|| instOpcode.equalsIgnoreCase("pooling_backward_reshape")
-				|| instOpcode.equalsIgnoreCase("maxpooling")) {
+				|| instOpcode.equalsIgnoreCase("maxpooling")
+				|| instOpcode.equalsIgnoreCase("maxpooling_backward")) {
 			
 			MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
 			pad_h = getScalarInput(ec, _padding, 0);
@@ -242,6 +244,13 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				outputBlock = allocateDenseOutputBlock(ec, N, C*P*Q); 
 				maxpooling(matBlock, outputBlock);
 			}
+			else if (instOpcode.equalsIgnoreCase("maxpooling_backward")) {
+				MatrixBlock dout = ec.getMatrixInput(_in2.getName());
+				this.input = matBlock;
+				outputBlock = allocateDenseOutputBlock(ec, N, C*H*W); 
+				maxpooling_backward(matBlock, dout, outputBlock);
+				ec.releaseMatrixInput(_in2.getName());
+			}
 			else {
 				throw new DMLRuntimeException("Unsupported op code " + instOpcode);
 			}
@@ -295,7 +304,77 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		outputBlock.setNonZeros(numRowsOutput * numColsOutput);
 		return outputBlock;
 	}
-	
+
+	private void maxpooling_backward(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock) throws DMLRuntimeException {
+		inputArray = null;
+		if (!input.isInSparseFormat())
+			inputArray = input.getDenseBlock();
+		if(input.getNumColumns() != C*H*W || input.getNumRows() != N) {
+			throw new DMLRuntimeException("Incorrect input dimensions in maxpooling_backward:" + input.getNumRows() + " " + input.getNumColumns() + " " + N + " " + K*P*Q);
+		}
+
+		double [] doutArray = null;
+		if(!dout.isInSparseFormat()) 
+			doutArray = dout.getDenseBlock();
+		if(dout.getNumColumns() != C*P*Q || dout.getNumRows() != N) {
+			throw new DMLRuntimeException("Incorrect dout dimensions in maxpooling_backward:" + input.getNumRows() + " " + input.getNumColumns() + " " + N + " " + K*P*Q);
+		}
+
+		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(-1);
+		if(!ALLOW_MULTI_THREADED_OPS || constrainedNumThreads <= 1) {
+			for (int n = 0; n < N; n++) {
+				for (int c = 0; c < C; c++) {
+					doPoolingBackward(c, n, doutArray, dout);
+				}
+			}
+		}
+		else {
+			runParallelPoolingTask(constrainedNumThreads, false, doutArray, dout);
+		}
+	}
+
+	public void doPoolingBackward(int c, int n, double [] doutArray, MatrixBlock dout) {
+		for (int p = 0; p < P; p++) {
+			for (int q = 0; q < Q; q++) {
+				int start_index_h = p * stride_h - pad_h;
+				int start_index_w = q * stride_w - pad_w;
+				int end_index_h = Math.min(start_index_h + R, H);
+				int end_index_w = Math.min(start_index_w + S, W);
+				start_index_h = Math.max(start_index_h, 0);
+				start_index_w = Math.max(start_index_w, 0);
+				//System.out.println("[" + start_index_h + " " + end_index_h + "]" + "[" + start_index_w + " " + end_index_w + "]");
+				int maxIndex = n*C*H*W + c*H*W +  start_index_h*W + start_index_w; 
+				double maxVal = Double.MIN_VALUE; 
+
+
+				double currDoutVal = -1;
+				for (int h = start_index_h; h < end_index_h; h++) {
+					for (int w = start_index_w; w < end_index_w; w++) {
+						if(inputArray != null)
+							currDoutVal = inputArray[n*C*H*W + c*H*W +  h*W + w];
+						else
+							currDoutVal = input.quickGetValue(n, c*H*W + h*W + w);
+
+						if(maxVal < currDoutVal) {
+							maxIndex = n*C*H*W + c*H*W +  h*W + w;
+							maxVal = currDoutVal;
+						}
+					}
+				}
+
+				double inVal = -1;
+				if(doutArray != null)
+					inVal = doutArray[n*C*P*Q + c*P*Q +  p * Q + q];
+				else
+					inVal = dout.quickGetValue(n, c*P*Q +  p * Q + q);
+
+				synchronized(this) {
+					outputArray[maxIndex] += inVal;
+				}
+			}
+		}
+	}
+
 	private void maxpooling(MatrixBlock input, MatrixBlock outputBlock) throws DMLRuntimeException {
 		inputArray = null;
 		if (!input.isInSparseFormat())
@@ -314,44 +393,44 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			}
 		}
 		else {
-			runParallelPoolingTask(constrainedNumThreads, true);
-		}		
+			runParallelPoolingTask(constrainedNumThreads, true, null, null);
+		}	
 	}
-	
+
 	public void doPooling(int c, int n) {
 		for (int p = 0; p < P; p++) {
 			for (int q = 0; q < Q; q++) {
 				int start_index_h = p * stride_h - pad_h;
-	            int start_index_w = q * stride_w - pad_w;
-	            int end_index_h = Math.min(start_index_h + R, H);
-	            int end_index_w = Math.min(start_index_w + S, W);
-	            start_index_h = Math.max(start_index_h, 0);
-	            start_index_w = Math.max(start_index_w, 0);
-	            int out_index = n*C*P*Q + c*P*Q +  p * Q + q;
-	            //System.out.println("[" + start_index_h + " " + end_index_h + "]" + "[" + start_index_w + " " + end_index_w + "]");
-	            for (int h = start_index_h; h < end_index_h; h++) {
-	              for (int w = start_index_w; w < end_index_w; w++) {
-	                double inVal = -1;
-	                if(inputArray != null)
-	                	inVal = inputArray[n*C*H*W + c*H*W +  h*W + w];
-	                else
-	                	inVal = input.quickGetValue(n, c*H*W +  h*W + w);
-	                outputArray[out_index] = Math.max(outputArray[out_index], inVal);
-	              }
-	            }
+				int start_index_w = q * stride_w - pad_w;
+				int end_index_h = Math.min(start_index_h + R, H);
+				int end_index_w = Math.min(start_index_w + S, W);
+				start_index_h = Math.max(start_index_h, 0);
+				start_index_w = Math.max(start_index_w, 0);
+				int out_index = n*C*P*Q + c*P*Q +  p * Q + q;
+				//System.out.println("[" + start_index_h + " " + end_index_h + "]" + "[" + start_index_w + " " + end_index_w + "]");
+				for (int h = start_index_h; h < end_index_h; h++) {
+					for (int w = start_index_w; w < end_index_w; w++) {
+						double inVal = -1;
+						if(inputArray != null)
+							inVal = inputArray[n*C*H*W + c*H*W +  h*W + w];
+						else
+							inVal = input.quickGetValue(n, c*H*W +  h*W + w);
+						outputArray[out_index] = Math.max(outputArray[out_index], inVal);
+					}
+				}
 			}
 		}
 	}
-	
-	private void runParallelPoolingTask(int constrainedNumThreads, boolean isIm2Col) throws DMLRuntimeException {
+
+	private void runParallelPoolingTask(int constrainedNumThreads, boolean isForwardPooling, double [] doutArray, MatrixBlock dout) throws DMLRuntimeException {
 		ArrayList<PoolingTask> tasks = new ArrayList<PoolingTask>();
-		
+
 		for (int n = 0; n < N; n++) {
 			for (int c = 0; c < C; c += TASK_SIZE) {
-				tasks.add(new PoolingTask(this, n, c));
+				tasks.add(new PoolingTask(this, n, c, isForwardPooling, doutArray, dout));
 			}
 		}
-		
+
 		ExecutorService pool = Executors.newFixedThreadPool( constrainedNumThreads );
 		try {
 			pool.invokeAll(tasks);
@@ -360,24 +439,31 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		}	
 		pool.shutdown();
 	}
-	
+
 	private static class PoolingTask implements Callable<Object> {
-		ConvolutionCPInstruction curr; int n1; int c1;
-		
-		public PoolingTask(ConvolutionCPInstruction curr, int n, int c) {
+		ConvolutionCPInstruction curr; int n1; int c1; boolean isForwardPooling;
+		double [] doutArray; MatrixBlock dout;
+
+		public PoolingTask(ConvolutionCPInstruction curr, int n, int c, boolean isForwardPooling, double [] doutArray, MatrixBlock dout) {
 			this.curr = curr; 
 			this.n1 = n;
 			this.c1 = c;
+			this.isForwardPooling = isForwardPooling;
+			this.doutArray = doutArray;
+			this.dout = dout;
 		}
 
 		@Override
 		public Object call() throws Exception {
 			for (int c = c1; c < Math.min(curr.C, c1 + TASK_SIZE); c++) {
-				curr.doPooling(c, n1);
+				if(isForwardPooling)
+					curr.doPooling(c, n1);
+				else
+					curr.doPoolingBackward(c, n1, doutArray, dout);
 			}
 			return null;
 		}
-		
+
 	}
 	
 	// Using indices (matrix of dimension 1 X NCPQ) and values (tensor of shape [N, C, P, Q])
