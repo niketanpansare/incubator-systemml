@@ -27,6 +27,7 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -35,12 +36,13 @@ import java.util.Map;
 import org.apache.hadoop.io.Writable;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
 
 /**
  * 
  */
 @SuppressWarnings({"rawtypes","unchecked"}) //allow generic native arrays
-public class FrameBlock implements Writable, Externalizable
+public class FrameBlock implements Writable, CacheBlock, Externalizable
 {
 	private static final long serialVersionUID = -3993450030207130665L;
 	
@@ -63,10 +65,14 @@ public class FrameBlock implements Writable, Externalizable
 		_coldata = new ArrayList<Array>();
 	}
 	
+	public FrameBlock(FrameBlock that) {
+		this(that.getSchema());
+		copy(that);
+	}
+	
 	public FrameBlock(int ncols, ValueType vt) {
 		this();
-		for( int j=0; j<ncols; j++ )
-			_schema.add(vt);
+		_schema.addAll(Collections.nCopies(ncols, vt));
 	}
 	
 	public FrameBlock(List<ValueType> schema) {
@@ -366,6 +372,21 @@ public class FrameBlock implements Writable, Externalizable
 		readFields(in);
 	}
 	
+	////////
+	// CacheBlock implementation
+	
+	@Override
+	public long getExactSerializedSize() {
+		//TODO implement getExactSizeOnDisk();
+		return 1;
+	}
+	
+	@Override
+	public boolean isShallowSerialize() {
+		//shallow serialize since frames always dense
+		return true;
+	}
+	
 	///////
 	// indexing and append operations
 	
@@ -517,6 +538,28 @@ public class FrameBlock implements Writable, Externalizable
 		return ret;
 	}
 	
+	public void copy(FrameBlock src)
+	{
+		//allocate 
+		ensureAllocatedColumns(src.getNumRows());
+		
+		//actual copy 
+		for( int i=0; i<src.getNumColumns(); i++ )
+			_coldata.get(i).set(0, src.getNumRows()-1, src._coldata.get(i));
+	}
+
+	
+	public void copy(int rl, int ru, int cl, int cu, FrameBlock src, int rlen, int clen) 
+		throws DMLRuntimeException
+	{
+		ensureAllocatedColumns(rlen);
+		
+		//copy values
+		for( int i=cl; i<cu; i++ )
+			_coldata.get(i).set(rl, ru-rl-1, src._coldata.get(i));
+	}
+		
+
 	
 	///////
 	// row iterators (over strings and boxed objects)
@@ -557,8 +600,10 @@ public class FrameBlock implements Writable, Externalizable
 		
 		@Override
 		public String[] next( ) {
-			for( int j=0; j<getNumColumns(); j++ )
-				_curRow[j] = get(_curPos, j).toString();
+			for( int j=0; j<getNumColumns(); j++ ) {
+				Object tmp = get(_curPos, j);
+				_curRow[j] = (tmp!=null) ? tmp.toString() : null;
+			}
 			_curPos++;			
 			return _curRow;
 		}
@@ -598,6 +643,7 @@ public class FrameBlock implements Writable, Externalizable
 		public abstract T get(int index);
 		public abstract void set(int index, T value);
 		public abstract void set(int rl, int ru, Array value);
+		public abstract void set(int rl, int ru, Array value, int rlSrc);
 		public abstract void append(String value);
 		public abstract void append(T value);
 		public abstract Array clone();
@@ -623,6 +669,9 @@ public class FrameBlock implements Writable, Externalizable
 		public void set(int rl, int ru, Array value) {
 			System.arraycopy(((StringArray)value)._data, 0, _data, rl, ru-rl+1);
 		}
+		public void set(int rl, int ru, Array value, int rlSrc) {
+			System.arraycopy(((StringArray)value)._data, rlSrc, _data, rl, ru-rl+1);
+		}
 		public void append(String value) {
 			if( _data.length <= _size )
 				_data = Arrays.copyOf(_data, newSize());
@@ -630,12 +679,14 @@ public class FrameBlock implements Writable, Externalizable
 		}
 		public void write(DataOutput out) throws IOException {
 			for( int i=0; i<_size; i++ )
-				out.writeUTF(_data[i]);
+				out.writeUTF((_data[i]!=null)?_data[i]:"");
 		}
 		public void readFields(DataInput in) throws IOException {
 			_size = _data.length;
-			for( int i=0; i<_size; i++ )
-				_data[i] = in.readUTF();
+			for( int i=0; i<_size; i++ ) {
+				String tmp = in.readUTF();
+				_data[i] = (!tmp.isEmpty()) ? tmp : null;
+			}
 		}
 		public Array clone() {
 			return new StringArray(Arrays.copyOf(_data, _size));
@@ -659,10 +710,13 @@ public class FrameBlock implements Writable, Externalizable
 			return _data[index];
 		}
 		public void set(int index, Boolean value) {
-			_data[index] = value;
+			_data[index] = (value!=null) ? value : false;
 		}
 		public void set(int rl, int ru, Array value) {
 			System.arraycopy(((BooleanArray)value)._data, 0, _data, rl, ru-rl+1);
+		}
+		public void set(int rl, int ru, Array value, int rlSrc) {
+			System.arraycopy(((BooleanArray)value)._data, rlSrc, _data, rl, ru-rl+1);
 		}
 		public void append(String value) {
 			append(Boolean.parseBoolean(value));
@@ -670,7 +724,7 @@ public class FrameBlock implements Writable, Externalizable
 		public void append(Boolean value) {
 			if( _data.length <= _size )
 				_data = Arrays.copyOf(_data, newSize());
-			_data[_size++] = value;
+			_data[_size++] = (value!=null) ? value : false;
 		}
 		public void write(DataOutput out) throws IOException {
 			for( int i=0; i<_size; i++ )
@@ -703,18 +757,21 @@ public class FrameBlock implements Writable, Externalizable
 			return _data[index];
 		}
 		public void set(int index, Long value) {
-			_data[index] = value;
+			_data[index] = (value!=null) ? value : 0L;
 		}
 		public void set(int rl, int ru, Array value) {
 			System.arraycopy(((LongArray)value)._data, 0, _data, rl, ru-rl+1);
 		}
+		public void set(int rl, int ru, Array value, int rlSrc) {
+			System.arraycopy(((LongArray)value)._data, rlSrc, _data, rl, ru-rl+1);
+		}
 		public void append(String value) {
-			append(Long.parseLong(value));
+			append((value!=null)?Long.parseLong(value):null);
 		}
 		public void append(Long value) {
 			if( _data.length <= _size )
 				_data = Arrays.copyOf(_data, newSize());
-			_data[_size++] = value;
+			_data[_size++] = (value!=null) ? value : 0L;
 		}
 		public void write(DataOutput out) throws IOException {
 			for( int i=0; i<_size; i++ )
@@ -747,18 +804,21 @@ public class FrameBlock implements Writable, Externalizable
 			return _data[index];
 		}
 		public void set(int index, Double value) {
-			_data[index] = value;
+			_data[index] = (value!=null) ? value : 0d;
 		}
 		public void set(int rl, int ru, Array value) {
 			System.arraycopy(((DoubleArray)value)._data, 0, _data, rl, ru-rl+1);
 		}
+		public void set(int rl, int ru, Array value, int rlSrc) {
+			System.arraycopy(((DoubleArray)value)._data, rlSrc, _data, rl, ru-rl+1);
+		}
 		public void append(String value) {
-			append(Double.parseDouble(value));
+			append((value!=null)?Double.parseDouble(value):null);
 		}
 		public void append(Double value) {
 			if( _data.length <= _size )
 				_data = Arrays.copyOf(_data, newSize());
-			_data[_size++] = value;
+			_data[_size++] = (value!=null) ? value : 0d;
 		}
 		public void write(DataOutput out) throws IOException {
 			for( int i=0; i<_size; i++ )
