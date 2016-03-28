@@ -23,8 +23,6 @@ import java.util.ArrayList;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -39,10 +37,11 @@ import org.apache.sysml.runtime.util.ConvolutionUtils;
 
 public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	
-	private static final Log LOG = LogFactory.getLog(ConvolutionCPInstruction.class.getName());
+	// private static final Log LOG = LogFactory.getLog(ConvolutionCPInstruction.class.getName());
 
-	public static boolean ALLOW_MULTI_THREADED_OPS = false;
+	public static boolean ALLOW_MULTI_THREADED_OPS = true;
 	public static boolean USE_IM2COL_POOLING = false; // TODO: Remove im2col-based pooling instruction
+	public static boolean OPTIMIZE_IM2COL_STRIDE1 = false;
 	
 	private CPOperand _in2; // used for pooling backward
 	private ArrayList<CPOperand> _input_shape;
@@ -559,21 +558,31 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			throw new DMLRuntimeException("Incorrect input dimensions in reshape_col_rev:" + input.getNumRows() + " " + input.getNumColumns() + " " + N + " " + K*P*Q);
 		}
 		
-		
-		for (int k = 0; k < K; k++) {
-			for (int n = 0; n < N; n++) {
-				for (int p = 0; p < P; p++) {
-					for (int q = 0; q < Q; q++) {		
-						if(inputArray != null)
-							outputArray[k*N*P*Q + n*P*Q + p*P + q] = inputArray[n*K*P*Q + k*P*Q + p*Q + q];
-						else
-							outputArray[k*N*P*Q + n*P*Q + p*P + q] = input.quickGetValue(n, k*P*Q + p*Q + q);
-					}
+		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(-1);
+		if(!ALLOW_MULTI_THREADED_OPS || constrainedNumThreads <= 1) {
+			for (int k = 0; k < K; k++) {
+				for (int n = 0; n < N; n++) {
+					doRotate180(n, k);
 				}
 			}
 		}
-
+		else {
+			runParallelRotateTask(constrainedNumThreads);
+		}
 	}
+	
+	public void doRotate180(int n, int k) {
+		for (int p = 0; p < P; p++) {
+			for (int q = 0; q < Q; q++) {		
+				if(inputArray != null)
+					outputArray[k*N*P*Q + n*P*Q + p*P + q] = inputArray[n*K*P*Q + k*P*Q + p*Q + q];
+				else
+					outputArray[k*N*P*Q + n*P*Q + p*P + q] = input.quickGetValue(n, k*P*Q + p*Q + q);
+			}
+		}
+	}
+	
+	
 	
 	// Reshape a matrix of dimension (K, NPQ) to 4D tensor of dimension (N, K, P, Q)
 	private void reshape_col(MatrixBlock input, MatrixBlock outputBlock) throws DMLRuntimeException {
@@ -587,20 +596,119 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			throw new DMLRuntimeException("Incorrect input dimensions in reshape_col:" + input.getNumRows() + " " + input.getNumColumns());
 		}
 		
+		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(-1);
+		if(!ALLOW_MULTI_THREADED_OPS || constrainedNumThreads <= 1) {
+			for (int n = 0; n < N; n++) { 
+				for (int k = 0; k < K; k++) { 
+					doReshapeCol(n, k);
+				}
+			}
+		}
+		else {
+			runParallelReshapeTask(constrainedNumThreads);
+		}
 		
-		for (int n = 0; n < N; n++) { 
-			for (int k = 0; k < K; k++) { 
-				for (int p = 0; p < P; p++) { 
-					for (int q = 0; q < Q; q++) {
-						if(inputArray != null)
-							outputArray[n*K*P*Q + k*P*Q + p*Q + q] = inputArray[k*N*P*Q + n*P*Q + p*Q + q];
-						else
-							outputArray[n*K*P*Q + k*P*Q + p*Q + q] = input.quickGetValue(k, n*P*Q + p*Q + q);
-					}
+	}
+	
+	
+	private void runParallelRotateTask(int constrainedNumThreads) throws DMLRuntimeException {
+		ArrayList<ReshapeTask> tasks = new ArrayList<ReshapeTask>();
+
+		if(K >= constrainedNumThreads) {
+			for (int k = 0; k < K; k++) {
+				tasks.add(new ReshapeTask(this, 0, N, k, k+1, false));
+			}
+		}
+		else if(N >= constrainedNumThreads) {
+			// TODO: Improve task partitioning, while still maintaining cache-conscious
+			for (int n = 0; n < N; n++) {
+				tasks.add(new ReshapeTask(this, n, n+1, 0, K, false));
+			}
+		}
+		else {
+			for (int k = 0; k < K; k++) {
+				for (int n = 0; n < N; n++) {
+					tasks.add(new ReshapeTask(this, n, n+1, k, k+1, false));
+				}
+			}
+		}
+
+		ExecutorService pool = Executors.newFixedThreadPool( constrainedNumThreads );
+		try {
+			pool.invokeAll(tasks);
+		} catch (InterruptedException e) {
+			throw new DMLRuntimeException("Error while executing multi-threaded maxpooling", e);
+		}	
+		pool.shutdown();
+	}
+
+	private void runParallelReshapeTask(int constrainedNumThreads) throws DMLRuntimeException {
+		ArrayList<ReshapeTask> tasks = new ArrayList<ReshapeTask>();
+
+		if(N >= constrainedNumThreads) {
+			for (int n = 0; n < N; n++) {
+				tasks.add(new ReshapeTask(this, n, n+1, 0, K, true));
+			}
+		}
+		else {
+			for (int n = 0; n < N; n++) {
+				for (int k = 0; k < K; k++) {	
+					tasks.add(new ReshapeTask(this, n, n+1, k, k+1, true));
 				}
 			}
 		}
 		
+
+		ExecutorService pool = Executors.newFixedThreadPool( constrainedNumThreads );
+		try {
+			pool.invokeAll(tasks);
+		} catch (InterruptedException e) {
+			throw new DMLRuntimeException("Error while executing multi-threaded maxpooling", e);
+		}	
+		pool.shutdown();
+	}
+	
+	private static class ReshapeTask implements Callable<Object> {
+		ConvolutionCPInstruction curr; int n1; int n2; int k1; int k2; boolean isReshapeCol;
+		public ReshapeTask(ConvolutionCPInstruction curr, int n1, int n2, int k1, int k2, boolean isReshapeCol) {
+			this.curr = curr; 
+			this.n1 = n1;
+			this.n2 = n2;
+			this.k1 = k1;
+			this.k2 = k2;
+			this.isReshapeCol = isReshapeCol;
+		}
+
+		@Override
+		public Object call() throws Exception {
+			if(isReshapeCol) {
+				for (int n = n1; n < n2; n++) {
+					for (int k = k1; k < k2; k++) {
+						curr.doReshapeCol(n, k);
+					}
+				}
+			}
+			else {
+				for (int k = k1; k < k2; k++) {
+					for (int n = n1; n < n2; n++) {
+						curr.doRotate180(n, k);
+					}
+				}
+			}
+			return null;
+		}
+
+	}
+	
+	private void doReshapeCol(int n, int k) {
+		for (int p = 0; p < P; p++) { 
+			for (int q = 0; q < Q; q++) {
+				if(inputArray != null)
+					outputArray[n*K*P*Q + k*P*Q + p*Q + q] = inputArray[k*N*P*Q + n*P*Q + p*Q + q];
+				else
+					outputArray[n*K*P*Q + k*P*Q + p*Q + q] = input.quickGetValue(k, n*P*Q + p*Q + q);
+			}
+		}
 	}
 	
 	// Converts a 4D tensor (N, C, R, S) to a matrix of dimension (CRS, NPQ)
@@ -612,13 +720,9 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		
 		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(-1);
 		if(!ALLOW_MULTI_THREADED_OPS || constrainedNumThreads <= 1) {
-			for (int c = 0; c < C; c++) { // Since format is NCHW
-				for (int r = 0; r < R; r++) { // Get an input patch of size R X S
-					for (int s = 0; s < S; s++) {
-						for (int n = 0; n < N; n++) { // Do following for all images
-							doIm2colOverInputPath_NCHW(n, c, r, s, this);
-						}
-					}
+			for (int n = 0; n < N; n++) { // Do following for all images
+				for (int c = 0; c < C; c++) { // Since format is NCHW
+					doIm2colOverInputPath_NCHW(n, c);
 				}
 			}
 		}
@@ -633,12 +737,19 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	private void runParallelTask(int constrainedNumThreads, boolean isIm2Col) throws DMLRuntimeException {
 		ArrayList<Im2ColOrCol2ImTask> tasks = new ArrayList<Im2ColOrCol2ImTask>();
 		
-		for (int c = 0; c < C; c++) { // Since format is NCHW
-			for (int r = 0; r < R; r++) { // Get an input patch of size R X S
-				for (int s = 0; s < S; s++) {
-					for (int n = 0; n < N; n += TASK_SIZE) {
-						tasks.add(new Im2ColOrCol2ImTask(this, c, r, s, n, isIm2Col));
-					}
+		// Total number of compute units available: constrainedNumThreads
+		// Static task allocation. TODO: Do this in dynamic way
+		if(N >= constrainedNumThreads) {
+			// Process one image per task
+			for (int n = 0; n < N; n++) {
+				tasks.add(new Im2ColOrCol2ImTask(this, 0, C, n, n+1, isIm2Col));
+			}
+		}
+		else {
+			// Process one channel of one image per task
+			for (int n = 0; n < N; n++) {
+				for (int c = 0; c < C; c++) { // Since format is NCHW
+					tasks.add(new Im2ColOrCol2ImTask(this, c, c+1, n, n+1, isIm2Col));
 				}
 			}
 		}
@@ -653,25 +764,38 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	}
 	
 	private static class Im2ColOrCol2ImTask implements Callable<Object> {
-		ConvolutionCPInstruction curr; int c; int r; int s1; int n1; boolean isIm2Col;
+		ConvolutionCPInstruction curr; 
+		int c1; int n1; int c2; int n2; 
+		boolean isIm2Col;
 		
-		public Im2ColOrCol2ImTask(ConvolutionCPInstruction curr, int c, int r, int s, int n, boolean isIm2Col) {
+		public Im2ColOrCol2ImTask(ConvolutionCPInstruction curr, int c1, int c2, int n1, int n2, boolean isIm2Col) {
 			this.curr = curr; 
-			this.c = c;
-			this.r = r;
-			this.s1 = s;
-			this.n1 = n;
+			this.c1 = c1;
+			this.n1 = n1;
+			this.c2 = c2;
+			this.n2 = n2;
 			this.isIm2Col = isIm2Col;
 		}
 
 		@Override
 		public Object call() throws Exception {
-			for (int n = n1; n < Math.min(curr.N, n1 + TASK_SIZE); n++) {
-				if(isIm2Col)
-					doIm2colOverInputPath_NCHW(n, c, r, s1, curr);
-				else
-					doCol2imOverInputPath_NCHW(n, c, r, s1, curr);
-			}	
+			if (isIm2Col && curr.inputArray != null && curr.stride_w == 1 && OPTIMIZE_IM2COL_STRIDE1) {
+				for (int n = n1; n < n2; n++) {
+					for (int c = c1; c < c2; c++) {
+						optimized_doIm2colOverInputPath_NCHW(n, c, curr);
+					}
+				}
+			}
+			else {
+				for (int n = n1; n < n2; n++) {
+					for (int c = c1; c < c2; c++) {
+						if(isIm2Col)
+							curr.doIm2colOverInputPath_NCHW(n, c);
+						else
+							curr.doCol2imOverInputPath_NCHW(n, c);
+					}
+				}
+			}
 			return null;
 		}
 		
@@ -688,13 +812,9 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(-1);
 		if(!ALLOW_MULTI_THREADED_OPS || constrainedNumThreads <= 1) {
 			// Sequential col2im
-			for (int c = 0; c < C; c++) { // Since format is NCHW
-				for (int r = 0; r < R; r++) { // Get an input patch of size R X S
-					for (int s = 0; s < S; s++) {
-						for (int n = 0; n < N; n++) { // Do following for all images
-							doCol2imOverInputPath_NCHW(n, c, r, s, this);
-						}
-					}
+			for (int n = 0; n < N; n++) { // Do following for all images
+				for (int c = 0; c < C; c++) { // Since format is NCHW
+					doCol2imOverInputPath_NCHW(n, c);
 				}
 			}
 		}
@@ -705,72 +825,133 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	}
 	
 		
-	private static void doCol2imOverInputPath_NCHW(int n, int c, int r, int s, ConvolutionCPInstruction inst) {
-		int N = inst.N; int C = inst.C; int H = inst.H; int W = inst.W;
-		int R = inst.R; int S = inst.S; int P = inst.P; int Q = inst.Q;
-		int pad_h = inst.pad_h; int pad_w = inst.pad_w; int stride_h = inst.stride_h; int stride_w = inst.stride_w;
-		int localIndex = ((c*R*S*N + r*S*N + s*N + n)*P*Q);
-		
-		int input_row = r - pad_h;
-		// And copy it to outputArray[i] (taking care of padding & striding)
-		for (int p = P; p > 0; p--) {
-			if (input_row >= 0 && input_row < H) {
-				int input_col = s - pad_w;
-				for (int q = Q; q > 0; q--, localIndex++) {
-					if (input_col >= 0 && input_col < W) {
-						// Copy from [channel c, height input_row, width input_col]
-						int index = n*C*H*W + c*H*W + input_row*W + input_col;
-						if (inst.inputArray != null) {
-							synchronized(inst) {
-								inst.outputArray[index] += inst.inputArray[localIndex];
+	private void doCol2imOverInputPath_NCHW(int n, int c) {
+		for (int r = 0; r < R; r++) { // Get an input patch of size R X S
+			for (int s = 0; s < S; s++) {
+				int localIndex = ((c*R*S*N + r*S*N + s*N + n)*P*Q);
+				
+				int input_row = r - pad_h;
+				// And copy it to outputArray[i] (taking care of padding & striding)
+				for (int p = P; p > 0; p--) {
+					if (input_row >= 0 && input_row < H) {
+						int input_col = s - pad_w;
+						for (int q = Q; q > 0; q--, localIndex++) {
+							if (input_col >= 0 && input_col < W) {
+								// Copy from [channel c, height input_row, width input_col]
+								int index = n*C*H*W + c*H*W + input_row*W + input_col;
+								if (inputArray != null) {
+									synchronized(this) {
+										outputArray[index] += inputArray[localIndex];
+									}
+								}
+								else {
+									// TODO: Validate this
+									// 4 X 4
+									// 0 1 2  3
+									// 4 5 6  7
+									// 8 9 10 11
+									int row = localIndex / (N*P*Q);
+									int col = localIndex % (N*P*Q);
+									double val = input.quickGetValue(row, col);
+									synchronized(this) {
+										outputArray[index] += val; 
+									}
+								}
 							}
+							input_col += stride_w;
 						}
-						else {
-							// TODO: Validate this
-							// 4 X 4
-							// 0 1 2  3
-							// 4 5 6  7
-							// 8 9 10 11
-							int row = localIndex / (N*P*Q);
-							int col = localIndex % (N*P*Q);
-							double val = inst.input.quickGetValue(row, col);
-							synchronized(inst) {
-								inst.outputArray[index] += val; 
-							}
-						}
+					} else {
+						localIndex += Q;
 					}
-					input_col += stride_w;
+					input_row += stride_h;
 				}
-			} else {
-				localIndex += Q;
 			}
-			input_row += stride_h;
 		}
 		
-	}	
+	}
 	
-	private static void doIm2colOverInputPath_NCHW(int n, int c, int r, int s, ConvolutionCPInstruction inst) {
-		int localIndex = ((c*inst.R*inst.S*inst.N + r*inst.S*inst.N + s*inst.N + n)*inst.P*inst.Q);
+	// called only when if (isIm2Col && curr.inputArray != null && curr.stride_w == 1 && OPTIMIZE_IM2COL_STRIDE1) {
+	private static void optimized_doIm2colOverInputPath_NCHW(int n, int c, ConvolutionCPInstruction inst) {
+		int N = inst.N; int C = inst.C; int H = inst.H; int W = inst.W;
+		int R = inst.R; int S = inst.S; int P = inst.P; int Q = inst.Q;
+		int pad_h = inst.pad_h; int pad_w = inst.pad_w; int stride_h = inst.stride_h; // int stride_w = inst.stride_w;
+		double [] inputArray = inst.inputArray;
+		double [] outputArray = inst.outputArray;
 		
-		int input_row = r - inst.pad_h;
-		// And copy it to outputArray[i] (taking care of padding & striding)
-		for (int p = inst.P; p > 0; p--) {
-			if (input_row >= 0 && input_row < inst.H) {
-				int input_col = s - inst.pad_w;
-				for (int q = inst.Q; q > 0; q--, localIndex++) {
-					if (input_col >= 0 && input_col < inst.W) {
-						// Copy from [channel c, height input_row, width input_col]
-						if (inst.inputArray != null)
-							inst.outputArray[localIndex] = inst.inputArray[n*inst.C*inst.H*inst.W + c*inst.H*inst.W + input_row*inst.W + input_col];
-						else
-							inst.outputArray[localIndex] = inst.input.quickGetValue(n, c*inst.H*inst.W + input_row*inst.W + input_col);
+		for (int r = 0; r < R; r++) { // Get an input patch of size R X S
+			for (int s = 0; s < S; s++) {
+				int localIndex = ((c*inst.R*S*N + r*S*N + s*N + n)*P*Q);
+				
+				int input_row = r - pad_h;
+				int p = P;
+				
+				int temp = n*C*H*W + c*H*W;
+				
+				for (; (input_row < 0) && p > 0; p--, input_row += stride_h, localIndex += Q) ;
+				
+				if(s - pad_w >= 0) {
+					// Non-edge patches
+					for (; p > 0 && (input_row < H); p--, input_row += stride_h) {
+						int input_col = s - pad_w;
+						int length = (input_col + Q  < W) ? Q : (W - input_col);
+						System.arraycopy(inputArray, temp + input_row*W + input_col, 
+								outputArray, localIndex, length);
+						localIndex += Q; input_col += Q;
 					}
-					input_col += inst.stride_w;
 				}
-			} else {
-				localIndex += inst.Q;
+				else {
+					// Edge patches
+					for (; p > 0 && (input_row < H); p--, input_row += stride_h) {
+						int input_col = s - pad_w;
+						int q = Q;
+						if(input_col >= 0) {
+							int length = (input_col + q  < W) ? q : (W - input_col);
+							System.arraycopy(inputArray, temp + input_row*W + input_col, 
+									outputArray, localIndex, length);
+							localIndex += q; input_col += q;
+						}
+						else {
+							for (; q > 0 && input_col < 0; q--, localIndex++, input_col++) ;
+							int length = Math.min(q, W - input_col); // OR W-input_col-1
+							System.arraycopy(inputArray, temp + input_row*W + input_col, 
+									outputArray, localIndex, length);
+							localIndex += q; input_col += q;
+						}
+					}
+				}
+				
+				for (; (input_row >= H) && p > 0; p--, input_row += stride_h, localIndex += Q) ;
+				
 			}
-			input_row += inst.stride_h;
+		}
+	}
+	
+	private void doIm2colOverInputPath_NCHW(int n, int c) {
+		for (int r = 0; r < R; r++) { // Get an input patch of size R X S
+			for (int s = 0; s < S; s++) {
+				int localIndex = ((c*R*S*N + r*S*N + s*N + n)*P*Q);
+				
+				int input_row = r - pad_h;
+				// And copy it to outputArray[i] (taking care of padding & striding)
+				for (int p = P; p > 0; p--) {
+					if (input_row >= 0 && input_row < H) {
+						int input_col = s - pad_w;
+						for (int q = Q; q > 0; q--, localIndex++) {
+							if (input_col >= 0 && input_col < W) {
+								// Copy from [channel c, height input_row, width input_col]
+								if (inputArray != null)
+									outputArray[localIndex] = inputArray[n*C*H*W + c*H*W + input_row*W + input_col];
+								else
+									outputArray[localIndex] = input.quickGetValue(n, c*H*W + input_row*W + input_col);
+							}
+							input_col += stride_w;
+						}
+					} else {
+						localIndex += Q;
+					}
+					input_row += stride_h;
+				}
+			}
 		}
 		
 	}
