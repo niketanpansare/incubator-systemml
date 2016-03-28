@@ -311,8 +311,9 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		if(input.getNumColumns() != C*H*W || input.getNumRows() != N) {
 			throw new DMLRuntimeException("Incorrect input dimensions in maxpooling_backward:" + input.getNumRows() + " " + input.getNumColumns() + " " + N + " " + K*P*Q);
 		}
+		this.dout = dout;
 
-		double [] doutArray = null;
+		doutArray = null;
 		if(!dout.isInSparseFormat()) 
 			doutArray = dout.getDenseBlock();
 		if(dout.getNumColumns() != C*P*Q || dout.getNumRows() != N) {
@@ -323,16 +324,17 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		if(!ALLOW_MULTI_THREADED_OPS || constrainedNumThreads <= 1) {
 			for (int n = 0; n < N; n++) {
 				for (int c = 0; c < C; c++) {
-					doPoolingBackward(c, n, doutArray, dout);
+					doPoolingBackward(n, c);
 				}
 			}
 		}
 		else {
-			runParallelPoolingTask(constrainedNumThreads, false, doutArray, dout);
+			runParallelConvTask(constrainedNumThreads, C, TaskType.MaxPooling_Backward);
 		}
 	}
 
-	public void doPoolingBackward(int c, int n, double [] doutArray, MatrixBlock dout) {
+	double [] doutArray; MatrixBlock dout;
+	public void doPoolingBackward(int n, int c) {
 		for (int p = 0; p < P; p++) {
 			for (int q = 0; q < Q; q++) {
 				int start_index_h = p * stride_h - pad_h;
@@ -387,16 +389,16 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		if(!ALLOW_MULTI_THREADED_OPS || constrainedNumThreads <= 1) {
 			for (int n = 0; n < N; n++) {
 				for (int c = 0; c < C; c++) {
-					doPooling(c, n);
+					doPooling(n, c);
 				}
 			}
 		}
 		else {
-			runParallelPoolingTask(constrainedNumThreads, true, null, null);
+			runParallelConvTask(constrainedNumThreads, C, TaskType.MaxPooling_Forward);
 		}	
 	}
 
-	public void doPooling(int c, int n) {
+	public void doPooling(int n, int c) {
 		for (int p = 0; p < P; p++) {
 			for (int q = 0; q < Q; q++) {
 				int start_index_h = p * stride_h - pad_h;
@@ -421,50 +423,6 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		}
 	}
 
-	private void runParallelPoolingTask(int constrainedNumThreads, boolean isForwardPooling, double [] doutArray, MatrixBlock dout) throws DMLRuntimeException {
-		ArrayList<PoolingTask> tasks = new ArrayList<PoolingTask>();
-
-		for (int n = 0; n < N; n++) {
-			for (int c = 0; c < C; c += TASK_SIZE) {
-				tasks.add(new PoolingTask(this, n, c, isForwardPooling, doutArray, dout));
-			}
-		}
-
-		ExecutorService pool = Executors.newFixedThreadPool( constrainedNumThreads );
-		try {
-			pool.invokeAll(tasks);
-		} catch (InterruptedException e) {
-			throw new DMLRuntimeException("Error while executing multi-threaded maxpooling", e);
-		}	
-		pool.shutdown();
-	}
-
-	private static class PoolingTask implements Callable<Object> {
-		ConvolutionCPInstruction curr; int n1; int c1; boolean isForwardPooling;
-		double [] doutArray; MatrixBlock dout;
-
-		public PoolingTask(ConvolutionCPInstruction curr, int n, int c, boolean isForwardPooling, double [] doutArray, MatrixBlock dout) {
-			this.curr = curr; 
-			this.n1 = n;
-			this.c1 = c;
-			this.isForwardPooling = isForwardPooling;
-			this.doutArray = doutArray;
-			this.dout = dout;
-		}
-
-		@Override
-		public Object call() throws Exception {
-			for (int c = c1; c < Math.min(curr.C, c1 + TASK_SIZE); c++) {
-				if(isForwardPooling)
-					curr.doPooling(c, n1);
-				else
-					curr.doPoolingBackward(c, n1, doutArray, dout);
-			}
-			return null;
-		}
-
-	}
-	
 	// Using indices (matrix of dimension 1 X NCPQ) and values (tensor of shape [N, C, P, Q])
 	// output a sparse matrix of dimension CRS X NPQ ... which is followed by col2im to output tensor of shape [N, C, H, W]
 	// TODO: Fuse these two operations together for pooling.
@@ -560,28 +518,29 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		
 		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(-1);
 		if(!ALLOW_MULTI_THREADED_OPS || constrainedNumThreads <= 1) {
-			for (int k = 0; k < K; k++) {
-				for (int n = 0; n < N; n++) {
+			for (int n = 0; n < N; n++) {
+				for (int k = 0; k < K; k++) {
 					doRotate180(n, k);
 				}
 			}
 		}
 		else {
-			runParallelRotateTask(constrainedNumThreads);
+			runParallelConvTask(constrainedNumThreads, K, TaskType.Rotate180);
 		}
 	}
 	
 	public void doRotate180(int n, int k) {
-		for (int p = 0; p < P; p++) {
-			for (int q = 0; q < Q; q++) {		
-				if(inputArray != null)
-					outputArray[k*N*P*Q + n*P*Q + p*P + q] = inputArray[n*K*P*Q + k*P*Q + p*Q + q];
-				else
+		if(inputArray != null) {
+			System.arraycopy(inputArray, n*K*P*Q + k*P*Q, outputArray, k*N*P*Q + n*P*Q, P*Q);
+		}
+		else {
+			for (int p = 0; p < P; p++) {
+				for (int q = 0; q < Q; q++) {		
 					outputArray[k*N*P*Q + n*P*Q + p*P + q] = input.quickGetValue(n, k*P*Q + p*Q + q);
+				}
 			}
 		}
 	}
-	
 	
 	
 	// Reshape a matrix of dimension (K, NPQ) to 4D tensor of dimension (N, K, P, Q)
@@ -605,108 +564,118 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			}
 		}
 		else {
-			runParallelReshapeTask(constrainedNumThreads);
+			runParallelConvTask(constrainedNumThreads, K, TaskType.ReshapeCol);
 		}
 		
 	}
 	
-	
-	private void runParallelRotateTask(int constrainedNumThreads) throws DMLRuntimeException {
-		ArrayList<ReshapeTask> tasks = new ArrayList<ReshapeTask>();
-
-		if(K >= constrainedNumThreads) {
-			for (int k = 0; k < K; k++) {
-				tasks.add(new ReshapeTask(this, 0, N, k, k+1, false));
-			}
-		}
-		else if(N >= constrainedNumThreads) {
-			// TODO: Improve task partitioning, while still maintaining cache-conscious
-			for (int n = 0; n < N; n++) {
-				tasks.add(new ReshapeTask(this, n, n+1, 0, K, false));
-			}
-		}
-		else {
-			for (int k = 0; k < K; k++) {
-				for (int n = 0; n < N; n++) {
-					tasks.add(new ReshapeTask(this, n, n+1, k, k+1, false));
-				}
-			}
-		}
-
-		ExecutorService pool = Executors.newFixedThreadPool( constrainedNumThreads );
-		try {
-			pool.invokeAll(tasks);
-		} catch (InterruptedException e) {
-			throw new DMLRuntimeException("Error while executing multi-threaded maxpooling", e);
-		}	
-		pool.shutdown();
-	}
-
-	private void runParallelReshapeTask(int constrainedNumThreads) throws DMLRuntimeException {
-		ArrayList<ReshapeTask> tasks = new ArrayList<ReshapeTask>();
-
-		if(N >= constrainedNumThreads) {
-			for (int n = 0; n < N; n++) {
-				tasks.add(new ReshapeTask(this, n, n+1, 0, K, true));
-			}
-		}
-		else {
-			for (int n = 0; n < N; n++) {
-				for (int k = 0; k < K; k++) {	
-					tasks.add(new ReshapeTask(this, n, n+1, k, k+1, true));
-				}
-			}
-		}
+	private void runParallelConvTask(int constrainedNumThreads, int Z, TaskType type) throws DMLRuntimeException {
+		ArrayList<ConvTask> tasks = new ArrayList<ConvTask>();		
 		
+		// Total number of compute units available: constrainedNumThreads
+		// Static task allocation. TODO: Do this in dynamic way
+		for (int n = 0; n < N; n++) {
+			for (int z = 0; z < Z; z += TASK_SIZE) {
+				tasks.add(new ConvTask(this, n, n+1, z, Math.min(Z, z+TASK_SIZE), type));
+			}
+		}
 
-		ExecutorService pool = Executors.newFixedThreadPool( constrainedNumThreads );
+		ExecutorService pool = Executors.newFixedThreadPool( Math.min(constrainedNumThreads, tasks.size()) );
 		try {
 			pool.invokeAll(tasks);
 		} catch (InterruptedException e) {
-			throw new DMLRuntimeException("Error while executing multi-threaded maxpooling", e);
+			throw new DMLRuntimeException("Error while executing multi-threaded " + type.name(), e);
 		}	
 		pool.shutdown();
 	}
 	
-	private static class ReshapeTask implements Callable<Object> {
-		ConvolutionCPInstruction curr; int n1; int n2; int k1; int k2; boolean isReshapeCol;
-		public ReshapeTask(ConvolutionCPInstruction curr, int n1, int n2, int k1, int k2, boolean isReshapeCol) {
+	enum TaskType {
+		ReshapeCol, Rotate180, Im2Col, Col2Im, MaxPooling_Forward, MaxPooling_Backward
+	}
+	public static final int TASK_SIZE = 64; // to take care of extremely small tasks
+	
+	private static class ConvTask implements Callable<Object> {
+		ConvolutionCPInstruction curr; int n1; int n2; int z1; int z2; 
+		TaskType type;
+		public ConvTask(ConvolutionCPInstruction curr, int n1, int n2, int z1, int z2, TaskType type) {
 			this.curr = curr; 
 			this.n1 = n1;
 			this.n2 = n2;
-			this.k1 = k1;
-			this.k2 = k2;
-			this.isReshapeCol = isReshapeCol;
+			this.z1 = z1;
+			this.z2 = z2;
+			this.type = type;
 		}
-
+		
 		@Override
 		public Object call() throws Exception {
-			if(isReshapeCol) {
-				for (int n = n1; n < n2; n++) {
-					for (int k = k1; k < k2; k++) {
-						curr.doReshapeCol(n, k);
-					}
-				}
-			}
-			else {
-				for (int k = k1; k < k2; k++) {
+			switch(type) {
+				case ReshapeCol:
 					for (int n = n1; n < n2; n++) {
-						curr.doRotate180(n, k);
+						for (int z = z1; z < z2; z++) {
+							curr.doReshapeCol(n, z);
+						}
 					}
-				}
+					break;
+				case Rotate180:
+					for (int n = n1; n < n2; n++) {
+						for (int z = z1; z < z2; z++) {
+							curr.doRotate180(n, z);
+						}
+					}
+					break;
+				case Im2Col:
+					if (curr.inputArray != null && curr.stride_w == 1 && OPTIMIZE_IM2COL_STRIDE1) {
+						for (int n = n1; n < n2; n++) {
+							for (int z = z1; z < z2; z++) {
+								curr.optimized_doIm2colOverInputPath_NCHW(n, z);
+							}
+						}
+					}
+					else {
+						for (int n = n1; n < n2; n++) {
+							for (int z = z1; z < z2; z++) {
+								curr.doIm2colOverInputPath_NCHW(n, z);
+							}
+						}
+					}
+					break;
+				case Col2Im:
+					for (int n = n1; n < n2; n++) {
+						for (int z = z1; z < z2; z++) {
+							curr.doCol2imOverInputPath_NCHW(n, z);
+						}
+					}
+					break;
+				case MaxPooling_Forward:
+					for (int n = n1; n < n2; n++) {
+						for (int z = z1; z < z2; z++) {
+							curr.doPooling(n, z);
+						}
+					}
+					break;
+				case MaxPooling_Backward:
+					for (int n = n1; n < n2; n++) {
+						for (int z = z1; z < z2; z++) {
+							curr.doPoolingBackward(n, z);
+						}
+					}
+					break;
+				default:
+					throw new RuntimeException("Unsupported ConvTask:" + type.name());
 			}
 			return null;
 		}
-
 	}
-	
+		
 	private void doReshapeCol(int n, int k) {
-		for (int p = 0; p < P; p++) { 
-			for (int q = 0; q < Q; q++) {
-				if(inputArray != null)
-					outputArray[n*K*P*Q + k*P*Q + p*Q + q] = inputArray[k*N*P*Q + n*P*Q + p*Q + q];
-				else
+		if(inputArray != null) {
+			System.arraycopy(inputArray, k*N*P*Q + n*P*Q, outputArray, n*K*P*Q + k*P*Q, P*Q);
+		}
+		else {
+			for (int p = 0; p < P; p++) { 
+				for (int q = 0; q < Q; q++) {
 					outputArray[n*K*P*Q + k*P*Q + p*Q + q] = input.quickGetValue(k, n*P*Q + p*Q + q);
+				}
 			}
 		}
 	}
@@ -727,80 +696,12 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			}
 		}
 		else {
-			// Parallel im2col
-			runParallelTask(constrainedNumThreads, true);
+			runParallelConvTask(constrainedNumThreads, C, TaskType.Im2Col);
 		}
 		
 	}
 	
-	public static final int TASK_SIZE = 64; // to take care of extremely small tasks 
-	private void runParallelTask(int constrainedNumThreads, boolean isIm2Col) throws DMLRuntimeException {
-		ArrayList<Im2ColOrCol2ImTask> tasks = new ArrayList<Im2ColOrCol2ImTask>();
-		
-		// Total number of compute units available: constrainedNumThreads
-		// Static task allocation. TODO: Do this in dynamic way
-		if(N >= constrainedNumThreads) {
-			// Process one image per task
-			for (int n = 0; n < N; n++) {
-				tasks.add(new Im2ColOrCol2ImTask(this, 0, C, n, n+1, isIm2Col));
-			}
-		}
-		else {
-			// Process one channel of one image per task
-			for (int n = 0; n < N; n++) {
-				for (int c = 0; c < C; c++) { // Since format is NCHW
-					tasks.add(new Im2ColOrCol2ImTask(this, c, c+1, n, n+1, isIm2Col));
-				}
-			}
-		}
-		
-		ExecutorService pool = Executors.newFixedThreadPool( constrainedNumThreads );
-		try {
-			pool.invokeAll(tasks);
-		} catch (InterruptedException e) {
-			throw new DMLRuntimeException("Error while executing multi-threaded im2col/col2im", e);
-		}	
-		pool.shutdown();
-	}
 	
-	private static class Im2ColOrCol2ImTask implements Callable<Object> {
-		ConvolutionCPInstruction curr; 
-		int c1; int n1; int c2; int n2; 
-		boolean isIm2Col;
-		
-		public Im2ColOrCol2ImTask(ConvolutionCPInstruction curr, int c1, int c2, int n1, int n2, boolean isIm2Col) {
-			this.curr = curr; 
-			this.c1 = c1;
-			this.n1 = n1;
-			this.c2 = c2;
-			this.n2 = n2;
-			this.isIm2Col = isIm2Col;
-		}
-
-		@Override
-		public Object call() throws Exception {
-			if (isIm2Col && curr.inputArray != null && curr.stride_w == 1 && OPTIMIZE_IM2COL_STRIDE1) {
-				for (int n = n1; n < n2; n++) {
-					for (int c = c1; c < c2; c++) {
-						optimized_doIm2colOverInputPath_NCHW(n, c, curr);
-					}
-				}
-			}
-			else {
-				for (int n = n1; n < n2; n++) {
-					for (int c = c1; c < c2; c++) {
-						if(isIm2Col)
-							curr.doIm2colOverInputPath_NCHW(n, c);
-						else
-							curr.doCol2imOverInputPath_NCHW(n, c);
-					}
-				}
-			}
-			return null;
-		}
-		
-	}
-
 	
 	// Converts a matrix of dimension (CRS, NPQ) to a 4D tensor (N, C, H, W)
 	private void col2im(MatrixBlock input, MatrixBlock outputBlock) throws DMLRuntimeException {
@@ -820,7 +721,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		}
 		else {
 			// Parallel col2im
-			runParallelTask(constrainedNumThreads, false);
+			runParallelConvTask(constrainedNumThreads, C, TaskType.Col2Im);
 		}
 	}
 	
@@ -871,16 +772,10 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	}
 	
 	// called only when if (isIm2Col && curr.inputArray != null && curr.stride_w == 1 && OPTIMIZE_IM2COL_STRIDE1) {
-	private static void optimized_doIm2colOverInputPath_NCHW(int n, int c, ConvolutionCPInstruction inst) {
-		int N = inst.N; int C = inst.C; int H = inst.H; int W = inst.W;
-		int R = inst.R; int S = inst.S; int P = inst.P; int Q = inst.Q;
-		int pad_h = inst.pad_h; int pad_w = inst.pad_w; int stride_h = inst.stride_h; // int stride_w = inst.stride_w;
-		double [] inputArray = inst.inputArray;
-		double [] outputArray = inst.outputArray;
-		
+	private void optimized_doIm2colOverInputPath_NCHW(int n, int c) {
 		for (int r = 0; r < R; r++) { // Get an input patch of size R X S
 			for (int s = 0; s < S; s++) {
-				int localIndex = ((c*inst.R*S*N + r*S*N + s*N + n)*P*Q);
+				int localIndex = ((c*R*S*N + r*S*N + s*N + n)*P*Q);
 				
 				int input_row = r - pad_h;
 				int p = P;
