@@ -27,10 +27,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysml.api.DMLException;
@@ -46,25 +49,27 @@ import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.AParserWrapper;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DMLTranslator;
+import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
+import org.apache.sysml.runtime.io.MatrixReader;
 import org.apache.sysml.runtime.io.MatrixReaderFactory;
 import org.apache.sysml.runtime.io.ReaderTextCell;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.transform.TransformationAgent;
 import org.apache.sysml.runtime.transform.TransformationAgent.TX_METHOD;
+import org.apache.sysml.runtime.transform.decode.DecoderRecode;
 import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONObject;
-
-import scala.actors.threadpool.Arrays;
 
 /**
  * JMLC (Java Machine Learning Connector) API:
@@ -75,6 +80,8 @@ import scala.actors.threadpool.Arrays;
  */
 public class Connection 
 {	
+	private static final Log LOG = LogFactory.getLog(Connection.class.getName());
+	
 	private DMLConfig _dmlconf = null;
 	private CompilerConfig _cconf = null;
 	
@@ -209,30 +216,123 @@ public class Connection
 				in = new BufferedReader(new InputStreamReader(fs.open(scriptPath)));
 			}
 			// from local file system
-			else 
-			{ 
+			else { 
 				in = new BufferedReader(new FileReader(fname));
 			}
 			
 			//core script reading
 			String tmp = null;
-			while ((tmp = in.readLine()) != null)
-			{
+			while ((tmp = in.readLine()) != null) {
 				sb.append( tmp );
 				sb.append( "\n" );
 			}
 		}
-		catch (IOException ex)
-		{
+		catch (IOException ex) {
 			throw ex;
 		}
-		finally 
-		{
-			if( in != null )
-			 	in.close();
+		finally {
+			IOUtilFunctions.closeSilently(in);
 		}
 		
 		return sb.toString();
+	}
+	
+	/**
+	 * Reads an input matrix in arbitrary format from HDFS into a dense double array.
+	 * NOTE: this call currently only supports default configurations for CSV.
+	 * 
+	 * @param fname
+	 * @return
+	 * @throws IOException
+	 */
+	public double[][] readDoubleMatrix(String fname) 
+		throws IOException
+	{
+		try {
+			//read json meta data 
+			String fnamemtd = DataExpression.getMTDFileName(fname);
+			JSONObject jmtd = new DataExpression().readMetadataFile(fnamemtd, false);
+			
+			//parse json meta data 
+			long rows = jmtd.getLong(DataExpression.READROWPARAM);
+			long cols = jmtd.getLong(DataExpression.READCOLPARAM);
+			int brlen = jmtd.containsKey(DataExpression.ROWBLOCKCOUNTPARAM)?
+					jmtd.getInt(DataExpression.ROWBLOCKCOUNTPARAM) : -1;
+			int bclen = jmtd.containsKey(DataExpression.COLUMNBLOCKCOUNTPARAM)?
+					jmtd.getInt(DataExpression.COLUMNBLOCKCOUNTPARAM) : -1;
+			long nnz = jmtd.containsKey(DataExpression.READNUMNONZEROPARAM)?
+					jmtd.getLong(DataExpression.READNUMNONZEROPARAM) : -1;
+			String format = jmtd.getString(DataExpression.FORMAT_TYPE);
+			InputInfo iinfo = InputInfo.stringExternalToInputInfo(format);			
+		
+			//read matrix file
+			return readDoubleMatrix(fname, iinfo, rows, cols, brlen, bclen, nnz);
+		}
+		catch(Exception ex) {
+			throw new IOException(ex);
+		}
+	}
+	
+	/**
+	 * Reads an input matrix in arbitrary format from HDFS into a dense double array.
+	 * NOTE: this call currently only supports default configurations for CSV.
+	 * 
+	 * @param fname
+	 * @param iinfo
+	 * @param rows
+	 * @param cols
+	 * @param brlen
+	 * @param bclen
+	 * @param nnz
+	 * @return
+	 * @throws IOException
+	 */
+	public double[][] readDoubleMatrix(String fname, InputInfo iinfo, long rows, long cols, int brlen, int bclen, long nnz) 
+		throws IOException
+	{
+		try {
+			MatrixReader reader = MatrixReaderFactory.createMatrixReader(iinfo);
+			MatrixBlock mb = reader.readMatrixFromHDFS(fname, rows, cols, brlen, bclen, nnz);
+			return DataConverter.convertToDoubleMatrix(mb);
+		}
+		catch(Exception ex) {
+			throw new IOException(ex);
+		}
+	}
+	
+	/**
+	 * Converts an input string representation of a matrix in textcell format
+	 * into a dense double array. The meta data string is the SystemML generated
+	 * .mtd file including the number of rows and columns.  
+	 * 
+	 * @param input
+	 * @param rows
+	 * @param cols
+	 * @return
+	 * @throws IOException
+	 */
+	public double[][] convertToDoubleMatrix(String input, String meta) 
+		throws IOException
+	{
+		try {
+			//parse json meta data 
+			JSONObject jmtd = new JSONObject(meta);
+			int rows = jmtd.getInt(DataExpression.READROWPARAM);
+			int cols = jmtd.getInt(DataExpression.READCOLPARAM);
+			String format = jmtd.getString(DataExpression.FORMAT_TYPE);
+	
+			//sanity check input format
+			if(!(DataExpression.FORMAT_TYPE_VALUE_TEXT.equals(format)
+				||DataExpression.FORMAT_TYPE_VALUE_MATRIXMARKET.equals(format))) {
+				throw new IOException("Invalid input format (expected: text or mm): "+format);
+			}
+			
+			//parse the input matrix
+			return convertToDoubleMatrix(input, rows, cols);
+		}
+		catch(Exception ex) {
+			throw new IOException(ex);
+		}
 	}
 	
 	/**
@@ -241,35 +341,52 @@ public class Connection
 	 * specified because textcell only represents non-zero values and hence
 	 * does not define the dimensions in the general case.
 	 * 
-	 * @param input  a string representation of an input matrix, 
-	 *              in format textcell (rowindex colindex value)
-	 * @param rows number of rows
-	 * @param cols number of columns 
+	 * @param input
+	 * @param rows
+	 * @param cols
 	 * @return
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	public double[][] convertToDoubleMatrix(String input, int rows, int cols) 
 		throws IOException
 	{
+		InputStream is = new ByteArrayInputStream(input.getBytes("UTF-8"));
+		return convertToDoubleMatrix(is, rows, cols);
+	}
+	
+	/**
+	 * Converts an input stream of a string matrix in textcell format
+	 * into a dense double array. The number of rows and columns need to be 
+	 * specified because textcell only represents non-zero values and hence
+	 * does not define the dimensions in the general case.
+	 * 
+	 * @param input
+	 * @param rows
+	 * @param cols
+	 * @return
+	 * @throws IOException
+	 */
+	public double[][] convertToDoubleMatrix(InputStream input, int rows, int cols) 
+		throws IOException
+	{
 		double[][] ret = null;
 		
-		try 
-		{
+		try {
 			//read input matrix
-			InputStream is = new ByteArrayInputStream(input.getBytes("UTF-8"));
 			ReaderTextCell reader = (ReaderTextCell)MatrixReaderFactory.createMatrixReader(InputInfo.TextCellInputInfo);
-			MatrixBlock mb = reader.readMatrixFromInputStream(is, rows, cols, ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), (long)rows*cols);
+			MatrixBlock mb = reader.readMatrixFromInputStream(input, rows, cols, ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), (long)rows*cols);
 		
 			//convert to double array
 			ret = DataConverter.convertToDoubleMatrix( mb );
 		}
-		catch(DMLRuntimeException rex) 
-		{
+		catch(DMLRuntimeException rex) {
 			throw new IOException( rex );
 		}
 		
 		return ret;
 	}
+	
+	
 	
 	/**
 	 * 
@@ -278,23 +395,34 @@ public class Connection
 	 * @return
 	 * @throws IOException 
 	 */
-	@SuppressWarnings("unchecked")
 	public FrameBlock readTransformMetaData(String spec, String metapath) 
 		throws IOException 
 	{
+		//read column types (for sanity check column names)
+		String coltypesStr = MapReduceTool.readStringFromHDFSFile(metapath+File.separator+"coltypes.csv");
+		List<String> coltypes = Arrays.asList(IOUtilFunctions.split(coltypesStr.trim(), ","));
+		
 		//read column names
-		String colStr = MapReduceTool.readStringFromHDFSFile(metapath+File.separator+"column.names");
-		List<String> colnames = Arrays.asList(IOUtilFunctions.split(colStr.trim(), ","));
+		String colnamesStr = MapReduceTool.readStringFromHDFSFile(metapath+File.separator+"column.names");
+		List<String> colnames = Arrays.asList(IOUtilFunctions.split(colnamesStr.trim(), ","));
+		if( coltypes.size() != colnames.size() ) {
+			LOG.warn("Number of columns names: "+colnames.size()+" (expected: "+coltypes.size()+").");
+			LOG.warn("--Sample column names: "+(!colnames.isEmpty()?colnames.get(0):"null"));
+		}
 		
 		//read meta data (currently only recode supported, without parsing spec)
 		HashMap<String,String> meta = new HashMap<String,String>();
 		int rows = 0;
-		for( String colName : colnames ) {
+		for( int j=0; j<colnames.size(); j++ ) {
+			String colName = colnames.get(j);
 			String name = metapath+File.separator+"Recode"+File.separator+colName;
 			if( MapReduceTool.existsFileOnHDFS(name+".map") ) {
 				meta.put(colName, MapReduceTool.readStringFromHDFSFile(name+".map"));
 				String ndistinct = MapReduceTool.readStringFromHDFSFile(name+".ndistinct");
 				rows = Math.max(rows, Integer.parseInt(ndistinct));
+			}
+			else if( coltypes.get(j).equals("2") ) {
+				LOG.warn("Recode map for column '"+colName+"' does not exist.");
 			}
 		}
 		
@@ -344,11 +472,12 @@ public class Connection
 				
 				InputStream is = new ByteArrayInputStream(map.getBytes("UTF-8"));
 				BufferedReader br = new BufferedReader(new InputStreamReader(is));
+				Pair<String,String> pair = new Pair<String,String>();
 				String line = null; int rpos = 0;
 				while( (line = br.readLine()) != null ) {
-					String parts[] = IOUtilFunctions.split(line.trim(), ",");
-					String pair = parts[0] + Lop.DATATYPE_PREFIX + parts[1]; //sval.code
-					ret.set(rpos++, colID-1, pair);
+					DecoderRecode.parseRecodeMapEntry(line, pair);
+					String tmp = pair.getKey() + Lop.DATATYPE_PREFIX + pair.getValue();
+					ret.set(rpos++, colID-1, tmp);
 				}
 			}
 		}

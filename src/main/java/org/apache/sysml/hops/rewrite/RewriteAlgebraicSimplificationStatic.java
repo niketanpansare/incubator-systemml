@@ -137,6 +137,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = fuseDatagenAndBinaryOperation(hop, hi, i);      //e.g., rand(min=-1,max=1)*7 -> rand(min=-7,max=7)
 			hi = fuseDatagenAndMinusOperation(hop, hi, i);       //e.g., -(rand(min=-2,max=1)) -> rand(min=-1,max=2)
  			hi = simplifyBinaryToUnaryOperation(hop, hi, i);     //e.g., X*X -> X^2 (pow2), X+X -> X*2, (X>0)-(X<0) -> sign(X)
+ 			hi = canonicalizeMatrixMultScalarAdd(hi);            //e.g., eps+U%*%t(V) -> U%*%t(V)+eps, U%*%t(V)-eps -> U%*%t(V)+(-eps) 
  			hi = simplifyReverseOperation(hop, hi, i);           //e.g., table(seq(1,nrow(X),1),seq(nrow(X),1,-1)) %*% X -> rev(X)
 			hi = simplifyMultiBinaryToBinaryOperation(hi);       //e.g., 1-X*Y -> X 1-* Y
  			hi = simplifyDistributiveBinaryOperation(hop, hi, i);//e.g., (X-Y*X) -> (1-Y)*X
@@ -473,8 +474,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	}
 	
 	/**
-	 * handle simplification of binary operations
-	 * (relies on previous common subexpression elimination)
+	 * Handle simplification of binary operations (relies on previous common subexpression elimination).
+	 * At the same time this servers as a canonicalization for more complex rewrites. 
 	 * 
 	 * X+X -> X*2, X*X -> X^2, (X>0)-(X<0) -> sign(X)
 	 * @throws HopsException 
@@ -543,6 +544,50 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		return hi;
 	}
 	
+	/**
+	 * Rewrite to canonicalize all patterns like U%*%V+eps, eps+U%*%V, and
+	 * U%*%V-eps into the common representation U%*%V+s which simplifies 
+	 * subsequent rewrites (e.g., wdivmm or wcemm with epsilon).   
+	 * 
+	 * @param parent
+	 * @param hi
+	 * @param pos
+	 * @return
+	 * @throws HopsException
+	 */
+	private Hop canonicalizeMatrixMultScalarAdd( Hop hi ) 
+		throws HopsException
+	{
+		//pattern: binary operation (+ or -) of matrix mult and scalar 		
+		if( hi instanceof BinaryOp )
+		{
+			BinaryOp bop = (BinaryOp)hi;
+			Hop left = hi.getInput().get(0);
+			Hop right = hi.getInput().get(1);
+			
+			//pattern: (eps + U%*%V) -> (U%*%V+eps)
+			if( left.getDataType().isScalar() && right instanceof AggBinaryOp
+				&& bop.getOp()==OpOp2.PLUS )
+			{
+				HopRewriteUtils.removeAllChildReferences(bop);
+				HopRewriteUtils.addChildReference(bop, right, 0);
+				HopRewriteUtils.addChildReference(bop, left, 1);
+				LOG.debug("Applied canonicalizeMatrixMultScalarAdd1 (line "+hi.getBeginLine()+").");
+			}
+			//pattern: (U%*%V - eps) -> (U%*%V + (-eps))
+			else if( right.getDataType().isScalar() && left instanceof AggBinaryOp
+					&& bop.getOp() == OpOp2.MINUS )
+			{
+				bop.setOp(OpOp2.PLUS);
+				HopRewriteUtils.removeChildReferenceByPos(bop, right, 1);
+				HopRewriteUtils.addChildReference(bop, 
+						HopRewriteUtils.createBinary(new LiteralOp(0), right, OpOp2.MINUS), 1);				
+				LOG.debug("Applied canonicalizeMatrixMultScalarAdd2 (line "+hi.getBeginLine()+").");
+			}
+		}
+		
+		return hi;
+	}
 
 	/**
 	 * NOTE: this would be by definition a dynamic rewrite; however, we apply it as a static
@@ -910,36 +955,27 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		   && hi.getInput().get(0) instanceof BinaryOp
 		   && (((BinaryOp)hi.getInput().get(0)).getOp()==OpOp2.CBIND    //append (cbind/rbind)
 		    || ((BinaryOp)hi.getInput().get(0)).getOp()==OpOp2.RBIND) 
-		   && hi.getInput().get(0).getParent().size() == 1 ) //single consumers of append
+		   && hi.getInput().get(0).getParent().size() == 1 ) //single consumer of append
 		{
 			BinaryOp bop = (BinaryOp)hi.getInput().get(0);
 			if( bop.getInput().get(0) instanceof ReorgOp  //both inputs transpose ops
 				&& ((ReorgOp)bop.getInput().get(0)).getOp()==ReOrgOp.TRANSPOSE
+				&& bop.getInput().get(0).getParent().size() == 1 //single consumer of transpose
 				&& bop.getInput().get(1) instanceof ReorgOp 
-				&& ((ReorgOp)bop.getInput().get(1)).getOp()==ReOrgOp.TRANSPOSE )
+				&& ((ReorgOp)bop.getInput().get(1)).getOp()==ReOrgOp.TRANSPOSE
+				&& bop.getInput().get(1).getParent().size() == 1 ) //single consumer of transpose
 			{
 				Hop left = bop.getInput().get(0).getInput().get(0);
 				Hop right = bop.getInput().get(1).getInput().get(0);
 				
-				//rewire links from parent, transpose, and binary
+				//create new subdag (no in-place dag update to prevent anomalies with
+				//multiple consumers during rewrite process)
 				HopRewriteUtils.removeChildReferenceByPos(parent, hi, pos);
-				HopRewriteUtils.addChildReference(parent, bop, pos);
-				HopRewriteUtils.removeAllChildReferences(hi);
-				HopRewriteUtils.removeAllChildReferences(bop);
+				OpOp2 binop = (bop.getOp()==OpOp2.CBIND) ? OpOp2.RBIND : OpOp2.CBIND;
+				BinaryOp bopnew = HopRewriteUtils.createBinary(left, right, binop);
+				HopRewriteUtils.addChildReference(parent, bopnew, pos);
 				
-				//change append type (safe due to single parent check)
-				if( bop.getOp()==OpOp2.CBIND )
-					bop.setOp(OpOp2.RBIND);
-				else 
-					bop.setOp(OpOp2.CBIND);
-				
-				//relink new childs to binary op
-				HopRewriteUtils.addChildReference(bop, left, 0);
-				HopRewriteUtils.addChildReference(bop, right, 1);
-				bop.refreshSizeInformation();
-				
-				hi = bop;
-			
+				hi = bopnew;
 				LOG.debug("Applied simplifyTransposedAppend (line "+hi.getBeginLine()+").");				
 			}
 		}

@@ -38,6 +38,7 @@ import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysml.runtime.util.IndexRange;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
+
 public class OperationsOnMatrixValues 
 {
 	
@@ -305,10 +306,10 @@ public class OperationsOnMatrixValues
 	public static void performSlice(IndexedMatrixValue in, IndexRange ixrange, int brlen, int bclen, ArrayList<IndexedMatrixValue> outlist) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
-		long cellIndexTopRow = UtilFunctions.cellIndexCalculation(in.getIndexes().getRowIndex(), brlen, 0);
-		long cellIndexBottomRow = UtilFunctions.cellIndexCalculation(in.getIndexes().getRowIndex(), brlen, in.getValue().getNumRows()-1);
-		long cellIndexLeftCol = UtilFunctions.cellIndexCalculation(in.getIndexes().getColumnIndex(), bclen, 0);
-		long cellIndexRightCol = UtilFunctions.cellIndexCalculation(in.getIndexes().getColumnIndex(), bclen, in.getValue().getNumColumns()-1);
+		long cellIndexTopRow = UtilFunctions.computeCellIndex(in.getIndexes().getRowIndex(), brlen, 0);
+		long cellIndexBottomRow = UtilFunctions.computeCellIndex(in.getIndexes().getRowIndex(), brlen, in.getValue().getNumRows()-1);
+		long cellIndexLeftCol = UtilFunctions.computeCellIndex(in.getIndexes().getColumnIndex(), bclen, 0);
+		long cellIndexRightCol = UtilFunctions.computeCellIndex(in.getIndexes().getColumnIndex(), bclen, in.getValue().getNumColumns()-1);
 		
 		long cellIndexOverlapTop = Math.max(cellIndexTopRow, ixrange.rowStart);
 		long cellIndexOverlapBottom = Math.min(cellIndexBottomRow, ixrange.rowEnd);
@@ -321,13 +322,13 @@ public class OperationsOnMatrixValues
 		}
 		
 		IndexRange tmpRange = new IndexRange(
-			UtilFunctions.cellInBlockCalculation(cellIndexOverlapTop, brlen), 
-			UtilFunctions.cellInBlockCalculation(cellIndexOverlapBottom, brlen), 
-			UtilFunctions.cellInBlockCalculation(cellIndexOverlapLeft, bclen), 
-			UtilFunctions.cellInBlockCalculation(cellIndexOverlapRight, bclen));
+			UtilFunctions.computeCellInBlock(cellIndexOverlapTop, brlen), 
+			UtilFunctions.computeCellInBlock(cellIndexOverlapBottom, brlen), 
+			UtilFunctions.computeCellInBlock(cellIndexOverlapLeft, bclen), 
+			UtilFunctions.computeCellInBlock(cellIndexOverlapRight, bclen));
 		
-		int rowCut=UtilFunctions.cellInBlockCalculation(ixrange.rowStart, brlen);
-		int colCut=UtilFunctions.cellInBlockCalculation(ixrange.colStart, bclen);
+		int rowCut=UtilFunctions.computeCellInBlock(ixrange.rowStart, brlen);
+		int colCut=UtilFunctions.computeCellInBlock(ixrange.colStart, bclen);
 		
 		int rowsInLastBlock = (int)((ixrange.rowEnd-ixrange.rowStart+1)%brlen);
 		if(rowsInLastBlock==0) 
@@ -336,15 +337,15 @@ public class OperationsOnMatrixValues
 		if(colsInLastBlock==0) 
 			colsInLastBlock=bclen;
 		
-		long resultBlockIndexTop=UtilFunctions.blockIndexCalculation(cellIndexOverlapTop-ixrange.rowStart+1, brlen);
-		long resultBlockIndexBottom=UtilFunctions.blockIndexCalculation(cellIndexOverlapBottom-ixrange.rowStart+1, brlen);
-		long resultBlockIndexLeft=UtilFunctions.blockIndexCalculation(cellIndexOverlapLeft-ixrange.colStart+1, bclen);
-		long resultBlockIndexRight=UtilFunctions.blockIndexCalculation(cellIndexOverlapRight-ixrange.colStart+1, bclen);
+		long resultBlockIndexTop=UtilFunctions.computeBlockIndex(cellIndexOverlapTop-ixrange.rowStart+1, brlen);
+		long resultBlockIndexBottom=UtilFunctions.computeBlockIndex(cellIndexOverlapBottom-ixrange.rowStart+1, brlen);
+		long resultBlockIndexLeft=UtilFunctions.computeBlockIndex(cellIndexOverlapLeft-ixrange.colStart+1, bclen);
+		long resultBlockIndexRight=UtilFunctions.computeBlockIndex(cellIndexOverlapRight-ixrange.colStart+1, bclen);
 		
 		int boundaryRlen = brlen;
 		int boundaryClen = bclen;
-		long finalBlockIndexBottom=UtilFunctions.blockIndexCalculation(ixrange.rowEnd-ixrange.rowStart+1, brlen);
-		long finalBlockIndexRight=UtilFunctions.blockIndexCalculation(ixrange.colEnd-ixrange.colStart+1, bclen);
+		long finalBlockIndexBottom=UtilFunctions.computeBlockIndex(ixrange.rowEnd-ixrange.rowStart+1, brlen);
+		long finalBlockIndexRight=UtilFunctions.computeBlockIndex(ixrange.colEnd-ixrange.colStart+1, bclen);
 		if(resultBlockIndexBottom==finalBlockIndexBottom)
 			boundaryRlen=rowsInLastBlock;
 		if(resultBlockIndexRight==finalBlockIndexRight)
@@ -361,6 +362,69 @@ public class OperationsOnMatrixValues
 		
 		//execute actual slice operation
 		in.getValue().sliceOperations(outlist, tmpRange, rowCut, colCut, brlen, bclen, boundaryRlen, boundaryClen);
+	}
+
+	/**
+	 * 
+	 * @param in
+	 * @param ixrange
+	 * @param brlen
+	 * @param bclen
+	 * @param rlen
+	 * @param clen
+	 * @param outlist
+	 * @throws DMLUnsupportedOperationException
+	 * @throws DMLRuntimeException
+	 */
+	public static void performShift(IndexedMatrixValue in, IndexRange ixrange, int brlen, int bclen, long rlen, long clen, ArrayList<IndexedMatrixValue> outlist) 
+		throws DMLUnsupportedOperationException, DMLRuntimeException
+	{
+		MatrixIndexes ix = in.getIndexes();
+		MatrixBlock mb = (MatrixBlock)in.getValue();
+		
+		long start_lhs_globalRowIndex = ixrange.rowStart + (ix.getRowIndex()-1)*brlen;
+		long start_lhs_globalColIndex = ixrange.colStart + (ix.getColumnIndex()-1)*bclen;
+		long end_lhs_globalRowIndex = start_lhs_globalRowIndex + mb.getNumRows() - 1;
+		long end_lhs_globalColIndex = start_lhs_globalColIndex + mb.getNumColumns() - 1;
+		
+		long start_lhs_rowIndex = UtilFunctions.computeBlockIndex(start_lhs_globalRowIndex, brlen);
+		long end_lhs_rowIndex = UtilFunctions.computeBlockIndex(end_lhs_globalRowIndex, brlen);
+		long start_lhs_colIndex = UtilFunctions.computeBlockIndex(start_lhs_globalColIndex, bclen);
+		long end_lhs_colIndex = UtilFunctions.computeBlockIndex(end_lhs_globalColIndex, bclen);
+		
+		for(long leftRowIndex = start_lhs_rowIndex; leftRowIndex <= end_lhs_rowIndex; leftRowIndex++) {
+			for(long leftColIndex = start_lhs_colIndex; leftColIndex <= end_lhs_colIndex; leftColIndex++) {
+				
+				// Calculate global index of right hand side block
+				long lhs_rl = Math.max((leftRowIndex-1)*brlen+1, start_lhs_globalRowIndex);
+				long lhs_ru = Math.min(leftRowIndex*brlen, end_lhs_globalRowIndex);
+				long lhs_cl = Math.max((leftColIndex-1)*bclen+1, start_lhs_globalColIndex);
+				long lhs_cu = Math.min(leftColIndex*bclen, end_lhs_globalColIndex);
+				
+				int lhs_lrl = UtilFunctions.computeCellInBlock(lhs_rl, brlen);
+				int lhs_lru = UtilFunctions.computeCellInBlock(lhs_ru, brlen);
+				int lhs_lcl = UtilFunctions.computeCellInBlock(lhs_cl, bclen);
+				int lhs_lcu = UtilFunctions.computeCellInBlock(lhs_cu, bclen);
+				
+				long rhs_rl = lhs_rl - ixrange.rowStart + 1;
+				long rhs_ru = rhs_rl + (lhs_ru - lhs_rl);
+				long rhs_cl = lhs_cl - ixrange.colStart + 1;
+				long rhs_cu = rhs_cl + (lhs_cu - lhs_cl);
+				
+				int rhs_lrl = UtilFunctions.computeCellInBlock(rhs_rl, brlen);
+				int rhs_lru = UtilFunctions.computeCellInBlock(rhs_ru, brlen);
+				int rhs_lcl = UtilFunctions.computeCellInBlock(rhs_cl, bclen);
+				int rhs_lcu = UtilFunctions.computeCellInBlock(rhs_cu, bclen);
+				
+				MatrixBlock slicedRHSBlk = mb.sliceOperations(rhs_lrl, rhs_lru, rhs_lcl, rhs_lcu, new MatrixBlock());
+				
+				int lbrlen = UtilFunctions.computeBlockSize(rlen, leftRowIndex, brlen);
+				int lbclen = UtilFunctions.computeBlockSize(clen, leftColIndex, bclen);
+				MatrixBlock resultBlock = new MatrixBlock(lbrlen, lbclen, false);
+				resultBlock = resultBlock.leftIndexingOperations(slicedRHSBlk, lhs_lrl, lhs_lru, lhs_lcl, lhs_lcu, null, false);
+				outlist.add(new IndexedMatrixValue(new MatrixIndexes(leftRowIndex, leftColIndex), resultBlock));
+			}
+		}
 	}
 	
 	/**

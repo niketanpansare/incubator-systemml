@@ -32,37 +32,14 @@ public class UtilFunctions
 	public static double DOUBLE_EPS = Math.pow(2, -53);
 	
 	
-	public static int longHashFunc(long v)
-	{
+	public static int longHashFunc(long v) {
 		return (int)(v^(v>>>32));
 	}
 	
-	//return one block index given the index in cell format and block size
-	//TODO to be deleted
-	public static long blockIndexCalculation(long cellIndex, int blockSize)
-	{
-		if(cellIndex>0)
-			return (cellIndex-1)/blockSize+1;
-		else
-			return (long)Math.floor((double)(cellIndex-1)/(double)blockSize)+1;
-	}
-	
-	//return cell index in the block, for given index in the cell format and block size
-	//TODO to be deleted
-	public static int cellInBlockCalculation(long cellIndex, int blockSize)
-	{
-		if(cellIndex>0)
-			return (int) ((cellIndex-1)%blockSize);
-		else
-			//return (int) Math.abs((cellIndex-1)%blockSize);
-			return (int) ((cellIndex-1)%blockSize)+blockSize;
-	}
-	
-	//given block index and block size and cells in block, return the index in cell format
-	//TODO to be deleted
-	public static long cellIndexCalculation(long blockIndex, int blockSize, int cellInBlock)
-	{
-		return (blockIndex-1)*blockSize+1+cellInBlock;
+	public static int nextIntPow2( int in ) {
+		int expon = (in==0) ? 0 : 32-Integer.numberOfLeadingZeros(in-1);
+		long pow2 = (long) Math.pow(2, expon);
+		return (int)((pow2>Integer.MAX_VALUE)?Integer.MAX_VALUE : pow2);	
 	}
 	
 	/**
@@ -73,8 +50,7 @@ public class UtilFunctions
 	 * @param blockSize
 	 * @return
 	 */
-	public static long computeBlockIndex(long cellIndex, int blockSize)
-	{
+	public static long computeBlockIndex(long cellIndex, int blockSize) {
 		return (cellIndex-1)/blockSize + 1;
 	}
 	
@@ -86,8 +62,7 @@ public class UtilFunctions
 	 * @param blockSize
 	 * @return
 	 */
-	public static int computeCellInBlock(long cellIndex, int blockSize)
-	{
+	public static int computeCellInBlock(long cellIndex, int blockSize) {
 		return (int) ((cellIndex-1)%blockSize);
 	}
 	
@@ -102,9 +77,7 @@ public class UtilFunctions
 	 * @param cellInBlock
 	 * @return
 	 */
-	public static long computeCellIndex( long blockIndex, int blockSize, int cellInBlock )
-	{
-		//
+	public static long computeCellIndex( long blockIndex, int blockSize, int cellInBlock ) {
 		return (blockIndex-1)*blockSize + 1 + cellInBlock;
 	}
 	
@@ -118,8 +91,7 @@ public class UtilFunctions
 	 * @param blockSize
 	 * @return
 	 */
-	public static int computeBlockSize( long len, long blockIndex, long blockSize )
-	{
+	public static int computeBlockSize( long len, long blockIndex, long blockSize ) {
 		long remain = len - (blockIndex-1)*blockSize;
 		return (int)Math.min(blockSize, remain);
 	}
@@ -184,15 +156,15 @@ public class UtilFunctions
 	{
 		IndexRange tempRange = new IndexRange(-1, -1, -1, -1);
 		
-		long topBlockRowIndex=UtilFunctions.blockIndexCalculation(indexRange.rowStart, blockRowFactor);
-		int topRowInTopBlock=UtilFunctions.cellInBlockCalculation(indexRange.rowStart, blockRowFactor);
-		long bottomBlockRowIndex=UtilFunctions.blockIndexCalculation(indexRange.rowEnd, blockRowFactor);
-		int bottomRowInBottomBlock=UtilFunctions.cellInBlockCalculation(indexRange.rowEnd, blockRowFactor);
+		long topBlockRowIndex=UtilFunctions.computeBlockIndex(indexRange.rowStart, blockRowFactor);
+		int topRowInTopBlock=UtilFunctions.computeCellInBlock(indexRange.rowStart, blockRowFactor);
+		long bottomBlockRowIndex=UtilFunctions.computeBlockIndex(indexRange.rowEnd, blockRowFactor);
+		int bottomRowInBottomBlock=UtilFunctions.computeCellInBlock(indexRange.rowEnd, blockRowFactor);
 		
-		long leftBlockColIndex=UtilFunctions.blockIndexCalculation(indexRange.colStart, blockColFactor);
-		int leftColInLeftBlock=UtilFunctions.cellInBlockCalculation(indexRange.colStart, blockColFactor);
-		long rightBlockColIndex=UtilFunctions.blockIndexCalculation(indexRange.colEnd, blockColFactor);
-		int rightColInRightBlock=UtilFunctions.cellInBlockCalculation(indexRange.colEnd, blockColFactor);
+		long leftBlockColIndex=UtilFunctions.computeBlockIndex(indexRange.colStart, blockColFactor);
+		int leftColInLeftBlock=UtilFunctions.computeCellInBlock(indexRange.colStart, blockColFactor);
+		long rightBlockColIndex=UtilFunctions.computeBlockIndex(indexRange.colEnd, blockColFactor);
+		int rightColInRightBlock=UtilFunctions.computeCellInBlock(indexRange.colEnd, blockColFactor);
 		
 		//no overlap
 		if(in.getIndexes().getRowIndex()<topBlockRowIndex || in.getIndexes().getRowIndex()>bottomBlockRowIndex
@@ -229,7 +201,6 @@ public class UtilFunctions
 		long total = UtilFunctions.getTotalLength(metadata);
 		long lpos=(long)Math.ceil(total*p);//lower bound is inclusive
 		long upos=(long)Math.ceil(total*(1-p));//upper bound is inclusive
-		//System.out.println("getLengthForInterQuantile(): " + (upos-lpos+1));
 		return upos-lpos+1;
 	}
 
@@ -323,7 +294,7 @@ public class UtilFunctions
 		switch( vt ) {
 			case STRING:  return in;
 			case BOOLEAN: return Boolean.parseBoolean(in);
-			case INT:     return Integer.parseInt(in);
+			case INT:     return Long.parseLong(in);
 			case DOUBLE:  return Double.parseDouble(in);
 			default: throw new RuntimeException("Unsupported value type: "+vt);
 		}
