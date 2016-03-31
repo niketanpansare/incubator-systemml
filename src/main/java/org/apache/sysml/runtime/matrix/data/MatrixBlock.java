@@ -431,6 +431,15 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		}
 	}
 	
+	public void setDenseBlock(double [] zeroedOutDenseArray) throws DMLRuntimeException {
+		if(sparse)
+			throw new DMLRuntimeException("Cannot set dense array as the MatrixBlock is sparse");
+		if(zeroedOutDenseArray.length != rlen * clen)
+			throw new DMLRuntimeException("Incorrect dimensions while setting dense block");
+		this.denseBlock = zeroedOutDenseArray;
+	}
+	
+	
 	/**
 	 * 
 	 */

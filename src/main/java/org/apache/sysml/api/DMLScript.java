@@ -307,6 +307,9 @@ public class DMLScript
 				else if( args[i].equalsIgnoreCase("-debug") ) {					
 					ENABLE_DEBUG_MODE = true;
 				}
+				else if( args[i].equalsIgnoreCase("-reuseoutput") ) {					
+					REUSE_NONZEROED_OUTPUT = true;
+				}
 				else if( args[i].equalsIgnoreCase("-python") ) {
 					parsePyDML = true;
 				}
@@ -974,5 +977,7 @@ public class DMLScript
 		}
 	}
 
+	
+	public static boolean REUSE_NONZEROED_OUTPUT = false;
 	
 }  

@@ -19,10 +19,13 @@
 
 package org.apache.sysml.runtime.instructions.cp;
 
+import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -41,7 +44,6 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 
 	public static boolean ALLOW_MULTI_THREADED_OPS = true;
 	public static boolean USE_IM2COL_POOLING = false; // TODO: Remove im2col-based pooling instruction
-	public static boolean OPTIMIZE_IM2COL_STRIDE1 = false;
 	
 	private CPOperand _in2; // used for pooling backward
 	private ArrayList<CPOperand> _input_shape;
@@ -199,25 +201,46 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				checkHeightWidth(ec);
 				checkInputDimensionForIm2col(matBlock);
 				this.input = matBlock;
-				outputBlock = allocateDenseOutputBlock(ec, C * R * S, N * P * Q);
+				// I tried to generalized this approach (by caching allocated double[] which we removed by rmvar instruction) 
+				// but could not see any performance benefits probably due to cost of lookup is much higher.
+				// Since im2col is always an intermediate array whose output is consumed immediately,
+				// subsequent calls to the same im2col instruction (especially if recompile is turned off)
+				// can reuse the previously allocated outputs. Also a good rule of thumb is that cost of lookup
+				// for im2col is usually much less than the allocated output.
+				// For MNIST-sized dataset with batch-size of 64
+				// For 2000 calls, 
+				// allocateReusableDenseOutputBlock = 0.025 seconds and allocateDenseOutputBlock = 4.7 seconds
+				// For 20000 calls,
+				// allocateReusableDenseOutputBlock = 0.155 seconds and allocateDenseOutputBlock = 62.006 seconds
+				if(DMLScript.REUSE_NONZEROED_OUTPUT)
+					outputBlock = allocateReusableNonZeroedDenseOutputBlock(ec, C * R * S, N * P * Q);
+				else
+					outputBlock = allocateDenseOutputBlock(ec, C * R * S, N * P * Q);
 				im2col(matBlock, outputBlock);
 			}
 			else if (instOpcode.equalsIgnoreCase("reshape_col")) {
 				checkHeightWidth(ec);
 				this.input = matBlock;
+				// Is eligible for REUSE_NONZEROED_OUTPUT but cannot guarantee that previous output has been rmvar-ed
+				// without somewhat expensive HashMap checks
 				outputBlock = allocateDenseOutputBlock(ec, N, K * P * Q);
 				reshape_col(matBlock, outputBlock);
 			}
 			else if (instOpcode.equalsIgnoreCase("rotate180")) {
 				checkHeightWidth(ec);
 				this.input = matBlock;
-				outputBlock = allocateDenseOutputBlock(ec, K, N * P * Q);
+				// Is eligible for REUSE_NONZEROED_OUTPUT and always an intermediate instruction
+				if(DMLScript.REUSE_NONZEROED_OUTPUT)
+					outputBlock = allocateReusableNonZeroedDenseOutputBlock(ec, K, N * P * Q);
+				else
+					outputBlock = allocateDenseOutputBlock(ec, K, N * P * Q);
 				rotate180(matBlock, outputBlock);
 			}
 			else if (instOpcode.equalsIgnoreCase("col2im")) {
 				checkHeightWidth(ec);
 				checkInputDimensionForCol2im(matBlock);
 				this.input = matBlock;
+				// needs to be zeroed-out
 				outputBlock = allocateDenseOutputBlock(ec, N, C * H * W);
 				col2im(matBlock, outputBlock);
 			}
@@ -240,12 +263,16 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			}
 			else if (instOpcode.equalsIgnoreCase("maxpooling")) {
 				this.input = matBlock;
-				outputBlock = allocateDenseOutputBlock(ec, N, C*P*Q); 
+				// Is eligible for REUSE_NONZEROED_OUTPUT but cannot guarantee that previous output has been rmvar-ed
+				// without somewhat expensive HashMap checks
+				outputBlock = allocateDenseOutputBlock(ec, N, C*P*Q);
 				maxpooling(matBlock, outputBlock);
 			}
 			else if (instOpcode.equalsIgnoreCase("maxpooling_backward")) {
 				MatrixBlock dout = ec.getMatrixInput(_in2.getName());
 				this.input = matBlock;
+				// Is eligible for REUSE_NONZEROED_OUTPUT but cannot guarantee that previous output has been rmvar-ed
+				// without somewhat expensive HashMap checks
 				outputBlock = allocateDenseOutputBlock(ec, N, C*H*W); 
 				maxpooling_backward(matBlock, dout, outputBlock);
 				ec.releaseMatrixInput(_in2.getName());
@@ -624,18 +651,9 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 					}
 					break;
 				case Im2Col:
-					if (curr.inputArray != null && curr.stride_w == 1 && OPTIMIZE_IM2COL_STRIDE1) {
-						for (int n = n1; n < n2; n++) {
-							for (int z = z1; z < z2; z++) {
-								curr.optimized_doIm2colOverInputPath_NCHW(n, z);
-							}
-						}
-					}
-					else {
-						for (int n = n1; n < n2; n++) {
-							for (int z = z1; z < z2; z++) {
-								curr.doIm2colOverInputPath_NCHW(n, z);
-							}
+					for (int n = n1; n < n2; n++) {
+						for (int z = z1; z < z2; z++) {
+							curr.doIm2colOverInputPath_NCHW(n, z);
 						}
 					}
 					break;
@@ -741,8 +759,9 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 								// Copy from [channel c, height input_row, width input_col]
 								int index = n*C*H*W + c*H*W + input_row*W + input_col;
 								if (inputArray != null) {
+									double val = inputArray[localIndex];
 									synchronized(this) {
-										outputArray[index] += inputArray[localIndex];
+										outputArray[index] += val;
 									}
 								}
 								else {
@@ -771,56 +790,6 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		
 	}
 	
-	// called only when if (isIm2Col && curr.inputArray != null && curr.stride_w == 1 && OPTIMIZE_IM2COL_STRIDE1) {
-	private void optimized_doIm2colOverInputPath_NCHW(int n, int c) {
-		for (int r = 0; r < R; r++) { // Get an input patch of size R X S
-			for (int s = 0; s < S; s++) {
-				int localIndex = ((c*R*S*N + r*S*N + s*N + n)*P*Q);
-				
-				int input_row = r - pad_h;
-				int p = P;
-				
-				int temp = n*C*H*W + c*H*W;
-				
-				for (; (input_row < 0) && p > 0; p--, input_row += stride_h, localIndex += Q) ;
-				
-				if(s - pad_w >= 0) {
-					// Non-edge patches
-					for (; p > 0 && (input_row < H); p--, input_row += stride_h) {
-						int input_col = s - pad_w;
-						int length = (input_col + Q  < W) ? Q : (W - input_col);
-						System.arraycopy(inputArray, temp + input_row*W + input_col, 
-								outputArray, localIndex, length);
-						localIndex += Q; input_col += Q;
-					}
-				}
-				else {
-					// Edge patches
-					for (; p > 0 && (input_row < H); p--, input_row += stride_h) {
-						int input_col = s - pad_w;
-						int q = Q;
-						if(input_col >= 0) {
-							int length = (input_col + q  < W) ? q : (W - input_col);
-							System.arraycopy(inputArray, temp + input_row*W + input_col, 
-									outputArray, localIndex, length);
-							localIndex += q; input_col += q;
-						}
-						else {
-							for (; q > 0 && input_col < 0; q--, localIndex++, input_col++) ;
-							int length = Math.min(q, W - input_col); // OR W-input_col-1
-							System.arraycopy(inputArray, temp + input_row*W + input_col, 
-									outputArray, localIndex, length);
-							localIndex += q; input_col += q;
-						}
-					}
-				}
-				
-				for (; (input_row >= H) && p > 0; p--, input_row += stride_h, localIndex += Q) ;
-				
-			}
-		}
-	}
-	
 	private void doIm2colOverInputPath_NCHW(int n, int c) {
 		for (int r = 0; r < R; r++) { // Get an input patch of size R X S
 			for (int s = 0; s < S; s++) {
@@ -839,9 +808,17 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 								else
 									outputArray[localIndex] = input.quickGetValue(n, c*H*W + input_row*W + input_col);
 							}
+							else if(DMLScript.REUSE_NONZEROED_OUTPUT) {
+								outputArray[localIndex] = 0;
+							}
 							input_col += stride_w;
 						}
 					} else {
+						if(DMLScript.REUSE_NONZEROED_OUTPUT) {
+							for(int i = localIndex; i < localIndex + Q; i++) {
+								outputArray[localIndex] = 0;
+							}
+						}
 						localIndex += Q;
 					}
 					input_row += stride_h;
@@ -851,6 +828,28 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		
 	}
 
+	private SoftReference<double[]> reuseableNonZeroedDoubleArray;
+	private MatrixBlock allocateReusableNonZeroedDenseOutputBlock(ExecutionContext ec, int numRowsOutput, int numColsOutput) throws DMLRuntimeException {
+		long nnz = numRowsOutput * numColsOutput;
+		MatrixBlock outputBlock = new MatrixBlock(numRowsOutput, numColsOutput, nnz);
+		outputArray = null;
+		if(reuseableNonZeroedDoubleArray != null) {
+			double[] arr = reuseableNonZeroedDoubleArray.get();
+			if(arr != null && arr.length == nnz) {
+				outputBlock.setDenseBlock(arr);
+				outputArray = arr;
+			}
+		}
+		
+		if(outputArray == null) {
+			outputBlock.allocateDenseBlock();
+			outputArray = outputBlock.getDenseBlock();
+			reuseableNonZeroedDoubleArray = new SoftReference<double[]>(outputArray);
+		}
+		
+		outputBlock.setNonZeros(nnz);
+		return outputBlock;
+	}
 	
 	
 	private void checkInputDimensionForIm2col(MatrixBlock matBlock) throws DMLRuntimeException {
