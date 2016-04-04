@@ -6,7 +6,7 @@ public class ConvolutionUtils {
 	public static long getP(long H, long R, long verticalStride, long heightPadding) {
 		long ret = (H + 2 * heightPadding - R) / verticalStride + 1;
 		if(ret <= 0) {
-			throw new RuntimeException("Incorrect output patch size");
+			throw new RuntimeException("Incorrect output patch size: (image_height + 2 * pad_h - filter_height) / verticalStride + 1) needs to be positive, but is " + ret);
 		}
 		return ret;
 		// return (long) Math.ceil( ( H - R + 1 + 2*heightPadding ) / verticalStride);
@@ -14,7 +14,7 @@ public class ConvolutionUtils {
 	public static long getQ(long W, long S, long horizontalStride, long widthPadding) {
 		long ret = (W + 2 * widthPadding - S) / horizontalStride + 1;
 		if(ret <= 0) {
-			throw new RuntimeException("Incorrect output patch size");
+			throw new RuntimeException("Incorrect output patch size: (image_width + 2 * pad_w - filter_width) / horizontalStride + 1) needs to be positive, but is " + ret);
 		}
 		return ret;
 		// return (long) Math.ceil( ( W - S + 1 + 2*widthPadding ) / horizontalStride);

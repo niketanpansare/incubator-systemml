@@ -45,7 +45,6 @@ import org.apache.sysml.parser.FunctionCallIdentifier;
 import org.apache.sysml.parser.FunctionStatement;
 import org.apache.sysml.parser.IfStatement;
 import org.apache.sysml.parser.ImportStatement;
-import org.apache.sysml.parser.IndexedIdentifier;
 import org.apache.sysml.parser.IntIdentifier;
 import org.apache.sysml.parser.IterablePredicate;
 import org.apache.sysml.parser.LanguageException;
@@ -107,7 +106,6 @@ import org.apache.sysml.parser.dml.DmlParser.SimpleDataIdentifierExpressionConte
 import org.apache.sysml.parser.dml.DmlParser.StatementContext;
 import org.apache.sysml.parser.dml.DmlParser.StrictParameterizedExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.StrictParameterizedKeyValueStringContext;
-import org.apache.sysml.parser.dml.DmlParser.TensorIndexedExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.TypedArgNoAssignContext;
 import org.apache.sysml.parser.dml.DmlParser.UnaryExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.ValueTypeContext;
@@ -1077,105 +1075,5 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		}
 		ctx.info.expr = new ExpressionList(values);
 	}
-
-	@Override
-	public void enterTensorIndexedExpression(TensorIndexedExpressionContext ctx) { }
-
-	private boolean isLowerEmpty(OptionalUpperIndexExpressionContext index) {
-		if(index != null && index.lowerIndex != null && !index.lowerIndex.isEmpty()) {
-			return false;
-		}
-		return true;
-	}
-	
-	private boolean isUpperEmpty(OptionalUpperIndexExpressionContext index) {
-		if(index != null && index.upperIndex != null && !index.upperIndex.isEmpty()) {
-			return false;
-		}
-		return true;
-	}
-	
-	@Override
-	public void exitTensorIndexedExpression(TensorIndexedExpressionContext ctx) {
-		if(!ctx.shapeName.getText().equals("shape")) {
-			notifyErrorListeners("incorrect parameter \"" + ctx.shapeName.getText() + "\" in tensor indexing", ctx.shapeName);
-			return;
-		}
-		ArrayList<Expression> shape = new ArrayList<Expression>();
-		for(ExpressionContext dim : ctx.dimensions) {
-			shape.add(dim.info.expr);
-		}
-		
-		ExpressionInfo rowLower = null;
-		ExpressionInfo rowUpper = null;
-		ExpressionInfo colLower = null;
-		ExpressionInfo colUpper = null;
-		boolean isSupported = false;
-		
-		// ------------------------------------------------------------
-		
-		// Special case: Indexing on only first two dimensions
-		OptionalUpperIndexExpressionContext firstIndex = (ctx.indexes != null && ctx.indexes.size() >= 1) ? ctx.indexes.get(0) : null;
-		OptionalUpperIndexExpressionContext secondIndex = (ctx.indexes != null && ctx.indexes.size() >= 2) ? ctx.indexes.get(1) : null;
-		
-		boolean isFirstLowerEmpty = firstIndex == null || isLowerEmpty(firstIndex);
-		boolean isFirstUpperEmpty = firstIndex == null || isUpperEmpty(firstIndex);
-		boolean isSecondLowerEmpty = secondIndex == null || isLowerEmpty(secondIndex);
-		boolean isSecondUpperEmpty = secondIndex == null || isUpperEmpty(secondIndex);
-		
-		if(!isFirstLowerEmpty || !isFirstUpperEmpty || !isSecondLowerEmpty || !isSecondUpperEmpty) {
-			isSupported = true;
-			for(int i = 2; i < ctx.indexes.size(); i++) {
-				OptionalUpperIndexExpressionContext otherIndex = ctx.indexes.get(i);
-				if(!isLowerEmpty(otherIndex) && !isUpperEmpty(otherIndex)) {
-					isSupported = false;
-					break;
-				}
-			}
-			
-			if(isSupported) {
-				if(!isFirstLowerEmpty) {
-					rowLower = new ExpressionInfo();
-					rowLower.expr = firstIndex.lowerIndex.info.expr;
-				}
-				if(!isFirstUpperEmpty) {
-					rowUpper = new ExpressionInfo();
-					rowUpper.expr = firstIndex.upperIndex.info.expr;
-				}
-				if(!isSecondLowerEmpty) {
-					colLower = new ExpressionInfo();
-					// TODO:
-					notifyErrorListeners("the given tensor indexing is not supported yet", ctx.start);
-					return;
-				}
-				if(!isSecondUpperEmpty) {
-					colUpper = new ExpressionInfo();
-					// TODO:
-					notifyErrorListeners("the given tensor indexing is not supported yet", ctx.start);
-					return;
-				}
-			}
-		}
-		
-		// ------------------------------------------------------------
-		if(!isSupported) {
-			notifyErrorListeners("the given tensor indexing is not supported", ctx.start);
-			return;
-		}
-		
-		boolean isRowLower = (rowLower != null);
-		boolean isRowUpper = (rowUpper != null);
-		boolean isColLower = (colLower != null);
-		boolean isColUpper = (colUpper != null);
-		String name = ctx.name.getText();
-		
-		ctx.dataInfo.expr = new IndexedIdentifier(name, false, false);
-		
-		exitIndexedExpressionHelper(ctx, name, ctx.dataInfo,
-				isRowLower ? rowLower : null,
-				isRowUpper ? rowUpper : null,
-				isColLower ? colLower : null,
-				isColUpper ? colUpper : null);
-	}	
 
 }

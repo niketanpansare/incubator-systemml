@@ -1528,6 +1528,9 @@ public class Dag<N extends Lop>
 					if( LOG.isTraceEnabled() )
 						LOG.trace("Generating instruction - "+ inst_string);
 					Instruction currInstr = InstructionParser.parseSingleInstruction(inst_string);
+					if(currInstr == null) {
+						throw new LopsException("Error parsing the instruction:" + inst_string);
+					}
 					if (node._beginLine != 0)
 						currInstr.setLocation(node);
 					else if ( !node.getOutputs().isEmpty() )

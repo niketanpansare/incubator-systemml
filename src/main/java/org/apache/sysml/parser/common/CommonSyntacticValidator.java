@@ -310,8 +310,7 @@ public abstract class CommonSyntacticValidator {
 
 	protected void exitIndexedExpressionHelper(ParserRuleContext ctx, String name, ExpressionInfo dataInfo,
 			ExpressionInfo rowLower, ExpressionInfo rowUpper, ExpressionInfo colLower, ExpressionInfo colUpper) {
-		if(dataInfo.expr != null)
-			dataInfo.expr = new IndexedIdentifier(name, false, false);
+		dataInfo.expr = new IndexedIdentifier(name, false, false);
 		
 		setFileLineColumn(dataInfo.expr, ctx);
 		boolean isRowLower = rowLower != null;

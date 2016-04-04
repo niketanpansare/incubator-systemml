@@ -255,165 +255,153 @@ public class ConvolutionOp extends Hop
 		return _etype;
 	}
 	
+	long N = -1; long C = -1; long H = -1; long W = -1;
+	long K = -1; long R = -1; long S = -1;
+	long stride1 = -1;
+	long stride2 = -1;
+	long padding1 = -1;
+	long padding2 = -1;
+	long P = -1; long Q = -1;
+	// stride1, stride2, padding1, padding2  
+	// input_shape1, input_shape2, input_shape3, input_shape4, 
+	// filter_shape1, filter_shape2, filter_shape3, filter_shape4
+	void parseInput() {
+		// For pooling: x,stride,stride,pad,pad,numImg,numChannels,imgSize,imgSize,1,1,poolSize1,poolSize2)
+		try {
+			stride1 = extractValue(getInput().get(1));
+			stride2 = extractValue(getInput().get(2));
+			padding1 = extractValue(getInput().get(3));
+			padding2 = extractValue(getInput().get(4));
+			N = extractValue(getInput().get(5));
+			C = extractValue(getInput().get(6));
+			H = extractValue(getInput().get(7));
+			W = extractValue(getInput().get(8));
+			K = extractValue(getInput().get(9));
+			C = (C <= 0) ? extractValue(getInput().get(10)) : C;
+			R = extractValue(getInput().get(11));
+			S = extractValue(getInput().get(12));
+			P = ConvolutionUtils.getP(H, R, stride1, padding1);
+			Q = ConvolutionUtils.getQ(W, S, stride2, padding2);
+		} catch (DMLRuntimeException e) {
+			// throw new RuntimeException("Error parsing the input for Convop", e);
+		}
+	}
+	
+	long getExtractedVal(long val1, long val2) {
+		if(val1 == -1 || val2 == -1) {
+			return -1;
+		}
+		return val1*val2;
+	}
+	
+	long getExtractedVal(long val1, long val2, long val3) {
+		if(val1 == -1 || val2 == -1 || val3 == -1) {
+			return -1;
+		}
+		return val1*val2*val3;
+	}
+	
 	@Override
 	public void refreshSizeInformation()
 	{
 		Hop input1 = getInput().get(0);
 		
-		switch(op) 
-		{
-			case IM2COL:
-			{
-				try {
-					// stride1, stride2, padding1, padding2  
-					// input_shape1, input_shape2, input_shape3, input_shape4, 
-					// filter_shape1, filter_shape2, filter_shape3, filter_shape4
-					long stride1 = extractValue(getInput().get(1));
-					long stride2 = extractValue(getInput().get(2));
-					long padding1 = extractValue(getInput().get(3));
-					long padding2 = extractValue(getInput().get(4));
-					long N = -1; long C = -1; long H = -1; long W = -1;
-					long K = -1; long R = -1; long S = -1;
-					
-					N = extractValue(getInput().get(5));
-					C = extractValue(getInput().get(6));
-					H = extractValue(getInput().get(7));
-					W = extractValue(getInput().get(8));
-					K = extractValue(getInput().get(9));
-					C = (C <= 0) ? extractValue(getInput().get(10)) : C;
-					R = extractValue(getInput().get(11));
-					S = extractValue(getInput().get(12));
-					
-					
-					// Set _dim1, _dim2 and if possible _nnz (use input1.getNnz())
-					_dim1 = C*R*S;
-					long P = ConvolutionUtils.getP(H, R, stride1, padding1);
-					long Q = ConvolutionUtils.getQ(W, S, stride2, padding2);
-					_dim2 = N*P*Q;
-					if(input1.getNnz() >= 0) {
-						// long approxNumPaddedZeros = N*C*(2*(P*R + Q*S));
-						long numZerosInOriginalImage = (N*C*H*W - input1.getNnz());
-						// long conservativeEstNumZeros = (numZerosInOriginalImage + approxNumPaddedZeros);
-						// Worst-case estimates (assuming only nnz are replicated):
-						// TODO:
-						_nnz = _dim1*_dim2 - numZerosInOriginalImage; 
-					}
-				}
-				catch(DMLRuntimeException e) {}
-				
-				break;
-			}
-			case COL2IM:
-			{
-				try {
-					// stride1, stride2, padding1, padding2  
-					// input_shape1, input_shape2, input_shape3, input_shape4, 
-					// filter_shape1, filter_shape2, filter_shape3, filter_shape4
-					long stride1 = extractValue(getInput().get(1));
-					long stride2 = extractValue(getInput().get(2));
-					long padding1 = extractValue(getInput().get(3));
-					long padding2 = extractValue(getInput().get(4));
-					long N = -1; long C = -1; long H = -1; long W = -1;
-					long K = -1; long R = -1; long S = -1;
-					
-					N = extractValue(getInput().get(5));
-					C = extractValue(getInput().get(6));
-					H = extractValue(getInput().get(7));
-					W = extractValue(getInput().get(8));
-					K = extractValue(getInput().get(9));
-					C = (C <= 0) ? extractValue(getInput().get(10)) : C;
-					R = extractValue(getInput().get(11));
-					S = extractValue(getInput().get(12));
-					
-					
-					// Set _dim1, _dim2 and if possible _nnz (use input1.getNnz())
-					_dim1 = N;
-					_dim2 = C*R*S;
-					if(input1.getNnz() >= 0) {
-						// long approxNumPaddedZeros = N*C*(2*(P*R + Q*S));
-						// long numZerosInOriginalImage = (N*C*H*W - input1.getNnz());
-						// long conservativeEstNumZeros = (numZerosInOriginalImage + approxNumPaddedZeros);
-						// Worst-case estimates (assuming only nnz are replicated):
-						// TODO:
-						_nnz = _dim1*_dim2; 
-					}
-				}
-				catch(DMLRuntimeException e) {}
-				
-				break;
-			}
-			case RESHAPE_COL:
-			{
-				try {
-					// stride1, stride2, padding1, padding2  
-					// input_shape1, input_shape2, input_shape3, input_shape4, 
-					// filter_shape1, filter_shape2, filter_shape3, filter_shape4
-					long stride1 = extractValue(getInput().get(1));
-					long stride2 = extractValue(getInput().get(2));
-					long padding1 = extractValue(getInput().get(3));
-					long padding2 = extractValue(getInput().get(4));
-					long N = -1; long C = -1; long H = -1; long W = -1;
-					long K = -1; long R = -1; long S = -1;
-					
-					// Set _dim1, _dim2 and if possible _nnz (use input1.getNnz())
-					N = extractValue(getInput().get(5));
-					C = extractValue(getInput().get(6));
-					H = extractValue(getInput().get(7));
-					W = extractValue(getInput().get(8));
-					K = extractValue(getInput().get(9));
-					C = (C <= 0) ? extractValue(getInput().get(10)) : C;
-					R = extractValue(getInput().get(11));
-					S = extractValue(getInput().get(12));
-					
-					long P = ConvolutionUtils.getP(H, R, stride1, padding1);
-					long Q = ConvolutionUtils.getQ(W, S, stride2, padding2);
-					
-					_dim1 = N;
-					_dim2 = K * P * Q;
-					// TODO: nnz
-					_nnz = _dim1*_dim2;
-					
-				}
-				catch(DMLRuntimeException e) {}
-				break;
-			}
-			case ROTATE180:
-			{
-				try {
-					// stride1, stride2, padding1, padding2  
-					// input_shape1, input_shape2, input_shape3, input_shape4, 
-					// filter_shape1, filter_shape2, filter_shape3, filter_shape4
-					long stride1 = extractValue(getInput().get(1));
-					long stride2 = extractValue(getInput().get(2));
-					long padding1 = extractValue(getInput().get(3));
-					long padding2 = extractValue(getInput().get(4));
-					long N = -1; long C = -1; long H = -1; long W = -1;
-					long K = -1; long R = -1; long S = -1;
-					
-					// Set _dim1, _dim2 and if possible _nnz (use input1.getNnz())
-					N = extractValue(getInput().get(5));
-					C = extractValue(getInput().get(6));
-					H = extractValue(getInput().get(7));
-					W = extractValue(getInput().get(8));
-					K = extractValue(getInput().get(9));
-					C = (C <= 0) ? extractValue(getInput().get(10)) : C;
-					R = extractValue(getInput().get(11));
-					S = extractValue(getInput().get(12));
-					
-					long P = ConvolutionUtils.getP(H, R, stride1, padding1);
-					long Q = ConvolutionUtils.getQ(W, S, stride2, padding2);
-					
-					// Reshape a 4D tensor of dimension (N, K, P, Q) to matrix of dimension (K, NPQ)
-					_dim1 = K;
-					_dim2 = N * P * Q;
-					// TODO: nnz
-					_nnz = _dim1*_dim2;
-					
-				}
-				catch(DMLRuntimeException e) {}
-				break;
-			}
-		}	
+//		switch(op) 
+//		{
+//			case IM2COL:
+//			{
+//				parseInput();
+//				_dim1 = getExtractedVal(C, R, S);
+//				_dim2 = getExtractedVal(N, P, Q);
+//				if(input1.getNnz() >= 0) {
+//					// long approxNumPaddedZeros = N*C*(2*(P*R + Q*S));
+//					// long numZerosInOriginalImage = (N*C*H*W - input1.getNnz());
+//					// long conservativeEstNumZeros = (numZerosInOriginalImage + approxNumPaddedZeros);
+//					// Worst-case estimates (assuming only nnz are replicated):
+//					// TODO:
+//					_nnz = _dim1*_dim2; // - numZerosInOriginalImage; 
+//				}
+//				
+//				break;
+//			}
+//			case COL2IM:
+//			{
+//				parseInput();
+//				// Set _dim1, _dim2 and if possible _nnz (use input1.getNnz())
+//				_dim1 = N;
+//				_dim2 = getExtractedVal(C, H, W);
+//				_nnz = _dim1*_dim2;
+//				break;
+//			}
+//			case RESHAPE_COL:
+//			{
+//				parseInput();
+//				_dim1 = N;
+//				_dim2 = getExtractedVal(K, P, Q);
+//				// TODO: nnz
+//				_nnz = _dim1*_dim2;
+//				break;
+//			}
+//			case ROTATE180:
+//			{
+//				parseInput();
+//				_dim1 = K;
+//				_dim2 = getExtractedVal(N, P, Q);
+//				// TODO: nnz
+//				_nnz = _dim1*_dim2;
+//				break;
+//			}
+//			case POOLING_PRE_RESHAPE:
+//			{
+//				parseInput();
+//				// Set _dim1, _dim2 and if possible _nnz (use input1.getNnz())
+//				_dim1 = getExtractedVal(N, C);
+//				_dim2 = getExtractedVal(H, W);
+//				_nnz = _dim1*_dim2;
+//				break;
+//			}
+//			case POOLING_POST_RESHAPE:
+//			{
+//				parseInput();
+//				// Set _dim1, _dim2 and if possible _nnz (use input1.getNnz())
+//				_dim1 = N;
+//				_dim2 = getExtractedVal(C, P, Q);
+//				_nnz = _dim1*_dim2;
+//				break;
+//			}
+//			case POOLING_BACKWARD_RESHAPE:
+//			{
+//				parseInput();
+//				// Set _dim1, _dim2 and if possible _nnz (use input1.getNnz())
+//				_dim1 = getExtractedVal(C, R, S);
+//				_dim2 = getExtractedVal(N, P, Q);
+//				_nnz = _dim1*_dim2;
+//				break;
+//			}
+//			case MAX_POOLING:
+//			{
+//				parseInput();
+//				// Set _dim1, _dim2 and if possible _nnz (use input1.getNnz())
+//				_dim1 = N;
+//				_dim2 = getExtractedVal(C, P, Q);
+//				_nnz = _dim1*_dim2;
+//				break;
+//			}
+//			case MAX_POOLING_BACKWARD:
+//			{
+//				parseInput();
+//				// Set _dim1, _dim2 and if possible _nnz (use input1.getNnz())
+//				_dim1 = N;
+//				_dim2 = getExtractedVal(C, H, W);
+//				_nnz = _dim1*_dim2;
+//				break;
+//			}
+//			default:
+//				throw new RuntimeException("The sizes are not refreshed for " + op.name());
+//		}
+//		if(_dim1 == -1 || _dim2 == -1) {
+//			_nnz = -1;
+//		}
 	}
 	
 	private long extractValue(Hop hop) throws DMLRuntimeException {
