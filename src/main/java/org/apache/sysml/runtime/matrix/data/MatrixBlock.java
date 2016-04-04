@@ -1311,14 +1311,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 	
 	/**
-	 * Basic debugging primitive to check correctness of nnz, this method is not intended for
-	 * production use.
-	 * 
-	 * @throws DMLRuntimeException
+	 * Basic debugging primitive to check correctness of nnz.
+	 * This method is not intended for production use.
 	 */
-	public void checkNonZeros() 
-		throws DMLRuntimeException
-	{
+	public void checkNonZeros() {
 		//take non-zeros before and after recompute nnz
 		long nnzBefore = getNonZeros();
 		recomputeNonZeros();
@@ -1326,7 +1322,27 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		
 		//raise exception if non-zeros don't match up
 		if( nnzBefore != nnzAfter )
-			throw new DMLRuntimeException("Number of non zeros incorrect: "+nnzBefore+" vs "+nnzAfter);
+			throw new RuntimeException("Number of non zeros incorrect: "+nnzBefore+" vs "+nnzAfter);
+	}
+	
+	/**
+	 * Basic debugging primitive to check sparse block column ordering.
+	 * This method is not intended for production use. 
+	 */
+	public void checkSparseRows() {
+		if( !sparse || sparseBlock == null )
+			return;
+		
+		//check ordering of column indexes per sparse row
+		for( int i=0; i<rlen; i++ )
+			if( !sparseBlock.isEmpty(i) ) {
+				int apos = sparseBlock.pos(i);
+				int alen = sparseBlock.size(i);
+				int[] aix = sparseBlock.indexes(i);
+				for( int k=apos+1; k<apos+alen; k++ )
+					if( aix[k-1] >= aix[k] )
+						throw new RuntimeException("Wrong sparse row ordering: "+k+" "+aix[k-1]+" "+aix[k]);
+			}
 	}
 
 	@Override
@@ -1363,8 +1379,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	private void copySparseToSparse(MatrixBlock that)
 	{
 		this.nonZeros=that.nonZeros;
-		if( that.isEmptyBlock(false) )
-		{
+		if( that.isEmptyBlock(false) ) {
 			resetSparse();
 			return;
 		}
@@ -2030,7 +2045,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 				int r = in.readInt();
 				int c = in.readInt();
 				double val = in.readDouble();
-				sparseBlock.allocate(r, 1,clen);
+				sparseBlock.allocate(r, 1, clen);
 				sparseBlock.append(r, c, val);
 			}
 		}
@@ -3861,6 +3876,24 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			LibMatrixMult.matrixMultPermute(this, m2, ret1, ret2);
 
 	}
+
+	/**
+	 * 
+	 * @param rhsMatrix
+	 * @param ixrange
+	 * @param ret
+	 * @param inplace
+	 * @return
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	public MatrixBlock leftIndexingOperations(MatrixBlock rhsMatrix, IndexRange ixrange, MatrixBlock ret, boolean inplace) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{
+		return leftIndexingOperations(
+				rhsMatrix, (int)ixrange.rowStart, (int)ixrange.rowEnd, 
+				(int)ixrange.colStart, (int)ixrange.colEnd, ret, inplace);
+	}
 	
 	/**
 	 * Method to perform leftIndexing operation for a given lower and upper bounds in row and column dimensions.
@@ -3975,6 +4008,18 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		
 		ret.quickSetValue(rl, cl, inVal);
 		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param ixrange
+	 * @return
+	 * @throws DMLRuntimeException 
+	 */
+	public MatrixBlock sliceOperations(IndexRange ixrange, MatrixBlock ret) throws DMLRuntimeException {
+		return sliceOperations(
+				(int)ixrange.rowStart, (int)ixrange.rowEnd, 
+				(int)ixrange.colStart, (int)ixrange.colEnd, ret);
 	}
 	
 	/**

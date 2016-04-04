@@ -412,8 +412,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			}
 			//matrix append (rbind/cbind)
 			else {				
-				checkMatrixParam(getFirstExpr());
-				checkMatrixParam(getSecondExpr());
+				checkMatrixFrameParam(getFirstExpr());
+				checkMatrixFrameParam(getSecondExpr());
 			}
 			
 			output.setDataType(id.getDataType());
@@ -1207,6 +1207,19 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	{
 		if (e.getOutput().getDataType() != DataType.MATRIX) {
 			raiseValidateError("Expecting matrix parameter for function "+ this.getOpCode(), false, LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
+		}
+	}
+	
+	/**
+	 * 
+	 * @param e
+	 * @throws LanguageException
+	 */
+	protected void checkMatrixFrameParam(Expression e) //always unconditional
+		throws LanguageException 
+	{
+		if (e.getOutput().getDataType() != DataType.MATRIX && e.getOutput().getDataType() != DataType.FRAME) {
+			raiseValidateError("Expecting matrix or frame parameter for function "+ this.getOpCode(), false, LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
 		}
 	}
 	

@@ -37,6 +37,7 @@ import org.apache.hadoop.io.Writable;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
+import org.apache.sysml.runtime.util.IndexRange;
 
 /**
  * 
@@ -216,6 +217,21 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		_coldata.get(c).set(r, val);
 	}
 	
+	public void reset(int nrow) 
+	{
+		getSchema().clear();
+		getColumnNames().clear();
+		if(_coldata != null)
+			for(int i=0; i < _coldata.size(); ++i)
+				_coldata.get(i)._size = nrow;
+	}
+
+	public void reset() 
+	{
+		reset(0);
+	}
+	
+
 	/**
 	 * Append a row to the end of the data frame, where all row fields
 	 * are boxed objects according to the schema.
@@ -390,6 +406,14 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	///////
 	// indexing and append operations
 	
+	public FrameBlock leftIndexingOperations(FrameBlock rhsFrame, IndexRange ixrange, FrameBlock ret)
+		throws DMLRuntimeException
+	{
+		return leftIndexingOperations(rhsFrame, 
+				(int)ixrange.rowStart, (int)ixrange.rowEnd, 
+				(int)ixrange.colStart, (int)ixrange.colEnd, ret);
+	}
+	
 	/**
 	 * 
 	 * @param rhsFrame
@@ -435,6 +459,21 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	}
 	
 	/**
+	 * 
+	 * @param ixrange
+	 * @param ret
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public FrameBlock sliceOperations(IndexRange ixrange, FrameBlock ret) 
+		throws DMLRuntimeException
+	{
+		return sliceOperations(
+				(int)ixrange.rowStart, (int)ixrange.rowEnd,
+				(int)ixrange.colStart, (int)ixrange.colEnd, ret);
+	}
+	
+	/**
 	 * Right indexing operations to slice a subframe out of this frame block. 
 	 * Note that the existing column value types are preserved.
 	 * 
@@ -458,18 +497,24 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		//allocate output frame
 		if( ret == null )
 			ret = new FrameBlock();
-		ret._numRows = ru-rl+1;
+		else
+			ret.reset(ru-rl+1);
 		
 		//copy output schema and colnames
 		for( int j=cl; j<=cu; j++ ) {
 			ret._schema.add(_schema.get(j));
 			ret._colnames.add(_colnames.get(j));
-		}
-		
+		}	
+		ret._numRows = ru-rl+1;
+
 		//copy output data
-		for( int j=cl; j<=cu; j++ )
-			ret._coldata.add(_coldata.get(j).slice(rl,ru));
-		
+		if(ret._coldata.size() == 0)
+			for( int j=cl; j<=cu; j++ )
+				ret._coldata.add(_coldata.get(j).slice(rl,ru));
+		else
+			for( int j=cl; j<=cu; j++ )
+				ret._coldata.get(j-cl).set(0, ru-rl+1, _coldata.get(j), rl);	
+
 		return ret;
 	}
 	
@@ -538,8 +583,11 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		return ret;
 	}
 	
-	public void copy(FrameBlock src)
-	{
+	/**
+	 * 
+	 * @param src
+	 */
+	public void copy(FrameBlock src) {
 		//allocate 
 		ensureAllocatedColumns(src.getNumRows());
 		
@@ -548,15 +596,23 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			_coldata.get(i).set(0, src.getNumRows()-1, src._coldata.get(i));
 	}
 
-	
-	public void copy(int rl, int ru, int cl, int cu, FrameBlock src, int rlen, int clen) 
+	/**
+	 * 
+	 * @param rl
+	 * @param ru
+	 * @param cl
+	 * @param cu
+	 * @param src
+	 * @throws DMLRuntimeException
+	 */
+	public void copy(int rl, int ru, int cl, int cu, FrameBlock src) 
 		throws DMLRuntimeException
 	{
-		ensureAllocatedColumns(rlen);
+		ensureAllocatedColumns(ru-rl+1);
 		
 		//copy values
-		for( int i=cl; i<cu; i++ )
-			_coldata.get(i).set(rl, ru-rl-1, src._coldata.get(i));
+		for( int i=cl; i<=cu; i++ )
+			_coldata.get(i).set(rl, ru, src._coldata.get(i-cl));
 	}
 		
 
