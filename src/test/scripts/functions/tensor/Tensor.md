@@ -13,9 +13,9 @@ B=A[1:2, ] 								# B = A[0:2, :, :]
 The images are assumed to be stored NCHW format, where N = batch size, C = #channels, H = height of image and W = width of image. Hence, the images are internally represented as a matrix with dimension (N, C * H * W).
 
 This prototype also contains initial implementation of forward/backward functions for 2D convolution and pooling:
-* conv2d(x, w, ...)
-* conv2d_backward_filter(x, dout, ...) and conv2d_backward_data(w, dout, ...)
-* max_pool(x, ...), avg_pool(x, ...)
+* `conv2d(x, w, ...)`
+* `conv2d_backward_filter(x, dout, ...)` and `conv2d_backward_data(w, dout, ...)`
+* `max_pool(x, ...)`
 
 The required arguments for all above functions are:
 * stride=[stride_h, stride_w]
