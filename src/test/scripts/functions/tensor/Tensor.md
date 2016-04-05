@@ -28,8 +28,10 @@ The additional required argument for conv2d/conv2d_backward_filter/conv2d_backwa
 The additional required argument for max_pool/avg_pool functions is:
 * pool_size=[height_pool, width_pool]
 
-The function `conv2d_backward_data(filter, dout, zero padding)` performs the operation `conv2d(dout, rotate_4Dtensor(filter), full padding)`,
-where `rotate_4Dtensor` can be implemented using following DML script:
+The function `conv2d_backward_data(filter, dout, zero padding)` performs the operation `conv2d(dout, rotate_4Dtensor(filter), full padding)`
+and `conv2d_backward_filter(x, dout)` performs `rotate_4Dtensor( conv2d(rotate_4Dtensor(x), rotate_4Dtensor(w) )`.
+
+The function `rotate_4Dtensor` can be implemented using following DML script:
 
 ``` python
 rotate_matrix = function(matrix[double] filter) return (matrix[double] ret) {
@@ -63,3 +65,5 @@ rotate_4Dtensor = function(matrix[double] filter, int dim1, int dim2, int dim3, 
 # dx1 = conv2d(dout, rotated_filter, stride=[stride_h, stride_w], padding=[R-1, S-1], input_shape=[N, K, P, Q], filter_shape=[C, K, R, S])
 # dx2 = conv2d_backward_data(filter, dout, stride=[stride_h, stride_w], padding=[pad_h, pad_w], input_shape=[N, C, H, W], filter_shape=[K, C, R, S])
 ``` 
+
+For full padding, use pad_h = filter_height-1 and pad_w = filter_weight-1.
