@@ -29,7 +29,7 @@ The additional required argument for max_pool/avg_pool functions is:
 * pool_size=[height_pool, width_pool]
 
 The function `conv2d_backward_data(filter, dout, zero padding)` performs the operation `conv2d(dout, rotate_4Dtensor(filter), full padding)`
-and `conv2d_backward_filter(x, dout)` performs `rotate_4Dtensor( conv2d(rotate_4Dtensor(x), rotate_4Dtensor(w) )`.
+and `conv2d_backward_filter(x, dout)` performs `rotate_4Dtensor( conv2d(rotate_4Dtensor(x), rotate_4Dtensor(dout) )`.
 
 The function `rotate_4Dtensor` can be implemented using following DML script:
 
