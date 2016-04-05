@@ -29,7 +29,7 @@ The additional required argument for max_pool/avg_pool functions is:
 * pool_size=[height_pool, width_pool]
 
 The function `conv2d_backward_data(filter, dout, zero padding)` performs the operation `conv2d(dout, rotate_4Dtensor(filter), full padding)`
-and `conv2d_backward_filter(x, dout)` performs `rotate_4Dtensor( conv2d(rotate_4Dtensor(x), rotate_4Dtensor(dout) )`.
+and `conv2d_backward_filter(x, dout)` performs `flipFirst2Dim( conv2d(flipFirst2Dim(x), flipFirst2Dim(dout) )`.
 
 The function `rotate_4Dtensor` can be implemented using following DML script:
 
@@ -61,9 +61,35 @@ rotate_4Dtensor = function(matrix[double] filter, int dim1, int dim2, int dim3, 
                 }
         }
 }
+
+flipFirst2Dim = function(matrix[double] filter, int dim1, int dim2, int dim3, int dim4) return (matrix[double] ret) {
+        ret = matrix(0, rows=dim2, cols=dim1*dim3*dim4)
+        for(k in 0:(dim1-1)) {
+                for(c in 0:(dim2-1)) {
+                        # ---------------------------------------------------
+                        # Since the tensor is stored in row-major format, the indexing flips the first and second dimensions
+                        outIndex1 = k*dim3*dim4
+                        outIndex2 = (k+1)*dim3*dim4-1
+                        inIndex1 = c*dim3*dim4
+                        inIndex2 = (c+1)*dim3*dim4-1
+                        # Place the rotated filter map back
+                        ret[c+1, (outIndex1+1):(outIndex2+1)] = filter[k+1, (inIndex1+1):(inIndex2+1)]
+                }
+        }
+}
+
 # Example invocations:
-# dx1 = conv2d(dout, rotated_filter, stride=[stride_h, stride_w], padding=[R-1, S-1], input_shape=[N, K, P, Q], filter_shape=[C, K, R, S])
-# dx2 = conv2d_backward_data(filter, dout, stride=[stride_h, stride_w], padding=[pad_h, pad_w], input_shape=[N, C, H, W], filter_shape=[K, C, R, S])
+rotated_filter = rotate_4Dtensor(filter, K, C, R, S)
+dx1 = conv2d(dout, rotated_filter, stride=[stride_h, stride_w], padding=[R-1, S-1], input_shape=[N, K, P, Q], filter_shape=[C, K, R, S])
+dx2 = conv2d_backward_data(filter, dout, stride=[stride_h, stride_w], padding=[pad_h, pad_w], input_shape=[N, C, H, W], filter_shape=[K, C, R, S])
+# dx1 is same as dx2
+
+r_x = flipFirst2Dim(x, N, C, H, W)
+r_d = flipFirst2Dim(dout, N, K, P, Q)
+out = conv2d(r_x, r_d, stride=[stride_h, stride_w], padding=[pad_h, pad_w], input_shape=[C, N, H, W], filter_shape=[K, N, P, Q])
+dfilter1 = flipFirst2Dim(out, C, K, R, S)
+dfilter2 = conv2d_backward_filter(x, dout, stride=[stride_h, stride_w], padding=[pad_h, pad_w], input_shape=[N, C, H, W], filter_shape=[K, C, R, S])
+# dfilter1 is same as dfilter2
 ``` 
 
 For full padding, use pad_h = filter_height-1 and pad_w = filter_weight-1.
