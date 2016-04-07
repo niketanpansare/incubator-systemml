@@ -62,6 +62,10 @@ public class ExecutionContextFactory
 				break;
 		}
 		
+		if(DMLScript.USE_GPU) {
+			ec.gpuCtx = new JCudaContext();
+		}
+		
 		return ec;
 	}
 }

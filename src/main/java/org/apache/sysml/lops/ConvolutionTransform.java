@@ -37,7 +37,8 @@ public class ConvolutionTransform extends Lop
 		POOLING_PRE_RESHAPE, POOLING_POST_RESHAPE,
 		POOLING_BACKWARD_RESHAPE,
 		MAX_POOLING,
-		MAX_POOLING_BACKWARD
+		MAX_POOLING_BACKWARD,
+		DIRECT_CONV2D
 	};
 	
 	private OperationTypes operation = null;
@@ -127,6 +128,9 @@ public class ConvolutionTransform extends Lop
 			
 		case POOLING_BACKWARD_RESHAPE:
 			return "pooling_backward_reshape";
+		
+		case DIRECT_CONV2D:
+			return "conv2d";
 			
 		default:
 			throw new UnsupportedOperationException(this.printErrorLocation() + "Instruction is not defined for Transform operation " + operation);
@@ -181,10 +185,13 @@ public class ConvolutionTransform extends Lop
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( getInputs().get(0).prepInputOperand(input));
 		
-		String[] inputX = new String[]{dout, stride1, stride2, padding1, padding2, 
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( getInputs().get(1).prepInputOperand(dout));
+		
+		String[] inputX = new String[]{input, dout, stride1, stride2, padding1, padding2, 
 			 input_shape1, input_shape2, input_shape3, input_shape4,
 			 filter_shape1, filter_shape2, filter_shape3, filter_shape4};
-		for( int i=1; i<=(inputX.length); i++ ) {
+		for( int i=2; i < inputX.length; i++ ) {
 			Lop ltmp = getInputs().get(i);
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( ltmp.prepScalarInputOperand(getExecType()));

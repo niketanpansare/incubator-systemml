@@ -218,6 +218,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "pooling_backward_reshape"      , CPINSTRUCTION_TYPE.Convolution);
 		String2CPInstructionType.put( "maxpooling"      , CPINSTRUCTION_TYPE.Convolution);
 		String2CPInstructionType.put( "maxpooling_backward"      , CPINSTRUCTION_TYPE.Convolution);
+		String2CPInstructionType.put( "conv2d"      , CPINSTRUCTION_TYPE.Convolution);
 		
 		// Quaternary instruction opcodes
 		String2CPInstructionType.put( "wsloss"  , CPINSTRUCTION_TYPE.Quaternary);

@@ -21,6 +21,7 @@ package org.apache.sysml.hops;
 
 import java.util.ArrayList;
 
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.ConvolutionTransform;
@@ -92,7 +93,32 @@ public class ConvolutionOp extends Hop
 		if( getLops() != null )
 			return getLops();
 
-		ExecType et = optFindExecType();
+		
+		ExecType et = ExecType.INVALID;
+		ArrayList<Hop> inputs = getInput();
+		
+		if(DMLScript.USE_GPU) {
+			Hop parent = getInput().get(0);
+			if(op == ConvOp.RESHAPE_COL && 
+					parent instanceof AggBinaryOp 
+					&& parent.getInput().get(1) instanceof ConvolutionOp
+					&& ((ConvolutionOp) parent.getInput().get(1)).getOp() == ConvOp.IM2COL) {
+				// Can be fused as GPU DIRECT_CONV2D
+				et = ExecType.GPU;
+				this.op = ConvOp.DIRECT_CONV2D;
+				inputs = new ArrayList<Hop>();
+				Hop image = parent.getInput().get(1).getInput().get(0);
+				Hop filter = parent.getInput().get(0);
+				inputs.add(image);
+				inputs.add(filter);
+				for(int i = 1; i < getInput().size(); i++){
+					inputs.add(getInput().get(i));
+				}
+			}
+		}
+		
+		if(et == ExecType.INVALID)
+			et = optFindExecType();
 		
 		switch( op )
 		{
@@ -105,10 +131,11 @@ public class ConvolutionOp extends Hop
 			case POOLING_BACKWARD_RESHAPE:
 			case MAX_POOLING:
 			case MAX_POOLING_BACKWARD:
-			{
-				if( et==ExecType.CP)
+			case DIRECT_CONV2D:
+			{	
+				if( et == ExecType.CP || et == ExecType.GPU)
 				{
-					setLops(constructIm2colOrReshapeColLOP(et));
+					setLops(constructConvolutionLops(et, inputs));
 					break;
 				}
 				else {
@@ -126,17 +153,18 @@ public class ConvolutionOp extends Hop
 		return getLops();
 	}
 	
-	private Lop constructIm2colOrReshapeColLOP(ExecType et) throws HopsException, LopsException {
+	private Lop constructConvolutionLops(ExecType et, ArrayList<Hop> inputs) throws HopsException, LopsException {
 		int expectedNumInputs = 13;
-		if(op == ConvOp.POOLING_BACKWARD_RESHAPE || op == ConvOp.MAX_POOLING_BACKWARD) {
+		if(op == ConvOp.POOLING_BACKWARD_RESHAPE || op == ConvOp.MAX_POOLING_BACKWARD
+				|| op == ConvOp.DIRECT_CONV2D) {
 			expectedNumInputs = 14;
 		}
 		
-		if(getInput().size() != expectedNumInputs) {
+		if(inputs.size() != expectedNumInputs) {
 			throw new HopsException("Incorrect number of inputs for " + op.name());
 		}
 		
-		Lop in = getInput().get(0).constructLops();
+		Lop in = inputs.get(0).constructLops();
 		ConvolutionTransform transform1 = new ConvolutionTransform( in, 
 				HopsConv2Lops.get(op), getDataType(), getValueType(), et);
 		setOutputDimensions(transform1);
@@ -147,7 +175,7 @@ public class ConvolutionOp extends Hop
 		// filter_shape1, filter_shape2, filter_shape3, filter_shape4
 		for( int i=1; i <= (expectedNumInputs-1); i++ )
 		{
-			Lop ltmp = getInput().get(i).constructLops();
+			Lop ltmp = inputs.get(i).constructLops();
 			transform1.addInput(ltmp);
 			ltmp.addOutput(transform1);
 		}

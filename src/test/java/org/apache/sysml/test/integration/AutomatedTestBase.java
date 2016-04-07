@@ -86,6 +86,8 @@ public abstract class AutomatedTestBase
 	public static final boolean EXCEPTION_EXPECTED = true;
 	public static final boolean EXCEPTION_NOT_EXPECTED = false;
 	
+	public static final boolean TEST_GPU = true;
+	
 	protected ScriptType scriptType;
 	
 	// *** HACK ALERT *** HACK ALERT *** HACK ALERT ***
@@ -105,8 +107,18 @@ public abstract class AutomatedTestBase
 
 			System.setProperty("hadoop.home.dir", cwd + File.separator
 					+ "\\src\\test\\config\\hadoop_bin_windows");
-			System.setProperty("java.library.path", cwd + File.separator
+			
+			if(TEST_GPU) {
+				String CUDA_LIBRARY_PATH = System.getenv("CUDA_PATH") + File.separator + "bin"; 
+				System.setProperty("java.library.path", cwd + File.separator
+						+ "\\src\\test\\config\\hadoop_bin_windows\\bin" + File.pathSeparator
+						+ "/lib" + File.pathSeparator
+						+ CUDA_LIBRARY_PATH);
+			}
+			else {
+				System.setProperty("java.library.path", cwd + File.separator
 					+ "\\src\\test\\config\\hadoop_bin_windows\\bin");
+			}
 			
 
 		    // Need to muck around with the classloader to get it to use the new

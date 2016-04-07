@@ -110,6 +110,8 @@ public class DMLScript
 	// Only supported NCHW image layout and W_XYZ tensor layout
 	public static boolean DEBUG_TENSOR = true;
 	
+	public static boolean USE_GPU = false;
+	
 	// flag that indicates whether or not to suppress any prints to stdout
 	public static boolean _suppressPrint2Stdout = false;
 	
@@ -128,6 +130,7 @@ public class DMLScript
 			//+ "   -s: <filename> will be interpreted as a DML script string \n"
 			+ "   -python: (optional) parses Python-like DML\n"
 			+ "   -debug: (optional) run in debug mode\n"
+			+ "   -usegpu: (optional) use gpu acceleration whenever possible. Current version only supports CUDA.\n"
 			// Later add optional flags to indicate optimizations turned on or off. Currently they are turned off.
 			//+ "   -debug: <flags> (optional) run in debug mode\n"
 			//+ "			Optional <flags> that is supported for this mode is optimize=(on|off)\n"
@@ -306,6 +309,9 @@ public class DMLScript
 					fnameOptConfig = args[i].substring(8).replaceAll("\"", ""); 
 				else if( args[i].equalsIgnoreCase("-debug") ) {					
 					ENABLE_DEBUG_MODE = true;
+				}
+				else if( args[i].equalsIgnoreCase("-usegpu") ) {					
+					USE_GPU = true;
 				}
 				else if( args[i].equalsIgnoreCase("-reuseoutput") ) {					
 					REUSE_NONZEROED_OUTPUT = true;
@@ -687,6 +693,11 @@ public class DMLScript
 		}
 		finally //ensure cleanup/shutdown
 		{	
+			if(ec != null && ec.gpuCtx != null) {
+				ec.gpuCtx.destroy();
+				ec.gpuCtx = null;
+			}
+			
 			if(ec != null && ec instanceof SparkExecutionContext) {
 				((SparkExecutionContext) ec).close();
 			}

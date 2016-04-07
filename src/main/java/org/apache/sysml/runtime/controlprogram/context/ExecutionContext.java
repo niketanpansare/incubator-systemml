@@ -67,6 +67,8 @@ public class ExecutionContext
 	//debugging (optional)
 	protected DebugState _dbState = null;
 	
+	public GPUContext gpuCtx = null;
+	
 	protected ExecutionContext()
 	{
 		//protected constructor to force use of ExecutionContextFactory

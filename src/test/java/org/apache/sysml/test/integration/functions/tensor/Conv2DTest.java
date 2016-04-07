@@ -89,11 +89,19 @@ public class Conv2DTest extends AutomatedTestBase
 			String RI_HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = RI_HOME + TEST_NAME + ".dml";
 			
-			programArgs = new String[]{"-args",  "" + imgSize, "" + numImg, 
+			if(TEST_GPU) {
+				programArgs = new String[]{"-usegpu", "-explain", "-args",  "" + imgSize, "" + numImg, 
 					"" + numChannels, "" + numFilters, 
 					"" + filterSize, "" + stride, "" + pad, 
 					output("B")};
-			        
+			}
+			else {
+				programArgs = new String[]{"-explain", "-args",  "" + imgSize, "" + numImg, 
+					"" + numChannels, "" + numFilters, 
+					"" + filterSize, "" + stride, "" + pad, 
+					output("B")};
+			}
+			
 			boolean exceptionExpected = false;
 			int expectedNumberOfJobs = -1;
 			runTest(true, exceptionExpected, null, expectedNumberOfJobs);
