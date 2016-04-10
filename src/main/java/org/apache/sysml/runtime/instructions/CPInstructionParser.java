@@ -25,7 +25,6 @@ import org.apache.sysml.lops.DataGen;
 import org.apache.sysml.lops.UnaryCP;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.instructions.cp.AggregateBinaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.AggregateTernaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.AggregateUnaryCPInstruction;
@@ -48,6 +47,7 @@ import org.apache.sysml.runtime.instructions.cp.MMChainCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.MMTSJCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.MatrixReshapeCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.MultiReturnBuiltinCPInstruction;
+import org.apache.sysml.runtime.instructions.cp.MultiReturnParameterizedBuiltinCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.PMMJCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.QuantilePickCPInstruction;
@@ -184,6 +184,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "transform"	, CPINSTRUCTION_TYPE.ParameterizedBuiltin);
 		String2CPInstructionType.put( "transformapply",CPINSTRUCTION_TYPE.ParameterizedBuiltin);
 		String2CPInstructionType.put( "transformdecode",CPINSTRUCTION_TYPE.ParameterizedBuiltin);
+		String2CPInstructionType.put( "transformencode",CPINSTRUCTION_TYPE.MultiReturnParameterizedBuiltin);
 
 		// Variable Instruction Opcodes 
 		String2CPInstructionType.put( "assignvar"   , CPINSTRUCTION_TYPE.Variable);
@@ -193,6 +194,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "rmfilevar"   , CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( UnaryCP.CAST_AS_SCALAR_OPCODE, CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( UnaryCP.CAST_AS_MATRIX_OPCODE, CPINSTRUCTION_TYPE.Variable);
+		String2CPInstructionType.put( UnaryCP.CAST_AS_FRAME_OPCODE,  CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( UnaryCP.CAST_AS_DOUBLE_OPCODE, CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( UnaryCP.CAST_AS_INT_OPCODE,    CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( UnaryCP.CAST_AS_BOOLEAN_OPCODE, CPINSTRUCTION_TYPE.Variable);
@@ -268,7 +270,7 @@ public class CPInstructionParser extends InstructionParser
 	}
 
 	public static CPInstruction parseSingleInstruction (String str ) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException 
+		throws DMLRuntimeException 
 	{
 		if ( str == null || str.isEmpty() )
 			return null;
@@ -283,7 +285,7 @@ public class CPInstructionParser extends InstructionParser
 	}
 	
 	public static CPInstruction parseSingleInstruction ( CPINSTRUCTION_TYPE cptype, String str ) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException 
+		throws DMLRuntimeException 
 	{
 		ExecType execType = null; 
 		
@@ -362,6 +364,9 @@ public class CPInstructionParser extends InstructionParser
 				else //exectype CP_FILE
 					return ParameterizedBuiltinCPFileInstruction.parseInstruction(str);
 	
+			case MultiReturnParameterizedBuiltin:
+				return MultiReturnParameterizedBuiltinCPInstruction.parseInstruction(str);
+				
 			case MultiReturnBuiltin:
 				return MultiReturnBuiltinCPInstruction.parseInstruction(str);
 				

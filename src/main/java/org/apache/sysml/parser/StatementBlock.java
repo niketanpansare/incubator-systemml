@@ -189,7 +189,8 @@ public class StatementBlock extends LiveVariableAnalysis
 			}
 			else
 				sourceExpr = ((MultiAssignmentStatement)stmt).getSource();
-			if ( sourceExpr instanceof BuiltinFunctionExpression && ((BuiltinFunctionExpression)sourceExpr).multipleReturns() )
+			if ( (sourceExpr instanceof BuiltinFunctionExpression && ((BuiltinFunctionExpression)sourceExpr).multipleReturns())
+				|| (sourceExpr instanceof ParameterizedBuiltinFunctionExpression && ((ParameterizedBuiltinFunctionExpression)sourceExpr).multipleReturns()))
 				return false;
 			
 			//function calls (only mergable if inlined dml-bodied function)
@@ -356,10 +357,10 @@ public class StatementBlock extends LiveVariableAnalysis
 		}
 		if (_liveOut != null) sb.append("liveout " + _liveOut.toString() + "\n");
 		if (_liveIn!= null) sb.append("livein " + _liveIn.toString()+ "\n");
-		if (_gen != null) sb.append("gen " + _gen.toString()+ "\n");
-		if (_kill != null) sb.append("kill " + _kill.toString()+ "\n");
-		if (_read != null) sb.append("read " + _read.toString()+ "\n");
-		if (_updated != null) sb.append("updated " + _updated.toString()+ "\n");
+		if (_gen != null && !_gen.getVariables().isEmpty()) sb.append("gen " + _gen.toString()+ "\n");
+		if (_kill != null && !_kill.getVariables().isEmpty()) sb.append("kill " + _kill.toString()+ "\n");
+		if (_read != null && !_read.getVariables().isEmpty()) sb.append("read " + _read.toString()+ "\n");
+		if (_updated != null && !_updated.getVariables().isEmpty()) sb.append("updated " + _updated.toString()+ "\n");
 		return sb.toString();
 	}
 
@@ -714,7 +715,8 @@ public class StatementBlock extends LiveVariableAnalysis
 					FunctionCallIdentifier fci = (FunctionCallIdentifier)source;
 					fci.validateExpression(dmlProg, ids.getVariables(), currConstVars, conditional);
 				}
-				else if ( source instanceof BuiltinFunctionExpression && ((DataIdentifier)source).multipleReturns()) {
+				else if ( (source instanceof BuiltinFunctionExpression || source instanceof ParameterizedBuiltinFunctionExpression) 
+						&& ((DataIdentifier)source).multipleReturns()) {
 					source.validateExpression(mas, ids.getVariables(), currConstVars, conditional);
 				}
 				else 
@@ -744,7 +746,7 @@ public class StatementBlock extends LiveVariableAnalysis
 							ids.addVariable(target.getName(), target);
 					}
 				}
-				else if ( source instanceof BuiltinFunctionExpression ) {
+				else if ( source instanceof BuiltinFunctionExpression || source instanceof ParameterizedBuiltinFunctionExpression ) {
 					Identifier[] outputs = source.getOutputs();
 					for (int j=0; j < targetList.size(); j++) {
 						ids.addVariable(targetList.get(j).getName(), (DataIdentifier)outputs[j]);

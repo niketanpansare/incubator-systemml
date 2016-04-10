@@ -25,10 +25,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map.Entry;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -39,53 +39,50 @@ import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 
-import scala.Tuple2;
-
 import com.google.common.collect.Ordering;
 
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.transform.MVImputeAgent.MVMethod;
 import org.apache.sysml.runtime.transform.decode.DecoderRecode;
+import org.apache.sysml.runtime.transform.encode.Encoder;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
-public class RecodeAgent extends TransformationAgent {
-	
+public class RecodeAgent extends Encoder 
+{	
 	private static final long serialVersionUID = 8213163881283341874L;
 
-	private int[] _rcdList = null;
 	private int[] _mvrcdList = null;
 	private int[] _fullrcdList = null;
 
 	// HashMap< columnID, HashMap<distinctValue, count> >
 	private HashMap<Integer, HashMap<String, Long>> _rcdMaps  = new HashMap<Integer, HashMap<String, Long>>();
+	private HashMap<Integer, HashMap<String,String>> _finalMaps = null;
 	
-	RecodeAgent(JSONObject parsedSpec) throws JSONException {
-		
-		int rcdCount = 0;
-		
-		if ( parsedSpec.containsKey(TX_METHOD.RECODE.toString())) 
+	public RecodeAgent(JSONObject parsedSpec)
+		throws JSONException 
+	{
+		super(null);
+		int rcdCount = 0;	
+		if ( parsedSpec.containsKey(TfUtils.TXMETHOD_RECODE)) 
 		{
 			//TODO consolidate external and internal json spec definitions
 			JSONArray attrs = null;
-			if( parsedSpec.get(TX_METHOD.RECODE.toString()) instanceof JSONObject ) {
-				JSONObject obj = (JSONObject) parsedSpec.get(TX_METHOD.RECODE.toString());
-				attrs = (JSONArray) obj.get(JSON_ATTRS);
+			if( parsedSpec.get(TfUtils.TXMETHOD_RECODE) instanceof JSONObject ) {
+				JSONObject obj = (JSONObject) parsedSpec.get(TfUtils.TXMETHOD_RECODE);
+				attrs = (JSONArray) obj.get(TfUtils.JSON_ATTRS);
 			}
 			else
-				attrs = (JSONArray)parsedSpec.get(TX_METHOD.RECODE.toString());
-			
-			_rcdList = new int[attrs.size()];
-			for(int i=0; i < _rcdList.length; i++) 
-				_rcdList[i] = UtilFunctions.toInt(attrs.get(i));
-			rcdCount = _rcdList.length;
+				attrs = (JSONArray)parsedSpec.get(TfUtils.TXMETHOD_RECODE);			
+			rcdCount = initColList(attrs);
 		}
 		
-		if ( parsedSpec.containsKey(TX_METHOD.MVRCD.toString())) 
+		if ( parsedSpec.containsKey(TfUtils.TXMETHOD_MVRCD)) 
 		{
-			JSONObject obj = (JSONObject) parsedSpec.get(TX_METHOD.MVRCD.toString());
-			JSONArray attrs = (JSONArray) obj.get(JSON_ATTRS);
+			JSONObject obj = (JSONObject) parsedSpec.get(TfUtils.TXMETHOD_MVRCD);
+			JSONArray attrs = (JSONArray) obj.get(TfUtils.JSON_ATTRS);
 			
 			_mvrcdList = new int[attrs.size()];
 			for(int i=0; i < _mvrcdList.length; i++) 
@@ -97,9 +94,9 @@ public class RecodeAgent extends TransformationAgent {
 		{
 			_fullrcdList = new int[rcdCount];
 			int idx = -1;
-			if(_rcdList != null)
-				for(int i=0; i < _rcdList.length; i++)
-					_fullrcdList[++idx] = _rcdList[i]; 
+			if(_colList != null)
+				for(int i=0; i < _colList.length; i++)
+					_fullrcdList[++idx] = _colList[i]; 
 			
 			if(_mvrcdList != null)
 				for(int i=0; i < _mvrcdList.length; i++)
@@ -114,8 +111,8 @@ public class RecodeAgent extends TransformationAgent {
 	 * @param frame
 	 */
 	public void initRecodeMaps( FrameBlock frame ) {
-		for( int j=0; j<_rcdList.length; j++ ) {
-			int colID = _rcdList[j]; //1-based
+		for( int j=0; j<_colList.length; j++ ) {
+			int colID = _colList[j]; //1-based
 			HashMap<String,Long> map = new HashMap<String,Long>();
 			for( int i=0; i<frame.getNumRows(); i++ ) {
 				String[] tmp = frame.get(i, colID-1).toString().split(Lop.DATATYPE_PREFIX);
@@ -125,8 +122,16 @@ public class RecodeAgent extends TransformationAgent {
 		}
 	}
 	
+	public HashMap<Integer, HashMap<String,Long>> getCPRecodeMaps() { 
+		return _rcdMaps; 
+	}
+	
+	public HashMap<Integer, HashMap<String,String>> getRecodeMaps() {
+		return _finalMaps;
+	}
+	
 	void prepare(String[] words, TfUtils agents) {
-		if ( _rcdList == null && _mvrcdList == null )
+		if ( _colList == null && _mvrcdList == null )
 			return;
 		
 		String w = null;
@@ -177,13 +182,13 @@ public class RecodeAgent extends TransformationAgent {
 		mapOutputHelper(taskID, out, null, agents);
 	}
 	
-	public ArrayList<Tuple2<Integer, DistinctValue>> mapOutputTransformationMetadata(int taskID, ArrayList<Tuple2<Integer, DistinctValue>> list, TfUtils agents) throws IOException {
+	public ArrayList<Pair<Integer, DistinctValue>> mapOutputTransformationMetadata(int taskID, ArrayList<Pair<Integer, DistinctValue>> list, TfUtils agents) throws IOException {
 		mapOutputHelper(taskID, null, list, agents);
 		return list;
 	}
 	
-	public void mapOutputHelper(int taskID, OutputCollector<IntWritable, DistinctValue> out, ArrayList<Tuple2<Integer, DistinctValue>> list, TfUtils agents) throws IOException {
-		if ( _rcdList == null  && _mvrcdList == null )
+	public void mapOutputHelper(int taskID, OutputCollector<IntWritable, DistinctValue> out, ArrayList<Pair<Integer, DistinctValue>> list, TfUtils agents) throws IOException {
+		if ( _colList == null  && _mvrcdList == null )
 			return;
 		
 		try 
@@ -204,7 +209,7 @@ public class RecodeAgent extends TransformationAgent {
 					}
 					else if ( list != null ) {
 						for(String s : map.keySet()) 
-							list.add(new Tuple2<Integer,DistinctValue>(colID, new DistinctValue(s, map.get(s))) );
+							list.add(new Pair<Integer,DistinctValue>(colID, new DistinctValue(s, map.get(s))) );
 					}
 				}
 			}
@@ -241,7 +246,7 @@ public class RecodeAgent extends TransformationAgent {
 		int rcdIndex = 0, modeIndex = 0;
 		long maxCount = Long.MIN_VALUE;
 		
-		boolean isRecoded = (isRecoded(colID) != -1);
+		boolean isRecoded = (isApplicable(colID) != -1);
 		boolean isModeImputed = (mvagent.getMethod(colID) == MVMethod.GLOBAL_MODE);
 		
 		Path pt=new Path(outputDir+"/Recode/"+ agents.getName(colID) + TfUtils.TXMTD_RCD_MAP_SUFFIX);
@@ -293,7 +298,7 @@ public class RecodeAgent extends TransformationAgent {
 		if ( isRecoded ) 
 		{
 			// output mode
-			pt=new Path(outputDir+"/Recode/"+ agents.getName(colID) + MODE_FILE_SUFFIX);
+			pt=new Path(outputDir+"/Recode/"+ agents.getName(colID) + TfUtils.MODE_FILE_SUFFIX);
 			br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
 			br.write(UtilFunctions.quote(mode) + "," + modeIndex + "," + maxCount );
 			br.close();
@@ -307,7 +312,7 @@ public class RecodeAgent extends TransformationAgent {
 		
 		if (isModeImputed) 
 		{
-			pt=new Path(outputDir+"/Impute/"+ agents.getName(colID) + MV_FILE_SUFFIX);
+			pt=new Path(outputDir+"/Impute/"+ agents.getName(colID) + TfUtils.MV_FILE_SUFFIX);
 			br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
 			br.write(colID + "," + UtilFunctions.quote(mode));
 			br.close();
@@ -316,7 +321,7 @@ public class RecodeAgent extends TransformationAgent {
 	}
 	
 	public void outputTransformationMetadata(String outputDir, FileSystem fs, TfUtils agents) throws IOException {
-		if(_rcdList == null && _mvrcdList == null )
+		if(_colList == null && _mvrcdList == null )
 			return;
 		
 		for(int i=0; i<_fullrcdList.length; i++) {
@@ -356,15 +361,6 @@ public class RecodeAgent extends TransformationAgent {
 		writeMetadata(map, outputDir, colID, fs, agents, false);
 	}
 	
-	// ------------------------------------------------------------------------------------------------
-	
-	public HashMap<Integer, HashMap<String,Long>> getCPRecodeMaps() { return _rcdMaps; }
-	
-	HashMap<Integer, HashMap<String,String>> _finalMaps = null;
-	public HashMap<Integer, HashMap<String,String>> getRecodeMaps() {
-		return _finalMaps;
-	}
-	
 	/**
 	 * Method to load recode maps of all attributes, at once.
 	 * 
@@ -373,14 +369,14 @@ public class RecodeAgent extends TransformationAgent {
 	 */
 	@Override
 	public void loadTxMtd(JobConf job, FileSystem fs, Path txMtdDir, TfUtils agents) throws IOException {
-		if ( _rcdList == null )
+		if( !isApplicable() )
 			return;
 		
 		_finalMaps = new HashMap<Integer, HashMap<String, String>>();
 	
 		if(fs.isDirectory(txMtdDir)) {
-			for(int i=0; i<_rcdList.length;i++) {
-				int colID = _rcdList[i];
+			for(int i=0; i<_colList.length;i++) {
+				int colID = _colList[i];
 				
 				Path path = new Path( txMtdDir + "/Recode/" + agents.getName(colID) + TfUtils.TXMTD_RCD_MAP_SUFFIX);
 				TfUtils.checkValidInputFile(fs, path, true); 
@@ -404,22 +400,7 @@ public class RecodeAgent extends TransformationAgent {
 			fs.close();
 			throw new RuntimeException("Path to recode maps must be a directory: " + txMtdDir);
 		}
-	}
-	
-	/**
-	 * Check if the given column ID is subjected to this transformation.
-	 * 
-	 */
-	public int isRecoded(int colID)
-	{
-		if(_rcdList == null)
-			return -1;
-		
-		int idx = Arrays.binarySearch(_rcdList, colID);
-		return ( idx >= 0 ? idx : -1);
-	}
-
-	
+	}	
 
 	/**
 	 * Method to apply transformations.
@@ -428,16 +409,17 @@ public class RecodeAgent extends TransformationAgent {
 	 * @return
 	 */
 	@Override
-	public String[] apply(String[] words, TfUtils agents) {
-		if ( _rcdList == null )
+	public String[] apply(String[] words) 
+	{
+		if( !isApplicable() )
 			return words;
 		
 		//apply recode maps on relevant columns of given row
-		for(int i=0; i < _rcdList.length; i++) {
+		for(int i=0; i < _colList.length; i++) {
 			//prepare input and get code
-			int colID = _rcdList[i];
+			int colID = _colList[i];
 			String key = UtilFunctions.unquote(words[colID-1].trim());
-			String val = _finalMaps.get(colID).get(key);			
+			String val = lookupRCDMap(colID, key);			
 			// replace unseen keys with NaN 
 			words[colID-1] = (val!=null) ? val : "NaN";
 		}
@@ -447,43 +429,109 @@ public class RecodeAgent extends TransformationAgent {
 	
 	/**
 	 * 
-	 * @param words
-	 * @param agents
+	 * @param colID
+	 * @param key
 	 * @return
 	 */
-	public String[] cp_apply(String[] words, TfUtils agents) {
-		if ( _rcdList == null )
-			return words;
+	private String lookupRCDMap(int colID, String key) {
+		if( _finalMaps!=null )
+			return _finalMaps.get(colID).get(key);
+		else { //used for cp
+			Long tmp = _rcdMaps.get(colID).get(key);
+			return (tmp!=null) ? Long.toString(tmp) : null;
+		}
+	}
+
+	@Override
+	public double[] encode(String[] in, double[] out) {
+		if( !isApplicable() )
+			return out;
 		
-		//apply recode maps on relevant columns of given row
-		for(int i=0; i < _rcdList.length; i++) {
-			//prepare input and get code
-			int colID = _rcdList[i];
-			String key = UtilFunctions.unquote(words[colID-1].trim());
-			Long val = _rcdMaps.get(colID).get(key);			
-			// replace unseen keys with NaN
-			words[colID-1] = (val!=null) ? Long.toString(val) : "NaN";
+		//build and apply recode maps
+		build(in);
+		apply(in);
+		
+		//convert to double 
+		for( int j=0; j<_colList.length; j++ )
+			out[_colList[j]-1] = Double.parseDouble(in[_colList[j]-1]);		
+		return out;
+	}
+
+	@Override
+	public MatrixBlock encode(FrameBlock in, MatrixBlock out) {
+		if( !isApplicable() )
+			return out;
+		
+		//build recode maps 
+		build(in);
+		
+		//apply created recode maps
+		Iterator<String[]> iter = in.getStringRowIterator();
+		for( int i=0; iter.hasNext(); i++ ) {
+			String[] row = apply( iter.next() );
+			for( int j=0; j<_colList.length; j++ ) {
+				double val = Double.parseDouble(row[_colList[j]-1]);
+				out.quickSetValue(i, _colList[j]-1, val);
+			}	
 		}
 			
-		return words;
+		return out;
 	}
-	
-	public void printMaps() {
-		for(Integer k : _rcdMaps.keySet()) {
-			System.out.println("Column " + k);
-			HashMap<String,Long> map = _rcdMaps.get(k);
-			for(String w : map.keySet()) {
-				System.out.println("    " + w + " : " + map.get(w));
-			}
+
+	@Override
+	public void build(String[] in) {
+		if( !isApplicable() )
+			return;
+		
+		for( int j=0; j<_colList.length; j++ ) {
+			int colID = _colList[j]; //1-based
+			//allocate column map if necessary
+			if( !_rcdMaps.containsKey(colID) ) 
+				_rcdMaps.put(colID, new HashMap<String,Long>());
+			//probe and build column map
+			HashMap<String,Long> map = _rcdMaps.get(colID);
+			String key = in[colID-1];
+			if( !map.containsKey(key) )
+				map.put(key, new Long(map.size()+1));
 		}
 	}
-	
-	public void print() {
-		System.out.print("Recoding List: \n    ");
-		for(int i : _rcdList) {
-			System.out.print(i + " ");
+
+	@Override
+	public void build(FrameBlock in) {
+		if( !isApplicable() )
+			return;		
+		
+		Iterator<String[]> iter = in.getStringRowIterator();
+		while( iter.hasNext() )
+			build( iter.next() );
+	}
+
+	@Override
+	public FrameBlock getMetaData(FrameBlock out) {
+		if( !isApplicable() )
+			return out;
+		
+		//inverse operation to initRecodeMaps
+		
+		//allocate output rows
+		int maxDistinct = 0;
+		for( int j=0; j<_colList.length; j++ )
+			if( _rcdMaps.containsKey(_colList[j]) )
+				maxDistinct = Math.max(maxDistinct, _rcdMaps.get(_colList[j]).size());
+		out.ensureAllocatedColumns(maxDistinct);
+		
+		//create compact meta data representation
+		for( int j=0; j<_colList.length; j++ ) {
+			int colID = _colList[j]; //1-based
+			int rowID = 0;
+			if( _rcdMaps.containsKey(_colList[j]) )
+				for( Entry<String, Long> e : _rcdMaps.get(colID).entrySet() ) {
+					String tmp = e.getKey() + Lop.DATATYPE_PREFIX + e.getValue().toString();
+					out.set(rowID++, colID-1, tmp); 
+				}
 		}
-		System.out.println();
+		
+		return out;
 	}
 }
  

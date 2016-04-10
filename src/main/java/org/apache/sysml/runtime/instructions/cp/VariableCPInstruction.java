@@ -28,7 +28,6 @@ import org.apache.sysml.lops.UnaryCP;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
@@ -42,9 +41,11 @@ import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.MetaData;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
+import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.utils.Statistics;
@@ -80,7 +81,8 @@ public class VariableCPInstruction extends CPInstruction
 		RemoveVariable, 
 		RemoveVariableAndFile,		 
 		CastAsScalarVariable, 
-		CastAsMatrixVariable,
+		CastAsMatrixVariable, 
+		CastAsFrameVariable,
 		CastAsDoubleVariable,
 		CastAsIntegerVariable,
 		CastAsBooleanVariable,
@@ -107,7 +109,7 @@ public class VariableCPInstruction extends CPInstruction
 		_uniqueVarID  = new IDSequence(true); 
 	}
 	
-	private static VariableOperationCode getVariableOperationCode ( String str ) throws DMLUnsupportedOperationException {
+	private static VariableOperationCode getVariableOperationCode ( String str ) throws DMLRuntimeException {
 		
 		if ( str.equalsIgnoreCase("createvar"))
 			return VariableOperationCode.CreateVariable;
@@ -133,6 +135,9 @@ public class VariableCPInstruction extends CPInstruction
 		else if ( str.equalsIgnoreCase(UnaryCP.CAST_AS_MATRIX_OPCODE) ) 
 			return VariableOperationCode.CastAsMatrixVariable;
 		
+		else if ( str.equalsIgnoreCase(UnaryCP.CAST_AS_FRAME_OPCODE) ) 
+			return VariableOperationCode.CastAsFrameVariable;
+		
 		else if ( str.equalsIgnoreCase(UnaryCP.CAST_AS_DOUBLE_OPCODE) ) 
 			return VariableOperationCode.CastAsDoubleVariable;
 		
@@ -152,7 +157,7 @@ public class VariableCPInstruction extends CPInstruction
 			return VariableOperationCode.SetFileName;
 		
 		else
-			throw new DMLUnsupportedOperationException("Invalid function: " + str);
+			throw new DMLRuntimeException("Invalid function: " + str);
 	}
 	
 	// Checks if this instructon is a remove instruction for varName
@@ -241,7 +246,7 @@ public class VariableCPInstruction extends CPInstruction
 	}
 	
 	public static VariableCPInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{	
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType ( str );
 		String opcode = parts[0];
@@ -379,6 +384,7 @@ public class VariableCPInstruction extends CPInstruction
 			
 		case CastAsScalarVariable:
 		case CastAsMatrixVariable:
+		case CastAsFrameVariable:
 		case CastAsDoubleVariable:
 		case CastAsIntegerVariable:
 		case CastAsBooleanVariable:			
@@ -421,7 +427,7 @@ public class VariableCPInstruction extends CPInstruction
 	
 	@Override
 	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{	
 		switch ( opcode ) 
 		{ 
@@ -512,10 +518,33 @@ public class VariableCPInstruction extends CPInstruction
 			ec.setScalarOutput(output.getName(), new DoubleObject(value));
 			break;
 		case CastAsMatrixVariable:{
-			ScalarObject scalarInput = ec.getScalarInput(input1.getName(), input1.getValueType(), input1.isLiteral());
-			MatrixBlock out = new MatrixBlock(1,1,false);
-			out.quickSetValue(0, 0, scalarInput.getDoubleValue());
+			MatrixBlock out = null;
+			if( input1.getDataType()==DataType.FRAME ) {
+				FrameBlock fin = ec.getFrameInput(input1.getName());
+				out = DataConverter.convertToMatrixBlock(fin);
+				ec.releaseFrameInput(input1.getName());
+			}
+			else { //assume DataType.SCALAR otherwise
+				ScalarObject scalarInput = ec.getScalarInput(input1.getName(), input1.getValueType(), input1.isLiteral());
+				out = new MatrixBlock(1,1,false);
+				out.quickSetValue(0, 0, scalarInput.getDoubleValue());		
+			}
 			ec.setMatrixOutput(output.getName(), out);
+			break;
+		}
+		case CastAsFrameVariable:{
+			FrameBlock out = null;
+			if( input1.getDataType()==DataType.SCALAR ) {
+				ScalarObject scalarInput = ec.getScalarInput(input1.getName(), input1.getValueType(), input1.isLiteral());
+				out = new FrameBlock(1, input1.getValueType());
+				out.set(0, 0, scalarInput.getStringValue());	
+			}
+			else { //DataType.FRAME
+				MatrixBlock min = ec.getMatrixInput(input1.getName());
+				out = DataConverter.convertToFrameBlock(min);
+				ec.releaseMatrixInput(input1.getName());
+			}
+			ec.setFrameOutput(output.getName(), out);
 			break;
 		}
 		case CastAsDoubleVariable:{ 
@@ -844,7 +873,7 @@ public class VariableCPInstruction extends CPInstruction
 		}
 	}
 	
-	public static Instruction prepareRemoveInstruction(String varName) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	public static Instruction prepareRemoveInstruction(String varName) throws DMLRuntimeException {
 		StringBuilder sb = new StringBuilder();
 		sb.append("CP");
 		sb.append(Lop.OPERAND_DELIMITOR);
@@ -856,7 +885,7 @@ public class VariableCPInstruction extends CPInstruction
 		return parseInstruction(str);
 	}
 	
-	public static Instruction prepareCopyInstruction(String srcVar, String destVar) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	public static Instruction prepareCopyInstruction(String srcVar, String destVar) throws DMLRuntimeException {
 		StringBuilder sb = new StringBuilder();
 		sb.append("CP");
 		sb.append(Lop.OPERAND_DELIMITOR);
@@ -870,7 +899,7 @@ public class VariableCPInstruction extends CPInstruction
 		return parseInstruction(str);
 	}
 	
-	public static Instruction prepareMoveInstruction(String srcVar, String destFileName, String format) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	public static Instruction prepareMoveInstruction(String srcVar, String destFileName, String format) throws DMLRuntimeException {
 		StringBuilder sb = new StringBuilder();
 		sb.append("CP");
 		sb.append(Lop.OPERAND_DELIMITOR);
@@ -886,7 +915,7 @@ public class VariableCPInstruction extends CPInstruction
 		return parseInstruction(str);
 	}
 	
-	public static Instruction prepareMoveInstruction(String srcVar, String destVar) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	public static Instruction prepareMoveInstruction(String srcVar, String destVar) throws DMLRuntimeException {
 		// example: mvvar tempA A 
 		// (instead of two instructions -- cpvar tempA A; rmvar tempA)
 		StringBuilder sb = new StringBuilder();
@@ -919,11 +948,11 @@ public class VariableCPInstruction extends CPInstruction
 		return sb.toString();
 	}
 	
-	public static Instruction prepareCreateVariableInstruction(String varName, String fileName, boolean fNameOverride, String format) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	public static Instruction prepareCreateVariableInstruction(String varName, String fileName, boolean fNameOverride, String format) throws DMLRuntimeException {
 		return parseInstruction(getBasicCreateVarString(varName, fileName, fNameOverride, format));
 	}
 	
-	public static Instruction prepareCreateVariableInstruction(String varName, String fileName, boolean fNameOverride, String format, MatrixCharacteristics mc) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	public static Instruction prepareCreateVariableInstruction(String varName, String fileName, boolean fNameOverride, String format, MatrixCharacteristics mc) throws DMLRuntimeException {
 		StringBuilder sb = new StringBuilder();
 		sb.append(getBasicCreateVarString(varName, fileName, fNameOverride, format));
 		
@@ -943,7 +972,7 @@ public class VariableCPInstruction extends CPInstruction
 		return parseInstruction(str);
 	}	
 	
-	public static Instruction prepareCreateVariableInstruction(String varName, String fileName, boolean fNameOverride, String format, MatrixCharacteristics mc, boolean updateInPlace) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	public static Instruction prepareCreateVariableInstruction(String varName, String fileName, boolean fNameOverride, String format, MatrixCharacteristics mc, boolean updateInPlace) throws DMLRuntimeException {
 		StringBuilder sb = new StringBuilder();
 		sb.append(getBasicCreateVarString(varName, fileName, fNameOverride, format));
 		
@@ -965,7 +994,7 @@ public class VariableCPInstruction extends CPInstruction
 		return parseInstruction(str);
 	}	
 	
-	public static Instruction prepareCreateVariableInstruction(String varName, String fileName, boolean fNameOverride, String format, MatrixCharacteristics mc, boolean updateInPlace, boolean hasHeader, String delim, boolean sparse) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	public static Instruction prepareCreateVariableInstruction(String varName, String fileName, boolean fNameOverride, String format, MatrixCharacteristics mc, boolean updateInPlace, boolean hasHeader, String delim, boolean sparse) throws DMLRuntimeException {
 		StringBuilder sb = new StringBuilder();
 		sb.append(getBasicCreateVarString(varName, fileName, fNameOverride, format));
 		
@@ -1002,7 +1031,7 @@ public class VariableCPInstruction extends CPInstruction
 			|| opcode == VariableOperationCode.SetFileName )
 		{
 			//replace in-memory instruction
-			input2.set_name(input2.getName().replaceAll(pattern, replace));
+			input2.setName(input2.getName().replaceAll(pattern, replace));
 
 			// Find a start position of file name string.
 			int iPos = StringUtils.ordinalIndexOf(instString, Lop.OPERAND_DELIMITOR, CREATEVAR_FILE_NAME_VAR_POS); 

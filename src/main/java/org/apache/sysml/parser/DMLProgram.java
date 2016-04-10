@@ -34,7 +34,6 @@ import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.compile.Dag;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.ExternalFunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.ExternalFunctionProgramBlockCP;
 import org.apache.sysml.runtime.controlprogram.ForProgramBlock;
@@ -96,8 +95,8 @@ public class DMLProgram
 	public HashMap<String, FunctionStatementBlock> getFunctionStatementBlocks(String namespaceKey) throws LanguageException{
 		DMLProgram namespaceProgram = this.getNamespaces().get(namespaceKey);
 		if (namespaceProgram == null){
-			LOG.error("ERROR: namespace " + namespaceKey + " is underfined");
-			throw new LanguageException("ERROR: namespace " + namespaceKey + " is underfined");
+			LOG.error("ERROR: namespace " + namespaceKey + " is undefined");
+			throw new LanguageException("ERROR: namespace " + namespaceKey + " is undefined");
 		}
 		// for the namespace DMLProgram, get the functions in its current namespace
 		return namespaceProgram._functionBlocks;
@@ -175,7 +174,7 @@ public class DMLProgram
 	}
 	
 	
-	public Program getRuntimeProgram(DMLConfig config) throws IOException, LanguageException, DMLRuntimeException, LopsException, DMLUnsupportedOperationException {
+	public Program getRuntimeProgram(DMLConfig config) throws IOException, LanguageException, DMLRuntimeException, LopsException {
 		
 		// constructor resets the set of registered functions
 		Program rtprog = new Program();
@@ -213,10 +212,9 @@ public class DMLProgram
 	 * @throws IOException
 	 * @throws LopsException
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	public ProgramBlock createRuntimeProgramBlock(Program prog, StatementBlock sb, DMLConfig config) 
-		throws IOException, LopsException, DMLRuntimeException, DMLUnsupportedOperationException 
+		throws IOException, LopsException, DMLRuntimeException 
 	{
 		Dag<Lop> dag = null; 
 		Dag<Lop> pred_dag = null;
@@ -571,7 +569,7 @@ public class DMLProgram
 	 * are cleaned after execution anyway.
 	 * (3) As an alternative to doing rule 2, we could also check for existing objects in createvar and function invocation
 	 * (or generic at program block level) and remove objects of previous iterations accordingly (but objects of last iteration
-	 * would still require seperate cleanup).
+	 * would still require separate cleanup).
 	 * 
 	 * TODO: MB: external function invocations should become hops/lops as well (see instruction gen in DMLTranslator), 
 	 * (currently not possible at Hops/Lops level due the requirement of multiple outputs for functions) 
@@ -583,11 +581,10 @@ public class DMLProgram
 	 * @param pb
 	 * @return
 	 * @throws DMLRuntimeException 
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	@SuppressWarnings("unused")
 	private ProgramBlock verifyAndCorrectProgramBlock(VariableSet in, VariableSet out, VariableSet kill, ProgramBlock pb) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{	
 		//RULE 1: if in IN and not in OUT, then there should be an rmvar or rmfilevar inst
 		//(currently required for specific cases of external functions)
@@ -642,7 +639,7 @@ public class DMLProgram
 	}
 	
 	private Instruction createCleanupInstruction(String varName) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		//(example "CP+Lops.OPERAND_DELIMITOR+rmvar+Lops.OPERAND_DELIMITOR+Var7")
 		StringBuilder sb = new StringBuilder();

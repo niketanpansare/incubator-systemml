@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.functionobjects.SwapIndex;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
@@ -113,7 +112,7 @@ public class ConvolutionGPUInstruction extends UnaryCPInstruction {
 	
 	@Override
 	public void processInstruction(ExecutionContext ec) 
-			throws DMLRuntimeException, DMLUnsupportedOperationException {
+			throws DMLRuntimeException {
 		MatrixBlock outputBlock = null;
 		if (instOpcode.equalsIgnoreCase("conv2d") || 
 				instOpcode.equalsIgnoreCase("conv2d_backward_filter")) {

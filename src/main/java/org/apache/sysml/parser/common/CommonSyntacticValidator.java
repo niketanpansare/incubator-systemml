@@ -65,11 +65,13 @@ public abstract class CommonSyntacticValidator {
 	protected final String currentFile;
 	protected String _workingDir = ".";   //current working directory
 	protected HashMap<String,String> argVals = null;
+	protected String sourceNamespace = null;
 
-	public CommonSyntacticValidator(CustomErrorListener errorListener, HashMap<String,String> argVals) {
+	public CommonSyntacticValidator(CustomErrorListener errorListener, HashMap<String,String> argVals, String sourceNamespace) {
 		this.errorListener = errorListener;
 		currentFile = errorListener.getCurrentFileName();
 		this.argVals = argVals;
+		this.sourceNamespace = sourceNamespace;
 	}
 
 	protected void notifyErrorListeners(String message, int line, int charPositionInLine) {
@@ -302,10 +304,15 @@ public abstract class CommonSyntacticValidator {
 
 	protected void exitDataIdExpressionHelper(ParserRuleContext ctx, ExpressionInfo me, ExpressionInfo dataInfo) {
 		me.expr = dataInfo.expr;
-		int line = ctx.start.getLine();
-		int col = ctx.start.getCharPositionInLine();
-		me.expr.setAllPositions(currentFile, line, col, line, col);
-		setFileLineColumn(me.expr, ctx);
+		// If "The parameter $X either needs to be passed through commandline or initialized to default value" validation
+		// error occurs, then dataInfo.expr is null which would cause a null pointer exception with the following code.
+		// Therefore, check for null so that parsing can continue so all parsing issues can be determined.
+		if (me.expr != null) {
+			int line = ctx.start.getLine();
+			int col = ctx.start.getCharPositionInLine();
+			me.expr.setAllPositions(currentFile, line, col, line, col);
+			setFileLineColumn(me.expr, ctx);
+		}
 	}
 
 	protected void exitIndexedExpressionHelper(ParserRuleContext ctx, String name, ExpressionInfo dataInfo,
@@ -514,7 +521,7 @@ public abstract class CommonSyntacticValidator {
 	protected void setOutputStatement(ParserRuleContext ctx,
 			ArrayList<ParameterExpression> paramExpression, StatementInfo info) {
 		if(paramExpression.size() < 2){
-			notifyErrorListeners("incorrect usage of write function (atleast 2 arguments required)", ctx.start);
+			notifyErrorListeners("incorrect usage of write function (at least 2 arguments required)", ctx.start);
 			return;
 		}
 		if(paramExpression.get(0).getExpr() instanceof DataIdentifier) {
@@ -696,7 +703,11 @@ public abstract class CommonSyntacticValidator {
 		// If builtin functions weren't found...
 		FunctionCallIdentifier functCall = new FunctionCallIdentifier(paramExpression);
 		functCall.setFunctionName(functionName);
-		functCall.setFunctionNamespace(namespace);
+		// Override default namespace for imported non-built-in function
+		String inferNamespace = (sourceNamespace != null && sourceNamespace.length() > 0 && DMLProgram.DEFAULT_NAMESPACE.equals(namespace)) ? sourceNamespace : namespace;
+		functCall.setFunctionNamespace(inferNamespace);
+
+		functCall.setAllPositions(currentFile, ctx.start.getLine(), ctx.start.getCharPositionInLine(), ctx.stop.getLine(), ctx.stop.getCharPositionInLine());
 
 		setAssignmentStatement(ctx, info, target, functCall);
 	}

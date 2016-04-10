@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.instructions;
 import java.util.HashMap;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction.CPINSTRUCTION_TYPE;
 import org.apache.sysml.runtime.instructions.gpu.ConvolutionGPUInstruction;
@@ -37,7 +36,7 @@ public class GPUInstructionParser  extends InstructionParser
 	}
 	
 	public static CPInstruction parseSingleInstruction (String str ) 
-			throws DMLUnsupportedOperationException, DMLRuntimeException 
+			throws DMLRuntimeException 
 		{
 			if ( str == null || str.isEmpty() )
 				return null;
@@ -52,7 +51,7 @@ public class GPUInstructionParser  extends InstructionParser
 		}
 	
 	public static CPInstruction parseSingleInstruction ( CPINSTRUCTION_TYPE cptype, String str ) 
-			throws DMLUnsupportedOperationException, DMLRuntimeException 
+			throws DMLRuntimeException 
 		{
 			
 			if ( str == null || str.isEmpty() ) 

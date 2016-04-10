@@ -170,17 +170,21 @@ public class FrameTransformTest extends AutomatedTestBase
 		return ret;
 	}
 	
+	protected static String[][] createFrameData(double[][] data) {
+		return createFrameData(data, "V");
+	}
+	
 	/**
 	 * 
 	 * @param data
 	 * @return
 	 */
-	protected static String[][] createFrameData(double[][] data) {
+	protected static String[][] createFrameData(double[][] data, String prefix) {
 		String[][] ret = new String[data.length][];
 		for( int i=0; i<data.length; i++ ) {
 			String[] row = new String[data[i].length]; 
 			for( int j=0; j<data[i].length; j++ )
-				row[j] = "V"+String.valueOf(data[i][j]);
+				row[j] = prefix+String.valueOf(data[i][j]);
 			ret[i] = row;
 		}
 		
