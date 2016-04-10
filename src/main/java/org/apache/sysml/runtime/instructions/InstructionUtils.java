@@ -269,6 +269,20 @@ public class InstructionUtils
 	
 	/**
 	 * 
+	 * @param str
+	 * @return
+	 * @throws DMLUnsupportedOperationException
+	 */
+	public static CPINSTRUCTION_TYPE getGPUType( String str ) 
+		throws DMLUnsupportedOperationException 
+	{
+		String opcode = getOpCode(str);
+		CPINSTRUCTION_TYPE cptype = GPUInstructionParser.String2GPUInstructionType.get( opcode ); 
+		return cptype;
+	}
+	
+	/**
+	 * 
 	 * @param opcode
 	 * @return
 	 */

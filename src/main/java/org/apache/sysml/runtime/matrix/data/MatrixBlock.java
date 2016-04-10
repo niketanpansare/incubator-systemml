@@ -42,6 +42,7 @@ import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
+import org.apache.sysml.runtime.controlprogram.context.GPUPointer;
 import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.functionobjects.CM;
 import org.apache.sysml.runtime.functionobjects.CTable;
@@ -114,6 +115,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	//matrix data (sparse or dense)
 	protected double[] denseBlock    = null;
 	protected SparseBlock sparseBlock = null;
+	public GPUPointer gpuPointer = null;
 		
 	//sparse-block-specific attributes (allocation only)
 	protected int estimatedNNzsPerRow = -1; 

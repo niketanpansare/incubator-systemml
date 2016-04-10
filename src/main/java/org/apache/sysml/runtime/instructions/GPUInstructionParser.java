@@ -16,12 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.sysml.runtime;
+package org.apache.sysml.runtime.instructions;
 
 import java.util.HashMap;
 
-import org.apache.sysml.runtime.instructions.InstructionParser;
-import org.apache.sysml.runtime.instructions.InstructionUtils;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction.CPINSTRUCTION_TYPE;
 import org.apache.sysml.runtime.instructions.gpu.ConvolutionGPUInstruction;
@@ -32,6 +32,7 @@ public class GPUInstructionParser  extends InstructionParser
 	static {
 		String2GPUInstructionType = new HashMap<String, CPINSTRUCTION_TYPE>();
 		String2GPUInstructionType.put( "conv2d"      , CPINSTRUCTION_TYPE.Convolution);
+		String2GPUInstructionType.put( "conv2d_backward_filter"      , CPINSTRUCTION_TYPE.Convolution);
 		
 	}
 	

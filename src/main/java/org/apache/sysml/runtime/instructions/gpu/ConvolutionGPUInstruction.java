@@ -21,15 +21,11 @@ package org.apache.sysml.runtime.instructions.gpu;
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 
-import jcuda.Pointer;
-import jcuda.jcudnn.cudnnTensorDescriptor;
-
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.controlprogram.context.JCudaContext;
 import org.apache.sysml.runtime.functionobjects.SwapIndex;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
@@ -37,20 +33,6 @@ import org.apache.sysml.runtime.instructions.cp.UnaryCPInstruction;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
-
-import static jcuda.jcudnn.JCudnn.cudnnConvolutionForward;
-import static jcuda.jcudnn.JCudnn.cudnnDestroyTensorDescriptor;
-import static jcuda.jcudnn.cudnnDataType.CUDNN_DATA_DOUBLE;
-import jcuda.jcudnn.cudnnFilterDescriptor;
-import static jcuda.jcudnn.JCudnn.cudnnDestroyFilterDescriptor;
-import static jcuda.runtime.JCuda.cudaFree;
-import jcuda.jcudnn.cudnnConvolutionDescriptor;
-import static jcuda.jcudnn.JCudnn.cudnnCreateConvolutionDescriptor;
-import static jcuda.jcudnn.JCudnn.cudnnDestroyConvolutionDescriptor;
-import static jcuda.jcudnn.JCudnn.cudnnSetConvolutionNdDescriptor;
-import static jcuda.jcudnn.cudnnConvolutionMode.CUDNN_CROSS_CORRELATION;
-import static jcuda.jcudnn.JCudnn.cudnnGetConvolutionForwardWorkspaceSize;
-
 
 // TODO: Using the same hierarchy as CPInstruction for now.
 public class ConvolutionGPUInstruction extends UnaryCPInstruction {
@@ -82,7 +64,8 @@ public class ConvolutionGPUInstruction extends UnaryCPInstruction {
 
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
-		if (opcode.equalsIgnoreCase("conv2d")) {
+		if (opcode.equalsIgnoreCase("conv2d") ||
+				opcode.equalsIgnoreCase("conv2d_backward_filter")) {
 			InstructionUtils.checkNumFields(parts, 15);
 			// dout, stride1, stride2, padding1, padding2
 			// input_shape1, input_shape2, input_shape3, input_shape4,
@@ -129,10 +112,11 @@ public class ConvolutionGPUInstruction extends UnaryCPInstruction {
 	}
 	
 	@Override
-	public void processInstruction(ExecutionContext ec)
+	public void processInstruction(ExecutionContext ec) 
 			throws DMLRuntimeException, DMLUnsupportedOperationException {
 		MatrixBlock outputBlock = null;
-		if (instOpcode.equalsIgnoreCase("conv2d")) {
+		if (instOpcode.equalsIgnoreCase("conv2d") || 
+				instOpcode.equalsIgnoreCase("conv2d_backward_filter")) {
 			
 			pad_h = getScalarInput(ec, _padding, 0);
 			pad_w = getScalarInput(ec, _padding, 1);
@@ -158,79 +142,36 @@ public class ConvolutionGPUInstruction extends UnaryCPInstruction {
 				if(image.isInSparseFormat() || filter.isInSparseFormat()) {
 					throw new DMLRuntimeException("Sparse convolution not implemented");
 				}
-				double [] imageData = image.getDenseBlock();
-				double [] filterData = filter.getDenseBlock();
 				
 				if(ec.gpuCtx != null) {
-					JCudaContext gpuCtx = (JCudaContext) ec.gpuCtx;
-					cudnnTensorDescriptor srcTensorDesc = null;
-					cudnnTensorDescriptor dstTensorDesc = null;
-					cudnnFilterDescriptor filterDesc = null;
-					Pointer imagePointer = null;
-					Pointer filterPointer = null;
-					Pointer dstPointer = null;
-					cudnnConvolutionDescriptor convDesc = null;
-					Pointer workSpace = null;
-					long sizeInBytes = 0;
-					try {
-						// Allocate descriptors
-						srcTensorDesc = gpuCtx.allocateTensorDescriptor(N, C, H, W);
-						dstTensorDesc = gpuCtx.allocateTensorDescriptor(N, K, P, Q);
-						filterDesc = gpuCtx.allocateFilterDescriptor(K, C, R, S);
-						
-						// Allocate data
-						imagePointer = gpuCtx.allocateDoubleArrayOnGPU(imageData, N, C, H, W);
-						filterPointer = gpuCtx.allocateDoubleArrayOnGPU(filterData, K, C, R, S);
-						dstPointer = gpuCtx.allocateDoubleArrayOnGPU(filterData, N, K, P, Q);
-						
-						convDesc = allocateConvolutionDescriptor();
-						
-						int algo = getAlgorithm();
-						
-						long sizeInBytesArray[] = { 0 };
-			            workSpace = new Pointer();
-			            cudnnGetConvolutionForwardWorkspaceSize(gpuCtx.cudnnHandle, 
-			                    srcTensorDesc, filterDesc, convDesc, dstTensorDesc, 
-			                    algo, sizeInBytesArray);
-			            
-						Pointer alpha = gpuCtx.pointerTo(1.0); // TODO
-						Pointer beta = gpuCtx.pointerTo(0.0f);
-						int ret = cudnnConvolutionForward(gpuCtx.cudnnHandle, alpha, 
-								srcTensorDesc, imagePointer, 
-								filterDesc, filterPointer,
-								convDesc, algo, workSpace, sizeInBytes, beta,
-								dstTensorDesc, dstPointer);
-						String status = jcuda.jcudnn.cudnnStatus.stringFor(ret);
-						if(!status.equalsIgnoreCase("CUDNN_STATUS_SUCCESS")) {
-							throw new DMLRuntimeException("Could not executed cudnnConvolutionForward: " + status);
-						}
-						
-						outputBlock = allocateReusableNonZeroedDenseOutputBlock(ec, N, K * P * Q);
-						gpuCtx.getDoubleArrayFromGPU(dstPointer, outputBlock.getDenseBlock());
-					}
-					finally {
-						if(srcTensorDesc != null)
-							cudnnDestroyTensorDescriptor(srcTensorDesc);
-						if(dstTensorDesc != null)
-							cudnnDestroyTensorDescriptor(dstTensorDesc);
-						if(filterDesc != null)
-							cudnnDestroyFilterDescriptor(filterDesc);
-						if(imagePointer != null)
-							cudaFree(imagePointer);
-						if(dstPointer != null)
-							cudaFree(dstPointer);
-						if(filterPointer != null)
-							cudaFree(filterPointer);
-						if(convDesc != null)
-							cudnnDestroyConvolutionDescriptor(convDesc);
-						if(workSpace != null && sizeInBytes != 0)
-							cudaFree(workSpace);
-					}
+					outputBlock = allocateReusableNonZeroedDenseOutputBlock(N, K * P * Q);
+					ec.gpuCtx.conv2d(image, filter, outputBlock, N, C, H, W,
+							K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
+					// TODO: For now always copy the device data to host
+					ec.gpuCtx.copyDeviceToHost(outputBlock);
 				}
 				else {
-					throw new DMLRuntimeException("Unsupported GPU context for " + instOpcode);
+					throw new DMLRuntimeException("GPUContext is not initialized");
 				}
-				
+			}
+			else if (instOpcode.equalsIgnoreCase("conv2d_backward_filter")) {
+				MatrixBlock image = ec.getMatrixInput(input1.getName());
+				MatrixBlock dout = ec.getMatrixInput(_in2.getName());
+				if(image.isInSparseFormat() || dout.isInSparseFormat())
+					throw new DMLRuntimeException("Sparse convolution backward not implemented");
+				if(ec.gpuCtx != null) {
+					outputBlock = allocateReusableNonZeroedDenseOutputBlock(K, C * R * S);
+					ec.gpuCtx.conv2d_backward_filter(image, dout, outputBlock, N, C, H, W,
+							K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
+					// TODO: For now always copy the device data to host
+					ec.gpuCtx.copyDeviceToHost(outputBlock);
+				}
+				else {
+					throw new DMLRuntimeException("GPUContext is not initialized");
+				}
+			}
+			else {
+				throw new DMLRuntimeException("Unsupported GPU context for " + instOpcode);
 			}
 		}
 		else {
@@ -242,24 +183,9 @@ public class ConvolutionGPUInstruction extends UnaryCPInstruction {
 		ec.setMatrixOutput(output.getName(), outputBlock);
 	}
 	
-	cudnnConvolutionDescriptor allocateConvolutionDescriptor() {
-		cudnnConvolutionDescriptor convDesc = new cudnnConvolutionDescriptor();
-		cudnnCreateConvolutionDescriptor(convDesc);
-		int padding [] = { pad_h, pad_w }; 
-		int strides [] = { stride_h, stride_w };
-		int upscale[] = { 1, 1 };
-		cudnnSetConvolutionNdDescriptor(convDesc, 2, padding, strides, upscale, 
-				CUDNN_CROSS_CORRELATION, CUDNN_DATA_DOUBLE);
-		return convDesc;
-	}
-	
-	int getAlgorithm() {
-		// TODO: For now always return GEMM, later optimize is
-		return jcuda.jcudnn.cudnnConvolutionFwdAlgo.CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM;
-	}
 	
 	private SoftReference<double[]> reuseableNonZeroedDoubleArray;
-	private MatrixBlock allocateReusableNonZeroedDenseOutputBlock(ExecutionContext ec, int numRowsOutput, int numColsOutput) throws DMLRuntimeException {
+	private MatrixBlock allocateReusableNonZeroedDenseOutputBlock(int numRowsOutput, int numColsOutput) throws DMLRuntimeException {
 		long nnz = numRowsOutput * numColsOutput;
 		MatrixBlock outputBlock = new MatrixBlock(numRowsOutput, numColsOutput, nnz);
 		double[] outputArray = null;

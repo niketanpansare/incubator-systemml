@@ -38,7 +38,7 @@ public class ConvolutionTransform extends Lop
 		POOLING_BACKWARD_RESHAPE,
 		MAX_POOLING,
 		MAX_POOLING_BACKWARD,
-		DIRECT_CONV2D
+		DIRECT_CONV2D, DIRECT_CONV2D_BACKWARD_FILTER
 	};
 	
 	private OperationTypes operation = null;
@@ -131,6 +131,9 @@ public class ConvolutionTransform extends Lop
 		
 		case DIRECT_CONV2D:
 			return "conv2d";
+			
+		case DIRECT_CONV2D_BACKWARD_FILTER:
+			return "conv2d_backward_filter";
 			
 		default:
 			throw new UnsupportedOperationException(this.printErrorLocation() + "Instruction is not defined for Transform operation " + operation);

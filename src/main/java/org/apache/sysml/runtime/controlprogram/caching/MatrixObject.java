@@ -32,6 +32,7 @@ import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.spark.data.BroadcastObject;
 import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
@@ -602,6 +603,12 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		if( DMLScript.STATISTICS ){
 			long t1 = System.nanoTime();
 			CacheStatistics.incrementReleaseTime(t1-t0);
+		}
+	}
+	
+	public void cleanupGPUData(ExecutionContext ec) throws DMLRuntimeException {
+		if(DMLScript.USE_GPU && ec.gpuCtx != null) {
+			ec.gpuCtx.remove(_data);
 		}
 	}
 

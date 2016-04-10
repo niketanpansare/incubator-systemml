@@ -153,10 +153,14 @@ public class ConvolutionOp extends Hop
 		return getLops();
 	}
 	
-	private Lop constructConvolutionLops(ExecType et, ArrayList<Hop> inputs) throws HopsException, LopsException {
+	public void setOp(ConvOp op) {
+		this.op = op;
+	}
+	
+	public Lop constructConvolutionLops(ExecType et, ArrayList<Hop> inputs) throws HopsException, LopsException {
 		int expectedNumInputs = 13;
 		if(op == ConvOp.POOLING_BACKWARD_RESHAPE || op == ConvOp.MAX_POOLING_BACKWARD
-				|| op == ConvOp.DIRECT_CONV2D) {
+				|| op == ConvOp.DIRECT_CONV2D || op == ConvOp.DIRECT_CONV2D_BACKWARD_FILTER) {
 			expectedNumInputs = 14;
 		}
 		
