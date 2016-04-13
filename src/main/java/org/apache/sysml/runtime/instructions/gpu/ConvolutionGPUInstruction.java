@@ -136,8 +136,8 @@ public class ConvolutionGPUInstruction extends UnaryCPInstruction {
 			Q = (int) ConvolutionUtils.getQ(W, S, stride_w, pad_w);
 			
 			if (instOpcode.equalsIgnoreCase("conv2d")) {
-				MatrixBlock image = ec.getMatrixInput(input1.getName());
-				MatrixBlock filter = ec.getMatrixInput(_in2.getName());
+				MatrixBlock image = ec.getMatrixInputForGPUInstruction(input1.getName());
+				MatrixBlock filter = ec.getMatrixInputForGPUInstruction(_in2.getName());
 				if(image.isInSparseFormat() || filter.isInSparseFormat()) {
 					throw new DMLRuntimeException("Sparse convolution not implemented");
 				}
@@ -147,15 +147,15 @@ public class ConvolutionGPUInstruction extends UnaryCPInstruction {
 					ec.gpuCtx.conv2d(image, filter, outputBlock, N, C, H, W,
 							K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
 					// TODO: For now always copy the device data to host
-					ec.gpuCtx.copyDeviceToHost(outputBlock);
+					// ec.gpuCtx.copyDeviceToHost(outputBlock);
 				}
 				else {
 					throw new DMLRuntimeException("GPUContext is not initialized");
 				}
 			}
 			else if (instOpcode.equalsIgnoreCase("conv2d_backward_filter")) {
-				MatrixBlock image = ec.getMatrixInput(input1.getName());
-				MatrixBlock dout = ec.getMatrixInput(_in2.getName());
+				MatrixBlock image = ec.getMatrixInputForGPUInstruction(input1.getName());
+				MatrixBlock dout = ec.getMatrixInputForGPUInstruction(_in2.getName());
 				if(image.isInSparseFormat() || dout.isInSparseFormat())
 					throw new DMLRuntimeException("Sparse convolution backward not implemented");
 				if(ec.gpuCtx != null) {
@@ -163,7 +163,7 @@ public class ConvolutionGPUInstruction extends UnaryCPInstruction {
 					ec.gpuCtx.conv2d_backward_filter(image, dout, outputBlock, N, C, H, W,
 							K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
 					// TODO: For now always copy the device data to host
-					ec.gpuCtx.copyDeviceToHost(outputBlock);
+					// ec.gpuCtx.copyDeviceToHost(outputBlock);
 				}
 				else {
 					throw new DMLRuntimeException("GPUContext is not initialized");
@@ -179,7 +179,7 @@ public class ConvolutionGPUInstruction extends UnaryCPInstruction {
 		// release inputs/outputs
 		ec.releaseMatrixInput(input1.getName());
 		ec.releaseMatrixInput(_in2.getName());
-		ec.setMatrixOutput(output.getName(), outputBlock);
+		ec.setMatrixOutputForGPUInstruction(output.getName(), outputBlock);
 	}
 	
 	

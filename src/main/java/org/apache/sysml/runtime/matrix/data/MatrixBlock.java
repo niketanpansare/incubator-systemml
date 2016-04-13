@@ -1367,6 +1367,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		this.clen=that.clen;
 		this.sparse=sp;
 		estimatedNNzsPerRow=(int)Math.ceil((double)thatValue.getNonZeros()/(double)rlen);
+		this.gpuPointer = that.gpuPointer;
+		 
 		if(this.sparse && that.sparse)
 			copySparseToSparse(that);
 		else if(this.sparse && !that.sparse)

@@ -33,6 +33,7 @@ import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.runtime.controlprogram.context.GPUPointer;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.spark.data.BroadcastObject;
 import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
@@ -158,6 +159,16 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	public void removeMetaData() {
 		_metaData = null;
 	}
+	
+	public GPUPointer getGPUPointer() {
+		if(_data == null)
+			return null;
+		return _data.gpuPointer;
+	}
+	public MatrixBlock getMatrixBlock() {
+		return _data;
+	}
+	
 	
 	@Override
 	public void updateMatrixCharacteristics (MatrixCharacteristics mc) {
@@ -719,6 +730,15 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			if( _data == null )
 				getCache();
 			super.acquire( false, _data==null ); //incl. read matrix if evicted	
+			
+			GPUPointer gpuPointer = getGPUPointer();
+			if( gpuPointer != null && gpuPointer.isDeviceCopyModified) {
+				try {
+					gpuPointer.copyFromDeviceToHost();
+				} catch (DMLRuntimeException e) {
+					throw new CacheException(e);
+				}
+			}
 			
 			// b) write the matrix 
 			try

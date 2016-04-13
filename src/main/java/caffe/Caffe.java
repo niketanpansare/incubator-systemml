@@ -90,10 +90,10 @@ public final class Caffe {
     // @@protoc_insertion_point(enum_scope:caffe.Phase)
   }
 
-  public interface BlobShapeOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.BlobShape)
-      com.google.protobuf.MessageOrBuilder {
+  public interface BlobShapeOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // repeated int64 dim = 1 [packed = true];
     /**
      * <code>repeated int64 dim = 1 [packed = true];</code>
      */
@@ -115,9 +115,8 @@ public final class Caffe {
    * </pre>
    */
   public static final class BlobShape extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.BlobShape)
-      BlobShapeOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements BlobShapeOrBuilder {
     // Use BlobShape.newBuilder() to construct.
     private BlobShape(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -226,6 +225,7 @@ public final class Caffe {
       return PARSER;
     }
 
+    // repeated int64 dim = 1 [packed = true];
     public static final int DIM_FIELD_NUMBER = 1;
     private java.util.List<java.lang.Long> dim_;
     /**
@@ -255,8 +255,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -381,9 +380,8 @@ public final class Caffe {
      * </pre>
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.BlobShape)
-        caffe.Caffe.BlobShapeOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.BlobShapeOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_BlobShape_descriptor;
@@ -502,6 +500,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // repeated int64 dim = 1 [packed = true];
       private java.util.List<java.lang.Long> dim_ = java.util.Collections.emptyList();
       private void ensureDimIsMutable() {
         if (!((bitField0_ & 0x00000001) == 0x00000001)) {
@@ -553,8 +552,7 @@ public final class Caffe {
       public Builder addAllDim(
           java.lang.Iterable<? extends java.lang.Long> values) {
         ensureDimIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, dim_);
+        super.addAll(values, dim_);
         onChanged();
         return this;
       }
@@ -579,10 +577,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.BlobShape)
   }
 
-  public interface BlobProtoOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.BlobProto)
-      com.google.protobuf.MessageOrBuilder {
+  public interface BlobProtoOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional .caffe.BlobShape shape = 7;
     /**
      * <code>optional .caffe.BlobShape shape = 7;</code>
      */
@@ -596,6 +594,7 @@ public final class Caffe {
      */
     caffe.Caffe.BlobShapeOrBuilder getShapeOrBuilder();
 
+    // repeated float data = 5 [packed = true];
     /**
      * <code>repeated float data = 5 [packed = true];</code>
      */
@@ -609,6 +608,7 @@ public final class Caffe {
      */
     float getData(int index);
 
+    // repeated float diff = 6 [packed = true];
     /**
      * <code>repeated float diff = 6 [packed = true];</code>
      */
@@ -622,6 +622,7 @@ public final class Caffe {
      */
     float getDiff(int index);
 
+    // repeated double double_data = 8 [packed = true];
     /**
      * <code>repeated double double_data = 8 [packed = true];</code>
      */
@@ -635,6 +636,7 @@ public final class Caffe {
      */
     double getDoubleData(int index);
 
+    // repeated double double_diff = 9 [packed = true];
     /**
      * <code>repeated double double_diff = 9 [packed = true];</code>
      */
@@ -648,6 +650,7 @@ public final class Caffe {
      */
     double getDoubleDiff(int index);
 
+    // optional int32 num = 1 [default = 0];
     /**
      * <code>optional int32 num = 1 [default = 0];</code>
      *
@@ -665,6 +668,7 @@ public final class Caffe {
      */
     int getNum();
 
+    // optional int32 channels = 2 [default = 0];
     /**
      * <code>optional int32 channels = 2 [default = 0];</code>
      */
@@ -674,6 +678,7 @@ public final class Caffe {
      */
     int getChannels();
 
+    // optional int32 height = 3 [default = 0];
     /**
      * <code>optional int32 height = 3 [default = 0];</code>
      */
@@ -683,6 +688,7 @@ public final class Caffe {
      */
     int getHeight();
 
+    // optional int32 width = 4 [default = 0];
     /**
      * <code>optional int32 width = 4 [default = 0];</code>
      */
@@ -696,9 +702,8 @@ public final class Caffe {
    * Protobuf type {@code caffe.BlobProto}
    */
   public static final class BlobProto extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.BlobProto)
-      BlobProtoOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements BlobProtoOrBuilder {
     // Use BlobProto.newBuilder() to construct.
     private BlobProto(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -913,6 +918,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional .caffe.BlobShape shape = 7;
     public static final int SHAPE_FIELD_NUMBER = 7;
     private caffe.Caffe.BlobShape shape_;
     /**
@@ -934,6 +940,7 @@ public final class Caffe {
       return shape_;
     }
 
+    // repeated float data = 5 [packed = true];
     public static final int DATA_FIELD_NUMBER = 5;
     private java.util.List<java.lang.Float> data_;
     /**
@@ -957,6 +964,7 @@ public final class Caffe {
     }
     private int dataMemoizedSerializedSize = -1;
 
+    // repeated float diff = 6 [packed = true];
     public static final int DIFF_FIELD_NUMBER = 6;
     private java.util.List<java.lang.Float> diff_;
     /**
@@ -980,6 +988,7 @@ public final class Caffe {
     }
     private int diffMemoizedSerializedSize = -1;
 
+    // repeated double double_data = 8 [packed = true];
     public static final int DOUBLE_DATA_FIELD_NUMBER = 8;
     private java.util.List<java.lang.Double> doubleData_;
     /**
@@ -1003,6 +1012,7 @@ public final class Caffe {
     }
     private int doubleDataMemoizedSerializedSize = -1;
 
+    // repeated double double_diff = 9 [packed = true];
     public static final int DOUBLE_DIFF_FIELD_NUMBER = 9;
     private java.util.List<java.lang.Double> doubleDiff_;
     /**
@@ -1026,6 +1036,7 @@ public final class Caffe {
     }
     private int doubleDiffMemoizedSerializedSize = -1;
 
+    // optional int32 num = 1 [default = 0];
     public static final int NUM_FIELD_NUMBER = 1;
     private int num_;
     /**
@@ -1049,6 +1060,7 @@ public final class Caffe {
       return num_;
     }
 
+    // optional int32 channels = 2 [default = 0];
     public static final int CHANNELS_FIELD_NUMBER = 2;
     private int channels_;
     /**
@@ -1064,6 +1076,7 @@ public final class Caffe {
       return channels_;
     }
 
+    // optional int32 height = 3 [default = 0];
     public static final int HEIGHT_FIELD_NUMBER = 3;
     private int height_;
     /**
@@ -1079,6 +1092,7 @@ public final class Caffe {
       return height_;
     }
 
+    // optional int32 width = 4 [default = 0];
     public static final int WIDTH_FIELD_NUMBER = 4;
     private int width_;
     /**
@@ -1108,8 +1122,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -1316,9 +1329,8 @@ public final class Caffe {
      * Protobuf type {@code caffe.BlobProto}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.BlobProto)
-        caffe.Caffe.BlobProtoOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.BlobProtoOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_BlobProto_descriptor;
@@ -1544,6 +1556,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional .caffe.BlobShape shape = 7;
       private caffe.Caffe.BlobShape shape_ = caffe.Caffe.BlobShape.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.BlobShape, caffe.Caffe.BlobShape.Builder, caffe.Caffe.BlobShapeOrBuilder> shapeBuilder_;
@@ -1652,7 +1665,7 @@ public final class Caffe {
         if (shapeBuilder_ == null) {
           shapeBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.BlobShape, caffe.Caffe.BlobShape.Builder, caffe.Caffe.BlobShapeOrBuilder>(
-                  getShape(),
+                  shape_,
                   getParentForChildren(),
                   isClean());
           shape_ = null;
@@ -1660,6 +1673,7 @@ public final class Caffe {
         return shapeBuilder_;
       }
 
+      // repeated float data = 5 [packed = true];
       private java.util.List<java.lang.Float> data_ = java.util.Collections.emptyList();
       private void ensureDataIsMutable() {
         if (!((bitField0_ & 0x00000002) == 0x00000002)) {
@@ -1711,8 +1725,7 @@ public final class Caffe {
       public Builder addAllData(
           java.lang.Iterable<? extends java.lang.Float> values) {
         ensureDataIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, data_);
+        super.addAll(values, data_);
         onChanged();
         return this;
       }
@@ -1726,6 +1739,7 @@ public final class Caffe {
         return this;
       }
 
+      // repeated float diff = 6 [packed = true];
       private java.util.List<java.lang.Float> diff_ = java.util.Collections.emptyList();
       private void ensureDiffIsMutable() {
         if (!((bitField0_ & 0x00000004) == 0x00000004)) {
@@ -1777,8 +1791,7 @@ public final class Caffe {
       public Builder addAllDiff(
           java.lang.Iterable<? extends java.lang.Float> values) {
         ensureDiffIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, diff_);
+        super.addAll(values, diff_);
         onChanged();
         return this;
       }
@@ -1792,6 +1805,7 @@ public final class Caffe {
         return this;
       }
 
+      // repeated double double_data = 8 [packed = true];
       private java.util.List<java.lang.Double> doubleData_ = java.util.Collections.emptyList();
       private void ensureDoubleDataIsMutable() {
         if (!((bitField0_ & 0x00000008) == 0x00000008)) {
@@ -1843,8 +1857,7 @@ public final class Caffe {
       public Builder addAllDoubleData(
           java.lang.Iterable<? extends java.lang.Double> values) {
         ensureDoubleDataIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, doubleData_);
+        super.addAll(values, doubleData_);
         onChanged();
         return this;
       }
@@ -1858,6 +1871,7 @@ public final class Caffe {
         return this;
       }
 
+      // repeated double double_diff = 9 [packed = true];
       private java.util.List<java.lang.Double> doubleDiff_ = java.util.Collections.emptyList();
       private void ensureDoubleDiffIsMutable() {
         if (!((bitField0_ & 0x00000010) == 0x00000010)) {
@@ -1909,8 +1923,7 @@ public final class Caffe {
       public Builder addAllDoubleDiff(
           java.lang.Iterable<? extends java.lang.Double> values) {
         ensureDoubleDiffIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, doubleDiff_);
+        super.addAll(values, doubleDiff_);
         onChanged();
         return this;
       }
@@ -1924,6 +1937,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional int32 num = 1 [default = 0];
       private int num_ ;
       /**
        * <code>optional int32 num = 1 [default = 0];</code>
@@ -1972,6 +1986,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional int32 channels = 2 [default = 0];
       private int channels_ ;
       /**
        * <code>optional int32 channels = 2 [default = 0];</code>
@@ -2004,6 +2019,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional int32 height = 3 [default = 0];
       private int height_ ;
       /**
        * <code>optional int32 height = 3 [default = 0];</code>
@@ -2036,6 +2052,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional int32 width = 4 [default = 0];
       private int width_ ;
       /**
        * <code>optional int32 width = 4 [default = 0];</code>
@@ -2079,10 +2096,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.BlobProto)
   }
 
-  public interface BlobProtoVectorOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.BlobProtoVector)
-      com.google.protobuf.MessageOrBuilder {
+  public interface BlobProtoVectorOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // repeated .caffe.BlobProto blobs = 1;
     /**
      * <code>repeated .caffe.BlobProto blobs = 1;</code>
      */
@@ -2116,9 +2133,8 @@ public final class Caffe {
    * </pre>
    */
   public static final class BlobProtoVector extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.BlobProtoVector)
-      BlobProtoVectorOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements BlobProtoVectorOrBuilder {
     // Use BlobProtoVector.newBuilder() to construct.
     private BlobProtoVector(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -2214,6 +2230,7 @@ public final class Caffe {
       return PARSER;
     }
 
+    // repeated .caffe.BlobProto blobs = 1;
     public static final int BLOBS_FIELD_NUMBER = 1;
     private java.util.List<caffe.Caffe.BlobProto> blobs_;
     /**
@@ -2255,8 +2272,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -2368,9 +2384,8 @@ public final class Caffe {
      * </pre>
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.BlobProtoVector)
-        caffe.Caffe.BlobProtoVectorOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.BlobProtoVectorOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_BlobProtoVector_descriptor;
@@ -2514,6 +2529,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // repeated .caffe.BlobProto blobs = 1;
       private java.util.List<caffe.Caffe.BlobProto> blobs_ =
         java.util.Collections.emptyList();
       private void ensureBlobsIsMutable() {
@@ -2655,8 +2671,7 @@ public final class Caffe {
           java.lang.Iterable<? extends caffe.Caffe.BlobProto> values) {
         if (blobsBuilder_ == null) {
           ensureBlobsIsMutable();
-          com.google.protobuf.AbstractMessageLite.Builder.addAll(
-              values, blobs_);
+          super.addAll(values, blobs_);
           onChanged();
         } else {
           blobsBuilder_.addAllMessages(values);
@@ -2765,10 +2780,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.BlobProtoVector)
   }
 
-  public interface DatumOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.Datum)
-      com.google.protobuf.MessageOrBuilder {
+  public interface DatumOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional int32 channels = 1;
     /**
      * <code>optional int32 channels = 1;</code>
      */
@@ -2778,6 +2793,7 @@ public final class Caffe {
      */
     int getChannels();
 
+    // optional int32 height = 2;
     /**
      * <code>optional int32 height = 2;</code>
      */
@@ -2787,6 +2803,7 @@ public final class Caffe {
      */
     int getHeight();
 
+    // optional int32 width = 3;
     /**
      * <code>optional int32 width = 3;</code>
      */
@@ -2796,6 +2813,7 @@ public final class Caffe {
      */
     int getWidth();
 
+    // optional bytes data = 4;
     /**
      * <code>optional bytes data = 4;</code>
      *
@@ -2813,6 +2831,7 @@ public final class Caffe {
      */
     com.google.protobuf.ByteString getData();
 
+    // optional int32 label = 5;
     /**
      * <code>optional int32 label = 5;</code>
      */
@@ -2822,6 +2841,7 @@ public final class Caffe {
      */
     int getLabel();
 
+    // repeated float float_data = 6;
     /**
      * <code>repeated float float_data = 6;</code>
      *
@@ -2847,6 +2867,7 @@ public final class Caffe {
      */
     float getFloatData(int index);
 
+    // optional bool encoded = 7 [default = false];
     /**
      * <code>optional bool encoded = 7 [default = false];</code>
      *
@@ -2868,9 +2889,8 @@ public final class Caffe {
    * Protobuf type {@code caffe.Datum}
    */
   public static final class Datum extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.Datum)
-      DatumOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements DatumOrBuilder {
     // Use Datum.newBuilder() to construct.
     private Datum(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -3010,6 +3030,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional int32 channels = 1;
     public static final int CHANNELS_FIELD_NUMBER = 1;
     private int channels_;
     /**
@@ -3025,6 +3046,7 @@ public final class Caffe {
       return channels_;
     }
 
+    // optional int32 height = 2;
     public static final int HEIGHT_FIELD_NUMBER = 2;
     private int height_;
     /**
@@ -3040,6 +3062,7 @@ public final class Caffe {
       return height_;
     }
 
+    // optional int32 width = 3;
     public static final int WIDTH_FIELD_NUMBER = 3;
     private int width_;
     /**
@@ -3055,6 +3078,7 @@ public final class Caffe {
       return width_;
     }
 
+    // optional bytes data = 4;
     public static final int DATA_FIELD_NUMBER = 4;
     private com.google.protobuf.ByteString data_;
     /**
@@ -3078,6 +3102,7 @@ public final class Caffe {
       return data_;
     }
 
+    // optional int32 label = 5;
     public static final int LABEL_FIELD_NUMBER = 5;
     private int label_;
     /**
@@ -3093,6 +3118,7 @@ public final class Caffe {
       return label_;
     }
 
+    // repeated float float_data = 6;
     public static final int FLOAT_DATA_FIELD_NUMBER = 6;
     private java.util.List<java.lang.Float> floatData_;
     /**
@@ -3127,6 +3153,7 @@ public final class Caffe {
       return floatData_.get(index);
     }
 
+    // optional bool encoded = 7 [default = false];
     public static final int ENCODED_FIELD_NUMBER = 7;
     private boolean encoded_;
     /**
@@ -3162,8 +3189,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -3314,9 +3340,8 @@ public final class Caffe {
      * Protobuf type {@code caffe.Datum}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.Datum)
-        caffe.Caffe.DatumOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.DatumOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_Datum_descriptor;
@@ -3491,6 +3516,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional int32 channels = 1;
       private int channels_ ;
       /**
        * <code>optional int32 channels = 1;</code>
@@ -3523,6 +3549,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional int32 height = 2;
       private int height_ ;
       /**
        * <code>optional int32 height = 2;</code>
@@ -3555,6 +3582,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional int32 width = 3;
       private int width_ ;
       /**
        * <code>optional int32 width = 3;</code>
@@ -3587,6 +3615,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional bytes data = 4;
       private com.google.protobuf.ByteString data_ = com.google.protobuf.ByteString.EMPTY;
       /**
        * <code>optional bytes data = 4;</code>
@@ -3638,6 +3667,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional int32 label = 5;
       private int label_ ;
       /**
        * <code>optional int32 label = 5;</code>
@@ -3670,6 +3700,7 @@ public final class Caffe {
         return this;
       }
 
+      // repeated float float_data = 6;
       private java.util.List<java.lang.Float> floatData_ = java.util.Collections.emptyList();
       private void ensureFloatDataIsMutable() {
         if (!((bitField0_ & 0x00000020) == 0x00000020)) {
@@ -3745,8 +3776,7 @@ public final class Caffe {
       public Builder addAllFloatData(
           java.lang.Iterable<? extends java.lang.Float> values) {
         ensureFloatDataIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, floatData_);
+        super.addAll(values, floatData_);
         onChanged();
         return this;
       }
@@ -3764,6 +3794,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional bool encoded = 7 [default = false];
       private boolean encoded_ ;
       /**
        * <code>optional bool encoded = 7 [default = false];</code>
@@ -3823,10 +3854,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.Datum)
   }
 
-  public interface FillerParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.FillerParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface FillerParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional string type = 1 [default = "constant"];
     /**
      * <code>optional string type = 1 [default = "constant"];</code>
      *
@@ -3853,6 +3884,7 @@ public final class Caffe {
     com.google.protobuf.ByteString
         getTypeBytes();
 
+    // optional float value = 2 [default = 0];
     /**
      * <code>optional float value = 2 [default = 0];</code>
      *
@@ -3870,6 +3902,7 @@ public final class Caffe {
      */
     float getValue();
 
+    // optional float min = 3 [default = 0];
     /**
      * <code>optional float min = 3 [default = 0];</code>
      *
@@ -3887,6 +3920,7 @@ public final class Caffe {
      */
     float getMin();
 
+    // optional float max = 4 [default = 1];
     /**
      * <code>optional float max = 4 [default = 1];</code>
      *
@@ -3904,6 +3938,7 @@ public final class Caffe {
      */
     float getMax();
 
+    // optional float mean = 5 [default = 0];
     /**
      * <code>optional float mean = 5 [default = 0];</code>
      *
@@ -3921,6 +3956,7 @@ public final class Caffe {
      */
     float getMean();
 
+    // optional float std = 6 [default = 1];
     /**
      * <code>optional float std = 6 [default = 1];</code>
      *
@@ -3938,6 +3974,7 @@ public final class Caffe {
      */
     float getStd();
 
+    // optional int32 sparse = 7 [default = -1];
     /**
      * <code>optional int32 sparse = 7 [default = -1];</code>
      *
@@ -3957,6 +3994,7 @@ public final class Caffe {
      */
     int getSparse();
 
+    // optional .caffe.FillerParameter.VarianceNorm variance_norm = 8 [default = FAN_IN];
     /**
      * <code>optional .caffe.FillerParameter.VarianceNorm variance_norm = 8 [default = FAN_IN];</code>
      */
@@ -3970,9 +4008,8 @@ public final class Caffe {
    * Protobuf type {@code caffe.FillerParameter}
    */
   public static final class FillerParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.FillerParameter)
-      FillerParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements FillerParameterOrBuilder {
     // Use FillerParameter.newBuilder() to construct.
     private FillerParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -4019,9 +4056,8 @@ public final class Caffe {
               break;
             }
             case 10: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000001;
-              type_ = bs;
+              type_ = input.readBytes();
               break;
             }
             case 21: {
@@ -4201,6 +4237,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional string type = 1 [default = "constant"];
     public static final int TYPE_FIELD_NUMBER = 1;
     private java.lang.Object type_;
     /**
@@ -4255,6 +4292,7 @@ public final class Caffe {
       }
     }
 
+    // optional float value = 2 [default = 0];
     public static final int VALUE_FIELD_NUMBER = 2;
     private float value_;
     /**
@@ -4278,6 +4316,7 @@ public final class Caffe {
       return value_;
     }
 
+    // optional float min = 3 [default = 0];
     public static final int MIN_FIELD_NUMBER = 3;
     private float min_;
     /**
@@ -4301,6 +4340,7 @@ public final class Caffe {
       return min_;
     }
 
+    // optional float max = 4 [default = 1];
     public static final int MAX_FIELD_NUMBER = 4;
     private float max_;
     /**
@@ -4324,6 +4364,7 @@ public final class Caffe {
       return max_;
     }
 
+    // optional float mean = 5 [default = 0];
     public static final int MEAN_FIELD_NUMBER = 5;
     private float mean_;
     /**
@@ -4347,6 +4388,7 @@ public final class Caffe {
       return mean_;
     }
 
+    // optional float std = 6 [default = 1];
     public static final int STD_FIELD_NUMBER = 6;
     private float std_;
     /**
@@ -4370,6 +4412,7 @@ public final class Caffe {
       return std_;
     }
 
+    // optional int32 sparse = 7 [default = -1];
     public static final int SPARSE_FIELD_NUMBER = 7;
     private int sparse_;
     /**
@@ -4395,6 +4438,7 @@ public final class Caffe {
       return sparse_;
     }
 
+    // optional .caffe.FillerParameter.VarianceNorm variance_norm = 8 [default = FAN_IN];
     public static final int VARIANCE_NORM_FIELD_NUMBER = 8;
     private caffe.Caffe.FillerParameter.VarianceNorm varianceNorm_;
     /**
@@ -4423,8 +4467,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -4580,9 +4623,8 @@ public final class Caffe {
      * Protobuf type {@code caffe.FillerParameter}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.FillerParameter)
-        caffe.Caffe.FillerParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.FillerParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_FillerParameter_descriptor;
@@ -4760,6 +4802,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional string type = 1 [default = "constant"];
       private java.lang.Object type_ = "constant";
       /**
        * <code>optional string type = 1 [default = "constant"];</code>
@@ -4781,12 +4824,9 @@ public final class Caffe {
       public java.lang.String getType() {
         java.lang.Object ref = type_;
         if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            type_ = s;
-          }
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          type_ = s;
           return s;
         } else {
           return (java.lang.String) ref;
@@ -4860,6 +4900,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float value = 2 [default = 0];
       private float value_ ;
       /**
        * <code>optional float value = 2 [default = 0];</code>
@@ -4908,6 +4949,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float min = 3 [default = 0];
       private float min_ ;
       /**
        * <code>optional float min = 3 [default = 0];</code>
@@ -4956,6 +4998,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float max = 4 [default = 1];
       private float max_ = 1F;
       /**
        * <code>optional float max = 4 [default = 1];</code>
@@ -5004,6 +5047,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float mean = 5 [default = 0];
       private float mean_ ;
       /**
        * <code>optional float mean = 5 [default = 0];</code>
@@ -5052,6 +5096,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float std = 6 [default = 1];
       private float std_ = 1F;
       /**
        * <code>optional float std = 6 [default = 1];</code>
@@ -5100,6 +5145,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional int32 sparse = 7 [default = -1];
       private int sparse_ = -1;
       /**
        * <code>optional int32 sparse = 7 [default = -1];</code>
@@ -5152,6 +5198,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional .caffe.FillerParameter.VarianceNorm variance_norm = 8 [default = FAN_IN];
       private caffe.Caffe.FillerParameter.VarianceNorm varianceNorm_ = caffe.Caffe.FillerParameter.VarianceNorm.FAN_IN;
       /**
        * <code>optional .caffe.FillerParameter.VarianceNorm variance_norm = 8 [default = FAN_IN];</code>
@@ -5198,10 +5245,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.FillerParameter)
   }
 
-  public interface NetParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.NetParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface NetParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional string name = 1;
     /**
      * <code>optional string name = 1;</code>
      *
@@ -5228,6 +5275,7 @@ public final class Caffe {
     com.google.protobuf.ByteString
         getNameBytes();
 
+    // repeated string input = 3;
     /**
      * <code>repeated string input = 3;</code>
      *
@@ -5235,8 +5283,8 @@ public final class Caffe {
      * DEPRECATED. See InputParameter. The input blobs to the network.
      * </pre>
      */
-    com.google.protobuf.ProtocolStringList
-        getInputList();
+    java.util.List<java.lang.String>
+    getInputList();
     /**
      * <code>repeated string input = 3;</code>
      *
@@ -5263,6 +5311,7 @@ public final class Caffe {
     com.google.protobuf.ByteString
         getInputBytes(int index);
 
+    // repeated .caffe.BlobShape input_shape = 8;
     /**
      * <code>repeated .caffe.BlobShape input_shape = 8;</code>
      *
@@ -5307,6 +5356,7 @@ public final class Caffe {
     caffe.Caffe.BlobShapeOrBuilder getInputShapeOrBuilder(
         int index);
 
+    // repeated int32 input_dim = 4;
     /**
      * <code>repeated int32 input_dim = 4;</code>
      *
@@ -5341,6 +5391,7 @@ public final class Caffe {
      */
     int getInputDim(int index);
 
+    // optional bool force_backward = 5 [default = false];
     /**
      * <code>optional bool force_backward = 5 [default = false];</code>
      *
@@ -5362,6 +5413,7 @@ public final class Caffe {
      */
     boolean getForceBackward();
 
+    // optional .caffe.NetState state = 6;
     /**
      * <code>optional .caffe.NetState state = 6;</code>
      *
@@ -5393,6 +5445,7 @@ public final class Caffe {
      */
     caffe.Caffe.NetStateOrBuilder getStateOrBuilder();
 
+    // optional bool debug_info = 7 [default = false];
     /**
      * <code>optional bool debug_info = 7 [default = false];</code>
      *
@@ -5412,6 +5465,7 @@ public final class Caffe {
      */
     boolean getDebugInfo();
 
+    // repeated .caffe.LayerParameter layer = 100;
     /**
      * <code>repeated .caffe.LayerParameter layer = 100;</code>
      *
@@ -5461,6 +5515,7 @@ public final class Caffe {
     caffe.Caffe.LayerParameterOrBuilder getLayerOrBuilder(
         int index);
 
+    // repeated .caffe.V1LayerParameter layers = 2;
     /**
      * <code>repeated .caffe.V1LayerParameter layers = 2;</code>
      *
@@ -5509,9 +5564,8 @@ public final class Caffe {
    * Protobuf type {@code caffe.NetParameter}
    */
   public static final class NetParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.NetParameter)
-      NetParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements NetParameterOrBuilder {
     // Use NetParameter.newBuilder() to construct.
     private NetParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -5558,9 +5612,8 @@ public final class Caffe {
               break;
             }
             case 10: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000001;
-              name_ = bs;
+              name_ = input.readBytes();
               break;
             }
             case 18: {
@@ -5572,12 +5625,11 @@ public final class Caffe {
               break;
             }
             case 26: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               if (!((mutable_bitField0_ & 0x00000002) == 0x00000002)) {
                 input_ = new com.google.protobuf.LazyStringArrayList();
                 mutable_bitField0_ |= 0x00000002;
               }
-              input_.add(bs);
+              input_.add(input.readBytes());
               break;
             }
             case 32: {
@@ -5652,7 +5704,7 @@ public final class Caffe {
           layers_ = java.util.Collections.unmodifiableList(layers_);
         }
         if (((mutable_bitField0_ & 0x00000002) == 0x00000002)) {
-          input_ = input_.getUnmodifiableView();
+          input_ = new com.google.protobuf.UnmodifiableLazyStringList(input_);
         }
         if (((mutable_bitField0_ & 0x00000008) == 0x00000008)) {
           inputDim_ = java.util.Collections.unmodifiableList(inputDim_);
@@ -5695,6 +5747,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional string name = 1;
     public static final int NAME_FIELD_NUMBER = 1;
     private java.lang.Object name_;
     /**
@@ -5749,6 +5802,7 @@ public final class Caffe {
       }
     }
 
+    // repeated string input = 3;
     public static final int INPUT_FIELD_NUMBER = 3;
     private com.google.protobuf.LazyStringList input_;
     /**
@@ -5758,7 +5812,7 @@ public final class Caffe {
      * DEPRECATED. See InputParameter. The input blobs to the network.
      * </pre>
      */
-    public com.google.protobuf.ProtocolStringList
+    public java.util.List<java.lang.String>
         getInputList() {
       return input_;
     }
@@ -5794,6 +5848,7 @@ public final class Caffe {
       return input_.getByteString(index);
     }
 
+    // repeated .caffe.BlobShape input_shape = 8;
     public static final int INPUT_SHAPE_FIELD_NUMBER = 8;
     private java.util.List<caffe.Caffe.BlobShape> inputShape_;
     /**
@@ -5849,6 +5904,7 @@ public final class Caffe {
       return inputShape_.get(index);
     }
 
+    // repeated int32 input_dim = 4;
     public static final int INPUT_DIM_FIELD_NUMBER = 4;
     private java.util.List<java.lang.Integer> inputDim_;
     /**
@@ -5892,6 +5948,7 @@ public final class Caffe {
       return inputDim_.get(index);
     }
 
+    // optional bool force_backward = 5 [default = false];
     public static final int FORCE_BACKWARD_FIELD_NUMBER = 5;
     private boolean forceBackward_;
     /**
@@ -5919,6 +5976,7 @@ public final class Caffe {
       return forceBackward_;
     }
 
+    // optional .caffe.NetState state = 6;
     public static final int STATE_FIELD_NUMBER = 6;
     private caffe.Caffe.NetState state_;
     /**
@@ -5958,6 +6016,7 @@ public final class Caffe {
       return state_;
     }
 
+    // optional bool debug_info = 7 [default = false];
     public static final int DEBUG_INFO_FIELD_NUMBER = 7;
     private boolean debugInfo_;
     /**
@@ -5983,6 +6042,7 @@ public final class Caffe {
       return debugInfo_;
     }
 
+    // repeated .caffe.LayerParameter layer = 100;
     public static final int LAYER_FIELD_NUMBER = 100;
     private java.util.List<caffe.Caffe.LayerParameter> layer_;
     /**
@@ -6043,6 +6103,7 @@ public final class Caffe {
       return layer_.get(index);
     }
 
+    // repeated .caffe.V1LayerParameter layers = 2;
     public static final int LAYERS_FIELD_NUMBER = 2;
     private java.util.List<caffe.Caffe.V1LayerParameter> layers_;
     /**
@@ -6112,8 +6173,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -6286,9 +6346,8 @@ public final class Caffe {
      * Protobuf type {@code caffe.NetParameter}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.NetParameter)
-        caffe.Caffe.NetParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.NetParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_NetParameter_descriptor;
@@ -6392,7 +6451,8 @@ public final class Caffe {
         }
         result.name_ = name_;
         if (((bitField0_ & 0x00000002) == 0x00000002)) {
-          input_ = input_.getUnmodifiableView();
+          input_ = new com.google.protobuf.UnmodifiableLazyStringList(
+              input_);
           bitField0_ = (bitField0_ & ~0x00000002);
         }
         result.input_ = input_;
@@ -6599,6 +6659,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional string name = 1;
       private java.lang.Object name_ = "";
       /**
        * <code>optional string name = 1;</code>
@@ -6620,12 +6681,9 @@ public final class Caffe {
       public java.lang.String getName() {
         java.lang.Object ref = name_;
         if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            name_ = s;
-          }
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          name_ = s;
           return s;
         } else {
           return (java.lang.String) ref;
@@ -6699,6 +6757,7 @@ public final class Caffe {
         return this;
       }
 
+      // repeated string input = 3;
       private com.google.protobuf.LazyStringList input_ = com.google.protobuf.LazyStringArrayList.EMPTY;
       private void ensureInputIsMutable() {
         if (!((bitField0_ & 0x00000002) == 0x00000002)) {
@@ -6713,9 +6772,9 @@ public final class Caffe {
        * DEPRECATED. See InputParameter. The input blobs to the network.
        * </pre>
        */
-      public com.google.protobuf.ProtocolStringList
+      public java.util.List<java.lang.String>
           getInputList() {
-        return input_.getUnmodifiableView();
+        return java.util.Collections.unmodifiableList(input_);
       }
       /**
        * <code>repeated string input = 3;</code>
@@ -6792,8 +6851,7 @@ public final class Caffe {
       public Builder addAllInput(
           java.lang.Iterable<java.lang.String> values) {
         ensureInputIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, input_);
+        super.addAll(values, input_);
         onChanged();
         return this;
       }
@@ -6828,6 +6886,7 @@ public final class Caffe {
         return this;
       }
 
+      // repeated .caffe.BlobShape input_shape = 8;
       private java.util.List<caffe.Caffe.BlobShape> inputShape_ =
         java.util.Collections.emptyList();
       private void ensureInputShapeIsMutable() {
@@ -7009,8 +7068,7 @@ public final class Caffe {
           java.lang.Iterable<? extends caffe.Caffe.BlobShape> values) {
         if (inputShapeBuilder_ == null) {
           ensureInputShapeIsMutable();
-          com.google.protobuf.AbstractMessageLite.Builder.addAll(
-              values, inputShape_);
+          super.addAll(values, inputShape_);
           onChanged();
         } else {
           inputShapeBuilder_.addAllMessages(values);
@@ -7140,6 +7198,7 @@ public final class Caffe {
         return inputShapeBuilder_;
       }
 
+      // repeated int32 input_dim = 4;
       private java.util.List<java.lang.Integer> inputDim_ = java.util.Collections.emptyList();
       private void ensureInputDimIsMutable() {
         if (!((bitField0_ & 0x00000008) == 0x00000008)) {
@@ -7233,8 +7292,7 @@ public final class Caffe {
       public Builder addAllInputDim(
           java.lang.Iterable<? extends java.lang.Integer> values) {
         ensureInputDimIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, inputDim_);
+        super.addAll(values, inputDim_);
         onChanged();
         return this;
       }
@@ -7255,6 +7313,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional bool force_backward = 5 [default = false];
       private boolean forceBackward_ ;
       /**
        * <code>optional bool force_backward = 5 [default = false];</code>
@@ -7311,6 +7370,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional .caffe.NetState state = 6;
       private caffe.Caffe.NetState state_ = caffe.Caffe.NetState.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.NetState, caffe.Caffe.NetState.Builder, caffe.Caffe.NetStateOrBuilder> stateBuilder_;
@@ -7473,7 +7533,7 @@ public final class Caffe {
         if (stateBuilder_ == null) {
           stateBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.NetState, caffe.Caffe.NetState.Builder, caffe.Caffe.NetStateOrBuilder>(
-                  getState(),
+                  state_,
                   getParentForChildren(),
                   isClean());
           state_ = null;
@@ -7481,6 +7541,7 @@ public final class Caffe {
         return stateBuilder_;
       }
 
+      // optional bool debug_info = 7 [default = false];
       private boolean debugInfo_ ;
       /**
        * <code>optional bool debug_info = 7 [default = false];</code>
@@ -7533,6 +7594,7 @@ public final class Caffe {
         return this;
       }
 
+      // repeated .caffe.LayerParameter layer = 100;
       private java.util.List<caffe.Caffe.LayerParameter> layer_ =
         java.util.Collections.emptyList();
       private void ensureLayerIsMutable() {
@@ -7724,8 +7786,7 @@ public final class Caffe {
           java.lang.Iterable<? extends caffe.Caffe.LayerParameter> values) {
         if (layerBuilder_ == null) {
           ensureLayerIsMutable();
-          com.google.protobuf.AbstractMessageLite.Builder.addAll(
-              values, layer_);
+          super.addAll(values, layer_);
           onChanged();
         } else {
           layerBuilder_.addAllMessages(values);
@@ -7863,6 +7924,7 @@ public final class Caffe {
         return layerBuilder_;
       }
 
+      // repeated .caffe.V1LayerParameter layers = 2;
       private java.util.List<caffe.Caffe.V1LayerParameter> layers_ =
         java.util.Collections.emptyList();
       private void ensureLayersIsMutable() {
@@ -8044,8 +8106,7 @@ public final class Caffe {
           java.lang.Iterable<? extends caffe.Caffe.V1LayerParameter> values) {
         if (layersBuilder_ == null) {
           ensureLayersIsMutable();
-          com.google.protobuf.AbstractMessageLite.Builder.addAll(
-              values, layers_);
+          super.addAll(values, layers_);
           onChanged();
         } else {
           layersBuilder_.addAllMessages(values);
@@ -8186,10 +8247,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.NetParameter)
   }
 
-  public interface SolverParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.SolverParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface SolverParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional string net = 24;
     /**
      * <code>optional string net = 24;</code>
      *
@@ -8219,6 +8280,7 @@ public final class Caffe {
     com.google.protobuf.ByteString
         getNetBytes();
 
+    // optional .caffe.NetParameter net_param = 25;
     /**
      * <code>optional .caffe.NetParameter net_param = 25;</code>
      *
@@ -8244,6 +8306,7 @@ public final class Caffe {
      */
     caffe.Caffe.NetParameterOrBuilder getNetParamOrBuilder();
 
+    // optional string train_net = 1;
     /**
      * <code>optional string train_net = 1;</code>
      *
@@ -8270,6 +8333,7 @@ public final class Caffe {
     com.google.protobuf.ByteString
         getTrainNetBytes();
 
+    // repeated string test_net = 2;
     /**
      * <code>repeated string test_net = 2;</code>
      *
@@ -8277,8 +8341,8 @@ public final class Caffe {
      * Proto filenames for the test nets.
      * </pre>
      */
-    com.google.protobuf.ProtocolStringList
-        getTestNetList();
+    java.util.List<java.lang.String>
+    getTestNetList();
     /**
      * <code>repeated string test_net = 2;</code>
      *
@@ -8305,6 +8369,7 @@ public final class Caffe {
     com.google.protobuf.ByteString
         getTestNetBytes(int index);
 
+    // optional .caffe.NetParameter train_net_param = 21;
     /**
      * <code>optional .caffe.NetParameter train_net_param = 21;</code>
      *
@@ -8330,6 +8395,7 @@ public final class Caffe {
      */
     caffe.Caffe.NetParameterOrBuilder getTrainNetParamOrBuilder();
 
+    // repeated .caffe.NetParameter test_net_param = 22;
     /**
      * <code>repeated .caffe.NetParameter test_net_param = 22;</code>
      *
@@ -8374,12 +8440,14 @@ public final class Caffe {
     caffe.Caffe.NetParameterOrBuilder getTestNetParamOrBuilder(
         int index);
 
+    // optional .caffe.NetState train_state = 26;
     /**
      * <code>optional .caffe.NetState train_state = 26;</code>
      *
      * <pre>
      * The states for the train/test nets. Must be unspecified or
      * specified once per net.
+     *
      * By default, all states will have solver = true;
      * train_state will have phase = TRAIN,
      * and all test_state's will have phase = TEST.
@@ -8393,6 +8461,7 @@ public final class Caffe {
      * <pre>
      * The states for the train/test nets. Must be unspecified or
      * specified once per net.
+     *
      * By default, all states will have solver = true;
      * train_state will have phase = TRAIN,
      * and all test_state's will have phase = TEST.
@@ -8406,6 +8475,7 @@ public final class Caffe {
      * <pre>
      * The states for the train/test nets. Must be unspecified or
      * specified once per net.
+     *
      * By default, all states will have solver = true;
      * train_state will have phase = TRAIN,
      * and all test_state's will have phase = TEST.
@@ -8414,6 +8484,7 @@ public final class Caffe {
      */
     caffe.Caffe.NetStateOrBuilder getTrainStateOrBuilder();
 
+    // repeated .caffe.NetState test_state = 27;
     /**
      * <code>repeated .caffe.NetState test_state = 27;</code>
      */
@@ -8438,6 +8509,7 @@ public final class Caffe {
     caffe.Caffe.NetStateOrBuilder getTestStateOrBuilder(
         int index);
 
+    // repeated int32 test_iter = 3;
     /**
      * <code>repeated int32 test_iter = 3;</code>
      *
@@ -8463,6 +8535,7 @@ public final class Caffe {
      */
     int getTestIter(int index);
 
+    // optional int32 test_interval = 4 [default = 0];
     /**
      * <code>optional int32 test_interval = 4 [default = 0];</code>
      *
@@ -8480,6 +8553,7 @@ public final class Caffe {
      */
     int getTestInterval();
 
+    // optional bool test_compute_loss = 19 [default = false];
     /**
      * <code>optional bool test_compute_loss = 19 [default = false];</code>
      */
@@ -8489,6 +8563,7 @@ public final class Caffe {
      */
     boolean getTestComputeLoss();
 
+    // optional bool test_initialization = 32 [default = true];
     /**
      * <code>optional bool test_initialization = 32 [default = true];</code>
      *
@@ -8508,6 +8583,7 @@ public final class Caffe {
      */
     boolean getTestInitialization();
 
+    // optional float base_lr = 5;
     /**
      * <code>optional float base_lr = 5;</code>
      *
@@ -8525,6 +8601,7 @@ public final class Caffe {
      */
     float getBaseLr();
 
+    // optional int32 display = 6;
     /**
      * <code>optional int32 display = 6;</code>
      *
@@ -8544,6 +8621,7 @@ public final class Caffe {
      */
     int getDisplay();
 
+    // optional int32 average_loss = 33 [default = 1];
     /**
      * <code>optional int32 average_loss = 33 [default = 1];</code>
      *
@@ -8561,6 +8639,7 @@ public final class Caffe {
      */
     int getAverageLoss();
 
+    // optional int32 max_iter = 7;
     /**
      * <code>optional int32 max_iter = 7;</code>
      *
@@ -8578,6 +8657,7 @@ public final class Caffe {
      */
     int getMaxIter();
 
+    // optional int32 iter_size = 36 [default = 1];
     /**
      * <code>optional int32 iter_size = 36 [default = 1];</code>
      *
@@ -8595,6 +8675,7 @@ public final class Caffe {
      */
     int getIterSize();
 
+    // optional string lr_policy = 8;
     /**
      * <code>optional string lr_policy = 8;</code>
      *
@@ -8611,6 +8692,7 @@ public final class Caffe {
      *      zero by the max_iter. return base_lr (1 - iter/max_iter) ^ (power)
      *    - sigmoid: the effective learning rate follows a sigmod decay
      *      return base_lr ( 1/(1 + exp(-gamma * (iter - stepsize))))
+     *
      * where base_lr, max_iter, gamma, step, stepvalue and power are defined
      * in the solver parameter protocol buffer, and iter is the current iteration.
      * </pre>
@@ -8632,6 +8714,7 @@ public final class Caffe {
      *      zero by the max_iter. return base_lr (1 - iter/max_iter) ^ (power)
      *    - sigmoid: the effective learning rate follows a sigmod decay
      *      return base_lr ( 1/(1 + exp(-gamma * (iter - stepsize))))
+     *
      * where base_lr, max_iter, gamma, step, stepvalue and power are defined
      * in the solver parameter protocol buffer, and iter is the current iteration.
      * </pre>
@@ -8653,6 +8736,7 @@ public final class Caffe {
      *      zero by the max_iter. return base_lr (1 - iter/max_iter) ^ (power)
      *    - sigmoid: the effective learning rate follows a sigmod decay
      *      return base_lr ( 1/(1 + exp(-gamma * (iter - stepsize))))
+     *
      * where base_lr, max_iter, gamma, step, stepvalue and power are defined
      * in the solver parameter protocol buffer, and iter is the current iteration.
      * </pre>
@@ -8660,6 +8744,7 @@ public final class Caffe {
     com.google.protobuf.ByteString
         getLrPolicyBytes();
 
+    // optional float gamma = 9;
     /**
      * <code>optional float gamma = 9;</code>
      *
@@ -8677,6 +8762,7 @@ public final class Caffe {
      */
     float getGamma();
 
+    // optional float power = 10;
     /**
      * <code>optional float power = 10;</code>
      *
@@ -8694,6 +8780,7 @@ public final class Caffe {
      */
     float getPower();
 
+    // optional float momentum = 11;
     /**
      * <code>optional float momentum = 11;</code>
      *
@@ -8711,6 +8798,7 @@ public final class Caffe {
      */
     float getMomentum();
 
+    // optional float weight_decay = 12;
     /**
      * <code>optional float weight_decay = 12;</code>
      *
@@ -8728,6 +8816,7 @@ public final class Caffe {
      */
     float getWeightDecay();
 
+    // optional string regularization_type = 29 [default = "L2"];
     /**
      * <code>optional string regularization_type = 29 [default = "L2"];</code>
      *
@@ -8757,6 +8846,7 @@ public final class Caffe {
     com.google.protobuf.ByteString
         getRegularizationTypeBytes();
 
+    // optional int32 stepsize = 13;
     /**
      * <code>optional int32 stepsize = 13;</code>
      *
@@ -8774,6 +8864,7 @@ public final class Caffe {
      */
     int getStepsize();
 
+    // repeated int32 stepvalue = 34;
     /**
      * <code>repeated int32 stepvalue = 34;</code>
      *
@@ -8799,6 +8890,7 @@ public final class Caffe {
      */
     int getStepvalue(int index);
 
+    // optional float clip_gradients = 35 [default = -1];
     /**
      * <code>optional float clip_gradients = 35 [default = -1];</code>
      *
@@ -8818,6 +8910,7 @@ public final class Caffe {
      */
     float getClipGradients();
 
+    // optional int32 snapshot = 14 [default = 0];
     /**
      * <code>optional int32 snapshot = 14 [default = 0];</code>
      *
@@ -8835,6 +8928,7 @@ public final class Caffe {
      */
     int getSnapshot();
 
+    // optional string snapshot_prefix = 15;
     /**
      * <code>optional string snapshot_prefix = 15;</code>
      *
@@ -8861,6 +8955,7 @@ public final class Caffe {
     com.google.protobuf.ByteString
         getSnapshotPrefixBytes();
 
+    // optional bool snapshot_diff = 16 [default = false];
     /**
      * <code>optional bool snapshot_diff = 16 [default = false];</code>
      *
@@ -8880,6 +8975,7 @@ public final class Caffe {
      */
     boolean getSnapshotDiff();
 
+    // optional .caffe.SolverParameter.SnapshotFormat snapshot_format = 37 [default = BINARYPROTO];
     /**
      * <code>optional .caffe.SolverParameter.SnapshotFormat snapshot_format = 37 [default = BINARYPROTO];</code>
      */
@@ -8889,6 +8985,7 @@ public final class Caffe {
      */
     caffe.Caffe.SolverParameter.SnapshotFormat getSnapshotFormat();
 
+    // optional .caffe.SolverParameter.SolverMode solver_mode = 17 [default = GPU];
     /**
      * <code>optional .caffe.SolverParameter.SolverMode solver_mode = 17 [default = GPU];</code>
      */
@@ -8898,6 +8995,7 @@ public final class Caffe {
      */
     caffe.Caffe.SolverParameter.SolverMode getSolverMode();
 
+    // optional int32 device_id = 18 [default = 0];
     /**
      * <code>optional int32 device_id = 18 [default = 0];</code>
      *
@@ -8915,6 +9013,7 @@ public final class Caffe {
      */
     int getDeviceId();
 
+    // optional int64 random_seed = 20 [default = -1];
     /**
      * <code>optional int64 random_seed = 20 [default = -1];</code>
      *
@@ -8936,6 +9035,7 @@ public final class Caffe {
      */
     long getRandomSeed();
 
+    // optional string type = 40 [default = "SGD"];
     /**
      * <code>optional string type = 40 [default = "SGD"];</code>
      *
@@ -8962,6 +9062,7 @@ public final class Caffe {
     com.google.protobuf.ByteString
         getTypeBytes();
 
+    // optional float delta = 31 [default = 1e-008];
     /**
      * <code>optional float delta = 31 [default = 1e-008];</code>
      *
@@ -8979,6 +9080,7 @@ public final class Caffe {
      */
     float getDelta();
 
+    // optional float momentum2 = 39 [default = 0.999];
     /**
      * <code>optional float momentum2 = 39 [default = 0.999];</code>
      *
@@ -8996,6 +9098,7 @@ public final class Caffe {
      */
     float getMomentum2();
 
+    // optional float rms_decay = 38;
     /**
      * <code>optional float rms_decay = 38;</code>
      *
@@ -9015,6 +9118,7 @@ public final class Caffe {
      */
     float getRmsDecay();
 
+    // optional bool debug_info = 23 [default = false];
     /**
      * <code>optional bool debug_info = 23 [default = false];</code>
      *
@@ -9034,6 +9138,7 @@ public final class Caffe {
      */
     boolean getDebugInfo();
 
+    // optional bool snapshot_after_train = 28 [default = true];
     /**
      * <code>optional bool snapshot_after_train = 28 [default = true];</code>
      *
@@ -9051,6 +9156,7 @@ public final class Caffe {
      */
     boolean getSnapshotAfterTrain();
 
+    // optional .caffe.SolverParameter.SolverType solver_type = 30 [default = SGD];
     /**
      * <code>optional .caffe.SolverParameter.SolverType solver_type = 30 [default = SGD];</code>
      *
@@ -9074,13 +9180,13 @@ public final class Caffe {
    * <pre>
    * NOTE
    * Update the next available ID when you add a new SolverParameter field.
+   *
    * SolverParameter next available ID: 41 (last added: type)
    * </pre>
    */
   public static final class SolverParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.SolverParameter)
-      SolverParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements SolverParameterOrBuilder {
     // Use SolverParameter.newBuilder() to construct.
     private SolverParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -9128,18 +9234,16 @@ public final class Caffe {
               break;
             }
             case 10: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000004;
-              trainNet_ = bs;
+              trainNet_ = input.readBytes();
               break;
             }
             case 18: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               if (!((mutable_bitField0_ & 0x00000008) == 0x00000008)) {
                 testNet_ = new com.google.protobuf.LazyStringArrayList();
                 mutable_bitField0_ |= 0x00000008;
               }
-              testNet_.add(bs);
+              testNet_.add(input.readBytes());
               break;
             }
             case 24: {
@@ -9184,9 +9288,8 @@ public final class Caffe {
               break;
             }
             case 66: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00002000;
-              lrPolicy_ = bs;
+              lrPolicy_ = input.readBytes();
               break;
             }
             case 77: {
@@ -9220,9 +9323,8 @@ public final class Caffe {
               break;
             }
             case 122: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00400000;
-              snapshotPrefix_ = bs;
+              snapshotPrefix_ = input.readBytes();
               break;
             }
             case 128: {
@@ -9283,9 +9385,8 @@ public final class Caffe {
               break;
             }
             case 194: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000001;
-              net_ = bs;
+              net_ = input.readBytes();
               break;
             }
             case 202: {
@@ -9328,9 +9429,8 @@ public final class Caffe {
               break;
             }
             case 234: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00040000;
-              regularizationType_ = bs;
+              regularizationType_ = input.readBytes();
               break;
             }
             case 240: {
@@ -9412,9 +9512,8 @@ public final class Caffe {
               break;
             }
             case 322: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x10000000;
-              type_ = bs;
+              type_ = input.readBytes();
               break;
             }
           }
@@ -9426,7 +9525,7 @@ public final class Caffe {
             e.getMessage()).setUnfinishedMessage(this);
       } finally {
         if (((mutable_bitField0_ & 0x00000008) == 0x00000008)) {
-          testNet_ = testNet_.getUnmodifiableView();
+          testNet_ = new com.google.protobuf.UnmodifiableLazyStringList(testNet_);
         }
         if (((mutable_bitField0_ & 0x00000100) == 0x00000100)) {
           testIter_ = java.util.Collections.unmodifiableList(testIter_);
@@ -9763,6 +9862,7 @@ public final class Caffe {
 
     private int bitField0_;
     private int bitField1_;
+    // optional string net = 24;
     public static final int NET_FIELD_NUMBER = 24;
     private java.lang.Object net_;
     /**
@@ -9820,6 +9920,7 @@ public final class Caffe {
       }
     }
 
+    // optional .caffe.NetParameter net_param = 25;
     public static final int NET_PARAM_FIELD_NUMBER = 25;
     private caffe.Caffe.NetParameter netParam_;
     /**
@@ -9853,6 +9954,7 @@ public final class Caffe {
       return netParam_;
     }
 
+    // optional string train_net = 1;
     public static final int TRAIN_NET_FIELD_NUMBER = 1;
     private java.lang.Object trainNet_;
     /**
@@ -9907,6 +10009,7 @@ public final class Caffe {
       }
     }
 
+    // repeated string test_net = 2;
     public static final int TEST_NET_FIELD_NUMBER = 2;
     private com.google.protobuf.LazyStringList testNet_;
     /**
@@ -9916,7 +10019,7 @@ public final class Caffe {
      * Proto filenames for the test nets.
      * </pre>
      */
-    public com.google.protobuf.ProtocolStringList
+    public java.util.List<java.lang.String>
         getTestNetList() {
       return testNet_;
     }
@@ -9952,6 +10055,7 @@ public final class Caffe {
       return testNet_.getByteString(index);
     }
 
+    // optional .caffe.NetParameter train_net_param = 21;
     public static final int TRAIN_NET_PARAM_FIELD_NUMBER = 21;
     private caffe.Caffe.NetParameter trainNetParam_;
     /**
@@ -9985,6 +10089,7 @@ public final class Caffe {
       return trainNetParam_;
     }
 
+    // repeated .caffe.NetParameter test_net_param = 22;
     public static final int TEST_NET_PARAM_FIELD_NUMBER = 22;
     private java.util.List<caffe.Caffe.NetParameter> testNetParam_;
     /**
@@ -10040,6 +10145,7 @@ public final class Caffe {
       return testNetParam_.get(index);
     }
 
+    // optional .caffe.NetState train_state = 26;
     public static final int TRAIN_STATE_FIELD_NUMBER = 26;
     private caffe.Caffe.NetState trainState_;
     /**
@@ -10048,6 +10154,7 @@ public final class Caffe {
      * <pre>
      * The states for the train/test nets. Must be unspecified or
      * specified once per net.
+     *
      * By default, all states will have solver = true;
      * train_state will have phase = TRAIN,
      * and all test_state's will have phase = TEST.
@@ -10063,6 +10170,7 @@ public final class Caffe {
      * <pre>
      * The states for the train/test nets. Must be unspecified or
      * specified once per net.
+     *
      * By default, all states will have solver = true;
      * train_state will have phase = TRAIN,
      * and all test_state's will have phase = TEST.
@@ -10078,6 +10186,7 @@ public final class Caffe {
      * <pre>
      * The states for the train/test nets. Must be unspecified or
      * specified once per net.
+     *
      * By default, all states will have solver = true;
      * train_state will have phase = TRAIN,
      * and all test_state's will have phase = TEST.
@@ -10088,6 +10197,7 @@ public final class Caffe {
       return trainState_;
     }
 
+    // repeated .caffe.NetState test_state = 27;
     public static final int TEST_STATE_FIELD_NUMBER = 27;
     private java.util.List<caffe.Caffe.NetState> testState_;
     /**
@@ -10123,6 +10233,7 @@ public final class Caffe {
       return testState_.get(index);
     }
 
+    // repeated int32 test_iter = 3;
     public static final int TEST_ITER_FIELD_NUMBER = 3;
     private java.util.List<java.lang.Integer> testIter_;
     /**
@@ -10157,6 +10268,7 @@ public final class Caffe {
       return testIter_.get(index);
     }
 
+    // optional int32 test_interval = 4 [default = 0];
     public static final int TEST_INTERVAL_FIELD_NUMBER = 4;
     private int testInterval_;
     /**
@@ -10180,6 +10292,7 @@ public final class Caffe {
       return testInterval_;
     }
 
+    // optional bool test_compute_loss = 19 [default = false];
     public static final int TEST_COMPUTE_LOSS_FIELD_NUMBER = 19;
     private boolean testComputeLoss_;
     /**
@@ -10195,6 +10308,7 @@ public final class Caffe {
       return testComputeLoss_;
     }
 
+    // optional bool test_initialization = 32 [default = true];
     public static final int TEST_INITIALIZATION_FIELD_NUMBER = 32;
     private boolean testInitialization_;
     /**
@@ -10220,6 +10334,7 @@ public final class Caffe {
       return testInitialization_;
     }
 
+    // optional float base_lr = 5;
     public static final int BASE_LR_FIELD_NUMBER = 5;
     private float baseLr_;
     /**
@@ -10243,6 +10358,7 @@ public final class Caffe {
       return baseLr_;
     }
 
+    // optional int32 display = 6;
     public static final int DISPLAY_FIELD_NUMBER = 6;
     private int display_;
     /**
@@ -10268,6 +10384,7 @@ public final class Caffe {
       return display_;
     }
 
+    // optional int32 average_loss = 33 [default = 1];
     public static final int AVERAGE_LOSS_FIELD_NUMBER = 33;
     private int averageLoss_;
     /**
@@ -10291,6 +10408,7 @@ public final class Caffe {
       return averageLoss_;
     }
 
+    // optional int32 max_iter = 7;
     public static final int MAX_ITER_FIELD_NUMBER = 7;
     private int maxIter_;
     /**
@@ -10314,6 +10432,7 @@ public final class Caffe {
       return maxIter_;
     }
 
+    // optional int32 iter_size = 36 [default = 1];
     public static final int ITER_SIZE_FIELD_NUMBER = 36;
     private int iterSize_;
     /**
@@ -10337,6 +10456,7 @@ public final class Caffe {
       return iterSize_;
     }
 
+    // optional string lr_policy = 8;
     public static final int LR_POLICY_FIELD_NUMBER = 8;
     private java.lang.Object lrPolicy_;
     /**
@@ -10355,6 +10475,7 @@ public final class Caffe {
      *      zero by the max_iter. return base_lr (1 - iter/max_iter) ^ (power)
      *    - sigmoid: the effective learning rate follows a sigmod decay
      *      return base_lr ( 1/(1 + exp(-gamma * (iter - stepsize))))
+     *
      * where base_lr, max_iter, gamma, step, stepvalue and power are defined
      * in the solver parameter protocol buffer, and iter is the current iteration.
      * </pre>
@@ -10378,6 +10499,7 @@ public final class Caffe {
      *      zero by the max_iter. return base_lr (1 - iter/max_iter) ^ (power)
      *    - sigmoid: the effective learning rate follows a sigmod decay
      *      return base_lr ( 1/(1 + exp(-gamma * (iter - stepsize))))
+     *
      * where base_lr, max_iter, gamma, step, stepvalue and power are defined
      * in the solver parameter protocol buffer, and iter is the current iteration.
      * </pre>
@@ -10412,6 +10534,7 @@ public final class Caffe {
      *      zero by the max_iter. return base_lr (1 - iter/max_iter) ^ (power)
      *    - sigmoid: the effective learning rate follows a sigmod decay
      *      return base_lr ( 1/(1 + exp(-gamma * (iter - stepsize))))
+     *
      * where base_lr, max_iter, gamma, step, stepvalue and power are defined
      * in the solver parameter protocol buffer, and iter is the current iteration.
      * </pre>
@@ -10430,6 +10553,7 @@ public final class Caffe {
       }
     }
 
+    // optional float gamma = 9;
     public static final int GAMMA_FIELD_NUMBER = 9;
     private float gamma_;
     /**
@@ -10453,6 +10577,7 @@ public final class Caffe {
       return gamma_;
     }
 
+    // optional float power = 10;
     public static final int POWER_FIELD_NUMBER = 10;
     private float power_;
     /**
@@ -10476,6 +10601,7 @@ public final class Caffe {
       return power_;
     }
 
+    // optional float momentum = 11;
     public static final int MOMENTUM_FIELD_NUMBER = 11;
     private float momentum_;
     /**
@@ -10499,6 +10625,7 @@ public final class Caffe {
       return momentum_;
     }
 
+    // optional float weight_decay = 12;
     public static final int WEIGHT_DECAY_FIELD_NUMBER = 12;
     private float weightDecay_;
     /**
@@ -10522,6 +10649,7 @@ public final class Caffe {
       return weightDecay_;
     }
 
+    // optional string regularization_type = 29 [default = "L2"];
     public static final int REGULARIZATION_TYPE_FIELD_NUMBER = 29;
     private java.lang.Object regularizationType_;
     /**
@@ -10579,6 +10707,7 @@ public final class Caffe {
       }
     }
 
+    // optional int32 stepsize = 13;
     public static final int STEPSIZE_FIELD_NUMBER = 13;
     private int stepsize_;
     /**
@@ -10602,6 +10731,7 @@ public final class Caffe {
       return stepsize_;
     }
 
+    // repeated int32 stepvalue = 34;
     public static final int STEPVALUE_FIELD_NUMBER = 34;
     private java.util.List<java.lang.Integer> stepvalue_;
     /**
@@ -10636,6 +10766,7 @@ public final class Caffe {
       return stepvalue_.get(index);
     }
 
+    // optional float clip_gradients = 35 [default = -1];
     public static final int CLIP_GRADIENTS_FIELD_NUMBER = 35;
     private float clipGradients_;
     /**
@@ -10661,6 +10792,7 @@ public final class Caffe {
       return clipGradients_;
     }
 
+    // optional int32 snapshot = 14 [default = 0];
     public static final int SNAPSHOT_FIELD_NUMBER = 14;
     private int snapshot_;
     /**
@@ -10684,6 +10816,7 @@ public final class Caffe {
       return snapshot_;
     }
 
+    // optional string snapshot_prefix = 15;
     public static final int SNAPSHOT_PREFIX_FIELD_NUMBER = 15;
     private java.lang.Object snapshotPrefix_;
     /**
@@ -10738,6 +10871,7 @@ public final class Caffe {
       }
     }
 
+    // optional bool snapshot_diff = 16 [default = false];
     public static final int SNAPSHOT_DIFF_FIELD_NUMBER = 16;
     private boolean snapshotDiff_;
     /**
@@ -10763,6 +10897,7 @@ public final class Caffe {
       return snapshotDiff_;
     }
 
+    // optional .caffe.SolverParameter.SnapshotFormat snapshot_format = 37 [default = BINARYPROTO];
     public static final int SNAPSHOT_FORMAT_FIELD_NUMBER = 37;
     private caffe.Caffe.SolverParameter.SnapshotFormat snapshotFormat_;
     /**
@@ -10778,6 +10913,7 @@ public final class Caffe {
       return snapshotFormat_;
     }
 
+    // optional .caffe.SolverParameter.SolverMode solver_mode = 17 [default = GPU];
     public static final int SOLVER_MODE_FIELD_NUMBER = 17;
     private caffe.Caffe.SolverParameter.SolverMode solverMode_;
     /**
@@ -10793,6 +10929,7 @@ public final class Caffe {
       return solverMode_;
     }
 
+    // optional int32 device_id = 18 [default = 0];
     public static final int DEVICE_ID_FIELD_NUMBER = 18;
     private int deviceId_;
     /**
@@ -10816,6 +10953,7 @@ public final class Caffe {
       return deviceId_;
     }
 
+    // optional int64 random_seed = 20 [default = -1];
     public static final int RANDOM_SEED_FIELD_NUMBER = 20;
     private long randomSeed_;
     /**
@@ -10843,6 +10981,7 @@ public final class Caffe {
       return randomSeed_;
     }
 
+    // optional string type = 40 [default = "SGD"];
     public static final int TYPE_FIELD_NUMBER = 40;
     private java.lang.Object type_;
     /**
@@ -10897,6 +11036,7 @@ public final class Caffe {
       }
     }
 
+    // optional float delta = 31 [default = 1e-008];
     public static final int DELTA_FIELD_NUMBER = 31;
     private float delta_;
     /**
@@ -10920,6 +11060,7 @@ public final class Caffe {
       return delta_;
     }
 
+    // optional float momentum2 = 39 [default = 0.999];
     public static final int MOMENTUM2_FIELD_NUMBER = 39;
     private float momentum2_;
     /**
@@ -10943,6 +11084,7 @@ public final class Caffe {
       return momentum2_;
     }
 
+    // optional float rms_decay = 38;
     public static final int RMS_DECAY_FIELD_NUMBER = 38;
     private float rmsDecay_;
     /**
@@ -10968,6 +11110,7 @@ public final class Caffe {
       return rmsDecay_;
     }
 
+    // optional bool debug_info = 23 [default = false];
     public static final int DEBUG_INFO_FIELD_NUMBER = 23;
     private boolean debugInfo_;
     /**
@@ -10993,6 +11136,7 @@ public final class Caffe {
       return debugInfo_;
     }
 
+    // optional bool snapshot_after_train = 28 [default = true];
     public static final int SNAPSHOT_AFTER_TRAIN_FIELD_NUMBER = 28;
     private boolean snapshotAfterTrain_;
     /**
@@ -11016,6 +11160,7 @@ public final class Caffe {
       return snapshotAfterTrain_;
     }
 
+    // optional .caffe.SolverParameter.SolverType solver_type = 30 [default = SGD];
     public static final int SOLVER_TYPE_FIELD_NUMBER = 30;
     private caffe.Caffe.SolverParameter.SolverType solverType_;
     /**
@@ -11084,8 +11229,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -11482,13 +11626,13 @@ public final class Caffe {
      * <pre>
      * NOTE
      * Update the next available ID when you add a new SolverParameter field.
+     *
      * SolverParameter next available ID: 41 (last added: type)
      * </pre>
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.SolverParameter)
-        caffe.Caffe.SolverParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.SolverParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_SolverParameter_descriptor;
@@ -11673,7 +11817,8 @@ public final class Caffe {
         }
         result.trainNet_ = trainNet_;
         if (((bitField0_ & 0x00000008) == 0x00000008)) {
-          testNet_ = testNet_.getUnmodifiableView();
+          testNet_ = new com.google.protobuf.UnmodifiableLazyStringList(
+              testNet_);
           bitField0_ = (bitField0_ & ~0x00000008);
         }
         result.testNet_ = testNet_;
@@ -12085,6 +12230,7 @@ public final class Caffe {
       private int bitField0_;
       private int bitField1_;
 
+      // optional string net = 24;
       private java.lang.Object net_ = "";
       /**
        * <code>optional string net = 24;</code>
@@ -12108,12 +12254,9 @@ public final class Caffe {
       public java.lang.String getNet() {
         java.lang.Object ref = net_;
         if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            net_ = s;
-          }
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          net_ = s;
           return s;
         } else {
           return (java.lang.String) ref;
@@ -12191,6 +12334,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional .caffe.NetParameter net_param = 25;
       private caffe.Caffe.NetParameter netParam_ = caffe.Caffe.NetParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.NetParameter, caffe.Caffe.NetParameter.Builder, caffe.Caffe.NetParameterOrBuilder> netParamBuilder_;
@@ -12335,7 +12479,7 @@ public final class Caffe {
         if (netParamBuilder_ == null) {
           netParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.NetParameter, caffe.Caffe.NetParameter.Builder, caffe.Caffe.NetParameterOrBuilder>(
-                  getNetParam(),
+                  netParam_,
                   getParentForChildren(),
                   isClean());
           netParam_ = null;
@@ -12343,6 +12487,7 @@ public final class Caffe {
         return netParamBuilder_;
       }
 
+      // optional string train_net = 1;
       private java.lang.Object trainNet_ = "";
       /**
        * <code>optional string train_net = 1;</code>
@@ -12364,12 +12509,9 @@ public final class Caffe {
       public java.lang.String getTrainNet() {
         java.lang.Object ref = trainNet_;
         if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            trainNet_ = s;
-          }
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          trainNet_ = s;
           return s;
         } else {
           return (java.lang.String) ref;
@@ -12443,6 +12585,7 @@ public final class Caffe {
         return this;
       }
 
+      // repeated string test_net = 2;
       private com.google.protobuf.LazyStringList testNet_ = com.google.protobuf.LazyStringArrayList.EMPTY;
       private void ensureTestNetIsMutable() {
         if (!((bitField0_ & 0x00000008) == 0x00000008)) {
@@ -12457,9 +12600,9 @@ public final class Caffe {
        * Proto filenames for the test nets.
        * </pre>
        */
-      public com.google.protobuf.ProtocolStringList
+      public java.util.List<java.lang.String>
           getTestNetList() {
-        return testNet_.getUnmodifiableView();
+        return java.util.Collections.unmodifiableList(testNet_);
       }
       /**
        * <code>repeated string test_net = 2;</code>
@@ -12536,8 +12679,7 @@ public final class Caffe {
       public Builder addAllTestNet(
           java.lang.Iterable<java.lang.String> values) {
         ensureTestNetIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, testNet_);
+        super.addAll(values, testNet_);
         onChanged();
         return this;
       }
@@ -12572,6 +12714,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional .caffe.NetParameter train_net_param = 21;
       private caffe.Caffe.NetParameter trainNetParam_ = caffe.Caffe.NetParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.NetParameter, caffe.Caffe.NetParameter.Builder, caffe.Caffe.NetParameterOrBuilder> trainNetParamBuilder_;
@@ -12716,7 +12859,7 @@ public final class Caffe {
         if (trainNetParamBuilder_ == null) {
           trainNetParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.NetParameter, caffe.Caffe.NetParameter.Builder, caffe.Caffe.NetParameterOrBuilder>(
-                  getTrainNetParam(),
+                  trainNetParam_,
                   getParentForChildren(),
                   isClean());
           trainNetParam_ = null;
@@ -12724,6 +12867,7 @@ public final class Caffe {
         return trainNetParamBuilder_;
       }
 
+      // repeated .caffe.NetParameter test_net_param = 22;
       private java.util.List<caffe.Caffe.NetParameter> testNetParam_ =
         java.util.Collections.emptyList();
       private void ensureTestNetParamIsMutable() {
@@ -12905,8 +13049,7 @@ public final class Caffe {
           java.lang.Iterable<? extends caffe.Caffe.NetParameter> values) {
         if (testNetParamBuilder_ == null) {
           ensureTestNetParamIsMutable();
-          com.google.protobuf.AbstractMessageLite.Builder.addAll(
-              values, testNetParam_);
+          super.addAll(values, testNetParam_);
           onChanged();
         } else {
           testNetParamBuilder_.addAllMessages(values);
@@ -13036,6 +13179,7 @@ public final class Caffe {
         return testNetParamBuilder_;
       }
 
+      // optional .caffe.NetState train_state = 26;
       private caffe.Caffe.NetState trainState_ = caffe.Caffe.NetState.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.NetState, caffe.Caffe.NetState.Builder, caffe.Caffe.NetStateOrBuilder> trainStateBuilder_;
@@ -13045,6 +13189,7 @@ public final class Caffe {
        * <pre>
        * The states for the train/test nets. Must be unspecified or
        * specified once per net.
+       *
        * By default, all states will have solver = true;
        * train_state will have phase = TRAIN,
        * and all test_state's will have phase = TEST.
@@ -13060,6 +13205,7 @@ public final class Caffe {
        * <pre>
        * The states for the train/test nets. Must be unspecified or
        * specified once per net.
+       *
        * By default, all states will have solver = true;
        * train_state will have phase = TRAIN,
        * and all test_state's will have phase = TEST.
@@ -13079,6 +13225,7 @@ public final class Caffe {
        * <pre>
        * The states for the train/test nets. Must be unspecified or
        * specified once per net.
+       *
        * By default, all states will have solver = true;
        * train_state will have phase = TRAIN,
        * and all test_state's will have phase = TEST.
@@ -13104,6 +13251,7 @@ public final class Caffe {
        * <pre>
        * The states for the train/test nets. Must be unspecified or
        * specified once per net.
+       *
        * By default, all states will have solver = true;
        * train_state will have phase = TRAIN,
        * and all test_state's will have phase = TEST.
@@ -13127,6 +13275,7 @@ public final class Caffe {
        * <pre>
        * The states for the train/test nets. Must be unspecified or
        * specified once per net.
+       *
        * By default, all states will have solver = true;
        * train_state will have phase = TRAIN,
        * and all test_state's will have phase = TEST.
@@ -13155,6 +13304,7 @@ public final class Caffe {
        * <pre>
        * The states for the train/test nets. Must be unspecified or
        * specified once per net.
+       *
        * By default, all states will have solver = true;
        * train_state will have phase = TRAIN,
        * and all test_state's will have phase = TEST.
@@ -13177,6 +13327,7 @@ public final class Caffe {
        * <pre>
        * The states for the train/test nets. Must be unspecified or
        * specified once per net.
+       *
        * By default, all states will have solver = true;
        * train_state will have phase = TRAIN,
        * and all test_state's will have phase = TEST.
@@ -13194,6 +13345,7 @@ public final class Caffe {
        * <pre>
        * The states for the train/test nets. Must be unspecified or
        * specified once per net.
+       *
        * By default, all states will have solver = true;
        * train_state will have phase = TRAIN,
        * and all test_state's will have phase = TEST.
@@ -13213,6 +13365,7 @@ public final class Caffe {
        * <pre>
        * The states for the train/test nets. Must be unspecified or
        * specified once per net.
+       *
        * By default, all states will have solver = true;
        * train_state will have phase = TRAIN,
        * and all test_state's will have phase = TEST.
@@ -13225,7 +13378,7 @@ public final class Caffe {
         if (trainStateBuilder_ == null) {
           trainStateBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.NetState, caffe.Caffe.NetState.Builder, caffe.Caffe.NetStateOrBuilder>(
-                  getTrainState(),
+                  trainState_,
                   getParentForChildren(),
                   isClean());
           trainState_ = null;
@@ -13233,6 +13386,7 @@ public final class Caffe {
         return trainStateBuilder_;
       }
 
+      // repeated .caffe.NetState test_state = 27;
       private java.util.List<caffe.Caffe.NetState> testState_ =
         java.util.Collections.emptyList();
       private void ensureTestStateIsMutable() {
@@ -13374,8 +13528,7 @@ public final class Caffe {
           java.lang.Iterable<? extends caffe.Caffe.NetState> values) {
         if (testStateBuilder_ == null) {
           ensureTestStateIsMutable();
-          com.google.protobuf.AbstractMessageLite.Builder.addAll(
-              values, testState_);
+          super.addAll(values, testState_);
           onChanged();
         } else {
           testStateBuilder_.addAllMessages(values);
@@ -13473,6 +13626,7 @@ public final class Caffe {
         return testStateBuilder_;
       }
 
+      // repeated int32 test_iter = 3;
       private java.util.List<java.lang.Integer> testIter_ = java.util.Collections.emptyList();
       private void ensureTestIterIsMutable() {
         if (!((bitField0_ & 0x00000100) == 0x00000100)) {
@@ -13548,8 +13702,7 @@ public final class Caffe {
       public Builder addAllTestIter(
           java.lang.Iterable<? extends java.lang.Integer> values) {
         ensureTestIterIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, testIter_);
+        super.addAll(values, testIter_);
         onChanged();
         return this;
       }
@@ -13567,6 +13720,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional int32 test_interval = 4 [default = 0];
       private int testInterval_ ;
       /**
        * <code>optional int32 test_interval = 4 [default = 0];</code>
@@ -13615,6 +13769,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional bool test_compute_loss = 19 [default = false];
       private boolean testComputeLoss_ ;
       /**
        * <code>optional bool test_compute_loss = 19 [default = false];</code>
@@ -13647,6 +13802,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional bool test_initialization = 32 [default = true];
       private boolean testInitialization_ = true;
       /**
        * <code>optional bool test_initialization = 32 [default = true];</code>
@@ -13699,6 +13855,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float base_lr = 5;
       private float baseLr_ ;
       /**
        * <code>optional float base_lr = 5;</code>
@@ -13747,6 +13904,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional int32 display = 6;
       private int display_ ;
       /**
        * <code>optional int32 display = 6;</code>
@@ -13799,6 +13957,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional int32 average_loss = 33 [default = 1];
       private int averageLoss_ = 1;
       /**
        * <code>optional int32 average_loss = 33 [default = 1];</code>
@@ -13847,6 +14006,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional int32 max_iter = 7;
       private int maxIter_ ;
       /**
        * <code>optional int32 max_iter = 7;</code>
@@ -13895,6 +14055,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional int32 iter_size = 36 [default = 1];
       private int iterSize_ = 1;
       /**
        * <code>optional int32 iter_size = 36 [default = 1];</code>
@@ -13943,6 +14104,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional string lr_policy = 8;
       private java.lang.Object lrPolicy_ = "";
       /**
        * <code>optional string lr_policy = 8;</code>
@@ -13960,6 +14122,7 @@ public final class Caffe {
        *      zero by the max_iter. return base_lr (1 - iter/max_iter) ^ (power)
        *    - sigmoid: the effective learning rate follows a sigmod decay
        *      return base_lr ( 1/(1 + exp(-gamma * (iter - stepsize))))
+       *
        * where base_lr, max_iter, gamma, step, stepvalue and power are defined
        * in the solver parameter protocol buffer, and iter is the current iteration.
        * </pre>
@@ -13983,6 +14146,7 @@ public final class Caffe {
        *      zero by the max_iter. return base_lr (1 - iter/max_iter) ^ (power)
        *    - sigmoid: the effective learning rate follows a sigmod decay
        *      return base_lr ( 1/(1 + exp(-gamma * (iter - stepsize))))
+       *
        * where base_lr, max_iter, gamma, step, stepvalue and power are defined
        * in the solver parameter protocol buffer, and iter is the current iteration.
        * </pre>
@@ -13990,12 +14154,9 @@ public final class Caffe {
       public java.lang.String getLrPolicy() {
         java.lang.Object ref = lrPolicy_;
         if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            lrPolicy_ = s;
-          }
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          lrPolicy_ = s;
           return s;
         } else {
           return (java.lang.String) ref;
@@ -14017,6 +14178,7 @@ public final class Caffe {
        *      zero by the max_iter. return base_lr (1 - iter/max_iter) ^ (power)
        *    - sigmoid: the effective learning rate follows a sigmod decay
        *      return base_lr ( 1/(1 + exp(-gamma * (iter - stepsize))))
+       *
        * where base_lr, max_iter, gamma, step, stepvalue and power are defined
        * in the solver parameter protocol buffer, and iter is the current iteration.
        * </pre>
@@ -14050,6 +14212,7 @@ public final class Caffe {
        *      zero by the max_iter. return base_lr (1 - iter/max_iter) ^ (power)
        *    - sigmoid: the effective learning rate follows a sigmod decay
        *      return base_lr ( 1/(1 + exp(-gamma * (iter - stepsize))))
+       *
        * where base_lr, max_iter, gamma, step, stepvalue and power are defined
        * in the solver parameter protocol buffer, and iter is the current iteration.
        * </pre>
@@ -14080,6 +14243,7 @@ public final class Caffe {
        *      zero by the max_iter. return base_lr (1 - iter/max_iter) ^ (power)
        *    - sigmoid: the effective learning rate follows a sigmod decay
        *      return base_lr ( 1/(1 + exp(-gamma * (iter - stepsize))))
+       *
        * where base_lr, max_iter, gamma, step, stepvalue and power are defined
        * in the solver parameter protocol buffer, and iter is the current iteration.
        * </pre>
@@ -14106,6 +14270,7 @@ public final class Caffe {
        *      zero by the max_iter. return base_lr (1 - iter/max_iter) ^ (power)
        *    - sigmoid: the effective learning rate follows a sigmod decay
        *      return base_lr ( 1/(1 + exp(-gamma * (iter - stepsize))))
+       *
        * where base_lr, max_iter, gamma, step, stepvalue and power are defined
        * in the solver parameter protocol buffer, and iter is the current iteration.
        * </pre>
@@ -14121,6 +14286,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float gamma = 9;
       private float gamma_ ;
       /**
        * <code>optional float gamma = 9;</code>
@@ -14169,6 +14335,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float power = 10;
       private float power_ ;
       /**
        * <code>optional float power = 10;</code>
@@ -14217,6 +14384,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float momentum = 11;
       private float momentum_ ;
       /**
        * <code>optional float momentum = 11;</code>
@@ -14265,6 +14433,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float weight_decay = 12;
       private float weightDecay_ ;
       /**
        * <code>optional float weight_decay = 12;</code>
@@ -14313,6 +14482,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional string regularization_type = 29 [default = "L2"];
       private java.lang.Object regularizationType_ = "L2";
       /**
        * <code>optional string regularization_type = 29 [default = "L2"];</code>
@@ -14336,12 +14506,9 @@ public final class Caffe {
       public java.lang.String getRegularizationType() {
         java.lang.Object ref = regularizationType_;
         if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            regularizationType_ = s;
-          }
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          regularizationType_ = s;
           return s;
         } else {
           return (java.lang.String) ref;
@@ -14419,6 +14586,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional int32 stepsize = 13;
       private int stepsize_ ;
       /**
        * <code>optional int32 stepsize = 13;</code>
@@ -14467,6 +14635,7 @@ public final class Caffe {
         return this;
       }
 
+      // repeated int32 stepvalue = 34;
       private java.util.List<java.lang.Integer> stepvalue_ = java.util.Collections.emptyList();
       private void ensureStepvalueIsMutable() {
         if (!((bitField0_ & 0x01000000) == 0x01000000)) {
@@ -14542,8 +14711,7 @@ public final class Caffe {
       public Builder addAllStepvalue(
           java.lang.Iterable<? extends java.lang.Integer> values) {
         ensureStepvalueIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, stepvalue_);
+        super.addAll(values, stepvalue_);
         onChanged();
         return this;
       }
@@ -14561,6 +14729,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float clip_gradients = 35 [default = -1];
       private float clipGradients_ = -1F;
       /**
        * <code>optional float clip_gradients = 35 [default = -1];</code>
@@ -14613,6 +14782,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional int32 snapshot = 14 [default = 0];
       private int snapshot_ ;
       /**
        * <code>optional int32 snapshot = 14 [default = 0];</code>
@@ -14661,6 +14831,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional string snapshot_prefix = 15;
       private java.lang.Object snapshotPrefix_ = "";
       /**
        * <code>optional string snapshot_prefix = 15;</code>
@@ -14682,12 +14853,9 @@ public final class Caffe {
       public java.lang.String getSnapshotPrefix() {
         java.lang.Object ref = snapshotPrefix_;
         if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            snapshotPrefix_ = s;
-          }
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          snapshotPrefix_ = s;
           return s;
         } else {
           return (java.lang.String) ref;
@@ -14761,6 +14929,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional bool snapshot_diff = 16 [default = false];
       private boolean snapshotDiff_ ;
       /**
        * <code>optional bool snapshot_diff = 16 [default = false];</code>
@@ -14813,6 +14982,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional .caffe.SolverParameter.SnapshotFormat snapshot_format = 37 [default = BINARYPROTO];
       private caffe.Caffe.SolverParameter.SnapshotFormat snapshotFormat_ = caffe.Caffe.SolverParameter.SnapshotFormat.BINARYPROTO;
       /**
        * <code>optional .caffe.SolverParameter.SnapshotFormat snapshot_format = 37 [default = BINARYPROTO];</code>
@@ -14848,6 +15018,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional .caffe.SolverParameter.SolverMode solver_mode = 17 [default = GPU];
       private caffe.Caffe.SolverParameter.SolverMode solverMode_ = caffe.Caffe.SolverParameter.SolverMode.GPU;
       /**
        * <code>optional .caffe.SolverParameter.SolverMode solver_mode = 17 [default = GPU];</code>
@@ -14883,6 +15054,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional int32 device_id = 18 [default = 0];
       private int deviceId_ ;
       /**
        * <code>optional int32 device_id = 18 [default = 0];</code>
@@ -14931,6 +15103,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional int64 random_seed = 20 [default = -1];
       private long randomSeed_ = -1L;
       /**
        * <code>optional int64 random_seed = 20 [default = -1];</code>
@@ -14987,6 +15160,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional string type = 40 [default = "SGD"];
       private java.lang.Object type_ = "SGD";
       /**
        * <code>optional string type = 40 [default = "SGD"];</code>
@@ -15008,12 +15182,9 @@ public final class Caffe {
       public java.lang.String getType() {
         java.lang.Object ref = type_;
         if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            type_ = s;
-          }
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          type_ = s;
           return s;
         } else {
           return (java.lang.String) ref;
@@ -15087,6 +15258,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float delta = 31 [default = 1e-008];
       private float delta_ = 1e-008F;
       /**
        * <code>optional float delta = 31 [default = 1e-008];</code>
@@ -15135,6 +15307,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float momentum2 = 39 [default = 0.999];
       private float momentum2_ = 0.999F;
       /**
        * <code>optional float momentum2 = 39 [default = 0.999];</code>
@@ -15183,6 +15356,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float rms_decay = 38;
       private float rmsDecay_ ;
       /**
        * <code>optional float rms_decay = 38;</code>
@@ -15235,6 +15409,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional bool debug_info = 23 [default = false];
       private boolean debugInfo_ ;
       /**
        * <code>optional bool debug_info = 23 [default = false];</code>
@@ -15287,6 +15462,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional bool snapshot_after_train = 28 [default = true];
       private boolean snapshotAfterTrain_ = true;
       /**
        * <code>optional bool snapshot_after_train = 28 [default = true];</code>
@@ -15335,6 +15511,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional .caffe.SolverParameter.SolverType solver_type = 30 [default = SGD];
       private caffe.Caffe.SolverParameter.SolverType solverType_ = caffe.Caffe.SolverParameter.SolverType.SGD;
       /**
        * <code>optional .caffe.SolverParameter.SolverType solver_type = 30 [default = SGD];</code>
@@ -15397,10 +15574,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.SolverParameter)
   }
 
-  public interface SolverStateOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.SolverState)
-      com.google.protobuf.MessageOrBuilder {
+  public interface SolverStateOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional int32 iter = 1;
     /**
      * <code>optional int32 iter = 1;</code>
      *
@@ -15418,6 +15595,7 @@ public final class Caffe {
      */
     int getIter();
 
+    // optional string learned_net = 2;
     /**
      * <code>optional string learned_net = 2;</code>
      *
@@ -15444,6 +15622,7 @@ public final class Caffe {
     com.google.protobuf.ByteString
         getLearnedNetBytes();
 
+    // repeated .caffe.BlobProto history = 3;
     /**
      * <code>repeated .caffe.BlobProto history = 3;</code>
      *
@@ -15488,6 +15667,7 @@ public final class Caffe {
     caffe.Caffe.BlobProtoOrBuilder getHistoryOrBuilder(
         int index);
 
+    // optional int32 current_step = 4 [default = 0];
     /**
      * <code>optional int32 current_step = 4 [default = 0];</code>
      *
@@ -15513,9 +15693,8 @@ public final class Caffe {
    * </pre>
    */
   public static final class SolverState extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.SolverState)
-      SolverStateOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements SolverStateOrBuilder {
     // Use SolverState.newBuilder() to construct.
     private SolverState(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -15567,9 +15746,8 @@ public final class Caffe {
               break;
             }
             case 18: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000002;
-              learnedNet_ = bs;
+              learnedNet_ = input.readBytes();
               break;
             }
             case 26: {
@@ -15628,6 +15806,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional int32 iter = 1;
     public static final int ITER_FIELD_NUMBER = 1;
     private int iter_;
     /**
@@ -15651,6 +15830,7 @@ public final class Caffe {
       return iter_;
     }
 
+    // optional string learned_net = 2;
     public static final int LEARNED_NET_FIELD_NUMBER = 2;
     private java.lang.Object learnedNet_;
     /**
@@ -15705,6 +15885,7 @@ public final class Caffe {
       }
     }
 
+    // repeated .caffe.BlobProto history = 3;
     public static final int HISTORY_FIELD_NUMBER = 3;
     private java.util.List<caffe.Caffe.BlobProto> history_;
     /**
@@ -15760,6 +15941,7 @@ public final class Caffe {
       return history_.get(index);
     }
 
+    // optional int32 current_step = 4 [default = 0];
     public static final int CURRENT_STEP_FIELD_NUMBER = 4;
     private int currentStep_;
     /**
@@ -15792,8 +15974,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -15925,9 +16106,8 @@ public final class Caffe {
      * </pre>
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.SolverState)
-        caffe.Caffe.SolverStateOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.SolverStateOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_SolverState_descriptor;
@@ -16102,6 +16282,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional int32 iter = 1;
       private int iter_ ;
       /**
        * <code>optional int32 iter = 1;</code>
@@ -16150,6 +16331,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional string learned_net = 2;
       private java.lang.Object learnedNet_ = "";
       /**
        * <code>optional string learned_net = 2;</code>
@@ -16171,12 +16353,9 @@ public final class Caffe {
       public java.lang.String getLearnedNet() {
         java.lang.Object ref = learnedNet_;
         if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            learnedNet_ = s;
-          }
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          learnedNet_ = s;
           return s;
         } else {
           return (java.lang.String) ref;
@@ -16250,6 +16429,7 @@ public final class Caffe {
         return this;
       }
 
+      // repeated .caffe.BlobProto history = 3;
       private java.util.List<caffe.Caffe.BlobProto> history_ =
         java.util.Collections.emptyList();
       private void ensureHistoryIsMutable() {
@@ -16431,8 +16611,7 @@ public final class Caffe {
           java.lang.Iterable<? extends caffe.Caffe.BlobProto> values) {
         if (historyBuilder_ == null) {
           ensureHistoryIsMutable();
-          com.google.protobuf.AbstractMessageLite.Builder.addAll(
-              values, history_);
+          super.addAll(values, history_);
           onChanged();
         } else {
           historyBuilder_.addAllMessages(values);
@@ -16562,6 +16741,7 @@ public final class Caffe {
         return historyBuilder_;
       }
 
+      // optional int32 current_step = 4 [default = 0];
       private int currentStep_ ;
       /**
        * <code>optional int32 current_step = 4 [default = 0];</code>
@@ -16621,10 +16801,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.SolverState)
   }
 
-  public interface NetStateOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.NetState)
-      com.google.protobuf.MessageOrBuilder {
+  public interface NetStateOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional .caffe.Phase phase = 1 [default = TEST];
     /**
      * <code>optional .caffe.Phase phase = 1 [default = TEST];</code>
      */
@@ -16634,6 +16814,7 @@ public final class Caffe {
      */
     caffe.Caffe.Phase getPhase();
 
+    // optional int32 level = 2 [default = 0];
     /**
      * <code>optional int32 level = 2 [default = 0];</code>
      */
@@ -16643,11 +16824,12 @@ public final class Caffe {
      */
     int getLevel();
 
+    // repeated string stage = 3;
     /**
      * <code>repeated string stage = 3;</code>
      */
-    com.google.protobuf.ProtocolStringList
-        getStageList();
+    java.util.List<java.lang.String>
+    getStageList();
     /**
      * <code>repeated string stage = 3;</code>
      */
@@ -16666,9 +16848,8 @@ public final class Caffe {
    * Protobuf type {@code caffe.NetState}
    */
   public static final class NetState extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.NetState)
-      NetStateOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements NetStateOrBuilder {
     // Use NetState.newBuilder() to construct.
     private NetState(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -16731,12 +16912,11 @@ public final class Caffe {
               break;
             }
             case 26: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               if (!((mutable_bitField0_ & 0x00000004) == 0x00000004)) {
                 stage_ = new com.google.protobuf.LazyStringArrayList();
                 mutable_bitField0_ |= 0x00000004;
               }
-              stage_.add(bs);
+              stage_.add(input.readBytes());
               break;
             }
           }
@@ -16748,7 +16928,7 @@ public final class Caffe {
             e.getMessage()).setUnfinishedMessage(this);
       } finally {
         if (((mutable_bitField0_ & 0x00000004) == 0x00000004)) {
-          stage_ = stage_.getUnmodifiableView();
+          stage_ = new com.google.protobuf.UnmodifiableLazyStringList(stage_);
         }
         this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
@@ -16782,6 +16962,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional .caffe.Phase phase = 1 [default = TEST];
     public static final int PHASE_FIELD_NUMBER = 1;
     private caffe.Caffe.Phase phase_;
     /**
@@ -16797,6 +16978,7 @@ public final class Caffe {
       return phase_;
     }
 
+    // optional int32 level = 2 [default = 0];
     public static final int LEVEL_FIELD_NUMBER = 2;
     private int level_;
     /**
@@ -16812,12 +16994,13 @@ public final class Caffe {
       return level_;
     }
 
+    // repeated string stage = 3;
     public static final int STAGE_FIELD_NUMBER = 3;
     private com.google.protobuf.LazyStringList stage_;
     /**
      * <code>repeated string stage = 3;</code>
      */
-    public com.google.protobuf.ProtocolStringList
+    public java.util.List<java.lang.String>
         getStageList() {
       return stage_;
     }
@@ -16849,8 +17032,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -16976,9 +17158,8 @@ public final class Caffe {
      * Protobuf type {@code caffe.NetState}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.NetState)
-        caffe.Caffe.NetStateOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.NetStateOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_NetState_descriptor;
@@ -17054,7 +17235,8 @@ public final class Caffe {
         }
         result.level_ = level_;
         if (((bitField0_ & 0x00000004) == 0x00000004)) {
-          stage_ = stage_.getUnmodifiableView();
+          stage_ = new com.google.protobuf.UnmodifiableLazyStringList(
+              stage_);
           bitField0_ = (bitField0_ & ~0x00000004);
         }
         result.stage_ = stage_;
@@ -17117,6 +17299,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional .caffe.Phase phase = 1 [default = TEST];
       private caffe.Caffe.Phase phase_ = caffe.Caffe.Phase.TEST;
       /**
        * <code>optional .caffe.Phase phase = 1 [default = TEST];</code>
@@ -17152,6 +17335,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional int32 level = 2 [default = 0];
       private int level_ ;
       /**
        * <code>optional int32 level = 2 [default = 0];</code>
@@ -17184,6 +17368,7 @@ public final class Caffe {
         return this;
       }
 
+      // repeated string stage = 3;
       private com.google.protobuf.LazyStringList stage_ = com.google.protobuf.LazyStringArrayList.EMPTY;
       private void ensureStageIsMutable() {
         if (!((bitField0_ & 0x00000004) == 0x00000004)) {
@@ -17194,9 +17379,9 @@ public final class Caffe {
       /**
        * <code>repeated string stage = 3;</code>
        */
-      public com.google.protobuf.ProtocolStringList
+      public java.util.List<java.lang.String>
           getStageList() {
-        return stage_.getUnmodifiableView();
+        return java.util.Collections.unmodifiableList(stage_);
       }
       /**
        * <code>repeated string stage = 3;</code>
@@ -17249,8 +17434,7 @@ public final class Caffe {
       public Builder addAllStage(
           java.lang.Iterable<java.lang.String> values) {
         ensureStageIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, stage_);
+        super.addAll(values, stage_);
         onChanged();
         return this;
       }
@@ -17288,10 +17472,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.NetState)
   }
 
-  public interface NetStateRuleOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.NetStateRule)
-      com.google.protobuf.MessageOrBuilder {
+  public interface NetStateRuleOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional .caffe.Phase phase = 1;
     /**
      * <code>optional .caffe.Phase phase = 1;</code>
      *
@@ -17311,6 +17495,7 @@ public final class Caffe {
      */
     caffe.Caffe.Phase getPhase();
 
+    // optional int32 min_level = 2;
     /**
      * <code>optional int32 min_level = 2;</code>
      *
@@ -17330,6 +17515,7 @@ public final class Caffe {
      */
     int getMinLevel();
 
+    // optional int32 max_level = 3;
     /**
      * <code>optional int32 max_level = 3;</code>
      */
@@ -17339,6 +17525,7 @@ public final class Caffe {
      */
     int getMaxLevel();
 
+    // repeated string stage = 4;
     /**
      * <code>repeated string stage = 4;</code>
      *
@@ -17349,8 +17536,8 @@ public final class Caffe {
      * (Use multiple NetStateRules to specify conjunctions of stages.)
      * </pre>
      */
-    com.google.protobuf.ProtocolStringList
-        getStageList();
+    java.util.List<java.lang.String>
+    getStageList();
     /**
      * <code>repeated string stage = 4;</code>
      *
@@ -17386,11 +17573,12 @@ public final class Caffe {
     com.google.protobuf.ByteString
         getStageBytes(int index);
 
+    // repeated string not_stage = 5;
     /**
      * <code>repeated string not_stage = 5;</code>
      */
-    com.google.protobuf.ProtocolStringList
-        getNotStageList();
+    java.util.List<java.lang.String>
+    getNotStageList();
     /**
      * <code>repeated string not_stage = 5;</code>
      */
@@ -17409,9 +17597,8 @@ public final class Caffe {
    * Protobuf type {@code caffe.NetStateRule}
    */
   public static final class NetStateRule extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.NetStateRule)
-      NetStateRuleOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements NetStateRuleOrBuilder {
     // Use NetStateRule.newBuilder() to construct.
     private NetStateRule(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -17479,21 +17666,19 @@ public final class Caffe {
               break;
             }
             case 34: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               if (!((mutable_bitField0_ & 0x00000008) == 0x00000008)) {
                 stage_ = new com.google.protobuf.LazyStringArrayList();
                 mutable_bitField0_ |= 0x00000008;
               }
-              stage_.add(bs);
+              stage_.add(input.readBytes());
               break;
             }
             case 42: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               if (!((mutable_bitField0_ & 0x00000010) == 0x00000010)) {
                 notStage_ = new com.google.protobuf.LazyStringArrayList();
                 mutable_bitField0_ |= 0x00000010;
               }
-              notStage_.add(bs);
+              notStage_.add(input.readBytes());
               break;
             }
           }
@@ -17505,10 +17690,10 @@ public final class Caffe {
             e.getMessage()).setUnfinishedMessage(this);
       } finally {
         if (((mutable_bitField0_ & 0x00000008) == 0x00000008)) {
-          stage_ = stage_.getUnmodifiableView();
+          stage_ = new com.google.protobuf.UnmodifiableLazyStringList(stage_);
         }
         if (((mutable_bitField0_ & 0x00000010) == 0x00000010)) {
-          notStage_ = notStage_.getUnmodifiableView();
+          notStage_ = new com.google.protobuf.UnmodifiableLazyStringList(notStage_);
         }
         this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
@@ -17542,6 +17727,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional .caffe.Phase phase = 1;
     public static final int PHASE_FIELD_NUMBER = 1;
     private caffe.Caffe.Phase phase_;
     /**
@@ -17567,6 +17753,7 @@ public final class Caffe {
       return phase_;
     }
 
+    // optional int32 min_level = 2;
     public static final int MIN_LEVEL_FIELD_NUMBER = 2;
     private int minLevel_;
     /**
@@ -17592,6 +17779,7 @@ public final class Caffe {
       return minLevel_;
     }
 
+    // optional int32 max_level = 3;
     public static final int MAX_LEVEL_FIELD_NUMBER = 3;
     private int maxLevel_;
     /**
@@ -17607,6 +17795,7 @@ public final class Caffe {
       return maxLevel_;
     }
 
+    // repeated string stage = 4;
     public static final int STAGE_FIELD_NUMBER = 4;
     private com.google.protobuf.LazyStringList stage_;
     /**
@@ -17619,7 +17808,7 @@ public final class Caffe {
      * (Use multiple NetStateRules to specify conjunctions of stages.)
      * </pre>
      */
-    public com.google.protobuf.ProtocolStringList
+    public java.util.List<java.lang.String>
         getStageList() {
       return stage_;
     }
@@ -17664,12 +17853,13 @@ public final class Caffe {
       return stage_.getByteString(index);
     }
 
+    // repeated string not_stage = 5;
     public static final int NOT_STAGE_FIELD_NUMBER = 5;
     private com.google.protobuf.LazyStringList notStage_;
     /**
      * <code>repeated string not_stage = 5;</code>
      */
-    public com.google.protobuf.ProtocolStringList
+    public java.util.List<java.lang.String>
         getNotStageList() {
       return notStage_;
     }
@@ -17703,8 +17893,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -17849,9 +18038,8 @@ public final class Caffe {
      * Protobuf type {@code caffe.NetStateRule}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.NetStateRule)
-        caffe.Caffe.NetStateRuleOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.NetStateRuleOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_NetStateRule_descriptor;
@@ -17935,12 +18123,14 @@ public final class Caffe {
         }
         result.maxLevel_ = maxLevel_;
         if (((bitField0_ & 0x00000008) == 0x00000008)) {
-          stage_ = stage_.getUnmodifiableView();
+          stage_ = new com.google.protobuf.UnmodifiableLazyStringList(
+              stage_);
           bitField0_ = (bitField0_ & ~0x00000008);
         }
         result.stage_ = stage_;
         if (((bitField0_ & 0x00000010) == 0x00000010)) {
-          notStage_ = notStage_.getUnmodifiableView();
+          notStage_ = new com.google.protobuf.UnmodifiableLazyStringList(
+              notStage_);
           bitField0_ = (bitField0_ & ~0x00000010);
         }
         result.notStage_ = notStage_;
@@ -18016,6 +18206,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional .caffe.Phase phase = 1;
       private caffe.Caffe.Phase phase_ = caffe.Caffe.Phase.TRAIN;
       /**
        * <code>optional .caffe.Phase phase = 1;</code>
@@ -18071,6 +18262,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional int32 min_level = 2;
       private int minLevel_ ;
       /**
        * <code>optional int32 min_level = 2;</code>
@@ -18123,6 +18315,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional int32 max_level = 3;
       private int maxLevel_ ;
       /**
        * <code>optional int32 max_level = 3;</code>
@@ -18155,6 +18348,7 @@ public final class Caffe {
         return this;
       }
 
+      // repeated string stage = 4;
       private com.google.protobuf.LazyStringList stage_ = com.google.protobuf.LazyStringArrayList.EMPTY;
       private void ensureStageIsMutable() {
         if (!((bitField0_ & 0x00000008) == 0x00000008)) {
@@ -18172,9 +18366,9 @@ public final class Caffe {
        * (Use multiple NetStateRules to specify conjunctions of stages.)
        * </pre>
        */
-      public com.google.protobuf.ProtocolStringList
+      public java.util.List<java.lang.String>
           getStageList() {
-        return stage_.getUnmodifiableView();
+        return java.util.Collections.unmodifiableList(stage_);
       }
       /**
        * <code>repeated string stage = 4;</code>
@@ -18269,8 +18463,7 @@ public final class Caffe {
       public Builder addAllStage(
           java.lang.Iterable<java.lang.String> values) {
         ensureStageIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, stage_);
+        super.addAll(values, stage_);
         onChanged();
         return this;
       }
@@ -18311,6 +18504,7 @@ public final class Caffe {
         return this;
       }
 
+      // repeated string not_stage = 5;
       private com.google.protobuf.LazyStringList notStage_ = com.google.protobuf.LazyStringArrayList.EMPTY;
       private void ensureNotStageIsMutable() {
         if (!((bitField0_ & 0x00000010) == 0x00000010)) {
@@ -18321,9 +18515,9 @@ public final class Caffe {
       /**
        * <code>repeated string not_stage = 5;</code>
        */
-      public com.google.protobuf.ProtocolStringList
+      public java.util.List<java.lang.String>
           getNotStageList() {
-        return notStage_.getUnmodifiableView();
+        return java.util.Collections.unmodifiableList(notStage_);
       }
       /**
        * <code>repeated string not_stage = 5;</code>
@@ -18376,8 +18570,7 @@ public final class Caffe {
       public Builder addAllNotStage(
           java.lang.Iterable<java.lang.String> values) {
         ensureNotStageIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, notStage_);
+        super.addAll(values, notStage_);
         onChanged();
         return this;
       }
@@ -18415,10 +18608,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.NetStateRule)
   }
 
-  public interface ParamSpecOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.ParamSpec)
-      com.google.protobuf.MessageOrBuilder {
+  public interface ParamSpecOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional string name = 1;
     /**
      * <code>optional string name = 1;</code>
      *
@@ -18451,6 +18644,7 @@ public final class Caffe {
     com.google.protobuf.ByteString
         getNameBytes();
 
+    // optional .caffe.ParamSpec.DimCheckMode share_mode = 2;
     /**
      * <code>optional .caffe.ParamSpec.DimCheckMode share_mode = 2;</code>
      *
@@ -18470,6 +18664,7 @@ public final class Caffe {
      */
     caffe.Caffe.ParamSpec.DimCheckMode getShareMode();
 
+    // optional float lr_mult = 3 [default = 1];
     /**
      * <code>optional float lr_mult = 3 [default = 1];</code>
      *
@@ -18487,6 +18682,7 @@ public final class Caffe {
      */
     float getLrMult();
 
+    // optional float decay_mult = 4 [default = 1];
     /**
      * <code>optional float decay_mult = 4 [default = 1];</code>
      *
@@ -18513,9 +18709,8 @@ public final class Caffe {
    * </pre>
    */
   public static final class ParamSpec extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.ParamSpec)
-      ParamSpecOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements ParamSpecOrBuilder {
     // Use ParamSpec.newBuilder() to construct.
     private ParamSpec(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -18562,9 +18757,8 @@ public final class Caffe {
               break;
             }
             case 10: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000001;
-              name_ = bs;
+              name_ = input.readBytes();
               break;
             }
             case 16: {
@@ -18726,6 +18920,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional string name = 1;
     public static final int NAME_FIELD_NUMBER = 1;
     private java.lang.Object name_;
     /**
@@ -18786,6 +18981,7 @@ public final class Caffe {
       }
     }
 
+    // optional .caffe.ParamSpec.DimCheckMode share_mode = 2;
     public static final int SHARE_MODE_FIELD_NUMBER = 2;
     private caffe.Caffe.ParamSpec.DimCheckMode shareMode_;
     /**
@@ -18811,6 +19007,7 @@ public final class Caffe {
       return shareMode_;
     }
 
+    // optional float lr_mult = 3 [default = 1];
     public static final int LR_MULT_FIELD_NUMBER = 3;
     private float lrMult_;
     /**
@@ -18834,6 +19031,7 @@ public final class Caffe {
       return lrMult_;
     }
 
+    // optional float decay_mult = 4 [default = 1];
     public static final int DECAY_MULT_FIELD_NUMBER = 4;
     private float decayMult_;
     /**
@@ -18866,8 +19064,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -19000,9 +19197,8 @@ public final class Caffe {
      * </pre>
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.ParamSpec)
-        caffe.Caffe.ParamSpecOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.ParamSpecOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_ParamSpec_descriptor;
@@ -19144,6 +19340,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional string name = 1;
       private java.lang.Object name_ = "";
       /**
        * <code>optional string name = 1;</code>
@@ -19169,12 +19366,9 @@ public final class Caffe {
       public java.lang.String getName() {
         java.lang.Object ref = name_;
         if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            name_ = s;
-          }
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          name_ = s;
           return s;
         } else {
           return (java.lang.String) ref;
@@ -19256,6 +19450,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional .caffe.ParamSpec.DimCheckMode share_mode = 2;
       private caffe.Caffe.ParamSpec.DimCheckMode shareMode_ = caffe.Caffe.ParamSpec.DimCheckMode.STRICT;
       /**
        * <code>optional .caffe.ParamSpec.DimCheckMode share_mode = 2;</code>
@@ -19311,6 +19506,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float lr_mult = 3 [default = 1];
       private float lrMult_ = 1F;
       /**
        * <code>optional float lr_mult = 3 [default = 1];</code>
@@ -19359,6 +19555,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float decay_mult = 4 [default = 1];
       private float decayMult_ = 1F;
       /**
        * <code>optional float decay_mult = 4 [default = 1];</code>
@@ -19418,10 +19615,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.ParamSpec)
   }
 
-  public interface LayerParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.LayerParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface LayerParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional string name = 1;
     /**
      * <code>optional string name = 1;</code>
      *
@@ -19448,6 +19645,7 @@ public final class Caffe {
     com.google.protobuf.ByteString
         getNameBytes();
 
+    // optional string type = 2;
     /**
      * <code>optional string type = 2;</code>
      *
@@ -19474,6 +19672,7 @@ public final class Caffe {
     com.google.protobuf.ByteString
         getTypeBytes();
 
+    // repeated string bottom = 3;
     /**
      * <code>repeated string bottom = 3;</code>
      *
@@ -19481,8 +19680,8 @@ public final class Caffe {
      * the name of each bottom blob
      * </pre>
      */
-    com.google.protobuf.ProtocolStringList
-        getBottomList();
+    java.util.List<java.lang.String>
+    getBottomList();
     /**
      * <code>repeated string bottom = 3;</code>
      *
@@ -19509,6 +19708,7 @@ public final class Caffe {
     com.google.protobuf.ByteString
         getBottomBytes(int index);
 
+    // repeated string top = 4;
     /**
      * <code>repeated string top = 4;</code>
      *
@@ -19516,8 +19716,8 @@ public final class Caffe {
      * the name of each top blob
      * </pre>
      */
-    com.google.protobuf.ProtocolStringList
-        getTopList();
+    java.util.List<java.lang.String>
+    getTopList();
     /**
      * <code>repeated string top = 4;</code>
      *
@@ -19544,6 +19744,7 @@ public final class Caffe {
     com.google.protobuf.ByteString
         getTopBytes(int index);
 
+    // optional .caffe.Phase phase = 10;
     /**
      * <code>optional .caffe.Phase phase = 10;</code>
      *
@@ -19561,6 +19762,7 @@ public final class Caffe {
      */
     caffe.Caffe.Phase getPhase();
 
+    // repeated float loss_weight = 5;
     /**
      * <code>repeated float loss_weight = 5;</code>
      *
@@ -19592,6 +19794,7 @@ public final class Caffe {
      */
     float getLossWeight(int index);
 
+    // repeated .caffe.ParamSpec param = 6;
     /**
      * <code>repeated .caffe.ParamSpec param = 6;</code>
      *
@@ -19641,6 +19844,7 @@ public final class Caffe {
     caffe.Caffe.ParamSpecOrBuilder getParamOrBuilder(
         int index);
 
+    // repeated .caffe.BlobProto blobs = 7;
     /**
      * <code>repeated .caffe.BlobProto blobs = 7;</code>
      *
@@ -19685,6 +19889,7 @@ public final class Caffe {
     caffe.Caffe.BlobProtoOrBuilder getBlobsOrBuilder(
         int index);
 
+    // repeated bool propagate_down = 11;
     /**
      * <code>repeated bool propagate_down = 11;</code>
      *
@@ -19713,6 +19918,7 @@ public final class Caffe {
      */
     boolean getPropagateDown(int index);
 
+    // repeated .caffe.NetStateRule include = 8;
     /**
      * <code>repeated .caffe.NetStateRule include = 8;</code>
      *
@@ -19782,6 +19988,7 @@ public final class Caffe {
     caffe.Caffe.NetStateRuleOrBuilder getIncludeOrBuilder(
         int index);
 
+    // repeated .caffe.NetStateRule exclude = 9;
     /**
      * <code>repeated .caffe.NetStateRule exclude = 9;</code>
      */
@@ -19806,6 +20013,7 @@ public final class Caffe {
     caffe.Caffe.NetStateRuleOrBuilder getExcludeOrBuilder(
         int index);
 
+    // optional .caffe.TransformationParameter transform_param = 100;
     /**
      * <code>optional .caffe.TransformationParameter transform_param = 100;</code>
      *
@@ -19831,6 +20039,7 @@ public final class Caffe {
      */
     caffe.Caffe.TransformationParameterOrBuilder getTransformParamOrBuilder();
 
+    // optional .caffe.LossParameter loss_param = 101;
     /**
      * <code>optional .caffe.LossParameter loss_param = 101;</code>
      *
@@ -19856,11 +20065,13 @@ public final class Caffe {
      */
     caffe.Caffe.LossParameterOrBuilder getLossParamOrBuilder();
 
+    // optional .caffe.AccuracyParameter accuracy_param = 102;
     /**
      * <code>optional .caffe.AccuracyParameter accuracy_param = 102;</code>
      *
      * <pre>
      * Layer type-specific parameters.
+     *
      * Note: certain layers may have more than one computational engine
      * for their implementation. These layers include an Engine type and
      * engine parameter for selecting the implementation.
@@ -19873,6 +20084,7 @@ public final class Caffe {
      *
      * <pre>
      * Layer type-specific parameters.
+     *
      * Note: certain layers may have more than one computational engine
      * for their implementation. These layers include an Engine type and
      * engine parameter for selecting the implementation.
@@ -19885,6 +20097,7 @@ public final class Caffe {
      *
      * <pre>
      * Layer type-specific parameters.
+     *
      * Note: certain layers may have more than one computational engine
      * for their implementation. These layers include an Engine type and
      * engine parameter for selecting the implementation.
@@ -19893,6 +20106,7 @@ public final class Caffe {
      */
     caffe.Caffe.AccuracyParameterOrBuilder getAccuracyParamOrBuilder();
 
+    // optional .caffe.ArgMaxParameter argmax_param = 103;
     /**
      * <code>optional .caffe.ArgMaxParameter argmax_param = 103;</code>
      */
@@ -19906,6 +20120,7 @@ public final class Caffe {
      */
     caffe.Caffe.ArgMaxParameterOrBuilder getArgmaxParamOrBuilder();
 
+    // optional .caffe.BatchNormParameter batch_norm_param = 139;
     /**
      * <code>optional .caffe.BatchNormParameter batch_norm_param = 139;</code>
      */
@@ -19919,6 +20134,7 @@ public final class Caffe {
      */
     caffe.Caffe.BatchNormParameterOrBuilder getBatchNormParamOrBuilder();
 
+    // optional .caffe.BiasParameter bias_param = 141;
     /**
      * <code>optional .caffe.BiasParameter bias_param = 141;</code>
      */
@@ -19932,6 +20148,7 @@ public final class Caffe {
      */
     caffe.Caffe.BiasParameterOrBuilder getBiasParamOrBuilder();
 
+    // optional .caffe.ConcatParameter concat_param = 104;
     /**
      * <code>optional .caffe.ConcatParameter concat_param = 104;</code>
      */
@@ -19945,6 +20162,7 @@ public final class Caffe {
      */
     caffe.Caffe.ConcatParameterOrBuilder getConcatParamOrBuilder();
 
+    // optional .caffe.ContrastiveLossParameter contrastive_loss_param = 105;
     /**
      * <code>optional .caffe.ContrastiveLossParameter contrastive_loss_param = 105;</code>
      */
@@ -19958,6 +20176,7 @@ public final class Caffe {
      */
     caffe.Caffe.ContrastiveLossParameterOrBuilder getContrastiveLossParamOrBuilder();
 
+    // optional .caffe.ConvolutionParameter convolution_param = 106;
     /**
      * <code>optional .caffe.ConvolutionParameter convolution_param = 106;</code>
      */
@@ -19971,6 +20190,7 @@ public final class Caffe {
      */
     caffe.Caffe.ConvolutionParameterOrBuilder getConvolutionParamOrBuilder();
 
+    // optional .caffe.CropParameter crop_param = 144;
     /**
      * <code>optional .caffe.CropParameter crop_param = 144;</code>
      */
@@ -19984,6 +20204,7 @@ public final class Caffe {
      */
     caffe.Caffe.CropParameterOrBuilder getCropParamOrBuilder();
 
+    // optional .caffe.DataParameter data_param = 107;
     /**
      * <code>optional .caffe.DataParameter data_param = 107;</code>
      */
@@ -19997,6 +20218,7 @@ public final class Caffe {
      */
     caffe.Caffe.DataParameterOrBuilder getDataParamOrBuilder();
 
+    // optional .caffe.DropoutParameter dropout_param = 108;
     /**
      * <code>optional .caffe.DropoutParameter dropout_param = 108;</code>
      */
@@ -20010,6 +20232,7 @@ public final class Caffe {
      */
     caffe.Caffe.DropoutParameterOrBuilder getDropoutParamOrBuilder();
 
+    // optional .caffe.DummyDataParameter dummy_data_param = 109;
     /**
      * <code>optional .caffe.DummyDataParameter dummy_data_param = 109;</code>
      */
@@ -20023,6 +20246,7 @@ public final class Caffe {
      */
     caffe.Caffe.DummyDataParameterOrBuilder getDummyDataParamOrBuilder();
 
+    // optional .caffe.EltwiseParameter eltwise_param = 110;
     /**
      * <code>optional .caffe.EltwiseParameter eltwise_param = 110;</code>
      */
@@ -20036,6 +20260,7 @@ public final class Caffe {
      */
     caffe.Caffe.EltwiseParameterOrBuilder getEltwiseParamOrBuilder();
 
+    // optional .caffe.ELUParameter elu_param = 140;
     /**
      * <code>optional .caffe.ELUParameter elu_param = 140;</code>
      */
@@ -20049,6 +20274,7 @@ public final class Caffe {
      */
     caffe.Caffe.ELUParameterOrBuilder getEluParamOrBuilder();
 
+    // optional .caffe.EmbedParameter embed_param = 137;
     /**
      * <code>optional .caffe.EmbedParameter embed_param = 137;</code>
      */
@@ -20062,6 +20288,7 @@ public final class Caffe {
      */
     caffe.Caffe.EmbedParameterOrBuilder getEmbedParamOrBuilder();
 
+    // optional .caffe.ExpParameter exp_param = 111;
     /**
      * <code>optional .caffe.ExpParameter exp_param = 111;</code>
      */
@@ -20075,6 +20302,7 @@ public final class Caffe {
      */
     caffe.Caffe.ExpParameterOrBuilder getExpParamOrBuilder();
 
+    // optional .caffe.FlattenParameter flatten_param = 135;
     /**
      * <code>optional .caffe.FlattenParameter flatten_param = 135;</code>
      */
@@ -20088,6 +20316,7 @@ public final class Caffe {
      */
     caffe.Caffe.FlattenParameterOrBuilder getFlattenParamOrBuilder();
 
+    // optional .caffe.HDF5DataParameter hdf5_data_param = 112;
     /**
      * <code>optional .caffe.HDF5DataParameter hdf5_data_param = 112;</code>
      */
@@ -20101,6 +20330,7 @@ public final class Caffe {
      */
     caffe.Caffe.HDF5DataParameterOrBuilder getHdf5DataParamOrBuilder();
 
+    // optional .caffe.HDF5OutputParameter hdf5_output_param = 113;
     /**
      * <code>optional .caffe.HDF5OutputParameter hdf5_output_param = 113;</code>
      */
@@ -20114,6 +20344,7 @@ public final class Caffe {
      */
     caffe.Caffe.HDF5OutputParameterOrBuilder getHdf5OutputParamOrBuilder();
 
+    // optional .caffe.HingeLossParameter hinge_loss_param = 114;
     /**
      * <code>optional .caffe.HingeLossParameter hinge_loss_param = 114;</code>
      */
@@ -20127,6 +20358,7 @@ public final class Caffe {
      */
     caffe.Caffe.HingeLossParameterOrBuilder getHingeLossParamOrBuilder();
 
+    // optional .caffe.ImageDataParameter image_data_param = 115;
     /**
      * <code>optional .caffe.ImageDataParameter image_data_param = 115;</code>
      */
@@ -20140,6 +20372,7 @@ public final class Caffe {
      */
     caffe.Caffe.ImageDataParameterOrBuilder getImageDataParamOrBuilder();
 
+    // optional .caffe.InfogainLossParameter infogain_loss_param = 116;
     /**
      * <code>optional .caffe.InfogainLossParameter infogain_loss_param = 116;</code>
      */
@@ -20153,6 +20386,7 @@ public final class Caffe {
      */
     caffe.Caffe.InfogainLossParameterOrBuilder getInfogainLossParamOrBuilder();
 
+    // optional .caffe.InnerProductParameter inner_product_param = 117;
     /**
      * <code>optional .caffe.InnerProductParameter inner_product_param = 117;</code>
      */
@@ -20166,6 +20400,7 @@ public final class Caffe {
      */
     caffe.Caffe.InnerProductParameterOrBuilder getInnerProductParamOrBuilder();
 
+    // optional .caffe.InputParameter input_param = 143;
     /**
      * <code>optional .caffe.InputParameter input_param = 143;</code>
      */
@@ -20179,6 +20414,7 @@ public final class Caffe {
      */
     caffe.Caffe.InputParameterOrBuilder getInputParamOrBuilder();
 
+    // optional .caffe.LogParameter log_param = 134;
     /**
      * <code>optional .caffe.LogParameter log_param = 134;</code>
      */
@@ -20192,6 +20428,7 @@ public final class Caffe {
      */
     caffe.Caffe.LogParameterOrBuilder getLogParamOrBuilder();
 
+    // optional .caffe.LRNParameter lrn_param = 118;
     /**
      * <code>optional .caffe.LRNParameter lrn_param = 118;</code>
      */
@@ -20205,6 +20442,7 @@ public final class Caffe {
      */
     caffe.Caffe.LRNParameterOrBuilder getLrnParamOrBuilder();
 
+    // optional .caffe.MemoryDataParameter memory_data_param = 119;
     /**
      * <code>optional .caffe.MemoryDataParameter memory_data_param = 119;</code>
      */
@@ -20218,6 +20456,7 @@ public final class Caffe {
      */
     caffe.Caffe.MemoryDataParameterOrBuilder getMemoryDataParamOrBuilder();
 
+    // optional .caffe.MVNParameter mvn_param = 120;
     /**
      * <code>optional .caffe.MVNParameter mvn_param = 120;</code>
      */
@@ -20231,6 +20470,7 @@ public final class Caffe {
      */
     caffe.Caffe.MVNParameterOrBuilder getMvnParamOrBuilder();
 
+    // optional .caffe.PoolingParameter pooling_param = 121;
     /**
      * <code>optional .caffe.PoolingParameter pooling_param = 121;</code>
      */
@@ -20244,6 +20484,7 @@ public final class Caffe {
      */
     caffe.Caffe.PoolingParameterOrBuilder getPoolingParamOrBuilder();
 
+    // optional .caffe.PowerParameter power_param = 122;
     /**
      * <code>optional .caffe.PowerParameter power_param = 122;</code>
      */
@@ -20257,6 +20498,7 @@ public final class Caffe {
      */
     caffe.Caffe.PowerParameterOrBuilder getPowerParamOrBuilder();
 
+    // optional .caffe.PReLUParameter prelu_param = 131;
     /**
      * <code>optional .caffe.PReLUParameter prelu_param = 131;</code>
      */
@@ -20270,6 +20512,7 @@ public final class Caffe {
      */
     caffe.Caffe.PReLUParameterOrBuilder getPreluParamOrBuilder();
 
+    // optional .caffe.PythonParameter python_param = 130;
     /**
      * <code>optional .caffe.PythonParameter python_param = 130;</code>
      */
@@ -20283,6 +20526,7 @@ public final class Caffe {
      */
     caffe.Caffe.PythonParameterOrBuilder getPythonParamOrBuilder();
 
+    // optional .caffe.ReductionParameter reduction_param = 136;
     /**
      * <code>optional .caffe.ReductionParameter reduction_param = 136;</code>
      */
@@ -20296,6 +20540,7 @@ public final class Caffe {
      */
     caffe.Caffe.ReductionParameterOrBuilder getReductionParamOrBuilder();
 
+    // optional .caffe.ReLUParameter relu_param = 123;
     /**
      * <code>optional .caffe.ReLUParameter relu_param = 123;</code>
      */
@@ -20309,6 +20554,7 @@ public final class Caffe {
      */
     caffe.Caffe.ReLUParameterOrBuilder getReluParamOrBuilder();
 
+    // optional .caffe.ReshapeParameter reshape_param = 133;
     /**
      * <code>optional .caffe.ReshapeParameter reshape_param = 133;</code>
      */
@@ -20322,6 +20568,7 @@ public final class Caffe {
      */
     caffe.Caffe.ReshapeParameterOrBuilder getReshapeParamOrBuilder();
 
+    // optional .caffe.ScaleParameter scale_param = 142;
     /**
      * <code>optional .caffe.ScaleParameter scale_param = 142;</code>
      */
@@ -20335,6 +20582,7 @@ public final class Caffe {
      */
     caffe.Caffe.ScaleParameterOrBuilder getScaleParamOrBuilder();
 
+    // optional .caffe.SigmoidParameter sigmoid_param = 124;
     /**
      * <code>optional .caffe.SigmoidParameter sigmoid_param = 124;</code>
      */
@@ -20348,6 +20596,7 @@ public final class Caffe {
      */
     caffe.Caffe.SigmoidParameterOrBuilder getSigmoidParamOrBuilder();
 
+    // optional .caffe.SoftmaxParameter softmax_param = 125;
     /**
      * <code>optional .caffe.SoftmaxParameter softmax_param = 125;</code>
      */
@@ -20361,6 +20610,7 @@ public final class Caffe {
      */
     caffe.Caffe.SoftmaxParameterOrBuilder getSoftmaxParamOrBuilder();
 
+    // optional .caffe.SPPParameter spp_param = 132;
     /**
      * <code>optional .caffe.SPPParameter spp_param = 132;</code>
      */
@@ -20374,6 +20624,7 @@ public final class Caffe {
      */
     caffe.Caffe.SPPParameterOrBuilder getSppParamOrBuilder();
 
+    // optional .caffe.SliceParameter slice_param = 126;
     /**
      * <code>optional .caffe.SliceParameter slice_param = 126;</code>
      */
@@ -20387,6 +20638,7 @@ public final class Caffe {
      */
     caffe.Caffe.SliceParameterOrBuilder getSliceParamOrBuilder();
 
+    // optional .caffe.TanHParameter tanh_param = 127;
     /**
      * <code>optional .caffe.TanHParameter tanh_param = 127;</code>
      */
@@ -20400,6 +20652,7 @@ public final class Caffe {
      */
     caffe.Caffe.TanHParameterOrBuilder getTanhParamOrBuilder();
 
+    // optional .caffe.ThresholdParameter threshold_param = 128;
     /**
      * <code>optional .caffe.ThresholdParameter threshold_param = 128;</code>
      */
@@ -20413,6 +20666,7 @@ public final class Caffe {
      */
     caffe.Caffe.ThresholdParameterOrBuilder getThresholdParamOrBuilder();
 
+    // optional .caffe.TileParameter tile_param = 138;
     /**
      * <code>optional .caffe.TileParameter tile_param = 138;</code>
      */
@@ -20426,6 +20680,7 @@ public final class Caffe {
      */
     caffe.Caffe.TileParameterOrBuilder getTileParamOrBuilder();
 
+    // optional .caffe.WindowDataParameter window_data_param = 129;
     /**
      * <code>optional .caffe.WindowDataParameter window_data_param = 129;</code>
      */
@@ -20445,13 +20700,13 @@ public final class Caffe {
    * <pre>
    * NOTE
    * Update the next available ID when you add a new LayerParameter field.
+   *
    * LayerParameter next available layer-specific ID: 145 (last added: crop_param)
    * </pre>
    */
   public static final class LayerParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.LayerParameter)
-      LayerParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements LayerParameterOrBuilder {
     // Use LayerParameter.newBuilder() to construct.
     private LayerParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -20499,33 +20754,29 @@ public final class Caffe {
               break;
             }
             case 10: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000001;
-              name_ = bs;
+              name_ = input.readBytes();
               break;
             }
             case 18: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000002;
-              type_ = bs;
+              type_ = input.readBytes();
               break;
             }
             case 26: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               if (!((mutable_bitField0_ & 0x00000004) == 0x00000004)) {
                 bottom_ = new com.google.protobuf.LazyStringArrayList();
                 mutable_bitField0_ |= 0x00000004;
               }
-              bottom_.add(bs);
+              bottom_.add(input.readBytes());
               break;
             }
             case 34: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               if (!((mutable_bitField0_ & 0x00000008) == 0x00000008)) {
                 top_ = new com.google.protobuf.LazyStringArrayList();
                 mutable_bitField0_ |= 0x00000008;
               }
-              top_.add(bs);
+              top_.add(input.readBytes());
               break;
             }
             case 45: {
@@ -21207,10 +21458,10 @@ public final class Caffe {
             e.getMessage()).setUnfinishedMessage(this);
       } finally {
         if (((mutable_bitField0_ & 0x00000004) == 0x00000004)) {
-          bottom_ = bottom_.getUnmodifiableView();
+          bottom_ = new com.google.protobuf.UnmodifiableLazyStringList(bottom_);
         }
         if (((mutable_bitField0_ & 0x00000008) == 0x00000008)) {
-          top_ = top_.getUnmodifiableView();
+          top_ = new com.google.protobuf.UnmodifiableLazyStringList(top_);
         }
         if (((mutable_bitField0_ & 0x00000020) == 0x00000020)) {
           lossWeight_ = java.util.Collections.unmodifiableList(lossWeight_);
@@ -21263,6 +21514,7 @@ public final class Caffe {
 
     private int bitField0_;
     private int bitField1_;
+    // optional string name = 1;
     public static final int NAME_FIELD_NUMBER = 1;
     private java.lang.Object name_;
     /**
@@ -21317,6 +21569,7 @@ public final class Caffe {
       }
     }
 
+    // optional string type = 2;
     public static final int TYPE_FIELD_NUMBER = 2;
     private java.lang.Object type_;
     /**
@@ -21371,6 +21624,7 @@ public final class Caffe {
       }
     }
 
+    // repeated string bottom = 3;
     public static final int BOTTOM_FIELD_NUMBER = 3;
     private com.google.protobuf.LazyStringList bottom_;
     /**
@@ -21380,7 +21634,7 @@ public final class Caffe {
      * the name of each bottom blob
      * </pre>
      */
-    public com.google.protobuf.ProtocolStringList
+    public java.util.List<java.lang.String>
         getBottomList() {
       return bottom_;
     }
@@ -21416,6 +21670,7 @@ public final class Caffe {
       return bottom_.getByteString(index);
     }
 
+    // repeated string top = 4;
     public static final int TOP_FIELD_NUMBER = 4;
     private com.google.protobuf.LazyStringList top_;
     /**
@@ -21425,7 +21680,7 @@ public final class Caffe {
      * the name of each top blob
      * </pre>
      */
-    public com.google.protobuf.ProtocolStringList
+    public java.util.List<java.lang.String>
         getTopList() {
       return top_;
     }
@@ -21461,6 +21716,7 @@ public final class Caffe {
       return top_.getByteString(index);
     }
 
+    // optional .caffe.Phase phase = 10;
     public static final int PHASE_FIELD_NUMBER = 10;
     private caffe.Caffe.Phase phase_;
     /**
@@ -21484,6 +21740,7 @@ public final class Caffe {
       return phase_;
     }
 
+    // repeated float loss_weight = 5;
     public static final int LOSS_WEIGHT_FIELD_NUMBER = 5;
     private java.util.List<java.lang.Float> lossWeight_;
     /**
@@ -21524,6 +21781,7 @@ public final class Caffe {
       return lossWeight_.get(index);
     }
 
+    // repeated .caffe.ParamSpec param = 6;
     public static final int PARAM_FIELD_NUMBER = 6;
     private java.util.List<caffe.Caffe.ParamSpec> param_;
     /**
@@ -21584,6 +21842,7 @@ public final class Caffe {
       return param_.get(index);
     }
 
+    // repeated .caffe.BlobProto blobs = 7;
     public static final int BLOBS_FIELD_NUMBER = 7;
     private java.util.List<caffe.Caffe.BlobProto> blobs_;
     /**
@@ -21639,6 +21898,7 @@ public final class Caffe {
       return blobs_.get(index);
     }
 
+    // repeated bool propagate_down = 11;
     public static final int PROPAGATE_DOWN_FIELD_NUMBER = 11;
     private java.util.List<java.lang.Boolean> propagateDown_;
     /**
@@ -21676,6 +21936,7 @@ public final class Caffe {
       return propagateDown_.get(index);
     }
 
+    // repeated .caffe.NetStateRule include = 8;
     public static final int INCLUDE_FIELD_NUMBER = 8;
     private java.util.List<caffe.Caffe.NetStateRule> include_;
     /**
@@ -21756,6 +22017,7 @@ public final class Caffe {
       return include_.get(index);
     }
 
+    // repeated .caffe.NetStateRule exclude = 9;
     public static final int EXCLUDE_FIELD_NUMBER = 9;
     private java.util.List<caffe.Caffe.NetStateRule> exclude_;
     /**
@@ -21791,6 +22053,7 @@ public final class Caffe {
       return exclude_.get(index);
     }
 
+    // optional .caffe.TransformationParameter transform_param = 100;
     public static final int TRANSFORM_PARAM_FIELD_NUMBER = 100;
     private caffe.Caffe.TransformationParameter transformParam_;
     /**
@@ -21824,6 +22087,7 @@ public final class Caffe {
       return transformParam_;
     }
 
+    // optional .caffe.LossParameter loss_param = 101;
     public static final int LOSS_PARAM_FIELD_NUMBER = 101;
     private caffe.Caffe.LossParameter lossParam_;
     /**
@@ -21857,6 +22121,7 @@ public final class Caffe {
       return lossParam_;
     }
 
+    // optional .caffe.AccuracyParameter accuracy_param = 102;
     public static final int ACCURACY_PARAM_FIELD_NUMBER = 102;
     private caffe.Caffe.AccuracyParameter accuracyParam_;
     /**
@@ -21864,6 +22129,7 @@ public final class Caffe {
      *
      * <pre>
      * Layer type-specific parameters.
+     *
      * Note: certain layers may have more than one computational engine
      * for their implementation. These layers include an Engine type and
      * engine parameter for selecting the implementation.
@@ -21878,6 +22144,7 @@ public final class Caffe {
      *
      * <pre>
      * Layer type-specific parameters.
+     *
      * Note: certain layers may have more than one computational engine
      * for their implementation. These layers include an Engine type and
      * engine parameter for selecting the implementation.
@@ -21892,6 +22159,7 @@ public final class Caffe {
      *
      * <pre>
      * Layer type-specific parameters.
+     *
      * Note: certain layers may have more than one computational engine
      * for their implementation. These layers include an Engine type and
      * engine parameter for selecting the implementation.
@@ -21902,6 +22170,7 @@ public final class Caffe {
       return accuracyParam_;
     }
 
+    // optional .caffe.ArgMaxParameter argmax_param = 103;
     public static final int ARGMAX_PARAM_FIELD_NUMBER = 103;
     private caffe.Caffe.ArgMaxParameter argmaxParam_;
     /**
@@ -21923,6 +22192,7 @@ public final class Caffe {
       return argmaxParam_;
     }
 
+    // optional .caffe.BatchNormParameter batch_norm_param = 139;
     public static final int BATCH_NORM_PARAM_FIELD_NUMBER = 139;
     private caffe.Caffe.BatchNormParameter batchNormParam_;
     /**
@@ -21944,6 +22214,7 @@ public final class Caffe {
       return batchNormParam_;
     }
 
+    // optional .caffe.BiasParameter bias_param = 141;
     public static final int BIAS_PARAM_FIELD_NUMBER = 141;
     private caffe.Caffe.BiasParameter biasParam_;
     /**
@@ -21965,6 +22236,7 @@ public final class Caffe {
       return biasParam_;
     }
 
+    // optional .caffe.ConcatParameter concat_param = 104;
     public static final int CONCAT_PARAM_FIELD_NUMBER = 104;
     private caffe.Caffe.ConcatParameter concatParam_;
     /**
@@ -21986,6 +22258,7 @@ public final class Caffe {
       return concatParam_;
     }
 
+    // optional .caffe.ContrastiveLossParameter contrastive_loss_param = 105;
     public static final int CONTRASTIVE_LOSS_PARAM_FIELD_NUMBER = 105;
     private caffe.Caffe.ContrastiveLossParameter contrastiveLossParam_;
     /**
@@ -22007,6 +22280,7 @@ public final class Caffe {
       return contrastiveLossParam_;
     }
 
+    // optional .caffe.ConvolutionParameter convolution_param = 106;
     public static final int CONVOLUTION_PARAM_FIELD_NUMBER = 106;
     private caffe.Caffe.ConvolutionParameter convolutionParam_;
     /**
@@ -22028,6 +22302,7 @@ public final class Caffe {
       return convolutionParam_;
     }
 
+    // optional .caffe.CropParameter crop_param = 144;
     public static final int CROP_PARAM_FIELD_NUMBER = 144;
     private caffe.Caffe.CropParameter cropParam_;
     /**
@@ -22049,6 +22324,7 @@ public final class Caffe {
       return cropParam_;
     }
 
+    // optional .caffe.DataParameter data_param = 107;
     public static final int DATA_PARAM_FIELD_NUMBER = 107;
     private caffe.Caffe.DataParameter dataParam_;
     /**
@@ -22070,6 +22346,7 @@ public final class Caffe {
       return dataParam_;
     }
 
+    // optional .caffe.DropoutParameter dropout_param = 108;
     public static final int DROPOUT_PARAM_FIELD_NUMBER = 108;
     private caffe.Caffe.DropoutParameter dropoutParam_;
     /**
@@ -22091,6 +22368,7 @@ public final class Caffe {
       return dropoutParam_;
     }
 
+    // optional .caffe.DummyDataParameter dummy_data_param = 109;
     public static final int DUMMY_DATA_PARAM_FIELD_NUMBER = 109;
     private caffe.Caffe.DummyDataParameter dummyDataParam_;
     /**
@@ -22112,6 +22390,7 @@ public final class Caffe {
       return dummyDataParam_;
     }
 
+    // optional .caffe.EltwiseParameter eltwise_param = 110;
     public static final int ELTWISE_PARAM_FIELD_NUMBER = 110;
     private caffe.Caffe.EltwiseParameter eltwiseParam_;
     /**
@@ -22133,6 +22412,7 @@ public final class Caffe {
       return eltwiseParam_;
     }
 
+    // optional .caffe.ELUParameter elu_param = 140;
     public static final int ELU_PARAM_FIELD_NUMBER = 140;
     private caffe.Caffe.ELUParameter eluParam_;
     /**
@@ -22154,6 +22434,7 @@ public final class Caffe {
       return eluParam_;
     }
 
+    // optional .caffe.EmbedParameter embed_param = 137;
     public static final int EMBED_PARAM_FIELD_NUMBER = 137;
     private caffe.Caffe.EmbedParameter embedParam_;
     /**
@@ -22175,6 +22456,7 @@ public final class Caffe {
       return embedParam_;
     }
 
+    // optional .caffe.ExpParameter exp_param = 111;
     public static final int EXP_PARAM_FIELD_NUMBER = 111;
     private caffe.Caffe.ExpParameter expParam_;
     /**
@@ -22196,6 +22478,7 @@ public final class Caffe {
       return expParam_;
     }
 
+    // optional .caffe.FlattenParameter flatten_param = 135;
     public static final int FLATTEN_PARAM_FIELD_NUMBER = 135;
     private caffe.Caffe.FlattenParameter flattenParam_;
     /**
@@ -22217,6 +22500,7 @@ public final class Caffe {
       return flattenParam_;
     }
 
+    // optional .caffe.HDF5DataParameter hdf5_data_param = 112;
     public static final int HDF5_DATA_PARAM_FIELD_NUMBER = 112;
     private caffe.Caffe.HDF5DataParameter hdf5DataParam_;
     /**
@@ -22238,6 +22522,7 @@ public final class Caffe {
       return hdf5DataParam_;
     }
 
+    // optional .caffe.HDF5OutputParameter hdf5_output_param = 113;
     public static final int HDF5_OUTPUT_PARAM_FIELD_NUMBER = 113;
     private caffe.Caffe.HDF5OutputParameter hdf5OutputParam_;
     /**
@@ -22259,6 +22544,7 @@ public final class Caffe {
       return hdf5OutputParam_;
     }
 
+    // optional .caffe.HingeLossParameter hinge_loss_param = 114;
     public static final int HINGE_LOSS_PARAM_FIELD_NUMBER = 114;
     private caffe.Caffe.HingeLossParameter hingeLossParam_;
     /**
@@ -22280,6 +22566,7 @@ public final class Caffe {
       return hingeLossParam_;
     }
 
+    // optional .caffe.ImageDataParameter image_data_param = 115;
     public static final int IMAGE_DATA_PARAM_FIELD_NUMBER = 115;
     private caffe.Caffe.ImageDataParameter imageDataParam_;
     /**
@@ -22301,6 +22588,7 @@ public final class Caffe {
       return imageDataParam_;
     }
 
+    // optional .caffe.InfogainLossParameter infogain_loss_param = 116;
     public static final int INFOGAIN_LOSS_PARAM_FIELD_NUMBER = 116;
     private caffe.Caffe.InfogainLossParameter infogainLossParam_;
     /**
@@ -22322,6 +22610,7 @@ public final class Caffe {
       return infogainLossParam_;
     }
 
+    // optional .caffe.InnerProductParameter inner_product_param = 117;
     public static final int INNER_PRODUCT_PARAM_FIELD_NUMBER = 117;
     private caffe.Caffe.InnerProductParameter innerProductParam_;
     /**
@@ -22343,6 +22632,7 @@ public final class Caffe {
       return innerProductParam_;
     }
 
+    // optional .caffe.InputParameter input_param = 143;
     public static final int INPUT_PARAM_FIELD_NUMBER = 143;
     private caffe.Caffe.InputParameter inputParam_;
     /**
@@ -22364,6 +22654,7 @@ public final class Caffe {
       return inputParam_;
     }
 
+    // optional .caffe.LogParameter log_param = 134;
     public static final int LOG_PARAM_FIELD_NUMBER = 134;
     private caffe.Caffe.LogParameter logParam_;
     /**
@@ -22385,6 +22676,7 @@ public final class Caffe {
       return logParam_;
     }
 
+    // optional .caffe.LRNParameter lrn_param = 118;
     public static final int LRN_PARAM_FIELD_NUMBER = 118;
     private caffe.Caffe.LRNParameter lrnParam_;
     /**
@@ -22406,6 +22698,7 @@ public final class Caffe {
       return lrnParam_;
     }
 
+    // optional .caffe.MemoryDataParameter memory_data_param = 119;
     public static final int MEMORY_DATA_PARAM_FIELD_NUMBER = 119;
     private caffe.Caffe.MemoryDataParameter memoryDataParam_;
     /**
@@ -22427,6 +22720,7 @@ public final class Caffe {
       return memoryDataParam_;
     }
 
+    // optional .caffe.MVNParameter mvn_param = 120;
     public static final int MVN_PARAM_FIELD_NUMBER = 120;
     private caffe.Caffe.MVNParameter mvnParam_;
     /**
@@ -22448,6 +22742,7 @@ public final class Caffe {
       return mvnParam_;
     }
 
+    // optional .caffe.PoolingParameter pooling_param = 121;
     public static final int POOLING_PARAM_FIELD_NUMBER = 121;
     private caffe.Caffe.PoolingParameter poolingParam_;
     /**
@@ -22469,6 +22764,7 @@ public final class Caffe {
       return poolingParam_;
     }
 
+    // optional .caffe.PowerParameter power_param = 122;
     public static final int POWER_PARAM_FIELD_NUMBER = 122;
     private caffe.Caffe.PowerParameter powerParam_;
     /**
@@ -22490,6 +22786,7 @@ public final class Caffe {
       return powerParam_;
     }
 
+    // optional .caffe.PReLUParameter prelu_param = 131;
     public static final int PRELU_PARAM_FIELD_NUMBER = 131;
     private caffe.Caffe.PReLUParameter preluParam_;
     /**
@@ -22511,6 +22808,7 @@ public final class Caffe {
       return preluParam_;
     }
 
+    // optional .caffe.PythonParameter python_param = 130;
     public static final int PYTHON_PARAM_FIELD_NUMBER = 130;
     private caffe.Caffe.PythonParameter pythonParam_;
     /**
@@ -22532,6 +22830,7 @@ public final class Caffe {
       return pythonParam_;
     }
 
+    // optional .caffe.ReductionParameter reduction_param = 136;
     public static final int REDUCTION_PARAM_FIELD_NUMBER = 136;
     private caffe.Caffe.ReductionParameter reductionParam_;
     /**
@@ -22553,6 +22852,7 @@ public final class Caffe {
       return reductionParam_;
     }
 
+    // optional .caffe.ReLUParameter relu_param = 123;
     public static final int RELU_PARAM_FIELD_NUMBER = 123;
     private caffe.Caffe.ReLUParameter reluParam_;
     /**
@@ -22574,6 +22874,7 @@ public final class Caffe {
       return reluParam_;
     }
 
+    // optional .caffe.ReshapeParameter reshape_param = 133;
     public static final int RESHAPE_PARAM_FIELD_NUMBER = 133;
     private caffe.Caffe.ReshapeParameter reshapeParam_;
     /**
@@ -22595,6 +22896,7 @@ public final class Caffe {
       return reshapeParam_;
     }
 
+    // optional .caffe.ScaleParameter scale_param = 142;
     public static final int SCALE_PARAM_FIELD_NUMBER = 142;
     private caffe.Caffe.ScaleParameter scaleParam_;
     /**
@@ -22616,6 +22918,7 @@ public final class Caffe {
       return scaleParam_;
     }
 
+    // optional .caffe.SigmoidParameter sigmoid_param = 124;
     public static final int SIGMOID_PARAM_FIELD_NUMBER = 124;
     private caffe.Caffe.SigmoidParameter sigmoidParam_;
     /**
@@ -22637,6 +22940,7 @@ public final class Caffe {
       return sigmoidParam_;
     }
 
+    // optional .caffe.SoftmaxParameter softmax_param = 125;
     public static final int SOFTMAX_PARAM_FIELD_NUMBER = 125;
     private caffe.Caffe.SoftmaxParameter softmaxParam_;
     /**
@@ -22658,6 +22962,7 @@ public final class Caffe {
       return softmaxParam_;
     }
 
+    // optional .caffe.SPPParameter spp_param = 132;
     public static final int SPP_PARAM_FIELD_NUMBER = 132;
     private caffe.Caffe.SPPParameter sppParam_;
     /**
@@ -22679,6 +22984,7 @@ public final class Caffe {
       return sppParam_;
     }
 
+    // optional .caffe.SliceParameter slice_param = 126;
     public static final int SLICE_PARAM_FIELD_NUMBER = 126;
     private caffe.Caffe.SliceParameter sliceParam_;
     /**
@@ -22700,6 +23006,7 @@ public final class Caffe {
       return sliceParam_;
     }
 
+    // optional .caffe.TanHParameter tanh_param = 127;
     public static final int TANH_PARAM_FIELD_NUMBER = 127;
     private caffe.Caffe.TanHParameter tanhParam_;
     /**
@@ -22721,6 +23028,7 @@ public final class Caffe {
       return tanhParam_;
     }
 
+    // optional .caffe.ThresholdParameter threshold_param = 128;
     public static final int THRESHOLD_PARAM_FIELD_NUMBER = 128;
     private caffe.Caffe.ThresholdParameter thresholdParam_;
     /**
@@ -22742,6 +23050,7 @@ public final class Caffe {
       return thresholdParam_;
     }
 
+    // optional .caffe.TileParameter tile_param = 138;
     public static final int TILE_PARAM_FIELD_NUMBER = 138;
     private caffe.Caffe.TileParameter tileParam_;
     /**
@@ -22763,6 +23072,7 @@ public final class Caffe {
       return tileParam_;
     }
 
+    // optional .caffe.WindowDataParameter window_data_param = 129;
     public static final int WINDOW_DATA_PARAM_FIELD_NUMBER = 129;
     private caffe.Caffe.WindowDataParameter windowDataParam_;
     /**
@@ -22845,8 +23155,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -23354,13 +23663,13 @@ public final class Caffe {
      * <pre>
      * NOTE
      * Update the next available ID when you add a new LayerParameter field.
+     *
      * LayerParameter next available layer-specific ID: 145 (last added: crop_param)
      * </pre>
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.LayerParameter)
-        caffe.Caffe.LayerParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.LayerParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_LayerParameter_descriptor;
@@ -23789,12 +24098,14 @@ public final class Caffe {
         }
         result.type_ = type_;
         if (((bitField0_ & 0x00000004) == 0x00000004)) {
-          bottom_ = bottom_.getUnmodifiableView();
+          bottom_ = new com.google.protobuf.UnmodifiableLazyStringList(
+              bottom_);
           bitField0_ = (bitField0_ & ~0x00000004);
         }
         result.bottom_ = bottom_;
         if (((bitField0_ & 0x00000008) == 0x00000008)) {
-          top_ = top_.getUnmodifiableView();
+          top_ = new com.google.protobuf.UnmodifiableLazyStringList(
+              top_);
           bitField0_ = (bitField0_ & ~0x00000008);
         }
         result.top_ = top_;
@@ -24545,6 +24856,7 @@ public final class Caffe {
       private int bitField0_;
       private int bitField1_;
 
+      // optional string name = 1;
       private java.lang.Object name_ = "";
       /**
        * <code>optional string name = 1;</code>
@@ -24566,12 +24878,9 @@ public final class Caffe {
       public java.lang.String getName() {
         java.lang.Object ref = name_;
         if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            name_ = s;
-          }
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          name_ = s;
           return s;
         } else {
           return (java.lang.String) ref;
@@ -24645,6 +24954,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional string type = 2;
       private java.lang.Object type_ = "";
       /**
        * <code>optional string type = 2;</code>
@@ -24666,12 +24976,9 @@ public final class Caffe {
       public java.lang.String getType() {
         java.lang.Object ref = type_;
         if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            type_ = s;
-          }
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          type_ = s;
           return s;
         } else {
           return (java.lang.String) ref;
@@ -24745,6 +25052,7 @@ public final class Caffe {
         return this;
       }
 
+      // repeated string bottom = 3;
       private com.google.protobuf.LazyStringList bottom_ = com.google.protobuf.LazyStringArrayList.EMPTY;
       private void ensureBottomIsMutable() {
         if (!((bitField0_ & 0x00000004) == 0x00000004)) {
@@ -24759,9 +25067,9 @@ public final class Caffe {
        * the name of each bottom blob
        * </pre>
        */
-      public com.google.protobuf.ProtocolStringList
+      public java.util.List<java.lang.String>
           getBottomList() {
-        return bottom_.getUnmodifiableView();
+        return java.util.Collections.unmodifiableList(bottom_);
       }
       /**
        * <code>repeated string bottom = 3;</code>
@@ -24838,8 +25146,7 @@ public final class Caffe {
       public Builder addAllBottom(
           java.lang.Iterable<java.lang.String> values) {
         ensureBottomIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, bottom_);
+        super.addAll(values, bottom_);
         onChanged();
         return this;
       }
@@ -24874,6 +25181,7 @@ public final class Caffe {
         return this;
       }
 
+      // repeated string top = 4;
       private com.google.protobuf.LazyStringList top_ = com.google.protobuf.LazyStringArrayList.EMPTY;
       private void ensureTopIsMutable() {
         if (!((bitField0_ & 0x00000008) == 0x00000008)) {
@@ -24888,9 +25196,9 @@ public final class Caffe {
        * the name of each top blob
        * </pre>
        */
-      public com.google.protobuf.ProtocolStringList
+      public java.util.List<java.lang.String>
           getTopList() {
-        return top_.getUnmodifiableView();
+        return java.util.Collections.unmodifiableList(top_);
       }
       /**
        * <code>repeated string top = 4;</code>
@@ -24967,8 +25275,7 @@ public final class Caffe {
       public Builder addAllTop(
           java.lang.Iterable<java.lang.String> values) {
         ensureTopIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, top_);
+        super.addAll(values, top_);
         onChanged();
         return this;
       }
@@ -25003,6 +25310,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional .caffe.Phase phase = 10;
       private caffe.Caffe.Phase phase_ = caffe.Caffe.Phase.TRAIN;
       /**
        * <code>optional .caffe.Phase phase = 10;</code>
@@ -25054,6 +25362,7 @@ public final class Caffe {
         return this;
       }
 
+      // repeated float loss_weight = 5;
       private java.util.List<java.lang.Float> lossWeight_ = java.util.Collections.emptyList();
       private void ensureLossWeightIsMutable() {
         if (!((bitField0_ & 0x00000020) == 0x00000020)) {
@@ -25141,8 +25450,7 @@ public final class Caffe {
       public Builder addAllLossWeight(
           java.lang.Iterable<? extends java.lang.Float> values) {
         ensureLossWeightIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, lossWeight_);
+        super.addAll(values, lossWeight_);
         onChanged();
         return this;
       }
@@ -25162,6 +25470,7 @@ public final class Caffe {
         return this;
       }
 
+      // repeated .caffe.ParamSpec param = 6;
       private java.util.List<caffe.Caffe.ParamSpec> param_ =
         java.util.Collections.emptyList();
       private void ensureParamIsMutable() {
@@ -25353,8 +25662,7 @@ public final class Caffe {
           java.lang.Iterable<? extends caffe.Caffe.ParamSpec> values) {
         if (paramBuilder_ == null) {
           ensureParamIsMutable();
-          com.google.protobuf.AbstractMessageLite.Builder.addAll(
-              values, param_);
+          super.addAll(values, param_);
           onChanged();
         } else {
           paramBuilder_.addAllMessages(values);
@@ -25492,6 +25800,7 @@ public final class Caffe {
         return paramBuilder_;
       }
 
+      // repeated .caffe.BlobProto blobs = 7;
       private java.util.List<caffe.Caffe.BlobProto> blobs_ =
         java.util.Collections.emptyList();
       private void ensureBlobsIsMutable() {
@@ -25673,8 +25982,7 @@ public final class Caffe {
           java.lang.Iterable<? extends caffe.Caffe.BlobProto> values) {
         if (blobsBuilder_ == null) {
           ensureBlobsIsMutable();
-          com.google.protobuf.AbstractMessageLite.Builder.addAll(
-              values, blobs_);
+          super.addAll(values, blobs_);
           onChanged();
         } else {
           blobsBuilder_.addAllMessages(values);
@@ -25804,6 +26112,7 @@ public final class Caffe {
         return blobsBuilder_;
       }
 
+      // repeated bool propagate_down = 11;
       private java.util.List<java.lang.Boolean> propagateDown_ = java.util.Collections.emptyList();
       private void ensurePropagateDownIsMutable() {
         if (!((bitField0_ & 0x00000100) == 0x00000100)) {
@@ -25885,8 +26194,7 @@ public final class Caffe {
       public Builder addAllPropagateDown(
           java.lang.Iterable<? extends java.lang.Boolean> values) {
         ensurePropagateDownIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, propagateDown_);
+        super.addAll(values, propagateDown_);
         onChanged();
         return this;
       }
@@ -25905,6 +26213,7 @@ public final class Caffe {
         return this;
       }
 
+      // repeated .caffe.NetStateRule include = 8;
       private java.util.List<caffe.Caffe.NetStateRule> include_ =
         java.util.Collections.emptyList();
       private void ensureIncludeIsMutable() {
@@ -26136,8 +26445,7 @@ public final class Caffe {
           java.lang.Iterable<? extends caffe.Caffe.NetStateRule> values) {
         if (includeBuilder_ == null) {
           ensureIncludeIsMutable();
-          com.google.protobuf.AbstractMessageLite.Builder.addAll(
-              values, include_);
+          super.addAll(values, include_);
           onChanged();
         } else {
           includeBuilder_.addAllMessages(values);
@@ -26307,6 +26615,7 @@ public final class Caffe {
         return includeBuilder_;
       }
 
+      // repeated .caffe.NetStateRule exclude = 9;
       private java.util.List<caffe.Caffe.NetStateRule> exclude_ =
         java.util.Collections.emptyList();
       private void ensureExcludeIsMutable() {
@@ -26448,8 +26757,7 @@ public final class Caffe {
           java.lang.Iterable<? extends caffe.Caffe.NetStateRule> values) {
         if (excludeBuilder_ == null) {
           ensureExcludeIsMutable();
-          com.google.protobuf.AbstractMessageLite.Builder.addAll(
-              values, exclude_);
+          super.addAll(values, exclude_);
           onChanged();
         } else {
           excludeBuilder_.addAllMessages(values);
@@ -26547,6 +26855,7 @@ public final class Caffe {
         return excludeBuilder_;
       }
 
+      // optional .caffe.TransformationParameter transform_param = 100;
       private caffe.Caffe.TransformationParameter transformParam_ = caffe.Caffe.TransformationParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.TransformationParameter, caffe.Caffe.TransformationParameter.Builder, caffe.Caffe.TransformationParameterOrBuilder> transformParamBuilder_;
@@ -26691,7 +27000,7 @@ public final class Caffe {
         if (transformParamBuilder_ == null) {
           transformParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.TransformationParameter, caffe.Caffe.TransformationParameter.Builder, caffe.Caffe.TransformationParameterOrBuilder>(
-                  getTransformParam(),
+                  transformParam_,
                   getParentForChildren(),
                   isClean());
           transformParam_ = null;
@@ -26699,6 +27008,7 @@ public final class Caffe {
         return transformParamBuilder_;
       }
 
+      // optional .caffe.LossParameter loss_param = 101;
       private caffe.Caffe.LossParameter lossParam_ = caffe.Caffe.LossParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.LossParameter, caffe.Caffe.LossParameter.Builder, caffe.Caffe.LossParameterOrBuilder> lossParamBuilder_;
@@ -26843,7 +27153,7 @@ public final class Caffe {
         if (lossParamBuilder_ == null) {
           lossParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.LossParameter, caffe.Caffe.LossParameter.Builder, caffe.Caffe.LossParameterOrBuilder>(
-                  getLossParam(),
+                  lossParam_,
                   getParentForChildren(),
                   isClean());
           lossParam_ = null;
@@ -26851,6 +27161,7 @@ public final class Caffe {
         return lossParamBuilder_;
       }
 
+      // optional .caffe.AccuracyParameter accuracy_param = 102;
       private caffe.Caffe.AccuracyParameter accuracyParam_ = caffe.Caffe.AccuracyParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.AccuracyParameter, caffe.Caffe.AccuracyParameter.Builder, caffe.Caffe.AccuracyParameterOrBuilder> accuracyParamBuilder_;
@@ -26859,6 +27170,7 @@ public final class Caffe {
        *
        * <pre>
        * Layer type-specific parameters.
+       *
        * Note: certain layers may have more than one computational engine
        * for their implementation. These layers include an Engine type and
        * engine parameter for selecting the implementation.
@@ -26873,6 +27185,7 @@ public final class Caffe {
        *
        * <pre>
        * Layer type-specific parameters.
+       *
        * Note: certain layers may have more than one computational engine
        * for their implementation. These layers include an Engine type and
        * engine parameter for selecting the implementation.
@@ -26891,6 +27204,7 @@ public final class Caffe {
        *
        * <pre>
        * Layer type-specific parameters.
+       *
        * Note: certain layers may have more than one computational engine
        * for their implementation. These layers include an Engine type and
        * engine parameter for selecting the implementation.
@@ -26915,6 +27229,7 @@ public final class Caffe {
        *
        * <pre>
        * Layer type-specific parameters.
+       *
        * Note: certain layers may have more than one computational engine
        * for their implementation. These layers include an Engine type and
        * engine parameter for selecting the implementation.
@@ -26937,6 +27252,7 @@ public final class Caffe {
        *
        * <pre>
        * Layer type-specific parameters.
+       *
        * Note: certain layers may have more than one computational engine
        * for their implementation. These layers include an Engine type and
        * engine parameter for selecting the implementation.
@@ -26964,6 +27280,7 @@ public final class Caffe {
        *
        * <pre>
        * Layer type-specific parameters.
+       *
        * Note: certain layers may have more than one computational engine
        * for their implementation. These layers include an Engine type and
        * engine parameter for selecting the implementation.
@@ -26985,6 +27302,7 @@ public final class Caffe {
        *
        * <pre>
        * Layer type-specific parameters.
+       *
        * Note: certain layers may have more than one computational engine
        * for their implementation. These layers include an Engine type and
        * engine parameter for selecting the implementation.
@@ -27001,6 +27319,7 @@ public final class Caffe {
        *
        * <pre>
        * Layer type-specific parameters.
+       *
        * Note: certain layers may have more than one computational engine
        * for their implementation. These layers include an Engine type and
        * engine parameter for selecting the implementation.
@@ -27019,6 +27338,7 @@ public final class Caffe {
        *
        * <pre>
        * Layer type-specific parameters.
+       *
        * Note: certain layers may have more than one computational engine
        * for their implementation. These layers include an Engine type and
        * engine parameter for selecting the implementation.
@@ -27031,7 +27351,7 @@ public final class Caffe {
         if (accuracyParamBuilder_ == null) {
           accuracyParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.AccuracyParameter, caffe.Caffe.AccuracyParameter.Builder, caffe.Caffe.AccuracyParameterOrBuilder>(
-                  getAccuracyParam(),
+                  accuracyParam_,
                   getParentForChildren(),
                   isClean());
           accuracyParam_ = null;
@@ -27039,6 +27359,7 @@ public final class Caffe {
         return accuracyParamBuilder_;
       }
 
+      // optional .caffe.ArgMaxParameter argmax_param = 103;
       private caffe.Caffe.ArgMaxParameter argmaxParam_ = caffe.Caffe.ArgMaxParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.ArgMaxParameter, caffe.Caffe.ArgMaxParameter.Builder, caffe.Caffe.ArgMaxParameterOrBuilder> argmaxParamBuilder_;
@@ -27147,7 +27468,7 @@ public final class Caffe {
         if (argmaxParamBuilder_ == null) {
           argmaxParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.ArgMaxParameter, caffe.Caffe.ArgMaxParameter.Builder, caffe.Caffe.ArgMaxParameterOrBuilder>(
-                  getArgmaxParam(),
+                  argmaxParam_,
                   getParentForChildren(),
                   isClean());
           argmaxParam_ = null;
@@ -27155,6 +27476,7 @@ public final class Caffe {
         return argmaxParamBuilder_;
       }
 
+      // optional .caffe.BatchNormParameter batch_norm_param = 139;
       private caffe.Caffe.BatchNormParameter batchNormParam_ = caffe.Caffe.BatchNormParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.BatchNormParameter, caffe.Caffe.BatchNormParameter.Builder, caffe.Caffe.BatchNormParameterOrBuilder> batchNormParamBuilder_;
@@ -27263,7 +27585,7 @@ public final class Caffe {
         if (batchNormParamBuilder_ == null) {
           batchNormParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.BatchNormParameter, caffe.Caffe.BatchNormParameter.Builder, caffe.Caffe.BatchNormParameterOrBuilder>(
-                  getBatchNormParam(),
+                  batchNormParam_,
                   getParentForChildren(),
                   isClean());
           batchNormParam_ = null;
@@ -27271,6 +27593,7 @@ public final class Caffe {
         return batchNormParamBuilder_;
       }
 
+      // optional .caffe.BiasParameter bias_param = 141;
       private caffe.Caffe.BiasParameter biasParam_ = caffe.Caffe.BiasParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.BiasParameter, caffe.Caffe.BiasParameter.Builder, caffe.Caffe.BiasParameterOrBuilder> biasParamBuilder_;
@@ -27379,7 +27702,7 @@ public final class Caffe {
         if (biasParamBuilder_ == null) {
           biasParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.BiasParameter, caffe.Caffe.BiasParameter.Builder, caffe.Caffe.BiasParameterOrBuilder>(
-                  getBiasParam(),
+                  biasParam_,
                   getParentForChildren(),
                   isClean());
           biasParam_ = null;
@@ -27387,6 +27710,7 @@ public final class Caffe {
         return biasParamBuilder_;
       }
 
+      // optional .caffe.ConcatParameter concat_param = 104;
       private caffe.Caffe.ConcatParameter concatParam_ = caffe.Caffe.ConcatParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.ConcatParameter, caffe.Caffe.ConcatParameter.Builder, caffe.Caffe.ConcatParameterOrBuilder> concatParamBuilder_;
@@ -27495,7 +27819,7 @@ public final class Caffe {
         if (concatParamBuilder_ == null) {
           concatParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.ConcatParameter, caffe.Caffe.ConcatParameter.Builder, caffe.Caffe.ConcatParameterOrBuilder>(
-                  getConcatParam(),
+                  concatParam_,
                   getParentForChildren(),
                   isClean());
           concatParam_ = null;
@@ -27503,6 +27827,7 @@ public final class Caffe {
         return concatParamBuilder_;
       }
 
+      // optional .caffe.ContrastiveLossParameter contrastive_loss_param = 105;
       private caffe.Caffe.ContrastiveLossParameter contrastiveLossParam_ = caffe.Caffe.ContrastiveLossParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.ContrastiveLossParameter, caffe.Caffe.ContrastiveLossParameter.Builder, caffe.Caffe.ContrastiveLossParameterOrBuilder> contrastiveLossParamBuilder_;
@@ -27611,7 +27936,7 @@ public final class Caffe {
         if (contrastiveLossParamBuilder_ == null) {
           contrastiveLossParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.ContrastiveLossParameter, caffe.Caffe.ContrastiveLossParameter.Builder, caffe.Caffe.ContrastiveLossParameterOrBuilder>(
-                  getContrastiveLossParam(),
+                  contrastiveLossParam_,
                   getParentForChildren(),
                   isClean());
           contrastiveLossParam_ = null;
@@ -27619,6 +27944,7 @@ public final class Caffe {
         return contrastiveLossParamBuilder_;
       }
 
+      // optional .caffe.ConvolutionParameter convolution_param = 106;
       private caffe.Caffe.ConvolutionParameter convolutionParam_ = caffe.Caffe.ConvolutionParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.ConvolutionParameter, caffe.Caffe.ConvolutionParameter.Builder, caffe.Caffe.ConvolutionParameterOrBuilder> convolutionParamBuilder_;
@@ -27727,7 +28053,7 @@ public final class Caffe {
         if (convolutionParamBuilder_ == null) {
           convolutionParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.ConvolutionParameter, caffe.Caffe.ConvolutionParameter.Builder, caffe.Caffe.ConvolutionParameterOrBuilder>(
-                  getConvolutionParam(),
+                  convolutionParam_,
                   getParentForChildren(),
                   isClean());
           convolutionParam_ = null;
@@ -27735,6 +28061,7 @@ public final class Caffe {
         return convolutionParamBuilder_;
       }
 
+      // optional .caffe.CropParameter crop_param = 144;
       private caffe.Caffe.CropParameter cropParam_ = caffe.Caffe.CropParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.CropParameter, caffe.Caffe.CropParameter.Builder, caffe.Caffe.CropParameterOrBuilder> cropParamBuilder_;
@@ -27843,7 +28170,7 @@ public final class Caffe {
         if (cropParamBuilder_ == null) {
           cropParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.CropParameter, caffe.Caffe.CropParameter.Builder, caffe.Caffe.CropParameterOrBuilder>(
-                  getCropParam(),
+                  cropParam_,
                   getParentForChildren(),
                   isClean());
           cropParam_ = null;
@@ -27851,6 +28178,7 @@ public final class Caffe {
         return cropParamBuilder_;
       }
 
+      // optional .caffe.DataParameter data_param = 107;
       private caffe.Caffe.DataParameter dataParam_ = caffe.Caffe.DataParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.DataParameter, caffe.Caffe.DataParameter.Builder, caffe.Caffe.DataParameterOrBuilder> dataParamBuilder_;
@@ -27959,7 +28287,7 @@ public final class Caffe {
         if (dataParamBuilder_ == null) {
           dataParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.DataParameter, caffe.Caffe.DataParameter.Builder, caffe.Caffe.DataParameterOrBuilder>(
-                  getDataParam(),
+                  dataParam_,
                   getParentForChildren(),
                   isClean());
           dataParam_ = null;
@@ -27967,6 +28295,7 @@ public final class Caffe {
         return dataParamBuilder_;
       }
 
+      // optional .caffe.DropoutParameter dropout_param = 108;
       private caffe.Caffe.DropoutParameter dropoutParam_ = caffe.Caffe.DropoutParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.DropoutParameter, caffe.Caffe.DropoutParameter.Builder, caffe.Caffe.DropoutParameterOrBuilder> dropoutParamBuilder_;
@@ -28075,7 +28404,7 @@ public final class Caffe {
         if (dropoutParamBuilder_ == null) {
           dropoutParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.DropoutParameter, caffe.Caffe.DropoutParameter.Builder, caffe.Caffe.DropoutParameterOrBuilder>(
-                  getDropoutParam(),
+                  dropoutParam_,
                   getParentForChildren(),
                   isClean());
           dropoutParam_ = null;
@@ -28083,6 +28412,7 @@ public final class Caffe {
         return dropoutParamBuilder_;
       }
 
+      // optional .caffe.DummyDataParameter dummy_data_param = 109;
       private caffe.Caffe.DummyDataParameter dummyDataParam_ = caffe.Caffe.DummyDataParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.DummyDataParameter, caffe.Caffe.DummyDataParameter.Builder, caffe.Caffe.DummyDataParameterOrBuilder> dummyDataParamBuilder_;
@@ -28191,7 +28521,7 @@ public final class Caffe {
         if (dummyDataParamBuilder_ == null) {
           dummyDataParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.DummyDataParameter, caffe.Caffe.DummyDataParameter.Builder, caffe.Caffe.DummyDataParameterOrBuilder>(
-                  getDummyDataParam(),
+                  dummyDataParam_,
                   getParentForChildren(),
                   isClean());
           dummyDataParam_ = null;
@@ -28199,6 +28529,7 @@ public final class Caffe {
         return dummyDataParamBuilder_;
       }
 
+      // optional .caffe.EltwiseParameter eltwise_param = 110;
       private caffe.Caffe.EltwiseParameter eltwiseParam_ = caffe.Caffe.EltwiseParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.EltwiseParameter, caffe.Caffe.EltwiseParameter.Builder, caffe.Caffe.EltwiseParameterOrBuilder> eltwiseParamBuilder_;
@@ -28307,7 +28638,7 @@ public final class Caffe {
         if (eltwiseParamBuilder_ == null) {
           eltwiseParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.EltwiseParameter, caffe.Caffe.EltwiseParameter.Builder, caffe.Caffe.EltwiseParameterOrBuilder>(
-                  getEltwiseParam(),
+                  eltwiseParam_,
                   getParentForChildren(),
                   isClean());
           eltwiseParam_ = null;
@@ -28315,6 +28646,7 @@ public final class Caffe {
         return eltwiseParamBuilder_;
       }
 
+      // optional .caffe.ELUParameter elu_param = 140;
       private caffe.Caffe.ELUParameter eluParam_ = caffe.Caffe.ELUParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.ELUParameter, caffe.Caffe.ELUParameter.Builder, caffe.Caffe.ELUParameterOrBuilder> eluParamBuilder_;
@@ -28423,7 +28755,7 @@ public final class Caffe {
         if (eluParamBuilder_ == null) {
           eluParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.ELUParameter, caffe.Caffe.ELUParameter.Builder, caffe.Caffe.ELUParameterOrBuilder>(
-                  getEluParam(),
+                  eluParam_,
                   getParentForChildren(),
                   isClean());
           eluParam_ = null;
@@ -28431,6 +28763,7 @@ public final class Caffe {
         return eluParamBuilder_;
       }
 
+      // optional .caffe.EmbedParameter embed_param = 137;
       private caffe.Caffe.EmbedParameter embedParam_ = caffe.Caffe.EmbedParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.EmbedParameter, caffe.Caffe.EmbedParameter.Builder, caffe.Caffe.EmbedParameterOrBuilder> embedParamBuilder_;
@@ -28539,7 +28872,7 @@ public final class Caffe {
         if (embedParamBuilder_ == null) {
           embedParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.EmbedParameter, caffe.Caffe.EmbedParameter.Builder, caffe.Caffe.EmbedParameterOrBuilder>(
-                  getEmbedParam(),
+                  embedParam_,
                   getParentForChildren(),
                   isClean());
           embedParam_ = null;
@@ -28547,6 +28880,7 @@ public final class Caffe {
         return embedParamBuilder_;
       }
 
+      // optional .caffe.ExpParameter exp_param = 111;
       private caffe.Caffe.ExpParameter expParam_ = caffe.Caffe.ExpParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.ExpParameter, caffe.Caffe.ExpParameter.Builder, caffe.Caffe.ExpParameterOrBuilder> expParamBuilder_;
@@ -28655,7 +28989,7 @@ public final class Caffe {
         if (expParamBuilder_ == null) {
           expParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.ExpParameter, caffe.Caffe.ExpParameter.Builder, caffe.Caffe.ExpParameterOrBuilder>(
-                  getExpParam(),
+                  expParam_,
                   getParentForChildren(),
                   isClean());
           expParam_ = null;
@@ -28663,6 +28997,7 @@ public final class Caffe {
         return expParamBuilder_;
       }
 
+      // optional .caffe.FlattenParameter flatten_param = 135;
       private caffe.Caffe.FlattenParameter flattenParam_ = caffe.Caffe.FlattenParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.FlattenParameter, caffe.Caffe.FlattenParameter.Builder, caffe.Caffe.FlattenParameterOrBuilder> flattenParamBuilder_;
@@ -28771,7 +29106,7 @@ public final class Caffe {
         if (flattenParamBuilder_ == null) {
           flattenParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.FlattenParameter, caffe.Caffe.FlattenParameter.Builder, caffe.Caffe.FlattenParameterOrBuilder>(
-                  getFlattenParam(),
+                  flattenParam_,
                   getParentForChildren(),
                   isClean());
           flattenParam_ = null;
@@ -28779,6 +29114,7 @@ public final class Caffe {
         return flattenParamBuilder_;
       }
 
+      // optional .caffe.HDF5DataParameter hdf5_data_param = 112;
       private caffe.Caffe.HDF5DataParameter hdf5DataParam_ = caffe.Caffe.HDF5DataParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.HDF5DataParameter, caffe.Caffe.HDF5DataParameter.Builder, caffe.Caffe.HDF5DataParameterOrBuilder> hdf5DataParamBuilder_;
@@ -28887,7 +29223,7 @@ public final class Caffe {
         if (hdf5DataParamBuilder_ == null) {
           hdf5DataParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.HDF5DataParameter, caffe.Caffe.HDF5DataParameter.Builder, caffe.Caffe.HDF5DataParameterOrBuilder>(
-                  getHdf5DataParam(),
+                  hdf5DataParam_,
                   getParentForChildren(),
                   isClean());
           hdf5DataParam_ = null;
@@ -28895,6 +29231,7 @@ public final class Caffe {
         return hdf5DataParamBuilder_;
       }
 
+      // optional .caffe.HDF5OutputParameter hdf5_output_param = 113;
       private caffe.Caffe.HDF5OutputParameter hdf5OutputParam_ = caffe.Caffe.HDF5OutputParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.HDF5OutputParameter, caffe.Caffe.HDF5OutputParameter.Builder, caffe.Caffe.HDF5OutputParameterOrBuilder> hdf5OutputParamBuilder_;
@@ -29003,7 +29340,7 @@ public final class Caffe {
         if (hdf5OutputParamBuilder_ == null) {
           hdf5OutputParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.HDF5OutputParameter, caffe.Caffe.HDF5OutputParameter.Builder, caffe.Caffe.HDF5OutputParameterOrBuilder>(
-                  getHdf5OutputParam(),
+                  hdf5OutputParam_,
                   getParentForChildren(),
                   isClean());
           hdf5OutputParam_ = null;
@@ -29011,6 +29348,7 @@ public final class Caffe {
         return hdf5OutputParamBuilder_;
       }
 
+      // optional .caffe.HingeLossParameter hinge_loss_param = 114;
       private caffe.Caffe.HingeLossParameter hingeLossParam_ = caffe.Caffe.HingeLossParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.HingeLossParameter, caffe.Caffe.HingeLossParameter.Builder, caffe.Caffe.HingeLossParameterOrBuilder> hingeLossParamBuilder_;
@@ -29119,7 +29457,7 @@ public final class Caffe {
         if (hingeLossParamBuilder_ == null) {
           hingeLossParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.HingeLossParameter, caffe.Caffe.HingeLossParameter.Builder, caffe.Caffe.HingeLossParameterOrBuilder>(
-                  getHingeLossParam(),
+                  hingeLossParam_,
                   getParentForChildren(),
                   isClean());
           hingeLossParam_ = null;
@@ -29127,6 +29465,7 @@ public final class Caffe {
         return hingeLossParamBuilder_;
       }
 
+      // optional .caffe.ImageDataParameter image_data_param = 115;
       private caffe.Caffe.ImageDataParameter imageDataParam_ = caffe.Caffe.ImageDataParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.ImageDataParameter, caffe.Caffe.ImageDataParameter.Builder, caffe.Caffe.ImageDataParameterOrBuilder> imageDataParamBuilder_;
@@ -29235,7 +29574,7 @@ public final class Caffe {
         if (imageDataParamBuilder_ == null) {
           imageDataParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.ImageDataParameter, caffe.Caffe.ImageDataParameter.Builder, caffe.Caffe.ImageDataParameterOrBuilder>(
-                  getImageDataParam(),
+                  imageDataParam_,
                   getParentForChildren(),
                   isClean());
           imageDataParam_ = null;
@@ -29243,6 +29582,7 @@ public final class Caffe {
         return imageDataParamBuilder_;
       }
 
+      // optional .caffe.InfogainLossParameter infogain_loss_param = 116;
       private caffe.Caffe.InfogainLossParameter infogainLossParam_ = caffe.Caffe.InfogainLossParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.InfogainLossParameter, caffe.Caffe.InfogainLossParameter.Builder, caffe.Caffe.InfogainLossParameterOrBuilder> infogainLossParamBuilder_;
@@ -29351,7 +29691,7 @@ public final class Caffe {
         if (infogainLossParamBuilder_ == null) {
           infogainLossParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.InfogainLossParameter, caffe.Caffe.InfogainLossParameter.Builder, caffe.Caffe.InfogainLossParameterOrBuilder>(
-                  getInfogainLossParam(),
+                  infogainLossParam_,
                   getParentForChildren(),
                   isClean());
           infogainLossParam_ = null;
@@ -29359,6 +29699,7 @@ public final class Caffe {
         return infogainLossParamBuilder_;
       }
 
+      // optional .caffe.InnerProductParameter inner_product_param = 117;
       private caffe.Caffe.InnerProductParameter innerProductParam_ = caffe.Caffe.InnerProductParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.InnerProductParameter, caffe.Caffe.InnerProductParameter.Builder, caffe.Caffe.InnerProductParameterOrBuilder> innerProductParamBuilder_;
@@ -29467,7 +29808,7 @@ public final class Caffe {
         if (innerProductParamBuilder_ == null) {
           innerProductParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.InnerProductParameter, caffe.Caffe.InnerProductParameter.Builder, caffe.Caffe.InnerProductParameterOrBuilder>(
-                  getInnerProductParam(),
+                  innerProductParam_,
                   getParentForChildren(),
                   isClean());
           innerProductParam_ = null;
@@ -29475,6 +29816,7 @@ public final class Caffe {
         return innerProductParamBuilder_;
       }
 
+      // optional .caffe.InputParameter input_param = 143;
       private caffe.Caffe.InputParameter inputParam_ = caffe.Caffe.InputParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.InputParameter, caffe.Caffe.InputParameter.Builder, caffe.Caffe.InputParameterOrBuilder> inputParamBuilder_;
@@ -29583,7 +29925,7 @@ public final class Caffe {
         if (inputParamBuilder_ == null) {
           inputParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.InputParameter, caffe.Caffe.InputParameter.Builder, caffe.Caffe.InputParameterOrBuilder>(
-                  getInputParam(),
+                  inputParam_,
                   getParentForChildren(),
                   isClean());
           inputParam_ = null;
@@ -29591,6 +29933,7 @@ public final class Caffe {
         return inputParamBuilder_;
       }
 
+      // optional .caffe.LogParameter log_param = 134;
       private caffe.Caffe.LogParameter logParam_ = caffe.Caffe.LogParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.LogParameter, caffe.Caffe.LogParameter.Builder, caffe.Caffe.LogParameterOrBuilder> logParamBuilder_;
@@ -29699,7 +30042,7 @@ public final class Caffe {
         if (logParamBuilder_ == null) {
           logParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.LogParameter, caffe.Caffe.LogParameter.Builder, caffe.Caffe.LogParameterOrBuilder>(
-                  getLogParam(),
+                  logParam_,
                   getParentForChildren(),
                   isClean());
           logParam_ = null;
@@ -29707,6 +30050,7 @@ public final class Caffe {
         return logParamBuilder_;
       }
 
+      // optional .caffe.LRNParameter lrn_param = 118;
       private caffe.Caffe.LRNParameter lrnParam_ = caffe.Caffe.LRNParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.LRNParameter, caffe.Caffe.LRNParameter.Builder, caffe.Caffe.LRNParameterOrBuilder> lrnParamBuilder_;
@@ -29815,7 +30159,7 @@ public final class Caffe {
         if (lrnParamBuilder_ == null) {
           lrnParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.LRNParameter, caffe.Caffe.LRNParameter.Builder, caffe.Caffe.LRNParameterOrBuilder>(
-                  getLrnParam(),
+                  lrnParam_,
                   getParentForChildren(),
                   isClean());
           lrnParam_ = null;
@@ -29823,6 +30167,7 @@ public final class Caffe {
         return lrnParamBuilder_;
       }
 
+      // optional .caffe.MemoryDataParameter memory_data_param = 119;
       private caffe.Caffe.MemoryDataParameter memoryDataParam_ = caffe.Caffe.MemoryDataParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.MemoryDataParameter, caffe.Caffe.MemoryDataParameter.Builder, caffe.Caffe.MemoryDataParameterOrBuilder> memoryDataParamBuilder_;
@@ -29931,7 +30276,7 @@ public final class Caffe {
         if (memoryDataParamBuilder_ == null) {
           memoryDataParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.MemoryDataParameter, caffe.Caffe.MemoryDataParameter.Builder, caffe.Caffe.MemoryDataParameterOrBuilder>(
-                  getMemoryDataParam(),
+                  memoryDataParam_,
                   getParentForChildren(),
                   isClean());
           memoryDataParam_ = null;
@@ -29939,6 +30284,7 @@ public final class Caffe {
         return memoryDataParamBuilder_;
       }
 
+      // optional .caffe.MVNParameter mvn_param = 120;
       private caffe.Caffe.MVNParameter mvnParam_ = caffe.Caffe.MVNParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.MVNParameter, caffe.Caffe.MVNParameter.Builder, caffe.Caffe.MVNParameterOrBuilder> mvnParamBuilder_;
@@ -30047,7 +30393,7 @@ public final class Caffe {
         if (mvnParamBuilder_ == null) {
           mvnParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.MVNParameter, caffe.Caffe.MVNParameter.Builder, caffe.Caffe.MVNParameterOrBuilder>(
-                  getMvnParam(),
+                  mvnParam_,
                   getParentForChildren(),
                   isClean());
           mvnParam_ = null;
@@ -30055,6 +30401,7 @@ public final class Caffe {
         return mvnParamBuilder_;
       }
 
+      // optional .caffe.PoolingParameter pooling_param = 121;
       private caffe.Caffe.PoolingParameter poolingParam_ = caffe.Caffe.PoolingParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.PoolingParameter, caffe.Caffe.PoolingParameter.Builder, caffe.Caffe.PoolingParameterOrBuilder> poolingParamBuilder_;
@@ -30163,7 +30510,7 @@ public final class Caffe {
         if (poolingParamBuilder_ == null) {
           poolingParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.PoolingParameter, caffe.Caffe.PoolingParameter.Builder, caffe.Caffe.PoolingParameterOrBuilder>(
-                  getPoolingParam(),
+                  poolingParam_,
                   getParentForChildren(),
                   isClean());
           poolingParam_ = null;
@@ -30171,6 +30518,7 @@ public final class Caffe {
         return poolingParamBuilder_;
       }
 
+      // optional .caffe.PowerParameter power_param = 122;
       private caffe.Caffe.PowerParameter powerParam_ = caffe.Caffe.PowerParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.PowerParameter, caffe.Caffe.PowerParameter.Builder, caffe.Caffe.PowerParameterOrBuilder> powerParamBuilder_;
@@ -30279,7 +30627,7 @@ public final class Caffe {
         if (powerParamBuilder_ == null) {
           powerParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.PowerParameter, caffe.Caffe.PowerParameter.Builder, caffe.Caffe.PowerParameterOrBuilder>(
-                  getPowerParam(),
+                  powerParam_,
                   getParentForChildren(),
                   isClean());
           powerParam_ = null;
@@ -30287,6 +30635,7 @@ public final class Caffe {
         return powerParamBuilder_;
       }
 
+      // optional .caffe.PReLUParameter prelu_param = 131;
       private caffe.Caffe.PReLUParameter preluParam_ = caffe.Caffe.PReLUParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.PReLUParameter, caffe.Caffe.PReLUParameter.Builder, caffe.Caffe.PReLUParameterOrBuilder> preluParamBuilder_;
@@ -30395,7 +30744,7 @@ public final class Caffe {
         if (preluParamBuilder_ == null) {
           preluParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.PReLUParameter, caffe.Caffe.PReLUParameter.Builder, caffe.Caffe.PReLUParameterOrBuilder>(
-                  getPreluParam(),
+                  preluParam_,
                   getParentForChildren(),
                   isClean());
           preluParam_ = null;
@@ -30403,6 +30752,7 @@ public final class Caffe {
         return preluParamBuilder_;
       }
 
+      // optional .caffe.PythonParameter python_param = 130;
       private caffe.Caffe.PythonParameter pythonParam_ = caffe.Caffe.PythonParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.PythonParameter, caffe.Caffe.PythonParameter.Builder, caffe.Caffe.PythonParameterOrBuilder> pythonParamBuilder_;
@@ -30511,7 +30861,7 @@ public final class Caffe {
         if (pythonParamBuilder_ == null) {
           pythonParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.PythonParameter, caffe.Caffe.PythonParameter.Builder, caffe.Caffe.PythonParameterOrBuilder>(
-                  getPythonParam(),
+                  pythonParam_,
                   getParentForChildren(),
                   isClean());
           pythonParam_ = null;
@@ -30519,6 +30869,7 @@ public final class Caffe {
         return pythonParamBuilder_;
       }
 
+      // optional .caffe.ReductionParameter reduction_param = 136;
       private caffe.Caffe.ReductionParameter reductionParam_ = caffe.Caffe.ReductionParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.ReductionParameter, caffe.Caffe.ReductionParameter.Builder, caffe.Caffe.ReductionParameterOrBuilder> reductionParamBuilder_;
@@ -30627,7 +30978,7 @@ public final class Caffe {
         if (reductionParamBuilder_ == null) {
           reductionParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.ReductionParameter, caffe.Caffe.ReductionParameter.Builder, caffe.Caffe.ReductionParameterOrBuilder>(
-                  getReductionParam(),
+                  reductionParam_,
                   getParentForChildren(),
                   isClean());
           reductionParam_ = null;
@@ -30635,6 +30986,7 @@ public final class Caffe {
         return reductionParamBuilder_;
       }
 
+      // optional .caffe.ReLUParameter relu_param = 123;
       private caffe.Caffe.ReLUParameter reluParam_ = caffe.Caffe.ReLUParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.ReLUParameter, caffe.Caffe.ReLUParameter.Builder, caffe.Caffe.ReLUParameterOrBuilder> reluParamBuilder_;
@@ -30743,7 +31095,7 @@ public final class Caffe {
         if (reluParamBuilder_ == null) {
           reluParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.ReLUParameter, caffe.Caffe.ReLUParameter.Builder, caffe.Caffe.ReLUParameterOrBuilder>(
-                  getReluParam(),
+                  reluParam_,
                   getParentForChildren(),
                   isClean());
           reluParam_ = null;
@@ -30751,6 +31103,7 @@ public final class Caffe {
         return reluParamBuilder_;
       }
 
+      // optional .caffe.ReshapeParameter reshape_param = 133;
       private caffe.Caffe.ReshapeParameter reshapeParam_ = caffe.Caffe.ReshapeParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.ReshapeParameter, caffe.Caffe.ReshapeParameter.Builder, caffe.Caffe.ReshapeParameterOrBuilder> reshapeParamBuilder_;
@@ -30859,7 +31212,7 @@ public final class Caffe {
         if (reshapeParamBuilder_ == null) {
           reshapeParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.ReshapeParameter, caffe.Caffe.ReshapeParameter.Builder, caffe.Caffe.ReshapeParameterOrBuilder>(
-                  getReshapeParam(),
+                  reshapeParam_,
                   getParentForChildren(),
                   isClean());
           reshapeParam_ = null;
@@ -30867,6 +31220,7 @@ public final class Caffe {
         return reshapeParamBuilder_;
       }
 
+      // optional .caffe.ScaleParameter scale_param = 142;
       private caffe.Caffe.ScaleParameter scaleParam_ = caffe.Caffe.ScaleParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.ScaleParameter, caffe.Caffe.ScaleParameter.Builder, caffe.Caffe.ScaleParameterOrBuilder> scaleParamBuilder_;
@@ -30975,7 +31329,7 @@ public final class Caffe {
         if (scaleParamBuilder_ == null) {
           scaleParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.ScaleParameter, caffe.Caffe.ScaleParameter.Builder, caffe.Caffe.ScaleParameterOrBuilder>(
-                  getScaleParam(),
+                  scaleParam_,
                   getParentForChildren(),
                   isClean());
           scaleParam_ = null;
@@ -30983,6 +31337,7 @@ public final class Caffe {
         return scaleParamBuilder_;
       }
 
+      // optional .caffe.SigmoidParameter sigmoid_param = 124;
       private caffe.Caffe.SigmoidParameter sigmoidParam_ = caffe.Caffe.SigmoidParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.SigmoidParameter, caffe.Caffe.SigmoidParameter.Builder, caffe.Caffe.SigmoidParameterOrBuilder> sigmoidParamBuilder_;
@@ -31091,7 +31446,7 @@ public final class Caffe {
         if (sigmoidParamBuilder_ == null) {
           sigmoidParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.SigmoidParameter, caffe.Caffe.SigmoidParameter.Builder, caffe.Caffe.SigmoidParameterOrBuilder>(
-                  getSigmoidParam(),
+                  sigmoidParam_,
                   getParentForChildren(),
                   isClean());
           sigmoidParam_ = null;
@@ -31099,6 +31454,7 @@ public final class Caffe {
         return sigmoidParamBuilder_;
       }
 
+      // optional .caffe.SoftmaxParameter softmax_param = 125;
       private caffe.Caffe.SoftmaxParameter softmaxParam_ = caffe.Caffe.SoftmaxParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.SoftmaxParameter, caffe.Caffe.SoftmaxParameter.Builder, caffe.Caffe.SoftmaxParameterOrBuilder> softmaxParamBuilder_;
@@ -31207,7 +31563,7 @@ public final class Caffe {
         if (softmaxParamBuilder_ == null) {
           softmaxParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.SoftmaxParameter, caffe.Caffe.SoftmaxParameter.Builder, caffe.Caffe.SoftmaxParameterOrBuilder>(
-                  getSoftmaxParam(),
+                  softmaxParam_,
                   getParentForChildren(),
                   isClean());
           softmaxParam_ = null;
@@ -31215,6 +31571,7 @@ public final class Caffe {
         return softmaxParamBuilder_;
       }
 
+      // optional .caffe.SPPParameter spp_param = 132;
       private caffe.Caffe.SPPParameter sppParam_ = caffe.Caffe.SPPParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.SPPParameter, caffe.Caffe.SPPParameter.Builder, caffe.Caffe.SPPParameterOrBuilder> sppParamBuilder_;
@@ -31323,7 +31680,7 @@ public final class Caffe {
         if (sppParamBuilder_ == null) {
           sppParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.SPPParameter, caffe.Caffe.SPPParameter.Builder, caffe.Caffe.SPPParameterOrBuilder>(
-                  getSppParam(),
+                  sppParam_,
                   getParentForChildren(),
                   isClean());
           sppParam_ = null;
@@ -31331,6 +31688,7 @@ public final class Caffe {
         return sppParamBuilder_;
       }
 
+      // optional .caffe.SliceParameter slice_param = 126;
       private caffe.Caffe.SliceParameter sliceParam_ = caffe.Caffe.SliceParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.SliceParameter, caffe.Caffe.SliceParameter.Builder, caffe.Caffe.SliceParameterOrBuilder> sliceParamBuilder_;
@@ -31439,7 +31797,7 @@ public final class Caffe {
         if (sliceParamBuilder_ == null) {
           sliceParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.SliceParameter, caffe.Caffe.SliceParameter.Builder, caffe.Caffe.SliceParameterOrBuilder>(
-                  getSliceParam(),
+                  sliceParam_,
                   getParentForChildren(),
                   isClean());
           sliceParam_ = null;
@@ -31447,6 +31805,7 @@ public final class Caffe {
         return sliceParamBuilder_;
       }
 
+      // optional .caffe.TanHParameter tanh_param = 127;
       private caffe.Caffe.TanHParameter tanhParam_ = caffe.Caffe.TanHParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.TanHParameter, caffe.Caffe.TanHParameter.Builder, caffe.Caffe.TanHParameterOrBuilder> tanhParamBuilder_;
@@ -31555,7 +31914,7 @@ public final class Caffe {
         if (tanhParamBuilder_ == null) {
           tanhParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.TanHParameter, caffe.Caffe.TanHParameter.Builder, caffe.Caffe.TanHParameterOrBuilder>(
-                  getTanhParam(),
+                  tanhParam_,
                   getParentForChildren(),
                   isClean());
           tanhParam_ = null;
@@ -31563,6 +31922,7 @@ public final class Caffe {
         return tanhParamBuilder_;
       }
 
+      // optional .caffe.ThresholdParameter threshold_param = 128;
       private caffe.Caffe.ThresholdParameter thresholdParam_ = caffe.Caffe.ThresholdParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.ThresholdParameter, caffe.Caffe.ThresholdParameter.Builder, caffe.Caffe.ThresholdParameterOrBuilder> thresholdParamBuilder_;
@@ -31671,7 +32031,7 @@ public final class Caffe {
         if (thresholdParamBuilder_ == null) {
           thresholdParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.ThresholdParameter, caffe.Caffe.ThresholdParameter.Builder, caffe.Caffe.ThresholdParameterOrBuilder>(
-                  getThresholdParam(),
+                  thresholdParam_,
                   getParentForChildren(),
                   isClean());
           thresholdParam_ = null;
@@ -31679,6 +32039,7 @@ public final class Caffe {
         return thresholdParamBuilder_;
       }
 
+      // optional .caffe.TileParameter tile_param = 138;
       private caffe.Caffe.TileParameter tileParam_ = caffe.Caffe.TileParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.TileParameter, caffe.Caffe.TileParameter.Builder, caffe.Caffe.TileParameterOrBuilder> tileParamBuilder_;
@@ -31787,7 +32148,7 @@ public final class Caffe {
         if (tileParamBuilder_ == null) {
           tileParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.TileParameter, caffe.Caffe.TileParameter.Builder, caffe.Caffe.TileParameterOrBuilder>(
-                  getTileParam(),
+                  tileParam_,
                   getParentForChildren(),
                   isClean());
           tileParam_ = null;
@@ -31795,6 +32156,7 @@ public final class Caffe {
         return tileParamBuilder_;
       }
 
+      // optional .caffe.WindowDataParameter window_data_param = 129;
       private caffe.Caffe.WindowDataParameter windowDataParam_ = caffe.Caffe.WindowDataParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.WindowDataParameter, caffe.Caffe.WindowDataParameter.Builder, caffe.Caffe.WindowDataParameterOrBuilder> windowDataParamBuilder_;
@@ -31903,7 +32265,7 @@ public final class Caffe {
         if (windowDataParamBuilder_ == null) {
           windowDataParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.WindowDataParameter, caffe.Caffe.WindowDataParameter.Builder, caffe.Caffe.WindowDataParameterOrBuilder>(
-                  getWindowDataParam(),
+                  windowDataParam_,
                   getParentForChildren(),
                   isClean());
           windowDataParam_ = null;
@@ -31922,10 +32284,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.LayerParameter)
   }
 
-  public interface TransformationParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.TransformationParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface TransformationParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional float scale = 1 [default = 1];
     /**
      * <code>optional float scale = 1 [default = 1];</code>
      *
@@ -31947,6 +32309,7 @@ public final class Caffe {
      */
     float getScale();
 
+    // optional bool mirror = 2 [default = false];
     /**
      * <code>optional bool mirror = 2 [default = false];</code>
      *
@@ -31964,6 +32327,7 @@ public final class Caffe {
      */
     boolean getMirror();
 
+    // optional uint32 crop_size = 3 [default = 0];
     /**
      * <code>optional uint32 crop_size = 3 [default = 0];</code>
      *
@@ -31981,6 +32345,7 @@ public final class Caffe {
      */
     int getCropSize();
 
+    // optional string mean_file = 4;
     /**
      * <code>optional string mean_file = 4;</code>
      *
@@ -32007,6 +32372,7 @@ public final class Caffe {
     com.google.protobuf.ByteString
         getMeanFileBytes();
 
+    // repeated float mean_value = 5;
     /**
      * <code>repeated float mean_value = 5;</code>
      *
@@ -32038,6 +32404,7 @@ public final class Caffe {
      */
     float getMeanValue(int index);
 
+    // optional bool force_color = 6 [default = false];
     /**
      * <code>optional bool force_color = 6 [default = false];</code>
      *
@@ -32055,6 +32422,7 @@ public final class Caffe {
      */
     boolean getForceColor();
 
+    // optional bool force_gray = 7 [default = false];
     /**
      * <code>optional bool force_gray = 7 [default = false];</code>
      *
@@ -32081,9 +32449,8 @@ public final class Caffe {
    * </pre>
    */
   public static final class TransformationParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.TransformationParameter)
-      TransformationParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements TransformationParameterOrBuilder {
     // Use TransformationParameter.newBuilder() to construct.
     private TransformationParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -32145,9 +32512,8 @@ public final class Caffe {
               break;
             }
             case 34: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000008;
-              meanFile_ = bs;
+              meanFile_ = input.readBytes();
               break;
             }
             case 45: {
@@ -32224,6 +32590,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional float scale = 1 [default = 1];
     public static final int SCALE_FIELD_NUMBER = 1;
     private float scale_;
     /**
@@ -32251,6 +32618,7 @@ public final class Caffe {
       return scale_;
     }
 
+    // optional bool mirror = 2 [default = false];
     public static final int MIRROR_FIELD_NUMBER = 2;
     private boolean mirror_;
     /**
@@ -32274,6 +32642,7 @@ public final class Caffe {
       return mirror_;
     }
 
+    // optional uint32 crop_size = 3 [default = 0];
     public static final int CROP_SIZE_FIELD_NUMBER = 3;
     private int cropSize_;
     /**
@@ -32297,6 +32666,7 @@ public final class Caffe {
       return cropSize_;
     }
 
+    // optional string mean_file = 4;
     public static final int MEAN_FILE_FIELD_NUMBER = 4;
     private java.lang.Object meanFile_;
     /**
@@ -32351,6 +32721,7 @@ public final class Caffe {
       }
     }
 
+    // repeated float mean_value = 5;
     public static final int MEAN_VALUE_FIELD_NUMBER = 5;
     private java.util.List<java.lang.Float> meanValue_;
     /**
@@ -32391,6 +32762,7 @@ public final class Caffe {
       return meanValue_.get(index);
     }
 
+    // optional bool force_color = 6 [default = false];
     public static final int FORCE_COLOR_FIELD_NUMBER = 6;
     private boolean forceColor_;
     /**
@@ -32414,6 +32786,7 @@ public final class Caffe {
       return forceColor_;
     }
 
+    // optional bool force_gray = 7 [default = false];
     public static final int FORCE_GRAY_FIELD_NUMBER = 7;
     private boolean forceGray_;
     /**
@@ -32449,8 +32822,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -32606,9 +32978,8 @@ public final class Caffe {
      * </pre>
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.TransformationParameter)
-        caffe.Caffe.TransformationParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.TransformationParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_TransformationParameter_descriptor;
@@ -32785,6 +33156,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional float scale = 1 [default = 1];
       private float scale_ = 1F;
       /**
        * <code>optional float scale = 1 [default = 1];</code>
@@ -32841,6 +33213,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional bool mirror = 2 [default = false];
       private boolean mirror_ ;
       /**
        * <code>optional bool mirror = 2 [default = false];</code>
@@ -32889,6 +33262,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 crop_size = 3 [default = 0];
       private int cropSize_ ;
       /**
        * <code>optional uint32 crop_size = 3 [default = 0];</code>
@@ -32937,6 +33311,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional string mean_file = 4;
       private java.lang.Object meanFile_ = "";
       /**
        * <code>optional string mean_file = 4;</code>
@@ -32958,12 +33333,9 @@ public final class Caffe {
       public java.lang.String getMeanFile() {
         java.lang.Object ref = meanFile_;
         if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            meanFile_ = s;
-          }
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          meanFile_ = s;
           return s;
         } else {
           return (java.lang.String) ref;
@@ -33037,6 +33409,7 @@ public final class Caffe {
         return this;
       }
 
+      // repeated float mean_value = 5;
       private java.util.List<java.lang.Float> meanValue_ = java.util.Collections.emptyList();
       private void ensureMeanValueIsMutable() {
         if (!((bitField0_ & 0x00000010) == 0x00000010)) {
@@ -33124,8 +33497,7 @@ public final class Caffe {
       public Builder addAllMeanValue(
           java.lang.Iterable<? extends java.lang.Float> values) {
         ensureMeanValueIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, meanValue_);
+        super.addAll(values, meanValue_);
         onChanged();
         return this;
       }
@@ -33145,6 +33517,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional bool force_color = 6 [default = false];
       private boolean forceColor_ ;
       /**
        * <code>optional bool force_color = 6 [default = false];</code>
@@ -33193,6 +33566,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional bool force_gray = 7 [default = false];
       private boolean forceGray_ ;
       /**
        * <code>optional bool force_gray = 7 [default = false];</code>
@@ -33252,10 +33626,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.TransformationParameter)
   }
 
-  public interface LossParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.LossParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface LossParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional int32 ignore_label = 1;
     /**
      * <code>optional int32 ignore_label = 1;</code>
      *
@@ -33273,6 +33647,7 @@ public final class Caffe {
      */
     int getIgnoreLabel();
 
+    // optional .caffe.LossParameter.NormalizationMode normalization = 3 [default = VALID];
     /**
      * <code>optional .caffe.LossParameter.NormalizationMode normalization = 3 [default = VALID];</code>
      */
@@ -33282,6 +33657,7 @@ public final class Caffe {
      */
     caffe.Caffe.LossParameter.NormalizationMode getNormalization();
 
+    // optional bool normalize = 2;
     /**
      * <code>optional bool normalize = 2;</code>
      *
@@ -33311,9 +33687,8 @@ public final class Caffe {
    * </pre>
    */
   public static final class LossParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.LossParameter)
-      LossParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements LossParameterOrBuilder {
     // Use LossParameter.newBuilder() to construct.
     private LossParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -33564,6 +33939,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional int32 ignore_label = 1;
     public static final int IGNORE_LABEL_FIELD_NUMBER = 1;
     private int ignoreLabel_;
     /**
@@ -33587,6 +33963,7 @@ public final class Caffe {
       return ignoreLabel_;
     }
 
+    // optional .caffe.LossParameter.NormalizationMode normalization = 3 [default = VALID];
     public static final int NORMALIZATION_FIELD_NUMBER = 3;
     private caffe.Caffe.LossParameter.NormalizationMode normalization_;
     /**
@@ -33602,6 +33979,7 @@ public final class Caffe {
       return normalization_;
     }
 
+    // optional bool normalize = 2;
     public static final int NORMALIZE_FIELD_NUMBER = 2;
     private boolean normalize_;
     /**
@@ -33637,8 +34015,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -33763,9 +34140,8 @@ public final class Caffe {
      * </pre>
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.LossParameter)
-        caffe.Caffe.LossParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.LossParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_LossParameter_descriptor;
@@ -33896,6 +34272,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional int32 ignore_label = 1;
       private int ignoreLabel_ ;
       /**
        * <code>optional int32 ignore_label = 1;</code>
@@ -33944,6 +34321,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional .caffe.LossParameter.NormalizationMode normalization = 3 [default = VALID];
       private caffe.Caffe.LossParameter.NormalizationMode normalization_ = caffe.Caffe.LossParameter.NormalizationMode.VALID;
       /**
        * <code>optional .caffe.LossParameter.NormalizationMode normalization = 3 [default = VALID];</code>
@@ -33979,6 +34357,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional bool normalize = 2;
       private boolean normalize_ ;
       /**
        * <code>optional bool normalize = 2;</code>
@@ -34046,10 +34425,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.LossParameter)
   }
 
-  public interface AccuracyParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.AccuracyParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface AccuracyParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional uint32 top_k = 1 [default = 1];
     /**
      * <code>optional uint32 top_k = 1 [default = 1];</code>
      *
@@ -34071,6 +34450,7 @@ public final class Caffe {
      */
     int getTopK();
 
+    // optional int32 axis = 2 [default = 1];
     /**
      * <code>optional int32 axis = 2 [default = 1];</code>
      *
@@ -34096,6 +34476,7 @@ public final class Caffe {
      */
     int getAxis();
 
+    // optional int32 ignore_label = 3;
     /**
      * <code>optional int32 ignore_label = 3;</code>
      *
@@ -34117,9 +34498,8 @@ public final class Caffe {
    * Protobuf type {@code caffe.AccuracyParameter}
    */
   public static final class AccuracyParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.AccuracyParameter)
-      AccuracyParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements AccuracyParameterOrBuilder {
     // Use AccuracyParameter.newBuilder() to construct.
     private AccuracyParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -34220,6 +34600,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional uint32 top_k = 1 [default = 1];
     public static final int TOP_K_FIELD_NUMBER = 1;
     private int topK_;
     /**
@@ -34247,6 +34628,7 @@ public final class Caffe {
       return topK_;
     }
 
+    // optional int32 axis = 2 [default = 1];
     public static final int AXIS_FIELD_NUMBER = 2;
     private int axis_;
     /**
@@ -34278,6 +34660,7 @@ public final class Caffe {
       return axis_;
     }
 
+    // optional int32 ignore_label = 3;
     public static final int IGNORE_LABEL_FIELD_NUMBER = 3;
     private int ignoreLabel_;
     /**
@@ -34309,8 +34692,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -34431,9 +34813,8 @@ public final class Caffe {
      * Protobuf type {@code caffe.AccuracyParameter}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.AccuracyParameter)
-        caffe.Caffe.AccuracyParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.AccuracyParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_AccuracyParameter_descriptor;
@@ -34564,6 +34945,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional uint32 top_k = 1 [default = 1];
       private int topK_ = 1;
       /**
        * <code>optional uint32 top_k = 1 [default = 1];</code>
@@ -34620,6 +35002,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional int32 axis = 2 [default = 1];
       private int axis_ = 1;
       /**
        * <code>optional int32 axis = 2 [default = 1];</code>
@@ -34684,6 +35067,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional int32 ignore_label = 3;
       private int ignoreLabel_ ;
       /**
        * <code>optional int32 ignore_label = 3;</code>
@@ -34743,10 +35127,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.AccuracyParameter)
   }
 
-  public interface ArgMaxParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.ArgMaxParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface ArgMaxParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional bool out_max_val = 1 [default = false];
     /**
      * <code>optional bool out_max_val = 1 [default = false];</code>
      *
@@ -34764,6 +35148,7 @@ public final class Caffe {
      */
     boolean getOutMaxVal();
 
+    // optional uint32 top_k = 2 [default = 1];
     /**
      * <code>optional uint32 top_k = 2 [default = 1];</code>
      */
@@ -34773,6 +35158,7 @@ public final class Caffe {
      */
     int getTopK();
 
+    // optional int32 axis = 3;
     /**
      * <code>optional int32 axis = 3;</code>
      *
@@ -34800,9 +35186,8 @@ public final class Caffe {
    * Protobuf type {@code caffe.ArgMaxParameter}
    */
   public static final class ArgMaxParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.ArgMaxParameter)
-      ArgMaxParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements ArgMaxParameterOrBuilder {
     // Use ArgMaxParameter.newBuilder() to construct.
     private ArgMaxParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -34903,6 +35288,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional bool out_max_val = 1 [default = false];
     public static final int OUT_MAX_VAL_FIELD_NUMBER = 1;
     private boolean outMaxVal_;
     /**
@@ -34926,6 +35312,7 @@ public final class Caffe {
       return outMaxVal_;
     }
 
+    // optional uint32 top_k = 2 [default = 1];
     public static final int TOP_K_FIELD_NUMBER = 2;
     private int topK_;
     /**
@@ -34941,6 +35328,7 @@ public final class Caffe {
       return topK_;
     }
 
+    // optional int32 axis = 3;
     public static final int AXIS_FIELD_NUMBER = 3;
     private int axis_;
     /**
@@ -34978,8 +35366,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -35100,9 +35487,8 @@ public final class Caffe {
      * Protobuf type {@code caffe.ArgMaxParameter}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.ArgMaxParameter)
-        caffe.Caffe.ArgMaxParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.ArgMaxParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_ArgMaxParameter_descriptor;
@@ -35233,6 +35619,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional bool out_max_val = 1 [default = false];
       private boolean outMaxVal_ ;
       /**
        * <code>optional bool out_max_val = 1 [default = false];</code>
@@ -35281,6 +35668,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 top_k = 2 [default = 1];
       private int topK_ = 1;
       /**
        * <code>optional uint32 top_k = 2 [default = 1];</code>
@@ -35313,6 +35701,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional int32 axis = 3;
       private int axis_ ;
       /**
        * <code>optional int32 axis = 3;</code>
@@ -35384,10 +35773,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.ArgMaxParameter)
   }
 
-  public interface ConcatParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.ConcatParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface ConcatParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional int32 axis = 2 [default = 1];
     /**
      * <code>optional int32 axis = 2 [default = 1];</code>
      *
@@ -35411,6 +35800,7 @@ public final class Caffe {
      */
     int getAxis();
 
+    // optional uint32 concat_dim = 1 [default = 1];
     /**
      * <code>optional uint32 concat_dim = 1 [default = 1];</code>
      *
@@ -35432,9 +35822,8 @@ public final class Caffe {
    * Protobuf type {@code caffe.ConcatParameter}
    */
   public static final class ConcatParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.ConcatParameter)
-      ConcatParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements ConcatParameterOrBuilder {
     // Use ConcatParameter.newBuilder() to construct.
     private ConcatParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -35530,6 +35919,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional int32 axis = 2 [default = 1];
     public static final int AXIS_FIELD_NUMBER = 2;
     private int axis_;
     /**
@@ -35559,6 +35949,7 @@ public final class Caffe {
       return axis_;
     }
 
+    // optional uint32 concat_dim = 1 [default = 1];
     public static final int CONCAT_DIM_FIELD_NUMBER = 1;
     private int concatDim_;
     /**
@@ -35589,8 +35980,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -35704,9 +36094,8 @@ public final class Caffe {
      * Protobuf type {@code caffe.ConcatParameter}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.ConcatParameter)
-        caffe.Caffe.ConcatParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.ConcatParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_ConcatParameter_descriptor;
@@ -35828,6 +36217,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional int32 axis = 2 [default = 1];
       private int axis_ = 1;
       /**
        * <code>optional int32 axis = 2 [default = 1];</code>
@@ -35888,6 +36278,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 concat_dim = 1 [default = 1];
       private int concatDim_ = 1;
       /**
        * <code>optional uint32 concat_dim = 1 [default = 1];</code>
@@ -35947,10 +36338,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.ConcatParameter)
   }
 
-  public interface BatchNormParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.BatchNormParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface BatchNormParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional bool use_global_stats = 1;
     /**
      * <code>optional bool use_global_stats = 1;</code>
      *
@@ -35972,6 +36363,7 @@ public final class Caffe {
      */
     boolean getUseGlobalStats();
 
+    // optional float moving_average_fraction = 2 [default = 0.999];
     /**
      * <code>optional float moving_average_fraction = 2 [default = 0.999];</code>
      *
@@ -35989,6 +36381,7 @@ public final class Caffe {
      */
     float getMovingAverageFraction();
 
+    // optional float eps = 3 [default = 1e-005];
     /**
      * <code>optional float eps = 3 [default = 1e-005];</code>
      *
@@ -36012,9 +36405,8 @@ public final class Caffe {
    * Protobuf type {@code caffe.BatchNormParameter}
    */
   public static final class BatchNormParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.BatchNormParameter)
-      BatchNormParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements BatchNormParameterOrBuilder {
     // Use BatchNormParameter.newBuilder() to construct.
     private BatchNormParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -36115,6 +36507,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional bool use_global_stats = 1;
     public static final int USE_GLOBAL_STATS_FIELD_NUMBER = 1;
     private boolean useGlobalStats_;
     /**
@@ -36142,6 +36535,7 @@ public final class Caffe {
       return useGlobalStats_;
     }
 
+    // optional float moving_average_fraction = 2 [default = 0.999];
     public static final int MOVING_AVERAGE_FRACTION_FIELD_NUMBER = 2;
     private float movingAverageFraction_;
     /**
@@ -36165,6 +36559,7 @@ public final class Caffe {
       return movingAverageFraction_;
     }
 
+    // optional float eps = 3 [default = 1e-005];
     public static final int EPS_FIELD_NUMBER = 3;
     private float eps_;
     /**
@@ -36198,8 +36593,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -36320,9 +36714,8 @@ public final class Caffe {
      * Protobuf type {@code caffe.BatchNormParameter}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.BatchNormParameter)
-        caffe.Caffe.BatchNormParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.BatchNormParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_BatchNormParameter_descriptor;
@@ -36453,6 +36846,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional bool use_global_stats = 1;
       private boolean useGlobalStats_ ;
       /**
        * <code>optional bool use_global_stats = 1;</code>
@@ -36509,6 +36903,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float moving_average_fraction = 2 [default = 0.999];
       private float movingAverageFraction_ = 0.999F;
       /**
        * <code>optional float moving_average_fraction = 2 [default = 0.999];</code>
@@ -36557,6 +36952,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float eps = 3 [default = 1e-005];
       private float eps_ = 1e-005F;
       /**
        * <code>optional float eps = 3 [default = 1e-005];</code>
@@ -36620,10 +37016,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.BatchNormParameter)
   }
 
-  public interface BiasParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.BiasParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface BiasParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional int32 axis = 1 [default = 1];
     /**
      * <code>optional int32 axis = 1 [default = 1];</code>
      *
@@ -36631,6 +37027,7 @@ public final class Caffe {
      * The first axis of bottom[0] (the first input Blob) along which to apply
      * bottom[1] (the second input Blob).  May be negative to index from the end
      * (e.g., -1 for the last axis).
+     *
      * For example, if bottom[0] is 4D with shape 100x3x40x60, the output
      * top[0] will have the same shape, and bottom[1] may have any of the
      * following shapes (for the given value of axis):
@@ -36650,6 +37047,7 @@ public final class Caffe {
      * The first axis of bottom[0] (the first input Blob) along which to apply
      * bottom[1] (the second input Blob).  May be negative to index from the end
      * (e.g., -1 for the last axis).
+     *
      * For example, if bottom[0] is 4D with shape 100x3x40x60, the output
      * top[0] will have the same shape, and bottom[1] may have any of the
      * following shapes (for the given value of axis):
@@ -36663,6 +37061,7 @@ public final class Caffe {
      */
     int getAxis();
 
+    // optional int32 num_axes = 2 [default = 1];
     /**
      * <code>optional int32 num_axes = 2 [default = 1];</code>
      *
@@ -36690,6 +37089,7 @@ public final class Caffe {
      */
     int getNumAxes();
 
+    // optional .caffe.FillerParameter filler = 3;
     /**
      * <code>optional .caffe.FillerParameter filler = 3;</code>
      *
@@ -36731,9 +37131,8 @@ public final class Caffe {
    * Protobuf type {@code caffe.BiasParameter}
    */
   public static final class BiasParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.BiasParameter)
-      BiasParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements BiasParameterOrBuilder {
     // Use BiasParameter.newBuilder() to construct.
     private BiasParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -36842,6 +37241,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional int32 axis = 1 [default = 1];
     public static final int AXIS_FIELD_NUMBER = 1;
     private int axis_;
     /**
@@ -36851,6 +37251,7 @@ public final class Caffe {
      * The first axis of bottom[0] (the first input Blob) along which to apply
      * bottom[1] (the second input Blob).  May be negative to index from the end
      * (e.g., -1 for the last axis).
+     *
      * For example, if bottom[0] is 4D with shape 100x3x40x60, the output
      * top[0] will have the same shape, and bottom[1] may have any of the
      * following shapes (for the given value of axis):
@@ -36872,6 +37273,7 @@ public final class Caffe {
      * The first axis of bottom[0] (the first input Blob) along which to apply
      * bottom[1] (the second input Blob).  May be negative to index from the end
      * (e.g., -1 for the last axis).
+     *
      * For example, if bottom[0] is 4D with shape 100x3x40x60, the output
      * top[0] will have the same shape, and bottom[1] may have any of the
      * following shapes (for the given value of axis):
@@ -36887,6 +37289,7 @@ public final class Caffe {
       return axis_;
     }
 
+    // optional int32 num_axes = 2 [default = 1];
     public static final int NUM_AXES_FIELD_NUMBER = 2;
     private int numAxes_;
     /**
@@ -36920,6 +37323,7 @@ public final class Caffe {
       return numAxes_;
     }
 
+    // optional .caffe.FillerParameter filler = 3;
     public static final int FILLER_FIELD_NUMBER = 3;
     private caffe.Caffe.FillerParameter filler_;
     /**
@@ -36973,8 +37377,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -37095,9 +37498,8 @@ public final class Caffe {
      * Protobuf type {@code caffe.BiasParameter}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.BiasParameter)
-        caffe.Caffe.BiasParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.BiasParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_BiasParameter_descriptor;
@@ -37237,6 +37639,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional int32 axis = 1 [default = 1];
       private int axis_ = 1;
       /**
        * <code>optional int32 axis = 1 [default = 1];</code>
@@ -37245,6 +37648,7 @@ public final class Caffe {
        * The first axis of bottom[0] (the first input Blob) along which to apply
        * bottom[1] (the second input Blob).  May be negative to index from the end
        * (e.g., -1 for the last axis).
+       *
        * For example, if bottom[0] is 4D with shape 100x3x40x60, the output
        * top[0] will have the same shape, and bottom[1] may have any of the
        * following shapes (for the given value of axis):
@@ -37266,6 +37670,7 @@ public final class Caffe {
        * The first axis of bottom[0] (the first input Blob) along which to apply
        * bottom[1] (the second input Blob).  May be negative to index from the end
        * (e.g., -1 for the last axis).
+       *
        * For example, if bottom[0] is 4D with shape 100x3x40x60, the output
        * top[0] will have the same shape, and bottom[1] may have any of the
        * following shapes (for the given value of axis):
@@ -37287,6 +37692,7 @@ public final class Caffe {
        * The first axis of bottom[0] (the first input Blob) along which to apply
        * bottom[1] (the second input Blob).  May be negative to index from the end
        * (e.g., -1 for the last axis).
+       *
        * For example, if bottom[0] is 4D with shape 100x3x40x60, the output
        * top[0] will have the same shape, and bottom[1] may have any of the
        * following shapes (for the given value of axis):
@@ -37311,6 +37717,7 @@ public final class Caffe {
        * The first axis of bottom[0] (the first input Blob) along which to apply
        * bottom[1] (the second input Blob).  May be negative to index from the end
        * (e.g., -1 for the last axis).
+       *
        * For example, if bottom[0] is 4D with shape 100x3x40x60, the output
        * top[0] will have the same shape, and bottom[1] may have any of the
        * following shapes (for the given value of axis):
@@ -37329,6 +37736,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional int32 num_axes = 2 [default = 1];
       private int numAxes_ = 1;
       /**
        * <code>optional int32 num_axes = 2 [default = 1];</code>
@@ -37397,6 +37805,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional .caffe.FillerParameter filler = 3;
       private caffe.Caffe.FillerParameter filler_ = caffe.Caffe.FillerParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.FillerParameter, caffe.Caffe.FillerParameter.Builder, caffe.Caffe.FillerParameterOrBuilder> fillerBuilder_;
@@ -37577,7 +37986,7 @@ public final class Caffe {
         if (fillerBuilder_ == null) {
           fillerBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.FillerParameter, caffe.Caffe.FillerParameter.Builder, caffe.Caffe.FillerParameterOrBuilder>(
-                  getFiller(),
+                  filler_,
                   getParentForChildren(),
                   isClean());
           filler_ = null;
@@ -37596,10 +38005,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.BiasParameter)
   }
 
-  public interface ContrastiveLossParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.ContrastiveLossParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface ContrastiveLossParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional float margin = 1 [default = 1];
     /**
      * <code>optional float margin = 1 [default = 1];</code>
      *
@@ -37617,6 +38026,7 @@ public final class Caffe {
      */
     float getMargin();
 
+    // optional bool legacy_version = 2 [default = false];
     /**
      * <code>optional bool legacy_version = 2 [default = false];</code>
      *
@@ -37648,9 +38058,8 @@ public final class Caffe {
    * Protobuf type {@code caffe.ContrastiveLossParameter}
    */
   public static final class ContrastiveLossParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.ContrastiveLossParameter)
-      ContrastiveLossParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements ContrastiveLossParameterOrBuilder {
     // Use ContrastiveLossParameter.newBuilder() to construct.
     private ContrastiveLossParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -37746,6 +38155,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional float margin = 1 [default = 1];
     public static final int MARGIN_FIELD_NUMBER = 1;
     private float margin_;
     /**
@@ -37769,6 +38179,7 @@ public final class Caffe {
       return margin_;
     }
 
+    // optional bool legacy_version = 2 [default = false];
     public static final int LEGACY_VERSION_FIELD_NUMBER = 2;
     private boolean legacyVersion_;
     /**
@@ -37809,8 +38220,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -37924,9 +38334,8 @@ public final class Caffe {
      * Protobuf type {@code caffe.ContrastiveLossParameter}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.ContrastiveLossParameter)
-        caffe.Caffe.ContrastiveLossParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.ContrastiveLossParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_ContrastiveLossParameter_descriptor;
@@ -38048,6 +38457,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional float margin = 1 [default = 1];
       private float margin_ = 1F;
       /**
        * <code>optional float margin = 1 [default = 1];</code>
@@ -38096,6 +38506,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional bool legacy_version = 2 [default = false];
       private boolean legacyVersion_ ;
       /**
        * <code>optional bool legacy_version = 2 [default = false];</code>
@@ -38175,10 +38586,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.ContrastiveLossParameter)
   }
 
-  public interface ConvolutionParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.ConvolutionParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface ConvolutionParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional uint32 num_output = 1;
     /**
      * <code>optional uint32 num_output = 1;</code>
      *
@@ -38196,6 +38607,7 @@ public final class Caffe {
      */
     int getNumOutput();
 
+    // optional bool bias_term = 2 [default = true];
     /**
      * <code>optional bool bias_term = 2 [default = true];</code>
      *
@@ -38213,6 +38625,7 @@ public final class Caffe {
      */
     boolean getBiasTerm();
 
+    // repeated uint32 pad = 3;
     /**
      * <code>repeated uint32 pad = 3;</code>
      *
@@ -38241,6 +38654,7 @@ public final class Caffe {
      */
     int getPad(int index);
 
+    // repeated uint32 kernel_size = 4;
     /**
      * <code>repeated uint32 kernel_size = 4;</code>
      *
@@ -38266,6 +38680,7 @@ public final class Caffe {
      */
     int getKernelSize(int index);
 
+    // repeated uint32 stride = 6;
     /**
      * <code>repeated uint32 stride = 6;</code>
      *
@@ -38291,6 +38706,7 @@ public final class Caffe {
      */
     int getStride(int index);
 
+    // repeated uint32 dilation = 18;
     /**
      * <code>repeated uint32 dilation = 18;</code>
      *
@@ -38322,6 +38738,7 @@ public final class Caffe {
      */
     int getDilation(int index);
 
+    // optional uint32 pad_h = 9 [default = 0];
     /**
      * <code>optional uint32 pad_h = 9 [default = 0];</code>
      *
@@ -38341,6 +38758,7 @@ public final class Caffe {
      */
     int getPadH();
 
+    // optional uint32 pad_w = 10 [default = 0];
     /**
      * <code>optional uint32 pad_w = 10 [default = 0];</code>
      *
@@ -38358,6 +38776,7 @@ public final class Caffe {
      */
     int getPadW();
 
+    // optional uint32 kernel_h = 11;
     /**
      * <code>optional uint32 kernel_h = 11;</code>
      *
@@ -38375,6 +38794,7 @@ public final class Caffe {
      */
     int getKernelH();
 
+    // optional uint32 kernel_w = 12;
     /**
      * <code>optional uint32 kernel_w = 12;</code>
      *
@@ -38392,6 +38812,7 @@ public final class Caffe {
      */
     int getKernelW();
 
+    // optional uint32 stride_h = 13;
     /**
      * <code>optional uint32 stride_h = 13;</code>
      *
@@ -38409,6 +38830,7 @@ public final class Caffe {
      */
     int getStrideH();
 
+    // optional uint32 stride_w = 14;
     /**
      * <code>optional uint32 stride_w = 14;</code>
      *
@@ -38426,6 +38848,7 @@ public final class Caffe {
      */
     int getStrideW();
 
+    // optional uint32 group = 5 [default = 1];
     /**
      * <code>optional uint32 group = 5 [default = 1];</code>
      *
@@ -38443,6 +38866,7 @@ public final class Caffe {
      */
     int getGroup();
 
+    // optional .caffe.FillerParameter weight_filler = 7;
     /**
      * <code>optional .caffe.FillerParameter weight_filler = 7;</code>
      *
@@ -38468,6 +38892,7 @@ public final class Caffe {
      */
     caffe.Caffe.FillerParameterOrBuilder getWeightFillerOrBuilder();
 
+    // optional .caffe.FillerParameter bias_filler = 8;
     /**
      * <code>optional .caffe.FillerParameter bias_filler = 8;</code>
      *
@@ -38493,6 +38918,7 @@ public final class Caffe {
      */
     caffe.Caffe.FillerParameterOrBuilder getBiasFillerOrBuilder();
 
+    // optional .caffe.ConvolutionParameter.Engine engine = 15 [default = DEFAULT];
     /**
      * <code>optional .caffe.ConvolutionParameter.Engine engine = 15 [default = DEFAULT];</code>
      */
@@ -38502,6 +38928,7 @@ public final class Caffe {
      */
     caffe.Caffe.ConvolutionParameter.Engine getEngine();
 
+    // optional int32 axis = 16 [default = 1];
     /**
      * <code>optional int32 axis = 16 [default = 1];</code>
      *
@@ -38535,6 +38962,7 @@ public final class Caffe {
      */
     int getAxis();
 
+    // optional bool force_nd_im2col = 17 [default = false];
     /**
      * <code>optional bool force_nd_im2col = 17 [default = false];</code>
      *
@@ -38564,9 +38992,8 @@ public final class Caffe {
    * Protobuf type {@code caffe.ConvolutionParameter}
    */
   public static final class ConvolutionParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.ConvolutionParameter)
-      ConvolutionParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements ConvolutionParameterOrBuilder {
     // Use ConvolutionParameter.newBuilder() to construct.
     private ConvolutionParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -38931,6 +39358,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional uint32 num_output = 1;
     public static final int NUM_OUTPUT_FIELD_NUMBER = 1;
     private int numOutput_;
     /**
@@ -38954,6 +39382,7 @@ public final class Caffe {
       return numOutput_;
     }
 
+    // optional bool bias_term = 2 [default = true];
     public static final int BIAS_TERM_FIELD_NUMBER = 2;
     private boolean biasTerm_;
     /**
@@ -38977,6 +39406,7 @@ public final class Caffe {
       return biasTerm_;
     }
 
+    // repeated uint32 pad = 3;
     public static final int PAD_FIELD_NUMBER = 3;
     private java.util.List<java.lang.Integer> pad_;
     /**
@@ -39014,6 +39444,7 @@ public final class Caffe {
       return pad_.get(index);
     }
 
+    // repeated uint32 kernel_size = 4;
     public static final int KERNEL_SIZE_FIELD_NUMBER = 4;
     private java.util.List<java.lang.Integer> kernelSize_;
     /**
@@ -39048,6 +39479,7 @@ public final class Caffe {
       return kernelSize_.get(index);
     }
 
+    // repeated uint32 stride = 6;
     public static final int STRIDE_FIELD_NUMBER = 6;
     private java.util.List<java.lang.Integer> stride_;
     /**
@@ -39082,6 +39514,7 @@ public final class Caffe {
       return stride_.get(index);
     }
 
+    // repeated uint32 dilation = 18;
     public static final int DILATION_FIELD_NUMBER = 18;
     private java.util.List<java.lang.Integer> dilation_;
     /**
@@ -39122,6 +39555,7 @@ public final class Caffe {
       return dilation_.get(index);
     }
 
+    // optional uint32 pad_h = 9 [default = 0];
     public static final int PAD_H_FIELD_NUMBER = 9;
     private int padH_;
     /**
@@ -39147,6 +39581,7 @@ public final class Caffe {
       return padH_;
     }
 
+    // optional uint32 pad_w = 10 [default = 0];
     public static final int PAD_W_FIELD_NUMBER = 10;
     private int padW_;
     /**
@@ -39170,6 +39605,7 @@ public final class Caffe {
       return padW_;
     }
 
+    // optional uint32 kernel_h = 11;
     public static final int KERNEL_H_FIELD_NUMBER = 11;
     private int kernelH_;
     /**
@@ -39193,6 +39629,7 @@ public final class Caffe {
       return kernelH_;
     }
 
+    // optional uint32 kernel_w = 12;
     public static final int KERNEL_W_FIELD_NUMBER = 12;
     private int kernelW_;
     /**
@@ -39216,6 +39653,7 @@ public final class Caffe {
       return kernelW_;
     }
 
+    // optional uint32 stride_h = 13;
     public static final int STRIDE_H_FIELD_NUMBER = 13;
     private int strideH_;
     /**
@@ -39239,6 +39677,7 @@ public final class Caffe {
       return strideH_;
     }
 
+    // optional uint32 stride_w = 14;
     public static final int STRIDE_W_FIELD_NUMBER = 14;
     private int strideW_;
     /**
@@ -39262,6 +39701,7 @@ public final class Caffe {
       return strideW_;
     }
 
+    // optional uint32 group = 5 [default = 1];
     public static final int GROUP_FIELD_NUMBER = 5;
     private int group_;
     /**
@@ -39285,6 +39725,7 @@ public final class Caffe {
       return group_;
     }
 
+    // optional .caffe.FillerParameter weight_filler = 7;
     public static final int WEIGHT_FILLER_FIELD_NUMBER = 7;
     private caffe.Caffe.FillerParameter weightFiller_;
     /**
@@ -39318,6 +39759,7 @@ public final class Caffe {
       return weightFiller_;
     }
 
+    // optional .caffe.FillerParameter bias_filler = 8;
     public static final int BIAS_FILLER_FIELD_NUMBER = 8;
     private caffe.Caffe.FillerParameter biasFiller_;
     /**
@@ -39351,6 +39793,7 @@ public final class Caffe {
       return biasFiller_;
     }
 
+    // optional .caffe.ConvolutionParameter.Engine engine = 15 [default = DEFAULT];
     public static final int ENGINE_FIELD_NUMBER = 15;
     private caffe.Caffe.ConvolutionParameter.Engine engine_;
     /**
@@ -39366,6 +39809,7 @@ public final class Caffe {
       return engine_;
     }
 
+    // optional int32 axis = 16 [default = 1];
     public static final int AXIS_FIELD_NUMBER = 16;
     private int axis_;
     /**
@@ -39405,6 +39849,7 @@ public final class Caffe {
       return axis_;
     }
 
+    // optional bool force_nd_im2col = 17 [default = false];
     public static final int FORCE_ND_IM2COL_FIELD_NUMBER = 17;
     private boolean forceNdIm2Col_;
     /**
@@ -39459,8 +39904,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -39706,9 +40150,8 @@ public final class Caffe {
      * Protobuf type {@code caffe.ConvolutionParameter}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.ConvolutionParameter)
-        caffe.Caffe.ConvolutionParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.ConvolutionParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_ConvolutionParameter_descriptor;
@@ -40024,6 +40467,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional uint32 num_output = 1;
       private int numOutput_ ;
       /**
        * <code>optional uint32 num_output = 1;</code>
@@ -40072,6 +40516,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional bool bias_term = 2 [default = true];
       private boolean biasTerm_ = true;
       /**
        * <code>optional bool bias_term = 2 [default = true];</code>
@@ -40120,6 +40565,7 @@ public final class Caffe {
         return this;
       }
 
+      // repeated uint32 pad = 3;
       private java.util.List<java.lang.Integer> pad_ = java.util.Collections.emptyList();
       private void ensurePadIsMutable() {
         if (!((bitField0_ & 0x00000004) == 0x00000004)) {
@@ -40201,8 +40647,7 @@ public final class Caffe {
       public Builder addAllPad(
           java.lang.Iterable<? extends java.lang.Integer> values) {
         ensurePadIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, pad_);
+        super.addAll(values, pad_);
         onChanged();
         return this;
       }
@@ -40221,6 +40666,7 @@ public final class Caffe {
         return this;
       }
 
+      // repeated uint32 kernel_size = 4;
       private java.util.List<java.lang.Integer> kernelSize_ = java.util.Collections.emptyList();
       private void ensureKernelSizeIsMutable() {
         if (!((bitField0_ & 0x00000008) == 0x00000008)) {
@@ -40296,8 +40742,7 @@ public final class Caffe {
       public Builder addAllKernelSize(
           java.lang.Iterable<? extends java.lang.Integer> values) {
         ensureKernelSizeIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, kernelSize_);
+        super.addAll(values, kernelSize_);
         onChanged();
         return this;
       }
@@ -40315,6 +40760,7 @@ public final class Caffe {
         return this;
       }
 
+      // repeated uint32 stride = 6;
       private java.util.List<java.lang.Integer> stride_ = java.util.Collections.emptyList();
       private void ensureStrideIsMutable() {
         if (!((bitField0_ & 0x00000010) == 0x00000010)) {
@@ -40390,8 +40836,7 @@ public final class Caffe {
       public Builder addAllStride(
           java.lang.Iterable<? extends java.lang.Integer> values) {
         ensureStrideIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, stride_);
+        super.addAll(values, stride_);
         onChanged();
         return this;
       }
@@ -40409,6 +40854,7 @@ public final class Caffe {
         return this;
       }
 
+      // repeated uint32 dilation = 18;
       private java.util.List<java.lang.Integer> dilation_ = java.util.Collections.emptyList();
       private void ensureDilationIsMutable() {
         if (!((bitField0_ & 0x00000020) == 0x00000020)) {
@@ -40496,8 +40942,7 @@ public final class Caffe {
       public Builder addAllDilation(
           java.lang.Iterable<? extends java.lang.Integer> values) {
         ensureDilationIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, dilation_);
+        super.addAll(values, dilation_);
         onChanged();
         return this;
       }
@@ -40517,6 +40962,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 pad_h = 9 [default = 0];
       private int padH_ ;
       /**
        * <code>optional uint32 pad_h = 9 [default = 0];</code>
@@ -40569,6 +41015,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 pad_w = 10 [default = 0];
       private int padW_ ;
       /**
        * <code>optional uint32 pad_w = 10 [default = 0];</code>
@@ -40617,6 +41064,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 kernel_h = 11;
       private int kernelH_ ;
       /**
        * <code>optional uint32 kernel_h = 11;</code>
@@ -40665,6 +41113,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 kernel_w = 12;
       private int kernelW_ ;
       /**
        * <code>optional uint32 kernel_w = 12;</code>
@@ -40713,6 +41162,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 stride_h = 13;
       private int strideH_ ;
       /**
        * <code>optional uint32 stride_h = 13;</code>
@@ -40761,6 +41211,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 stride_w = 14;
       private int strideW_ ;
       /**
        * <code>optional uint32 stride_w = 14;</code>
@@ -40809,6 +41260,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 group = 5 [default = 1];
       private int group_ = 1;
       /**
        * <code>optional uint32 group = 5 [default = 1];</code>
@@ -40857,6 +41309,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional .caffe.FillerParameter weight_filler = 7;
       private caffe.Caffe.FillerParameter weightFiller_ = caffe.Caffe.FillerParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.FillerParameter, caffe.Caffe.FillerParameter.Builder, caffe.Caffe.FillerParameterOrBuilder> weightFillerBuilder_;
@@ -41001,7 +41454,7 @@ public final class Caffe {
         if (weightFillerBuilder_ == null) {
           weightFillerBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.FillerParameter, caffe.Caffe.FillerParameter.Builder, caffe.Caffe.FillerParameterOrBuilder>(
-                  getWeightFiller(),
+                  weightFiller_,
                   getParentForChildren(),
                   isClean());
           weightFiller_ = null;
@@ -41009,6 +41462,7 @@ public final class Caffe {
         return weightFillerBuilder_;
       }
 
+      // optional .caffe.FillerParameter bias_filler = 8;
       private caffe.Caffe.FillerParameter biasFiller_ = caffe.Caffe.FillerParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.FillerParameter, caffe.Caffe.FillerParameter.Builder, caffe.Caffe.FillerParameterOrBuilder> biasFillerBuilder_;
@@ -41153,7 +41607,7 @@ public final class Caffe {
         if (biasFillerBuilder_ == null) {
           biasFillerBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.FillerParameter, caffe.Caffe.FillerParameter.Builder, caffe.Caffe.FillerParameterOrBuilder>(
-                  getBiasFiller(),
+                  biasFiller_,
                   getParentForChildren(),
                   isClean());
           biasFiller_ = null;
@@ -41161,6 +41615,7 @@ public final class Caffe {
         return biasFillerBuilder_;
       }
 
+      // optional .caffe.ConvolutionParameter.Engine engine = 15 [default = DEFAULT];
       private caffe.Caffe.ConvolutionParameter.Engine engine_ = caffe.Caffe.ConvolutionParameter.Engine.DEFAULT;
       /**
        * <code>optional .caffe.ConvolutionParameter.Engine engine = 15 [default = DEFAULT];</code>
@@ -41196,6 +41651,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional int32 axis = 16 [default = 1];
       private int axis_ = 1;
       /**
        * <code>optional int32 axis = 16 [default = 1];</code>
@@ -41276,6 +41732,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional bool force_nd_im2col = 17 [default = false];
       private boolean forceNdIm2Col_ ;
       /**
        * <code>optional bool force_nd_im2col = 17 [default = false];</code>
@@ -41351,10 +41808,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.ConvolutionParameter)
   }
 
-  public interface CropParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.CropParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface CropParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional int32 axis = 1 [default = 2];
     /**
      * <code>optional int32 axis = 1 [default = 2];</code>
      *
@@ -41396,6 +41853,7 @@ public final class Caffe {
      */
     int getAxis();
 
+    // repeated uint32 offset = 2;
     /**
      * <code>repeated uint32 offset = 2;</code>
      */
@@ -41413,9 +41871,8 @@ public final class Caffe {
    * Protobuf type {@code caffe.CropParameter}
    */
   public static final class CropParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.CropParameter)
-      CropParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements CropParameterOrBuilder {
     // Use CropParameter.newBuilder() to construct.
     private CropParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -41530,6 +41987,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional int32 axis = 1 [default = 2];
     public static final int AXIS_FIELD_NUMBER = 1;
     private int axis_;
     /**
@@ -41577,6 +42035,7 @@ public final class Caffe {
       return axis_;
     }
 
+    // repeated uint32 offset = 2;
     public static final int OFFSET_FIELD_NUMBER = 2;
     private java.util.List<java.lang.Integer> offset_;
     /**
@@ -41606,8 +42065,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -41726,9 +42184,8 @@ public final class Caffe {
      * Protobuf type {@code caffe.CropParameter}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.CropParameter)
-        caffe.Caffe.CropParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.CropParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_CropParameter_descriptor;
@@ -41858,6 +42315,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional int32 axis = 1 [default = 2];
       private int axis_ = 2;
       /**
        * <code>optional int32 axis = 1 [default = 2];</code>
@@ -41954,6 +42412,7 @@ public final class Caffe {
         return this;
       }
 
+      // repeated uint32 offset = 2;
       private java.util.List<java.lang.Integer> offset_ = java.util.Collections.emptyList();
       private void ensureOffsetIsMutable() {
         if (!((bitField0_ & 0x00000002) == 0x00000002)) {
@@ -42005,8 +42464,7 @@ public final class Caffe {
       public Builder addAllOffset(
           java.lang.Iterable<? extends java.lang.Integer> values) {
         ensureOffsetIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, offset_);
+        super.addAll(values, offset_);
         onChanged();
         return this;
       }
@@ -42031,10 +42489,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.CropParameter)
   }
 
-  public interface DataParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.DataParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface DataParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional string source = 1;
     /**
      * <code>optional string source = 1;</code>
      *
@@ -42061,6 +42519,7 @@ public final class Caffe {
     com.google.protobuf.ByteString
         getSourceBytes();
 
+    // optional uint32 batch_size = 4;
     /**
      * <code>optional uint32 batch_size = 4;</code>
      *
@@ -42078,6 +42537,7 @@ public final class Caffe {
      */
     int getBatchSize();
 
+    // optional uint32 rand_skip = 7 [default = 0];
     /**
      * <code>optional uint32 rand_skip = 7 [default = 0];</code>
      *
@@ -42103,6 +42563,7 @@ public final class Caffe {
      */
     int getRandSkip();
 
+    // optional .caffe.DataParameter.DB backend = 8 [default = LEVELDB];
     /**
      * <code>optional .caffe.DataParameter.DB backend = 8 [default = LEVELDB];</code>
      */
@@ -42112,6 +42573,7 @@ public final class Caffe {
      */
     caffe.Caffe.DataParameter.DB getBackend();
 
+    // optional float scale = 2 [default = 1];
     /**
      * <code>optional float scale = 2 [default = 1];</code>
      *
@@ -42133,6 +42595,7 @@ public final class Caffe {
      */
     float getScale();
 
+    // optional string mean_file = 3;
     /**
      * <code>optional string mean_file = 3;</code>
      */
@@ -42147,6 +42610,7 @@ public final class Caffe {
     com.google.protobuf.ByteString
         getMeanFileBytes();
 
+    // optional uint32 crop_size = 5 [default = 0];
     /**
      * <code>optional uint32 crop_size = 5 [default = 0];</code>
      *
@@ -42166,6 +42630,7 @@ public final class Caffe {
      */
     int getCropSize();
 
+    // optional bool mirror = 6 [default = false];
     /**
      * <code>optional bool mirror = 6 [default = false];</code>
      *
@@ -42185,6 +42650,7 @@ public final class Caffe {
      */
     boolean getMirror();
 
+    // optional bool force_encoded_color = 9 [default = false];
     /**
      * <code>optional bool force_encoded_color = 9 [default = false];</code>
      *
@@ -42202,6 +42668,7 @@ public final class Caffe {
      */
     boolean getForceEncodedColor();
 
+    // optional uint32 prefetch = 10 [default = 4];
     /**
      * <code>optional uint32 prefetch = 10 [default = 4];</code>
      *
@@ -42225,9 +42692,8 @@ public final class Caffe {
    * Protobuf type {@code caffe.DataParameter}
    */
   public static final class DataParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.DataParameter)
-      DataParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements DataParameterOrBuilder {
     // Use DataParameter.newBuilder() to construct.
     private DataParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -42274,9 +42740,8 @@ public final class Caffe {
               break;
             }
             case 10: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000001;
-              source_ = bs;
+              source_ = input.readBytes();
               break;
             }
             case 21: {
@@ -42285,9 +42750,8 @@ public final class Caffe {
               break;
             }
             case 26: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000020;
-              meanFile_ = bs;
+              meanFile_ = input.readBytes();
               break;
             }
             case 32: {
@@ -42453,6 +42917,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional string source = 1;
     public static final int SOURCE_FIELD_NUMBER = 1;
     private java.lang.Object source_;
     /**
@@ -42507,6 +42972,7 @@ public final class Caffe {
       }
     }
 
+    // optional uint32 batch_size = 4;
     public static final int BATCH_SIZE_FIELD_NUMBER = 4;
     private int batchSize_;
     /**
@@ -42530,6 +42996,7 @@ public final class Caffe {
       return batchSize_;
     }
 
+    // optional uint32 rand_skip = 7 [default = 0];
     public static final int RAND_SKIP_FIELD_NUMBER = 7;
     private int randSkip_;
     /**
@@ -42561,6 +43028,7 @@ public final class Caffe {
       return randSkip_;
     }
 
+    // optional .caffe.DataParameter.DB backend = 8 [default = LEVELDB];
     public static final int BACKEND_FIELD_NUMBER = 8;
     private caffe.Caffe.DataParameter.DB backend_;
     /**
@@ -42576,6 +43044,7 @@ public final class Caffe {
       return backend_;
     }
 
+    // optional float scale = 2 [default = 1];
     public static final int SCALE_FIELD_NUMBER = 2;
     private float scale_;
     /**
@@ -42603,6 +43072,7 @@ public final class Caffe {
       return scale_;
     }
 
+    // optional string mean_file = 3;
     public static final int MEAN_FILE_FIELD_NUMBER = 3;
     private java.lang.Object meanFile_;
     /**
@@ -42645,6 +43115,7 @@ public final class Caffe {
       }
     }
 
+    // optional uint32 crop_size = 5 [default = 0];
     public static final int CROP_SIZE_FIELD_NUMBER = 5;
     private int cropSize_;
     /**
@@ -42670,6 +43141,7 @@ public final class Caffe {
       return cropSize_;
     }
 
+    // optional bool mirror = 6 [default = false];
     public static final int MIRROR_FIELD_NUMBER = 6;
     private boolean mirror_;
     /**
@@ -42695,6 +43167,7 @@ public final class Caffe {
       return mirror_;
     }
 
+    // optional bool force_encoded_color = 9 [default = false];
     public static final int FORCE_ENCODED_COLOR_FIELD_NUMBER = 9;
     private boolean forceEncodedColor_;
     /**
@@ -42718,6 +43191,7 @@ public final class Caffe {
       return forceEncodedColor_;
     }
 
+    // optional uint32 prefetch = 10 [default = 4];
     public static final int PREFETCH_FIELD_NUMBER = 10;
     private int prefetch_;
     /**
@@ -42758,8 +43232,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -42929,9 +43402,8 @@ public final class Caffe {
      * Protobuf type {@code caffe.DataParameter}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.DataParameter)
-        caffe.Caffe.DataParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.DataParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_DataParameter_descriptor;
@@ -43129,6 +43601,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional string source = 1;
       private java.lang.Object source_ = "";
       /**
        * <code>optional string source = 1;</code>
@@ -43150,12 +43623,9 @@ public final class Caffe {
       public java.lang.String getSource() {
         java.lang.Object ref = source_;
         if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            source_ = s;
-          }
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          source_ = s;
           return s;
         } else {
           return (java.lang.String) ref;
@@ -43229,6 +43699,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 batch_size = 4;
       private int batchSize_ ;
       /**
        * <code>optional uint32 batch_size = 4;</code>
@@ -43277,6 +43748,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 rand_skip = 7 [default = 0];
       private int randSkip_ ;
       /**
        * <code>optional uint32 rand_skip = 7 [default = 0];</code>
@@ -43341,6 +43813,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional .caffe.DataParameter.DB backend = 8 [default = LEVELDB];
       private caffe.Caffe.DataParameter.DB backend_ = caffe.Caffe.DataParameter.DB.LEVELDB;
       /**
        * <code>optional .caffe.DataParameter.DB backend = 8 [default = LEVELDB];</code>
@@ -43376,6 +43849,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float scale = 2 [default = 1];
       private float scale_ = 1F;
       /**
        * <code>optional float scale = 2 [default = 1];</code>
@@ -43432,6 +43906,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional string mean_file = 3;
       private java.lang.Object meanFile_ = "";
       /**
        * <code>optional string mean_file = 3;</code>
@@ -43445,12 +43920,9 @@ public final class Caffe {
       public java.lang.String getMeanFile() {
         java.lang.Object ref = meanFile_;
         if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            meanFile_ = s;
-          }
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          meanFile_ = s;
           return s;
         } else {
           return (java.lang.String) ref;
@@ -43508,6 +43980,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 crop_size = 5 [default = 0];
       private int cropSize_ ;
       /**
        * <code>optional uint32 crop_size = 5 [default = 0];</code>
@@ -43560,6 +44033,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional bool mirror = 6 [default = false];
       private boolean mirror_ ;
       /**
        * <code>optional bool mirror = 6 [default = false];</code>
@@ -43612,6 +44086,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional bool force_encoded_color = 9 [default = false];
       private boolean forceEncodedColor_ ;
       /**
        * <code>optional bool force_encoded_color = 9 [default = false];</code>
@@ -43660,6 +44135,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 prefetch = 10 [default = 4];
       private int prefetch_ = 4;
       /**
        * <code>optional uint32 prefetch = 10 [default = 4];</code>
@@ -43723,10 +44199,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.DataParameter)
   }
 
-  public interface DropoutParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.DropoutParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface DropoutParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional float dropout_ratio = 1 [default = 0.5];
     /**
      * <code>optional float dropout_ratio = 1 [default = 0.5];</code>
      *
@@ -43748,9 +44224,8 @@ public final class Caffe {
    * Protobuf type {@code caffe.DropoutParameter}
    */
   public static final class DropoutParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.DropoutParameter)
-      DropoutParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements DropoutParameterOrBuilder {
     // Use DropoutParameter.newBuilder() to construct.
     private DropoutParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -43841,6 +44316,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional float dropout_ratio = 1 [default = 0.5];
     public static final int DROPOUT_RATIO_FIELD_NUMBER = 1;
     private float dropoutRatio_;
     /**
@@ -43870,8 +44346,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -43978,9 +44453,8 @@ public final class Caffe {
      * Protobuf type {@code caffe.DropoutParameter}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.DropoutParameter)
-        caffe.Caffe.DropoutParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.DropoutParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_DropoutParameter_descriptor;
@@ -44093,6 +44567,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional float dropout_ratio = 1 [default = 0.5];
       private float dropoutRatio_ = 0.5F;
       /**
        * <code>optional float dropout_ratio = 1 [default = 0.5];</code>
@@ -44152,16 +44627,17 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.DropoutParameter)
   }
 
-  public interface DummyDataParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.DummyDataParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface DummyDataParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // repeated .caffe.FillerParameter data_filler = 1;
     /**
      * <code>repeated .caffe.FillerParameter data_filler = 1;</code>
      *
      * <pre>
      * This layer produces N &gt;= 1 top blobs.  DummyDataParameter must specify 1 or N
      * shape fields, and 0, 1 or N data_fillers.
+     *
      * If 0 data_fillers are specified, ConstantFiller with a value of 0 is used.
      * If 1 data_filler is specified, it is applied to all top blobs.  If N are
      * specified, the ith is applied to the ith top blob.
@@ -44175,6 +44651,7 @@ public final class Caffe {
      * <pre>
      * This layer produces N &gt;= 1 top blobs.  DummyDataParameter must specify 1 or N
      * shape fields, and 0, 1 or N data_fillers.
+     *
      * If 0 data_fillers are specified, ConstantFiller with a value of 0 is used.
      * If 1 data_filler is specified, it is applied to all top blobs.  If N are
      * specified, the ith is applied to the ith top blob.
@@ -44187,6 +44664,7 @@ public final class Caffe {
      * <pre>
      * This layer produces N &gt;= 1 top blobs.  DummyDataParameter must specify 1 or N
      * shape fields, and 0, 1 or N data_fillers.
+     *
      * If 0 data_fillers are specified, ConstantFiller with a value of 0 is used.
      * If 1 data_filler is specified, it is applied to all top blobs.  If N are
      * specified, the ith is applied to the ith top blob.
@@ -44199,6 +44677,7 @@ public final class Caffe {
      * <pre>
      * This layer produces N &gt;= 1 top blobs.  DummyDataParameter must specify 1 or N
      * shape fields, and 0, 1 or N data_fillers.
+     *
      * If 0 data_fillers are specified, ConstantFiller with a value of 0 is used.
      * If 1 data_filler is specified, it is applied to all top blobs.  If N are
      * specified, the ith is applied to the ith top blob.
@@ -44212,6 +44691,7 @@ public final class Caffe {
      * <pre>
      * This layer produces N &gt;= 1 top blobs.  DummyDataParameter must specify 1 or N
      * shape fields, and 0, 1 or N data_fillers.
+     *
      * If 0 data_fillers are specified, ConstantFiller with a value of 0 is used.
      * If 1 data_filler is specified, it is applied to all top blobs.  If N are
      * specified, the ith is applied to the ith top blob.
@@ -44220,6 +44700,7 @@ public final class Caffe {
     caffe.Caffe.FillerParameterOrBuilder getDataFillerOrBuilder(
         int index);
 
+    // repeated .caffe.BlobShape shape = 6;
     /**
      * <code>repeated .caffe.BlobShape shape = 6;</code>
      */
@@ -44244,6 +44725,7 @@ public final class Caffe {
     caffe.Caffe.BlobShapeOrBuilder getShapeOrBuilder(
         int index);
 
+    // repeated uint32 num = 2;
     /**
      * <code>repeated uint32 num = 2;</code>
      *
@@ -44269,6 +44751,7 @@ public final class Caffe {
      */
     int getNum(int index);
 
+    // repeated uint32 channels = 3;
     /**
      * <code>repeated uint32 channels = 3;</code>
      */
@@ -44282,6 +44765,7 @@ public final class Caffe {
      */
     int getChannels(int index);
 
+    // repeated uint32 height = 4;
     /**
      * <code>repeated uint32 height = 4;</code>
      */
@@ -44295,6 +44779,7 @@ public final class Caffe {
      */
     int getHeight(int index);
 
+    // repeated uint32 width = 5;
     /**
      * <code>repeated uint32 width = 5;</code>
      */
@@ -44317,9 +44802,8 @@ public final class Caffe {
    * </pre>
    */
   public static final class DummyDataParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.DummyDataParameter)
-      DummyDataParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements DummyDataParameterOrBuilder {
     // Use DummyDataParameter.newBuilder() to construct.
     private DummyDataParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -44522,6 +45006,7 @@ public final class Caffe {
       return PARSER;
     }
 
+    // repeated .caffe.FillerParameter data_filler = 1;
     public static final int DATA_FILLER_FIELD_NUMBER = 1;
     private java.util.List<caffe.Caffe.FillerParameter> dataFiller_;
     /**
@@ -44530,6 +45015,7 @@ public final class Caffe {
      * <pre>
      * This layer produces N &gt;= 1 top blobs.  DummyDataParameter must specify 1 or N
      * shape fields, and 0, 1 or N data_fillers.
+     *
      * If 0 data_fillers are specified, ConstantFiller with a value of 0 is used.
      * If 1 data_filler is specified, it is applied to all top blobs.  If N are
      * specified, the ith is applied to the ith top blob.
@@ -44544,6 +45030,7 @@ public final class Caffe {
      * <pre>
      * This layer produces N &gt;= 1 top blobs.  DummyDataParameter must specify 1 or N
      * shape fields, and 0, 1 or N data_fillers.
+     *
      * If 0 data_fillers are specified, ConstantFiller with a value of 0 is used.
      * If 1 data_filler is specified, it is applied to all top blobs.  If N are
      * specified, the ith is applied to the ith top blob.
@@ -44559,6 +45046,7 @@ public final class Caffe {
      * <pre>
      * This layer produces N &gt;= 1 top blobs.  DummyDataParameter must specify 1 or N
      * shape fields, and 0, 1 or N data_fillers.
+     *
      * If 0 data_fillers are specified, ConstantFiller with a value of 0 is used.
      * If 1 data_filler is specified, it is applied to all top blobs.  If N are
      * specified, the ith is applied to the ith top blob.
@@ -44573,6 +45061,7 @@ public final class Caffe {
      * <pre>
      * This layer produces N &gt;= 1 top blobs.  DummyDataParameter must specify 1 or N
      * shape fields, and 0, 1 or N data_fillers.
+     *
      * If 0 data_fillers are specified, ConstantFiller with a value of 0 is used.
      * If 1 data_filler is specified, it is applied to all top blobs.  If N are
      * specified, the ith is applied to the ith top blob.
@@ -44587,6 +45076,7 @@ public final class Caffe {
      * <pre>
      * This layer produces N &gt;= 1 top blobs.  DummyDataParameter must specify 1 or N
      * shape fields, and 0, 1 or N data_fillers.
+     *
      * If 0 data_fillers are specified, ConstantFiller with a value of 0 is used.
      * If 1 data_filler is specified, it is applied to all top blobs.  If N are
      * specified, the ith is applied to the ith top blob.
@@ -44597,6 +45087,7 @@ public final class Caffe {
       return dataFiller_.get(index);
     }
 
+    // repeated .caffe.BlobShape shape = 6;
     public static final int SHAPE_FIELD_NUMBER = 6;
     private java.util.List<caffe.Caffe.BlobShape> shape_;
     /**
@@ -44632,6 +45123,7 @@ public final class Caffe {
       return shape_.get(index);
     }
 
+    // repeated uint32 num = 2;
     public static final int NUM_FIELD_NUMBER = 2;
     private java.util.List<java.lang.Integer> num_;
     /**
@@ -44666,6 +45158,7 @@ public final class Caffe {
       return num_.get(index);
     }
 
+    // repeated uint32 channels = 3;
     public static final int CHANNELS_FIELD_NUMBER = 3;
     private java.util.List<java.lang.Integer> channels_;
     /**
@@ -44688,6 +45181,7 @@ public final class Caffe {
       return channels_.get(index);
     }
 
+    // repeated uint32 height = 4;
     public static final int HEIGHT_FIELD_NUMBER = 4;
     private java.util.List<java.lang.Integer> height_;
     /**
@@ -44710,6 +45204,7 @@ public final class Caffe {
       return height_.get(index);
     }
 
+    // repeated uint32 width = 5;
     public static final int WIDTH_FIELD_NUMBER = 5;
     private java.util.List<java.lang.Integer> width_;
     /**
@@ -44743,8 +45238,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -44911,9 +45405,8 @@ public final class Caffe {
      * </pre>
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.DummyDataParameter)
-        caffe.Caffe.DummyDataParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.DummyDataParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_DummyDataParameter_descriptor;
@@ -45167,6 +45660,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // repeated .caffe.FillerParameter data_filler = 1;
       private java.util.List<caffe.Caffe.FillerParameter> dataFiller_ =
         java.util.Collections.emptyList();
       private void ensureDataFillerIsMutable() {
@@ -45185,6 +45679,7 @@ public final class Caffe {
        * <pre>
        * This layer produces N &gt;= 1 top blobs.  DummyDataParameter must specify 1 or N
        * shape fields, and 0, 1 or N data_fillers.
+       *
        * If 0 data_fillers are specified, ConstantFiller with a value of 0 is used.
        * If 1 data_filler is specified, it is applied to all top blobs.  If N are
        * specified, the ith is applied to the ith top blob.
@@ -45203,6 +45698,7 @@ public final class Caffe {
        * <pre>
        * This layer produces N &gt;= 1 top blobs.  DummyDataParameter must specify 1 or N
        * shape fields, and 0, 1 or N data_fillers.
+       *
        * If 0 data_fillers are specified, ConstantFiller with a value of 0 is used.
        * If 1 data_filler is specified, it is applied to all top blobs.  If N are
        * specified, the ith is applied to the ith top blob.
@@ -45221,6 +45717,7 @@ public final class Caffe {
        * <pre>
        * This layer produces N &gt;= 1 top blobs.  DummyDataParameter must specify 1 or N
        * shape fields, and 0, 1 or N data_fillers.
+       *
        * If 0 data_fillers are specified, ConstantFiller with a value of 0 is used.
        * If 1 data_filler is specified, it is applied to all top blobs.  If N are
        * specified, the ith is applied to the ith top blob.
@@ -45239,6 +45736,7 @@ public final class Caffe {
        * <pre>
        * This layer produces N &gt;= 1 top blobs.  DummyDataParameter must specify 1 or N
        * shape fields, and 0, 1 or N data_fillers.
+       *
        * If 0 data_fillers are specified, ConstantFiller with a value of 0 is used.
        * If 1 data_filler is specified, it is applied to all top blobs.  If N are
        * specified, the ith is applied to the ith top blob.
@@ -45264,6 +45762,7 @@ public final class Caffe {
        * <pre>
        * This layer produces N &gt;= 1 top blobs.  DummyDataParameter must specify 1 or N
        * shape fields, and 0, 1 or N data_fillers.
+       *
        * If 0 data_fillers are specified, ConstantFiller with a value of 0 is used.
        * If 1 data_filler is specified, it is applied to all top blobs.  If N are
        * specified, the ith is applied to the ith top blob.
@@ -45286,6 +45785,7 @@ public final class Caffe {
        * <pre>
        * This layer produces N &gt;= 1 top blobs.  DummyDataParameter must specify 1 or N
        * shape fields, and 0, 1 or N data_fillers.
+       *
        * If 0 data_fillers are specified, ConstantFiller with a value of 0 is used.
        * If 1 data_filler is specified, it is applied to all top blobs.  If N are
        * specified, the ith is applied to the ith top blob.
@@ -45310,6 +45810,7 @@ public final class Caffe {
        * <pre>
        * This layer produces N &gt;= 1 top blobs.  DummyDataParameter must specify 1 or N
        * shape fields, and 0, 1 or N data_fillers.
+       *
        * If 0 data_fillers are specified, ConstantFiller with a value of 0 is used.
        * If 1 data_filler is specified, it is applied to all top blobs.  If N are
        * specified, the ith is applied to the ith top blob.
@@ -45335,6 +45836,7 @@ public final class Caffe {
        * <pre>
        * This layer produces N &gt;= 1 top blobs.  DummyDataParameter must specify 1 or N
        * shape fields, and 0, 1 or N data_fillers.
+       *
        * If 0 data_fillers are specified, ConstantFiller with a value of 0 is used.
        * If 1 data_filler is specified, it is applied to all top blobs.  If N are
        * specified, the ith is applied to the ith top blob.
@@ -45357,6 +45859,7 @@ public final class Caffe {
        * <pre>
        * This layer produces N &gt;= 1 top blobs.  DummyDataParameter must specify 1 or N
        * shape fields, and 0, 1 or N data_fillers.
+       *
        * If 0 data_fillers are specified, ConstantFiller with a value of 0 is used.
        * If 1 data_filler is specified, it is applied to all top blobs.  If N are
        * specified, the ith is applied to the ith top blob.
@@ -45379,6 +45882,7 @@ public final class Caffe {
        * <pre>
        * This layer produces N &gt;= 1 top blobs.  DummyDataParameter must specify 1 or N
        * shape fields, and 0, 1 or N data_fillers.
+       *
        * If 0 data_fillers are specified, ConstantFiller with a value of 0 is used.
        * If 1 data_filler is specified, it is applied to all top blobs.  If N are
        * specified, the ith is applied to the ith top blob.
@@ -45388,8 +45892,7 @@ public final class Caffe {
           java.lang.Iterable<? extends caffe.Caffe.FillerParameter> values) {
         if (dataFillerBuilder_ == null) {
           ensureDataFillerIsMutable();
-          com.google.protobuf.AbstractMessageLite.Builder.addAll(
-              values, dataFiller_);
+          super.addAll(values, dataFiller_);
           onChanged();
         } else {
           dataFillerBuilder_.addAllMessages(values);
@@ -45402,6 +45905,7 @@ public final class Caffe {
        * <pre>
        * This layer produces N &gt;= 1 top blobs.  DummyDataParameter must specify 1 or N
        * shape fields, and 0, 1 or N data_fillers.
+       *
        * If 0 data_fillers are specified, ConstantFiller with a value of 0 is used.
        * If 1 data_filler is specified, it is applied to all top blobs.  If N are
        * specified, the ith is applied to the ith top blob.
@@ -45423,6 +45927,7 @@ public final class Caffe {
        * <pre>
        * This layer produces N &gt;= 1 top blobs.  DummyDataParameter must specify 1 or N
        * shape fields, and 0, 1 or N data_fillers.
+       *
        * If 0 data_fillers are specified, ConstantFiller with a value of 0 is used.
        * If 1 data_filler is specified, it is applied to all top blobs.  If N are
        * specified, the ith is applied to the ith top blob.
@@ -45444,6 +45949,7 @@ public final class Caffe {
        * <pre>
        * This layer produces N &gt;= 1 top blobs.  DummyDataParameter must specify 1 or N
        * shape fields, and 0, 1 or N data_fillers.
+       *
        * If 0 data_fillers are specified, ConstantFiller with a value of 0 is used.
        * If 1 data_filler is specified, it is applied to all top blobs.  If N are
        * specified, the ith is applied to the ith top blob.
@@ -45459,6 +45965,7 @@ public final class Caffe {
        * <pre>
        * This layer produces N &gt;= 1 top blobs.  DummyDataParameter must specify 1 or N
        * shape fields, and 0, 1 or N data_fillers.
+       *
        * If 0 data_fillers are specified, ConstantFiller with a value of 0 is used.
        * If 1 data_filler is specified, it is applied to all top blobs.  If N are
        * specified, the ith is applied to the ith top blob.
@@ -45477,6 +45984,7 @@ public final class Caffe {
        * <pre>
        * This layer produces N &gt;= 1 top blobs.  DummyDataParameter must specify 1 or N
        * shape fields, and 0, 1 or N data_fillers.
+       *
        * If 0 data_fillers are specified, ConstantFiller with a value of 0 is used.
        * If 1 data_filler is specified, it is applied to all top blobs.  If N are
        * specified, the ith is applied to the ith top blob.
@@ -45496,6 +46004,7 @@ public final class Caffe {
        * <pre>
        * This layer produces N &gt;= 1 top blobs.  DummyDataParameter must specify 1 or N
        * shape fields, and 0, 1 or N data_fillers.
+       *
        * If 0 data_fillers are specified, ConstantFiller with a value of 0 is used.
        * If 1 data_filler is specified, it is applied to all top blobs.  If N are
        * specified, the ith is applied to the ith top blob.
@@ -45511,6 +46020,7 @@ public final class Caffe {
        * <pre>
        * This layer produces N &gt;= 1 top blobs.  DummyDataParameter must specify 1 or N
        * shape fields, and 0, 1 or N data_fillers.
+       *
        * If 0 data_fillers are specified, ConstantFiller with a value of 0 is used.
        * If 1 data_filler is specified, it is applied to all top blobs.  If N are
        * specified, the ith is applied to the ith top blob.
@@ -45527,6 +46037,7 @@ public final class Caffe {
        * <pre>
        * This layer produces N &gt;= 1 top blobs.  DummyDataParameter must specify 1 or N
        * shape fields, and 0, 1 or N data_fillers.
+       *
        * If 0 data_fillers are specified, ConstantFiller with a value of 0 is used.
        * If 1 data_filler is specified, it is applied to all top blobs.  If N are
        * specified, the ith is applied to the ith top blob.
@@ -45551,6 +46062,7 @@ public final class Caffe {
         return dataFillerBuilder_;
       }
 
+      // repeated .caffe.BlobShape shape = 6;
       private java.util.List<caffe.Caffe.BlobShape> shape_ =
         java.util.Collections.emptyList();
       private void ensureShapeIsMutable() {
@@ -45692,8 +46204,7 @@ public final class Caffe {
           java.lang.Iterable<? extends caffe.Caffe.BlobShape> values) {
         if (shapeBuilder_ == null) {
           ensureShapeIsMutable();
-          com.google.protobuf.AbstractMessageLite.Builder.addAll(
-              values, shape_);
+          super.addAll(values, shape_);
           onChanged();
         } else {
           shapeBuilder_.addAllMessages(values);
@@ -45791,6 +46302,7 @@ public final class Caffe {
         return shapeBuilder_;
       }
 
+      // repeated uint32 num = 2;
       private java.util.List<java.lang.Integer> num_ = java.util.Collections.emptyList();
       private void ensureNumIsMutable() {
         if (!((bitField0_ & 0x00000004) == 0x00000004)) {
@@ -45866,8 +46378,7 @@ public final class Caffe {
       public Builder addAllNum(
           java.lang.Iterable<? extends java.lang.Integer> values) {
         ensureNumIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, num_);
+        super.addAll(values, num_);
         onChanged();
         return this;
       }
@@ -45885,6 +46396,7 @@ public final class Caffe {
         return this;
       }
 
+      // repeated uint32 channels = 3;
       private java.util.List<java.lang.Integer> channels_ = java.util.Collections.emptyList();
       private void ensureChannelsIsMutable() {
         if (!((bitField0_ & 0x00000008) == 0x00000008)) {
@@ -45936,8 +46448,7 @@ public final class Caffe {
       public Builder addAllChannels(
           java.lang.Iterable<? extends java.lang.Integer> values) {
         ensureChannelsIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, channels_);
+        super.addAll(values, channels_);
         onChanged();
         return this;
       }
@@ -45951,6 +46462,7 @@ public final class Caffe {
         return this;
       }
 
+      // repeated uint32 height = 4;
       private java.util.List<java.lang.Integer> height_ = java.util.Collections.emptyList();
       private void ensureHeightIsMutable() {
         if (!((bitField0_ & 0x00000010) == 0x00000010)) {
@@ -46002,8 +46514,7 @@ public final class Caffe {
       public Builder addAllHeight(
           java.lang.Iterable<? extends java.lang.Integer> values) {
         ensureHeightIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, height_);
+        super.addAll(values, height_);
         onChanged();
         return this;
       }
@@ -46017,6 +46528,7 @@ public final class Caffe {
         return this;
       }
 
+      // repeated uint32 width = 5;
       private java.util.List<java.lang.Integer> width_ = java.util.Collections.emptyList();
       private void ensureWidthIsMutable() {
         if (!((bitField0_ & 0x00000020) == 0x00000020)) {
@@ -46068,8 +46580,7 @@ public final class Caffe {
       public Builder addAllWidth(
           java.lang.Iterable<? extends java.lang.Integer> values) {
         ensureWidthIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, width_);
+        super.addAll(values, width_);
         onChanged();
         return this;
       }
@@ -46094,10 +46605,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.DummyDataParameter)
   }
 
-  public interface EltwiseParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.EltwiseParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface EltwiseParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional .caffe.EltwiseParameter.EltwiseOp operation = 1 [default = SUM];
     /**
      * <code>optional .caffe.EltwiseParameter.EltwiseOp operation = 1 [default = SUM];</code>
      *
@@ -46115,6 +46626,7 @@ public final class Caffe {
      */
     caffe.Caffe.EltwiseParameter.EltwiseOp getOperation();
 
+    // repeated float coeff = 2;
     /**
      * <code>repeated float coeff = 2;</code>
      *
@@ -46140,6 +46652,7 @@ public final class Caffe {
      */
     float getCoeff(int index);
 
+    // optional bool stable_prod_grad = 3 [default = true];
     /**
      * <code>optional bool stable_prod_grad = 3 [default = true];</code>
      *
@@ -46163,9 +46676,8 @@ public final class Caffe {
    * Protobuf type {@code caffe.EltwiseParameter}
    */
   public static final class EltwiseParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.EltwiseParameter)
-      EltwiseParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements EltwiseParameterOrBuilder {
     // Use EltwiseParameter.newBuilder() to construct.
     private EltwiseParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -46382,6 +46894,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional .caffe.EltwiseParameter.EltwiseOp operation = 1 [default = SUM];
     public static final int OPERATION_FIELD_NUMBER = 1;
     private caffe.Caffe.EltwiseParameter.EltwiseOp operation_;
     /**
@@ -46405,6 +46918,7 @@ public final class Caffe {
       return operation_;
     }
 
+    // repeated float coeff = 2;
     public static final int COEFF_FIELD_NUMBER = 2;
     private java.util.List<java.lang.Float> coeff_;
     /**
@@ -46439,6 +46953,7 @@ public final class Caffe {
       return coeff_.get(index);
     }
 
+    // optional bool stable_prod_grad = 3 [default = true];
     public static final int STABLE_PROD_GRAD_FIELD_NUMBER = 3;
     private boolean stableProdGrad_;
     /**
@@ -46472,8 +46987,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -46596,9 +47110,8 @@ public final class Caffe {
      * Protobuf type {@code caffe.EltwiseParameter}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.EltwiseParameter)
-        caffe.Caffe.EltwiseParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.EltwiseParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_EltwiseParameter_descriptor;
@@ -46737,6 +47250,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional .caffe.EltwiseParameter.EltwiseOp operation = 1 [default = SUM];
       private caffe.Caffe.EltwiseParameter.EltwiseOp operation_ = caffe.Caffe.EltwiseParameter.EltwiseOp.SUM;
       /**
        * <code>optional .caffe.EltwiseParameter.EltwiseOp operation = 1 [default = SUM];</code>
@@ -46788,6 +47302,7 @@ public final class Caffe {
         return this;
       }
 
+      // repeated float coeff = 2;
       private java.util.List<java.lang.Float> coeff_ = java.util.Collections.emptyList();
       private void ensureCoeffIsMutable() {
         if (!((bitField0_ & 0x00000002) == 0x00000002)) {
@@ -46863,8 +47378,7 @@ public final class Caffe {
       public Builder addAllCoeff(
           java.lang.Iterable<? extends java.lang.Float> values) {
         ensureCoeffIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, coeff_);
+        super.addAll(values, coeff_);
         onChanged();
         return this;
       }
@@ -46882,6 +47396,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional bool stable_prod_grad = 3 [default = true];
       private boolean stableProdGrad_ = true;
       /**
        * <code>optional bool stable_prod_grad = 3 [default = true];</code>
@@ -46945,10 +47460,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.EltwiseParameter)
   }
 
-  public interface ELUParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.ELUParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface ELUParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional float alpha = 1 [default = 1];
     /**
      * <code>optional float alpha = 1 [default = 1];</code>
      *
@@ -46978,9 +47493,8 @@ public final class Caffe {
    * </pre>
    */
   public static final class ELUParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.ELUParameter)
-      ELUParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements ELUParameterOrBuilder {
     // Use ELUParameter.newBuilder() to construct.
     private ELUParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -47071,6 +47585,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional float alpha = 1 [default = 1];
     public static final int ALPHA_FIELD_NUMBER = 1;
     private float alpha_;
     /**
@@ -47104,8 +47619,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -47216,9 +47730,8 @@ public final class Caffe {
      * </pre>
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.ELUParameter)
-        caffe.Caffe.ELUParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.ELUParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_ELUParameter_descriptor;
@@ -47331,6 +47844,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional float alpha = 1 [default = 1];
       private float alpha_ = 1F;
       /**
        * <code>optional float alpha = 1 [default = 1];</code>
@@ -47398,10 +47912,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.ELUParameter)
   }
 
-  public interface EmbedParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.EmbedParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface EmbedParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional uint32 num_output = 1;
     /**
      * <code>optional uint32 num_output = 1;</code>
      *
@@ -47419,6 +47933,7 @@ public final class Caffe {
      */
     int getNumOutput();
 
+    // optional uint32 input_dim = 2;
     /**
      * <code>optional uint32 input_dim = 2;</code>
      *
@@ -47440,6 +47955,7 @@ public final class Caffe {
      */
     int getInputDim();
 
+    // optional bool bias_term = 3 [default = true];
     /**
      * <code>optional bool bias_term = 3 [default = true];</code>
      *
@@ -47457,6 +47973,7 @@ public final class Caffe {
      */
     boolean getBiasTerm();
 
+    // optional .caffe.FillerParameter weight_filler = 4;
     /**
      * <code>optional .caffe.FillerParameter weight_filler = 4;</code>
      *
@@ -47482,6 +47999,7 @@ public final class Caffe {
      */
     caffe.Caffe.FillerParameterOrBuilder getWeightFillerOrBuilder();
 
+    // optional .caffe.FillerParameter bias_filler = 5;
     /**
      * <code>optional .caffe.FillerParameter bias_filler = 5;</code>
      *
@@ -47515,9 +48033,8 @@ public final class Caffe {
    * </pre>
    */
   public static final class EmbedParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.EmbedParameter)
-      EmbedParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements EmbedParameterOrBuilder {
     // Use EmbedParameter.newBuilder() to construct.
     private EmbedParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -47644,6 +48161,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional uint32 num_output = 1;
     public static final int NUM_OUTPUT_FIELD_NUMBER = 1;
     private int numOutput_;
     /**
@@ -47667,6 +48185,7 @@ public final class Caffe {
       return numOutput_;
     }
 
+    // optional uint32 input_dim = 2;
     public static final int INPUT_DIM_FIELD_NUMBER = 2;
     private int inputDim_;
     /**
@@ -47694,6 +48213,7 @@ public final class Caffe {
       return inputDim_;
     }
 
+    // optional bool bias_term = 3 [default = true];
     public static final int BIAS_TERM_FIELD_NUMBER = 3;
     private boolean biasTerm_;
     /**
@@ -47717,6 +48237,7 @@ public final class Caffe {
       return biasTerm_;
     }
 
+    // optional .caffe.FillerParameter weight_filler = 4;
     public static final int WEIGHT_FILLER_FIELD_NUMBER = 4;
     private caffe.Caffe.FillerParameter weightFiller_;
     /**
@@ -47750,6 +48271,7 @@ public final class Caffe {
       return weightFiller_;
     }
 
+    // optional .caffe.FillerParameter bias_filler = 5;
     public static final int BIAS_FILLER_FIELD_NUMBER = 5;
     private caffe.Caffe.FillerParameter biasFiller_;
     /**
@@ -47793,8 +48315,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -47933,9 +48454,8 @@ public final class Caffe {
      * </pre>
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.EmbedParameter)
-        caffe.Caffe.EmbedParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.EmbedParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_EmbedParameter_descriptor;
@@ -48102,6 +48622,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional uint32 num_output = 1;
       private int numOutput_ ;
       /**
        * <code>optional uint32 num_output = 1;</code>
@@ -48150,6 +48671,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 input_dim = 2;
       private int inputDim_ ;
       /**
        * <code>optional uint32 input_dim = 2;</code>
@@ -48206,6 +48728,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional bool bias_term = 3 [default = true];
       private boolean biasTerm_ = true;
       /**
        * <code>optional bool bias_term = 3 [default = true];</code>
@@ -48254,6 +48777,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional .caffe.FillerParameter weight_filler = 4;
       private caffe.Caffe.FillerParameter weightFiller_ = caffe.Caffe.FillerParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.FillerParameter, caffe.Caffe.FillerParameter.Builder, caffe.Caffe.FillerParameterOrBuilder> weightFillerBuilder_;
@@ -48398,7 +48922,7 @@ public final class Caffe {
         if (weightFillerBuilder_ == null) {
           weightFillerBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.FillerParameter, caffe.Caffe.FillerParameter.Builder, caffe.Caffe.FillerParameterOrBuilder>(
-                  getWeightFiller(),
+                  weightFiller_,
                   getParentForChildren(),
                   isClean());
           weightFiller_ = null;
@@ -48406,6 +48930,7 @@ public final class Caffe {
         return weightFillerBuilder_;
       }
 
+      // optional .caffe.FillerParameter bias_filler = 5;
       private caffe.Caffe.FillerParameter biasFiller_ = caffe.Caffe.FillerParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.FillerParameter, caffe.Caffe.FillerParameter.Builder, caffe.Caffe.FillerParameterOrBuilder> biasFillerBuilder_;
@@ -48550,7 +49075,7 @@ public final class Caffe {
         if (biasFillerBuilder_ == null) {
           biasFillerBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.FillerParameter, caffe.Caffe.FillerParameter.Builder, caffe.Caffe.FillerParameterOrBuilder>(
-                  getBiasFiller(),
+                  biasFiller_,
                   getParentForChildren(),
                   isClean());
           biasFiller_ = null;
@@ -48569,10 +49094,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.EmbedParameter)
   }
 
-  public interface ExpParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.ExpParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface ExpParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional float base = 1 [default = -1];
     /**
      * <code>optional float base = 1 [default = -1];</code>
      *
@@ -48594,6 +49119,7 @@ public final class Caffe {
      */
     float getBase();
 
+    // optional float scale = 2 [default = 1];
     /**
      * <code>optional float scale = 2 [default = 1];</code>
      */
@@ -48603,6 +49129,7 @@ public final class Caffe {
      */
     float getScale();
 
+    // optional float shift = 3 [default = 0];
     /**
      * <code>optional float shift = 3 [default = 0];</code>
      */
@@ -48620,9 +49147,8 @@ public final class Caffe {
    * </pre>
    */
   public static final class ExpParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.ExpParameter)
-      ExpParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements ExpParameterOrBuilder {
     // Use ExpParameter.newBuilder() to construct.
     private ExpParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -48723,6 +49249,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional float base = 1 [default = -1];
     public static final int BASE_FIELD_NUMBER = 1;
     private float base_;
     /**
@@ -48750,6 +49277,7 @@ public final class Caffe {
       return base_;
     }
 
+    // optional float scale = 2 [default = 1];
     public static final int SCALE_FIELD_NUMBER = 2;
     private float scale_;
     /**
@@ -48765,6 +49293,7 @@ public final class Caffe {
       return scale_;
     }
 
+    // optional float shift = 3 [default = 0];
     public static final int SHIFT_FIELD_NUMBER = 3;
     private float shift_;
     /**
@@ -48788,8 +49317,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -48914,9 +49442,8 @@ public final class Caffe {
      * </pre>
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.ExpParameter)
-        caffe.Caffe.ExpParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.ExpParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_ExpParameter_descriptor;
@@ -49047,6 +49574,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional float base = 1 [default = -1];
       private float base_ = -1F;
       /**
        * <code>optional float base = 1 [default = -1];</code>
@@ -49103,6 +49631,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float scale = 2 [default = 1];
       private float scale_ = 1F;
       /**
        * <code>optional float scale = 2 [default = 1];</code>
@@ -49135,6 +49664,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float shift = 3 [default = 0];
       private float shift_ ;
       /**
        * <code>optional float shift = 3 [default = 0];</code>
@@ -49178,10 +49708,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.ExpParameter)
   }
 
-  public interface FlattenParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.FlattenParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface FlattenParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional int32 axis = 1 [default = 1];
     /**
      * <code>optional int32 axis = 1 [default = 1];</code>
      *
@@ -49201,6 +49731,7 @@ public final class Caffe {
      */
     int getAxis();
 
+    // optional int32 end_axis = 2 [default = -1];
     /**
      * <code>optional int32 end_axis = 2 [default = -1];</code>
      *
@@ -49230,9 +49761,8 @@ public final class Caffe {
    * </pre>
    */
   public static final class FlattenParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.FlattenParameter)
-      FlattenParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements FlattenParameterOrBuilder {
     // Use FlattenParameter.newBuilder() to construct.
     private FlattenParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -49328,6 +49858,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional int32 axis = 1 [default = 1];
     public static final int AXIS_FIELD_NUMBER = 1;
     private int axis_;
     /**
@@ -49353,6 +49884,7 @@ public final class Caffe {
       return axis_;
     }
 
+    // optional int32 end_axis = 2 [default = -1];
     public static final int END_AXIS_FIELD_NUMBER = 2;
     private int endAxis_;
     /**
@@ -49387,8 +49919,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -49506,9 +50037,8 @@ public final class Caffe {
      * </pre>
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.FlattenParameter)
-        caffe.Caffe.FlattenParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.FlattenParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_FlattenParameter_descriptor;
@@ -49630,6 +50160,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional int32 axis = 1 [default = 1];
       private int axis_ = 1;
       /**
        * <code>optional int32 axis = 1 [default = 1];</code>
@@ -49682,6 +50213,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional int32 end_axis = 2 [default = -1];
       private int endAxis_ = -1;
       /**
        * <code>optional int32 end_axis = 2 [default = -1];</code>
@@ -49749,10 +50281,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.FlattenParameter)
   }
 
-  public interface HDF5DataParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.HDF5DataParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface HDF5DataParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional string source = 1;
     /**
      * <code>optional string source = 1;</code>
      *
@@ -49779,6 +50311,7 @@ public final class Caffe {
     com.google.protobuf.ByteString
         getSourceBytes();
 
+    // optional uint32 batch_size = 2;
     /**
      * <code>optional uint32 batch_size = 2;</code>
      *
@@ -49796,6 +50329,7 @@ public final class Caffe {
      */
     int getBatchSize();
 
+    // optional bool shuffle = 3 [default = false];
     /**
      * <code>optional bool shuffle = 3 [default = false];</code>
      *
@@ -49829,9 +50363,8 @@ public final class Caffe {
    * </pre>
    */
   public static final class HDF5DataParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.HDF5DataParameter)
-      HDF5DataParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements HDF5DataParameterOrBuilder {
     // Use HDF5DataParameter.newBuilder() to construct.
     private HDF5DataParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -49878,9 +50411,8 @@ public final class Caffe {
               break;
             }
             case 10: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000001;
-              source_ = bs;
+              source_ = input.readBytes();
               break;
             }
             case 16: {
@@ -49933,6 +50465,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional string source = 1;
     public static final int SOURCE_FIELD_NUMBER = 1;
     private java.lang.Object source_;
     /**
@@ -49987,6 +50520,7 @@ public final class Caffe {
       }
     }
 
+    // optional uint32 batch_size = 2;
     public static final int BATCH_SIZE_FIELD_NUMBER = 2;
     private int batchSize_;
     /**
@@ -50010,6 +50544,7 @@ public final class Caffe {
       return batchSize_;
     }
 
+    // optional bool shuffle = 3 [default = false];
     public static final int SHUFFLE_FIELD_NUMBER = 3;
     private boolean shuffle_;
     /**
@@ -50049,8 +50584,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -50175,9 +50709,8 @@ public final class Caffe {
      * </pre>
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.HDF5DataParameter)
-        caffe.Caffe.HDF5DataParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.HDF5DataParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_HDF5DataParameter_descriptor;
@@ -50310,6 +50843,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional string source = 1;
       private java.lang.Object source_ = "";
       /**
        * <code>optional string source = 1;</code>
@@ -50331,12 +50865,9 @@ public final class Caffe {
       public java.lang.String getSource() {
         java.lang.Object ref = source_;
         if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            source_ = s;
-          }
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          source_ = s;
           return s;
         } else {
           return (java.lang.String) ref;
@@ -50410,6 +50941,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 batch_size = 2;
       private int batchSize_ ;
       /**
        * <code>optional uint32 batch_size = 2;</code>
@@ -50458,6 +50990,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional bool shuffle = 3 [default = false];
       private boolean shuffle_ ;
       /**
        * <code>optional bool shuffle = 3 [default = false];</code>
@@ -50533,10 +51066,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.HDF5DataParameter)
   }
 
-  public interface HDF5OutputParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.HDF5OutputParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface HDF5OutputParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional string file_name = 1;
     /**
      * <code>optional string file_name = 1;</code>
      */
@@ -50555,9 +51088,8 @@ public final class Caffe {
    * Protobuf type {@code caffe.HDF5OutputParameter}
    */
   public static final class HDF5OutputParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.HDF5OutputParameter)
-      HDF5OutputParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements HDF5OutputParameterOrBuilder {
     // Use HDF5OutputParameter.newBuilder() to construct.
     private HDF5OutputParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -50604,9 +51136,8 @@ public final class Caffe {
               break;
             }
             case 10: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000001;
-              fileName_ = bs;
+              fileName_ = input.readBytes();
               break;
             }
           }
@@ -50649,6 +51180,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional string file_name = 1;
     public static final int FILE_NAME_FIELD_NUMBER = 1;
     private java.lang.Object fileName_;
     /**
@@ -50697,8 +51229,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -50805,9 +51336,8 @@ public final class Caffe {
      * Protobuf type {@code caffe.HDF5OutputParameter}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.HDF5OutputParameter)
-        caffe.Caffe.HDF5OutputParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.HDF5OutputParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_HDF5OutputParameter_descriptor;
@@ -50922,6 +51452,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional string file_name = 1;
       private java.lang.Object fileName_ = "";
       /**
        * <code>optional string file_name = 1;</code>
@@ -50935,12 +51466,9 @@ public final class Caffe {
       public java.lang.String getFileName() {
         java.lang.Object ref = fileName_;
         if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            fileName_ = s;
-          }
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          fileName_ = s;
           return s;
         } else {
           return (java.lang.String) ref;
@@ -51009,10 +51537,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.HDF5OutputParameter)
   }
 
-  public interface HingeLossParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.HingeLossParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface HingeLossParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional .caffe.HingeLossParameter.Norm norm = 1 [default = L1];
     /**
      * <code>optional .caffe.HingeLossParameter.Norm norm = 1 [default = L1];</code>
      *
@@ -51034,9 +51562,8 @@ public final class Caffe {
    * Protobuf type {@code caffe.HingeLossParameter}
    */
   public static final class HingeLossParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.HingeLossParameter)
-      HingeLossParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements HingeLossParameterOrBuilder {
     // Use HingeLossParameter.newBuilder() to construct.
     private HingeLossParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -51215,6 +51742,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional .caffe.HingeLossParameter.Norm norm = 1 [default = L1];
     public static final int NORM_FIELD_NUMBER = 1;
     private caffe.Caffe.HingeLossParameter.Norm norm_;
     /**
@@ -51244,8 +51772,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -51352,9 +51879,8 @@ public final class Caffe {
      * Protobuf type {@code caffe.HingeLossParameter}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.HingeLossParameter)
-        caffe.Caffe.HingeLossParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.HingeLossParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_HingeLossParameter_descriptor;
@@ -51467,6 +51993,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional .caffe.HingeLossParameter.Norm norm = 1 [default = L1];
       private caffe.Caffe.HingeLossParameter.Norm norm_ = caffe.Caffe.HingeLossParameter.Norm.L1;
       /**
        * <code>optional .caffe.HingeLossParameter.Norm norm = 1 [default = L1];</code>
@@ -51529,10 +52056,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.HingeLossParameter)
   }
 
-  public interface ImageDataParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.ImageDataParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface ImageDataParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional string source = 1;
     /**
      * <code>optional string source = 1;</code>
      *
@@ -51559,6 +52086,7 @@ public final class Caffe {
     com.google.protobuf.ByteString
         getSourceBytes();
 
+    // optional uint32 batch_size = 4 [default = 1];
     /**
      * <code>optional uint32 batch_size = 4 [default = 1];</code>
      *
@@ -51576,6 +52104,7 @@ public final class Caffe {
      */
     int getBatchSize();
 
+    // optional uint32 rand_skip = 7 [default = 0];
     /**
      * <code>optional uint32 rand_skip = 7 [default = 0];</code>
      *
@@ -51599,6 +52128,7 @@ public final class Caffe {
      */
     int getRandSkip();
 
+    // optional bool shuffle = 8 [default = false];
     /**
      * <code>optional bool shuffle = 8 [default = false];</code>
      *
@@ -51616,6 +52146,7 @@ public final class Caffe {
      */
     boolean getShuffle();
 
+    // optional uint32 new_height = 9 [default = 0];
     /**
      * <code>optional uint32 new_height = 9 [default = 0];</code>
      *
@@ -51633,6 +52164,7 @@ public final class Caffe {
      */
     int getNewHeight();
 
+    // optional uint32 new_width = 10 [default = 0];
     /**
      * <code>optional uint32 new_width = 10 [default = 0];</code>
      */
@@ -51642,6 +52174,7 @@ public final class Caffe {
      */
     int getNewWidth();
 
+    // optional bool is_color = 11 [default = true];
     /**
      * <code>optional bool is_color = 11 [default = true];</code>
      *
@@ -51659,6 +52192,7 @@ public final class Caffe {
      */
     boolean getIsColor();
 
+    // optional float scale = 2 [default = 1];
     /**
      * <code>optional float scale = 2 [default = 1];</code>
      *
@@ -51680,6 +52214,7 @@ public final class Caffe {
      */
     float getScale();
 
+    // optional string mean_file = 3;
     /**
      * <code>optional string mean_file = 3;</code>
      */
@@ -51694,6 +52229,7 @@ public final class Caffe {
     com.google.protobuf.ByteString
         getMeanFileBytes();
 
+    // optional uint32 crop_size = 5 [default = 0];
     /**
      * <code>optional uint32 crop_size = 5 [default = 0];</code>
      *
@@ -51713,6 +52249,7 @@ public final class Caffe {
      */
     int getCropSize();
 
+    // optional bool mirror = 6 [default = false];
     /**
      * <code>optional bool mirror = 6 [default = false];</code>
      *
@@ -51732,6 +52269,7 @@ public final class Caffe {
      */
     boolean getMirror();
 
+    // optional string root_folder = 12 [default = ""];
     /**
      * <code>optional string root_folder = 12 [default = ""];</code>
      */
@@ -51750,9 +52288,8 @@ public final class Caffe {
    * Protobuf type {@code caffe.ImageDataParameter}
    */
   public static final class ImageDataParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.ImageDataParameter)
-      ImageDataParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements ImageDataParameterOrBuilder {
     // Use ImageDataParameter.newBuilder() to construct.
     private ImageDataParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -51799,9 +52336,8 @@ public final class Caffe {
               break;
             }
             case 10: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000001;
-              source_ = bs;
+              source_ = input.readBytes();
               break;
             }
             case 21: {
@@ -51810,9 +52346,8 @@ public final class Caffe {
               break;
             }
             case 26: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000100;
-              meanFile_ = bs;
+              meanFile_ = input.readBytes();
               break;
             }
             case 32: {
@@ -51856,9 +52391,8 @@ public final class Caffe {
               break;
             }
             case 98: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000800;
-              rootFolder_ = bs;
+              rootFolder_ = input.readBytes();
               break;
             }
           }
@@ -51901,6 +52435,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional string source = 1;
     public static final int SOURCE_FIELD_NUMBER = 1;
     private java.lang.Object source_;
     /**
@@ -51955,6 +52490,7 @@ public final class Caffe {
       }
     }
 
+    // optional uint32 batch_size = 4 [default = 1];
     public static final int BATCH_SIZE_FIELD_NUMBER = 4;
     private int batchSize_;
     /**
@@ -51978,6 +52514,7 @@ public final class Caffe {
       return batchSize_;
     }
 
+    // optional uint32 rand_skip = 7 [default = 0];
     public static final int RAND_SKIP_FIELD_NUMBER = 7;
     private int randSkip_;
     /**
@@ -52007,6 +52544,7 @@ public final class Caffe {
       return randSkip_;
     }
 
+    // optional bool shuffle = 8 [default = false];
     public static final int SHUFFLE_FIELD_NUMBER = 8;
     private boolean shuffle_;
     /**
@@ -52030,6 +52568,7 @@ public final class Caffe {
       return shuffle_;
     }
 
+    // optional uint32 new_height = 9 [default = 0];
     public static final int NEW_HEIGHT_FIELD_NUMBER = 9;
     private int newHeight_;
     /**
@@ -52053,6 +52592,7 @@ public final class Caffe {
       return newHeight_;
     }
 
+    // optional uint32 new_width = 10 [default = 0];
     public static final int NEW_WIDTH_FIELD_NUMBER = 10;
     private int newWidth_;
     /**
@@ -52068,6 +52608,7 @@ public final class Caffe {
       return newWidth_;
     }
 
+    // optional bool is_color = 11 [default = true];
     public static final int IS_COLOR_FIELD_NUMBER = 11;
     private boolean isColor_;
     /**
@@ -52091,6 +52632,7 @@ public final class Caffe {
       return isColor_;
     }
 
+    // optional float scale = 2 [default = 1];
     public static final int SCALE_FIELD_NUMBER = 2;
     private float scale_;
     /**
@@ -52118,6 +52660,7 @@ public final class Caffe {
       return scale_;
     }
 
+    // optional string mean_file = 3;
     public static final int MEAN_FILE_FIELD_NUMBER = 3;
     private java.lang.Object meanFile_;
     /**
@@ -52160,6 +52703,7 @@ public final class Caffe {
       }
     }
 
+    // optional uint32 crop_size = 5 [default = 0];
     public static final int CROP_SIZE_FIELD_NUMBER = 5;
     private int cropSize_;
     /**
@@ -52185,6 +52729,7 @@ public final class Caffe {
       return cropSize_;
     }
 
+    // optional bool mirror = 6 [default = false];
     public static final int MIRROR_FIELD_NUMBER = 6;
     private boolean mirror_;
     /**
@@ -52210,6 +52755,7 @@ public final class Caffe {
       return mirror_;
     }
 
+    // optional string root_folder = 12 [default = ""];
     public static final int ROOT_FOLDER_FIELD_NUMBER = 12;
     private java.lang.Object rootFolder_;
     /**
@@ -52269,8 +52815,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -52454,9 +52999,8 @@ public final class Caffe {
      * Protobuf type {@code caffe.ImageDataParameter}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.ImageDataParameter)
-        caffe.Caffe.ImageDataParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.ImageDataParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_ImageDataParameter_descriptor;
@@ -52674,6 +53218,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional string source = 1;
       private java.lang.Object source_ = "";
       /**
        * <code>optional string source = 1;</code>
@@ -52695,12 +53240,9 @@ public final class Caffe {
       public java.lang.String getSource() {
         java.lang.Object ref = source_;
         if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            source_ = s;
-          }
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          source_ = s;
           return s;
         } else {
           return (java.lang.String) ref;
@@ -52774,6 +53316,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 batch_size = 4 [default = 1];
       private int batchSize_ = 1;
       /**
        * <code>optional uint32 batch_size = 4 [default = 1];</code>
@@ -52822,6 +53365,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 rand_skip = 7 [default = 0];
       private int randSkip_ ;
       /**
        * <code>optional uint32 rand_skip = 7 [default = 0];</code>
@@ -52882,6 +53426,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional bool shuffle = 8 [default = false];
       private boolean shuffle_ ;
       /**
        * <code>optional bool shuffle = 8 [default = false];</code>
@@ -52930,6 +53475,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 new_height = 9 [default = 0];
       private int newHeight_ ;
       /**
        * <code>optional uint32 new_height = 9 [default = 0];</code>
@@ -52978,6 +53524,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 new_width = 10 [default = 0];
       private int newWidth_ ;
       /**
        * <code>optional uint32 new_width = 10 [default = 0];</code>
@@ -53010,6 +53557,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional bool is_color = 11 [default = true];
       private boolean isColor_ = true;
       /**
        * <code>optional bool is_color = 11 [default = true];</code>
@@ -53058,6 +53606,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float scale = 2 [default = 1];
       private float scale_ = 1F;
       /**
        * <code>optional float scale = 2 [default = 1];</code>
@@ -53114,6 +53663,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional string mean_file = 3;
       private java.lang.Object meanFile_ = "";
       /**
        * <code>optional string mean_file = 3;</code>
@@ -53127,12 +53677,9 @@ public final class Caffe {
       public java.lang.String getMeanFile() {
         java.lang.Object ref = meanFile_;
         if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            meanFile_ = s;
-          }
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          meanFile_ = s;
           return s;
         } else {
           return (java.lang.String) ref;
@@ -53190,6 +53737,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 crop_size = 5 [default = 0];
       private int cropSize_ ;
       /**
        * <code>optional uint32 crop_size = 5 [default = 0];</code>
@@ -53242,6 +53790,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional bool mirror = 6 [default = false];
       private boolean mirror_ ;
       /**
        * <code>optional bool mirror = 6 [default = false];</code>
@@ -53294,6 +53843,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional string root_folder = 12 [default = ""];
       private java.lang.Object rootFolder_ = "";
       /**
        * <code>optional string root_folder = 12 [default = ""];</code>
@@ -53307,12 +53857,9 @@ public final class Caffe {
       public java.lang.String getRootFolder() {
         java.lang.Object ref = rootFolder_;
         if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            rootFolder_ = s;
-          }
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          rootFolder_ = s;
           return s;
         } else {
           return (java.lang.String) ref;
@@ -53381,10 +53928,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.ImageDataParameter)
   }
 
-  public interface InfogainLossParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.InfogainLossParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface InfogainLossParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional string source = 1;
     /**
      * <code>optional string source = 1;</code>
      *
@@ -53415,9 +53962,8 @@ public final class Caffe {
    * Protobuf type {@code caffe.InfogainLossParameter}
    */
   public static final class InfogainLossParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.InfogainLossParameter)
-      InfogainLossParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements InfogainLossParameterOrBuilder {
     // Use InfogainLossParameter.newBuilder() to construct.
     private InfogainLossParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -53464,9 +54010,8 @@ public final class Caffe {
               break;
             }
             case 10: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000001;
-              source_ = bs;
+              source_ = input.readBytes();
               break;
             }
           }
@@ -53509,6 +54054,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional string source = 1;
     public static final int SOURCE_FIELD_NUMBER = 1;
     private java.lang.Object source_;
     /**
@@ -53569,8 +54115,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -53677,9 +54222,8 @@ public final class Caffe {
      * Protobuf type {@code caffe.InfogainLossParameter}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.InfogainLossParameter)
-        caffe.Caffe.InfogainLossParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.InfogainLossParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_InfogainLossParameter_descriptor;
@@ -53794,6 +54338,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional string source = 1;
       private java.lang.Object source_ = "";
       /**
        * <code>optional string source = 1;</code>
@@ -53815,12 +54360,9 @@ public final class Caffe {
       public java.lang.String getSource() {
         java.lang.Object ref = source_;
         if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            source_ = s;
-          }
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          source_ = s;
           return s;
         } else {
           return (java.lang.String) ref;
@@ -53905,10 +54447,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.InfogainLossParameter)
   }
 
-  public interface InnerProductParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.InnerProductParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface InnerProductParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional uint32 num_output = 1;
     /**
      * <code>optional uint32 num_output = 1;</code>
      *
@@ -53926,6 +54468,7 @@ public final class Caffe {
      */
     int getNumOutput();
 
+    // optional bool bias_term = 2 [default = true];
     /**
      * <code>optional bool bias_term = 2 [default = true];</code>
      *
@@ -53943,6 +54486,7 @@ public final class Caffe {
      */
     boolean getBiasTerm();
 
+    // optional .caffe.FillerParameter weight_filler = 3;
     /**
      * <code>optional .caffe.FillerParameter weight_filler = 3;</code>
      *
@@ -53968,6 +54512,7 @@ public final class Caffe {
      */
     caffe.Caffe.FillerParameterOrBuilder getWeightFillerOrBuilder();
 
+    // optional .caffe.FillerParameter bias_filler = 4;
     /**
      * <code>optional .caffe.FillerParameter bias_filler = 4;</code>
      *
@@ -53993,6 +54538,7 @@ public final class Caffe {
      */
     caffe.Caffe.FillerParameterOrBuilder getBiasFillerOrBuilder();
 
+    // optional int32 axis = 5 [default = 1];
     /**
      * <code>optional int32 axis = 5 [default = 1];</code>
      *
@@ -54014,6 +54560,7 @@ public final class Caffe {
      */
     int getAxis();
 
+    // optional bool transpose = 6 [default = false];
     /**
      * <code>optional bool transpose = 6 [default = false];</code>
      *
@@ -54041,9 +54588,8 @@ public final class Caffe {
    * Protobuf type {@code caffe.InnerProductParameter}
    */
   public static final class InnerProductParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.InnerProductParameter)
-      InnerProductParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements InnerProductParameterOrBuilder {
     // Use InnerProductParameter.newBuilder() to construct.
     private InnerProductParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -54175,6 +54721,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional uint32 num_output = 1;
     public static final int NUM_OUTPUT_FIELD_NUMBER = 1;
     private int numOutput_;
     /**
@@ -54198,6 +54745,7 @@ public final class Caffe {
       return numOutput_;
     }
 
+    // optional bool bias_term = 2 [default = true];
     public static final int BIAS_TERM_FIELD_NUMBER = 2;
     private boolean biasTerm_;
     /**
@@ -54221,6 +54769,7 @@ public final class Caffe {
       return biasTerm_;
     }
 
+    // optional .caffe.FillerParameter weight_filler = 3;
     public static final int WEIGHT_FILLER_FIELD_NUMBER = 3;
     private caffe.Caffe.FillerParameter weightFiller_;
     /**
@@ -54254,6 +54803,7 @@ public final class Caffe {
       return weightFiller_;
     }
 
+    // optional .caffe.FillerParameter bias_filler = 4;
     public static final int BIAS_FILLER_FIELD_NUMBER = 4;
     private caffe.Caffe.FillerParameter biasFiller_;
     /**
@@ -54287,6 +54837,7 @@ public final class Caffe {
       return biasFiller_;
     }
 
+    // optional int32 axis = 5 [default = 1];
     public static final int AXIS_FIELD_NUMBER = 5;
     private int axis_;
     /**
@@ -54314,6 +54865,7 @@ public final class Caffe {
       return axis_;
     }
 
+    // optional bool transpose = 6 [default = false];
     public static final int TRANSPOSE_FIELD_NUMBER = 6;
     private boolean transpose_;
     /**
@@ -54354,8 +54906,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -54497,9 +55048,8 @@ public final class Caffe {
      * Protobuf type {@code caffe.InnerProductParameter}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.InnerProductParameter)
-        caffe.Caffe.InnerProductParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.InnerProductParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_InnerProductParameter_descriptor;
@@ -54675,6 +55225,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional uint32 num_output = 1;
       private int numOutput_ ;
       /**
        * <code>optional uint32 num_output = 1;</code>
@@ -54723,6 +55274,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional bool bias_term = 2 [default = true];
       private boolean biasTerm_ = true;
       /**
        * <code>optional bool bias_term = 2 [default = true];</code>
@@ -54771,6 +55323,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional .caffe.FillerParameter weight_filler = 3;
       private caffe.Caffe.FillerParameter weightFiller_ = caffe.Caffe.FillerParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.FillerParameter, caffe.Caffe.FillerParameter.Builder, caffe.Caffe.FillerParameterOrBuilder> weightFillerBuilder_;
@@ -54915,7 +55468,7 @@ public final class Caffe {
         if (weightFillerBuilder_ == null) {
           weightFillerBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.FillerParameter, caffe.Caffe.FillerParameter.Builder, caffe.Caffe.FillerParameterOrBuilder>(
-                  getWeightFiller(),
+                  weightFiller_,
                   getParentForChildren(),
                   isClean());
           weightFiller_ = null;
@@ -54923,6 +55476,7 @@ public final class Caffe {
         return weightFillerBuilder_;
       }
 
+      // optional .caffe.FillerParameter bias_filler = 4;
       private caffe.Caffe.FillerParameter biasFiller_ = caffe.Caffe.FillerParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.FillerParameter, caffe.Caffe.FillerParameter.Builder, caffe.Caffe.FillerParameterOrBuilder> biasFillerBuilder_;
@@ -55067,7 +55621,7 @@ public final class Caffe {
         if (biasFillerBuilder_ == null) {
           biasFillerBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.FillerParameter, caffe.Caffe.FillerParameter.Builder, caffe.Caffe.FillerParameterOrBuilder>(
-                  getBiasFiller(),
+                  biasFiller_,
                   getParentForChildren(),
                   isClean());
           biasFiller_ = null;
@@ -55075,6 +55629,7 @@ public final class Caffe {
         return biasFillerBuilder_;
       }
 
+      // optional int32 axis = 5 [default = 1];
       private int axis_ = 1;
       /**
        * <code>optional int32 axis = 5 [default = 1];</code>
@@ -55131,6 +55686,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional bool transpose = 6 [default = false];
       private boolean transpose_ ;
       /**
        * <code>optional bool transpose = 6 [default = false];</code>
@@ -55202,10 +55758,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.InnerProductParameter)
   }
 
-  public interface InputParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.InputParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface InputParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // repeated .caffe.BlobShape shape = 1;
     /**
      * <code>repeated .caffe.BlobShape shape = 1;</code>
      *
@@ -55269,9 +55825,8 @@ public final class Caffe {
    * Protobuf type {@code caffe.InputParameter}
    */
   public static final class InputParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.InputParameter)
-      InputParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements InputParameterOrBuilder {
     // Use InputParameter.newBuilder() to construct.
     private InputParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -55367,6 +55922,7 @@ public final class Caffe {
       return PARSER;
     }
 
+    // repeated .caffe.BlobShape shape = 1;
     public static final int SHAPE_FIELD_NUMBER = 1;
     private java.util.List<caffe.Caffe.BlobShape> shape_;
     /**
@@ -55443,8 +55999,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -55551,9 +56106,8 @@ public final class Caffe {
      * Protobuf type {@code caffe.InputParameter}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.InputParameter)
-        caffe.Caffe.InputParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.InputParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_InputParameter_descriptor;
@@ -55697,6 +56251,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // repeated .caffe.BlobShape shape = 1;
       private java.util.List<caffe.Caffe.BlobShape> shape_ =
         java.util.Collections.emptyList();
       private void ensureShapeIsMutable() {
@@ -55908,8 +56463,7 @@ public final class Caffe {
           java.lang.Iterable<? extends caffe.Caffe.BlobShape> values) {
         if (shapeBuilder_ == null) {
           ensureShapeIsMutable();
-          com.google.protobuf.AbstractMessageLite.Builder.addAll(
-              values, shape_);
+          super.addAll(values, shape_);
           onChanged();
         } else {
           shapeBuilder_.addAllMessages(values);
@@ -56074,10 +56628,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.InputParameter)
   }
 
-  public interface LogParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.LogParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface LogParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional float base = 1 [default = -1];
     /**
      * <code>optional float base = 1 [default = -1];</code>
      *
@@ -56099,6 +56653,7 @@ public final class Caffe {
      */
     float getBase();
 
+    // optional float scale = 2 [default = 1];
     /**
      * <code>optional float scale = 2 [default = 1];</code>
      */
@@ -56108,6 +56663,7 @@ public final class Caffe {
      */
     float getScale();
 
+    // optional float shift = 3 [default = 0];
     /**
      * <code>optional float shift = 3 [default = 0];</code>
      */
@@ -56125,9 +56681,8 @@ public final class Caffe {
    * </pre>
    */
   public static final class LogParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.LogParameter)
-      LogParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements LogParameterOrBuilder {
     // Use LogParameter.newBuilder() to construct.
     private LogParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -56228,6 +56783,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional float base = 1 [default = -1];
     public static final int BASE_FIELD_NUMBER = 1;
     private float base_;
     /**
@@ -56255,6 +56811,7 @@ public final class Caffe {
       return base_;
     }
 
+    // optional float scale = 2 [default = 1];
     public static final int SCALE_FIELD_NUMBER = 2;
     private float scale_;
     /**
@@ -56270,6 +56827,7 @@ public final class Caffe {
       return scale_;
     }
 
+    // optional float shift = 3 [default = 0];
     public static final int SHIFT_FIELD_NUMBER = 3;
     private float shift_;
     /**
@@ -56293,8 +56851,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -56419,9 +56976,8 @@ public final class Caffe {
      * </pre>
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.LogParameter)
-        caffe.Caffe.LogParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.LogParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_LogParameter_descriptor;
@@ -56552,6 +57108,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional float base = 1 [default = -1];
       private float base_ = -1F;
       /**
        * <code>optional float base = 1 [default = -1];</code>
@@ -56608,6 +57165,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float scale = 2 [default = 1];
       private float scale_ = 1F;
       /**
        * <code>optional float scale = 2 [default = 1];</code>
@@ -56640,6 +57198,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float shift = 3 [default = 0];
       private float shift_ ;
       /**
        * <code>optional float shift = 3 [default = 0];</code>
@@ -56683,10 +57242,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.LogParameter)
   }
 
-  public interface LRNParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.LRNParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface LRNParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional uint32 local_size = 1 [default = 5];
     /**
      * <code>optional uint32 local_size = 1 [default = 5];</code>
      */
@@ -56696,6 +57255,7 @@ public final class Caffe {
      */
     int getLocalSize();
 
+    // optional float alpha = 2 [default = 1];
     /**
      * <code>optional float alpha = 2 [default = 1];</code>
      */
@@ -56705,6 +57265,7 @@ public final class Caffe {
      */
     float getAlpha();
 
+    // optional float beta = 3 [default = 0.75];
     /**
      * <code>optional float beta = 3 [default = 0.75];</code>
      */
@@ -56714,6 +57275,7 @@ public final class Caffe {
      */
     float getBeta();
 
+    // optional .caffe.LRNParameter.NormRegion norm_region = 4 [default = ACROSS_CHANNELS];
     /**
      * <code>optional .caffe.LRNParameter.NormRegion norm_region = 4 [default = ACROSS_CHANNELS];</code>
      */
@@ -56723,6 +57285,7 @@ public final class Caffe {
      */
     caffe.Caffe.LRNParameter.NormRegion getNormRegion();
 
+    // optional float k = 5 [default = 1];
     /**
      * <code>optional float k = 5 [default = 1];</code>
      */
@@ -56732,6 +57295,7 @@ public final class Caffe {
      */
     float getK();
 
+    // optional .caffe.LRNParameter.Engine engine = 6 [default = DEFAULT];
     /**
      * <code>optional .caffe.LRNParameter.Engine engine = 6 [default = DEFAULT];</code>
      */
@@ -56749,9 +57313,8 @@ public final class Caffe {
    * </pre>
    */
   public static final class LRNParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.LRNParameter)
-      LRNParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements LRNParameterOrBuilder {
     // Use LRNParameter.newBuilder() to construct.
     private LRNParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -57052,6 +57615,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional uint32 local_size = 1 [default = 5];
     public static final int LOCAL_SIZE_FIELD_NUMBER = 1;
     private int localSize_;
     /**
@@ -57067,6 +57631,7 @@ public final class Caffe {
       return localSize_;
     }
 
+    // optional float alpha = 2 [default = 1];
     public static final int ALPHA_FIELD_NUMBER = 2;
     private float alpha_;
     /**
@@ -57082,6 +57647,7 @@ public final class Caffe {
       return alpha_;
     }
 
+    // optional float beta = 3 [default = 0.75];
     public static final int BETA_FIELD_NUMBER = 3;
     private float beta_;
     /**
@@ -57097,6 +57663,7 @@ public final class Caffe {
       return beta_;
     }
 
+    // optional .caffe.LRNParameter.NormRegion norm_region = 4 [default = ACROSS_CHANNELS];
     public static final int NORM_REGION_FIELD_NUMBER = 4;
     private caffe.Caffe.LRNParameter.NormRegion normRegion_;
     /**
@@ -57112,6 +57679,7 @@ public final class Caffe {
       return normRegion_;
     }
 
+    // optional float k = 5 [default = 1];
     public static final int K_FIELD_NUMBER = 5;
     private float k_;
     /**
@@ -57127,6 +57695,7 @@ public final class Caffe {
       return k_;
     }
 
+    // optional .caffe.LRNParameter.Engine engine = 6 [default = DEFAULT];
     public static final int ENGINE_FIELD_NUMBER = 6;
     private caffe.Caffe.LRNParameter.Engine engine_;
     /**
@@ -57153,8 +57722,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -57300,9 +57868,8 @@ public final class Caffe {
      * </pre>
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.LRNParameter)
-        caffe.Caffe.LRNParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.LRNParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_LRNParameter_descriptor;
@@ -57460,6 +58027,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional uint32 local_size = 1 [default = 5];
       private int localSize_ = 5;
       /**
        * <code>optional uint32 local_size = 1 [default = 5];</code>
@@ -57492,6 +58060,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float alpha = 2 [default = 1];
       private float alpha_ = 1F;
       /**
        * <code>optional float alpha = 2 [default = 1];</code>
@@ -57524,6 +58093,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float beta = 3 [default = 0.75];
       private float beta_ = 0.75F;
       /**
        * <code>optional float beta = 3 [default = 0.75];</code>
@@ -57556,6 +58126,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional .caffe.LRNParameter.NormRegion norm_region = 4 [default = ACROSS_CHANNELS];
       private caffe.Caffe.LRNParameter.NormRegion normRegion_ = caffe.Caffe.LRNParameter.NormRegion.ACROSS_CHANNELS;
       /**
        * <code>optional .caffe.LRNParameter.NormRegion norm_region = 4 [default = ACROSS_CHANNELS];</code>
@@ -57591,6 +58162,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float k = 5 [default = 1];
       private float k_ = 1F;
       /**
        * <code>optional float k = 5 [default = 1];</code>
@@ -57623,6 +58195,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional .caffe.LRNParameter.Engine engine = 6 [default = DEFAULT];
       private caffe.Caffe.LRNParameter.Engine engine_ = caffe.Caffe.LRNParameter.Engine.DEFAULT;
       /**
        * <code>optional .caffe.LRNParameter.Engine engine = 6 [default = DEFAULT];</code>
@@ -57669,10 +58242,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.LRNParameter)
   }
 
-  public interface MemoryDataParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.MemoryDataParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface MemoryDataParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional uint32 batch_size = 1;
     /**
      * <code>optional uint32 batch_size = 1;</code>
      */
@@ -57682,6 +58255,7 @@ public final class Caffe {
      */
     int getBatchSize();
 
+    // optional uint32 channels = 2;
     /**
      * <code>optional uint32 channels = 2;</code>
      */
@@ -57691,6 +58265,7 @@ public final class Caffe {
      */
     int getChannels();
 
+    // optional uint32 height = 3;
     /**
      * <code>optional uint32 height = 3;</code>
      */
@@ -57700,6 +58275,7 @@ public final class Caffe {
      */
     int getHeight();
 
+    // optional uint32 width = 4;
     /**
      * <code>optional uint32 width = 4;</code>
      */
@@ -57713,9 +58289,8 @@ public final class Caffe {
    * Protobuf type {@code caffe.MemoryDataParameter}
    */
   public static final class MemoryDataParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.MemoryDataParameter)
-      MemoryDataParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements MemoryDataParameterOrBuilder {
     // Use MemoryDataParameter.newBuilder() to construct.
     private MemoryDataParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -57821,6 +58396,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional uint32 batch_size = 1;
     public static final int BATCH_SIZE_FIELD_NUMBER = 1;
     private int batchSize_;
     /**
@@ -57836,6 +58412,7 @@ public final class Caffe {
       return batchSize_;
     }
 
+    // optional uint32 channels = 2;
     public static final int CHANNELS_FIELD_NUMBER = 2;
     private int channels_;
     /**
@@ -57851,6 +58428,7 @@ public final class Caffe {
       return channels_;
     }
 
+    // optional uint32 height = 3;
     public static final int HEIGHT_FIELD_NUMBER = 3;
     private int height_;
     /**
@@ -57866,6 +58444,7 @@ public final class Caffe {
       return height_;
     }
 
+    // optional uint32 width = 4;
     public static final int WIDTH_FIELD_NUMBER = 4;
     private int width_;
     /**
@@ -57890,8 +58469,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -58019,9 +58597,8 @@ public final class Caffe {
      * Protobuf type {@code caffe.MemoryDataParameter}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.MemoryDataParameter)
-        caffe.Caffe.MemoryDataParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.MemoryDataParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_MemoryDataParameter_descriptor;
@@ -58161,6 +58738,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional uint32 batch_size = 1;
       private int batchSize_ ;
       /**
        * <code>optional uint32 batch_size = 1;</code>
@@ -58193,6 +58771,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 channels = 2;
       private int channels_ ;
       /**
        * <code>optional uint32 channels = 2;</code>
@@ -58225,6 +58804,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 height = 3;
       private int height_ ;
       /**
        * <code>optional uint32 height = 3;</code>
@@ -58257,6 +58837,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 width = 4;
       private int width_ ;
       /**
        * <code>optional uint32 width = 4;</code>
@@ -58300,10 +58881,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.MemoryDataParameter)
   }
 
-  public interface MVNParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.MVNParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface MVNParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional bool normalize_variance = 1 [default = true];
     /**
      * <code>optional bool normalize_variance = 1 [default = true];</code>
      *
@@ -58321,6 +58902,7 @@ public final class Caffe {
      */
     boolean getNormalizeVariance();
 
+    // optional bool across_channels = 2 [default = false];
     /**
      * <code>optional bool across_channels = 2 [default = false];</code>
      *
@@ -58338,6 +58920,7 @@ public final class Caffe {
      */
     boolean getAcrossChannels();
 
+    // optional float eps = 3 [default = 1e-009];
     /**
      * <code>optional float eps = 3 [default = 1e-009];</code>
      *
@@ -58359,9 +58942,8 @@ public final class Caffe {
    * Protobuf type {@code caffe.MVNParameter}
    */
   public static final class MVNParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.MVNParameter)
-      MVNParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements MVNParameterOrBuilder {
     // Use MVNParameter.newBuilder() to construct.
     private MVNParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -58462,6 +59044,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional bool normalize_variance = 1 [default = true];
     public static final int NORMALIZE_VARIANCE_FIELD_NUMBER = 1;
     private boolean normalizeVariance_;
     /**
@@ -58485,6 +59068,7 @@ public final class Caffe {
       return normalizeVariance_;
     }
 
+    // optional bool across_channels = 2 [default = false];
     public static final int ACROSS_CHANNELS_FIELD_NUMBER = 2;
     private boolean acrossChannels_;
     /**
@@ -58508,6 +59092,7 @@ public final class Caffe {
       return acrossChannels_;
     }
 
+    // optional float eps = 3 [default = 1e-009];
     public static final int EPS_FIELD_NUMBER = 3;
     private float eps_;
     /**
@@ -58539,8 +59124,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -58661,9 +59245,8 @@ public final class Caffe {
      * Protobuf type {@code caffe.MVNParameter}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.MVNParameter)
-        caffe.Caffe.MVNParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.MVNParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_MVNParameter_descriptor;
@@ -58794,6 +59377,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional bool normalize_variance = 1 [default = true];
       private boolean normalizeVariance_ = true;
       /**
        * <code>optional bool normalize_variance = 1 [default = true];</code>
@@ -58842,6 +59426,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional bool across_channels = 2 [default = false];
       private boolean acrossChannels_ ;
       /**
        * <code>optional bool across_channels = 2 [default = false];</code>
@@ -58890,6 +59475,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float eps = 3 [default = 1e-009];
       private float eps_ = 1e-009F;
       /**
        * <code>optional float eps = 3 [default = 1e-009];</code>
@@ -58949,10 +59535,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.MVNParameter)
   }
 
-  public interface PoolingParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.PoolingParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface PoolingParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional .caffe.PoolingParameter.PoolMethod pool = 1 [default = MAX];
     /**
      * <code>optional .caffe.PoolingParameter.PoolMethod pool = 1 [default = MAX];</code>
      *
@@ -58970,6 +59556,7 @@ public final class Caffe {
      */
     caffe.Caffe.PoolingParameter.PoolMethod getPool();
 
+    // optional uint32 pad = 4 [default = 0];
     /**
      * <code>optional uint32 pad = 4 [default = 0];</code>
      *
@@ -58989,6 +59576,7 @@ public final class Caffe {
      */
     int getPad();
 
+    // optional uint32 pad_h = 9 [default = 0];
     /**
      * <code>optional uint32 pad_h = 9 [default = 0];</code>
      *
@@ -59006,6 +59594,7 @@ public final class Caffe {
      */
     int getPadH();
 
+    // optional uint32 pad_w = 10 [default = 0];
     /**
      * <code>optional uint32 pad_w = 10 [default = 0];</code>
      *
@@ -59023,6 +59612,7 @@ public final class Caffe {
      */
     int getPadW();
 
+    // optional uint32 kernel_size = 2;
     /**
      * <code>optional uint32 kernel_size = 2;</code>
      *
@@ -59040,6 +59630,7 @@ public final class Caffe {
      */
     int getKernelSize();
 
+    // optional uint32 kernel_h = 5;
     /**
      * <code>optional uint32 kernel_h = 5;</code>
      *
@@ -59057,6 +59648,7 @@ public final class Caffe {
      */
     int getKernelH();
 
+    // optional uint32 kernel_w = 6;
     /**
      * <code>optional uint32 kernel_w = 6;</code>
      *
@@ -59074,6 +59666,7 @@ public final class Caffe {
      */
     int getKernelW();
 
+    // optional uint32 stride = 3 [default = 1];
     /**
      * <code>optional uint32 stride = 3 [default = 1];</code>
      *
@@ -59091,6 +59684,7 @@ public final class Caffe {
      */
     int getStride();
 
+    // optional uint32 stride_h = 7;
     /**
      * <code>optional uint32 stride_h = 7;</code>
      *
@@ -59108,6 +59702,7 @@ public final class Caffe {
      */
     int getStrideH();
 
+    // optional uint32 stride_w = 8;
     /**
      * <code>optional uint32 stride_w = 8;</code>
      *
@@ -59125,6 +59720,7 @@ public final class Caffe {
      */
     int getStrideW();
 
+    // optional .caffe.PoolingParameter.Engine engine = 11 [default = DEFAULT];
     /**
      * <code>optional .caffe.PoolingParameter.Engine engine = 11 [default = DEFAULT];</code>
      */
@@ -59134,6 +59730,7 @@ public final class Caffe {
      */
     caffe.Caffe.PoolingParameter.Engine getEngine();
 
+    // optional bool global_pooling = 12 [default = false];
     /**
      * <code>optional bool global_pooling = 12 [default = false];</code>
      *
@@ -59157,9 +59754,8 @@ public final class Caffe {
    * Protobuf type {@code caffe.PoolingParameter}
    */
   public static final class PoolingParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.PoolingParameter)
-      PoolingParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements PoolingParameterOrBuilder {
     // Use PoolingParameter.newBuilder() to construct.
     private PoolingParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -59499,6 +60095,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional .caffe.PoolingParameter.PoolMethod pool = 1 [default = MAX];
     public static final int POOL_FIELD_NUMBER = 1;
     private caffe.Caffe.PoolingParameter.PoolMethod pool_;
     /**
@@ -59522,6 +60119,7 @@ public final class Caffe {
       return pool_;
     }
 
+    // optional uint32 pad = 4 [default = 0];
     public static final int PAD_FIELD_NUMBER = 4;
     private int pad_;
     /**
@@ -59547,6 +60145,7 @@ public final class Caffe {
       return pad_;
     }
 
+    // optional uint32 pad_h = 9 [default = 0];
     public static final int PAD_H_FIELD_NUMBER = 9;
     private int padH_;
     /**
@@ -59570,6 +60169,7 @@ public final class Caffe {
       return padH_;
     }
 
+    // optional uint32 pad_w = 10 [default = 0];
     public static final int PAD_W_FIELD_NUMBER = 10;
     private int padW_;
     /**
@@ -59593,6 +60193,7 @@ public final class Caffe {
       return padW_;
     }
 
+    // optional uint32 kernel_size = 2;
     public static final int KERNEL_SIZE_FIELD_NUMBER = 2;
     private int kernelSize_;
     /**
@@ -59616,6 +60217,7 @@ public final class Caffe {
       return kernelSize_;
     }
 
+    // optional uint32 kernel_h = 5;
     public static final int KERNEL_H_FIELD_NUMBER = 5;
     private int kernelH_;
     /**
@@ -59639,6 +60241,7 @@ public final class Caffe {
       return kernelH_;
     }
 
+    // optional uint32 kernel_w = 6;
     public static final int KERNEL_W_FIELD_NUMBER = 6;
     private int kernelW_;
     /**
@@ -59662,6 +60265,7 @@ public final class Caffe {
       return kernelW_;
     }
 
+    // optional uint32 stride = 3 [default = 1];
     public static final int STRIDE_FIELD_NUMBER = 3;
     private int stride_;
     /**
@@ -59685,6 +60289,7 @@ public final class Caffe {
       return stride_;
     }
 
+    // optional uint32 stride_h = 7;
     public static final int STRIDE_H_FIELD_NUMBER = 7;
     private int strideH_;
     /**
@@ -59708,6 +60313,7 @@ public final class Caffe {
       return strideH_;
     }
 
+    // optional uint32 stride_w = 8;
     public static final int STRIDE_W_FIELD_NUMBER = 8;
     private int strideW_;
     /**
@@ -59731,6 +60337,7 @@ public final class Caffe {
       return strideW_;
     }
 
+    // optional .caffe.PoolingParameter.Engine engine = 11 [default = DEFAULT];
     public static final int ENGINE_FIELD_NUMBER = 11;
     private caffe.Caffe.PoolingParameter.Engine engine_;
     /**
@@ -59746,6 +60353,7 @@ public final class Caffe {
       return engine_;
     }
 
+    // optional bool global_pooling = 12 [default = false];
     public static final int GLOBAL_POOLING_FIELD_NUMBER = 12;
     private boolean globalPooling_;
     /**
@@ -59788,8 +60396,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -59973,9 +60580,8 @@ public final class Caffe {
      * Protobuf type {@code caffe.PoolingParameter}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.PoolingParameter)
-        caffe.Caffe.PoolingParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.PoolingParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_PoolingParameter_descriptor;
@@ -60187,6 +60793,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional .caffe.PoolingParameter.PoolMethod pool = 1 [default = MAX];
       private caffe.Caffe.PoolingParameter.PoolMethod pool_ = caffe.Caffe.PoolingParameter.PoolMethod.MAX;
       /**
        * <code>optional .caffe.PoolingParameter.PoolMethod pool = 1 [default = MAX];</code>
@@ -60238,6 +60845,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 pad = 4 [default = 0];
       private int pad_ ;
       /**
        * <code>optional uint32 pad = 4 [default = 0];</code>
@@ -60290,6 +60898,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 pad_h = 9 [default = 0];
       private int padH_ ;
       /**
        * <code>optional uint32 pad_h = 9 [default = 0];</code>
@@ -60338,6 +60947,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 pad_w = 10 [default = 0];
       private int padW_ ;
       /**
        * <code>optional uint32 pad_w = 10 [default = 0];</code>
@@ -60386,6 +60996,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 kernel_size = 2;
       private int kernelSize_ ;
       /**
        * <code>optional uint32 kernel_size = 2;</code>
@@ -60434,6 +61045,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 kernel_h = 5;
       private int kernelH_ ;
       /**
        * <code>optional uint32 kernel_h = 5;</code>
@@ -60482,6 +61094,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 kernel_w = 6;
       private int kernelW_ ;
       /**
        * <code>optional uint32 kernel_w = 6;</code>
@@ -60530,6 +61143,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 stride = 3 [default = 1];
       private int stride_ = 1;
       /**
        * <code>optional uint32 stride = 3 [default = 1];</code>
@@ -60578,6 +61192,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 stride_h = 7;
       private int strideH_ ;
       /**
        * <code>optional uint32 stride_h = 7;</code>
@@ -60626,6 +61241,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 stride_w = 8;
       private int strideW_ ;
       /**
        * <code>optional uint32 stride_w = 8;</code>
@@ -60674,6 +61290,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional .caffe.PoolingParameter.Engine engine = 11 [default = DEFAULT];
       private caffe.Caffe.PoolingParameter.Engine engine_ = caffe.Caffe.PoolingParameter.Engine.DEFAULT;
       /**
        * <code>optional .caffe.PoolingParameter.Engine engine = 11 [default = DEFAULT];</code>
@@ -60709,6 +61326,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional bool global_pooling = 12 [default = false];
       private boolean globalPooling_ ;
       /**
        * <code>optional bool global_pooling = 12 [default = false];</code>
@@ -60772,10 +61390,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.PoolingParameter)
   }
 
-  public interface PowerParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.PowerParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface PowerParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional float power = 1 [default = 1];
     /**
      * <code>optional float power = 1 [default = 1];</code>
      *
@@ -60793,6 +61411,7 @@ public final class Caffe {
      */
     float getPower();
 
+    // optional float scale = 2 [default = 1];
     /**
      * <code>optional float scale = 2 [default = 1];</code>
      */
@@ -60802,6 +61421,7 @@ public final class Caffe {
      */
     float getScale();
 
+    // optional float shift = 3 [default = 0];
     /**
      * <code>optional float shift = 3 [default = 0];</code>
      */
@@ -60815,9 +61435,8 @@ public final class Caffe {
    * Protobuf type {@code caffe.PowerParameter}
    */
   public static final class PowerParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.PowerParameter)
-      PowerParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements PowerParameterOrBuilder {
     // Use PowerParameter.newBuilder() to construct.
     private PowerParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -60918,6 +61537,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional float power = 1 [default = 1];
     public static final int POWER_FIELD_NUMBER = 1;
     private float power_;
     /**
@@ -60941,6 +61561,7 @@ public final class Caffe {
       return power_;
     }
 
+    // optional float scale = 2 [default = 1];
     public static final int SCALE_FIELD_NUMBER = 2;
     private float scale_;
     /**
@@ -60956,6 +61577,7 @@ public final class Caffe {
       return scale_;
     }
 
+    // optional float shift = 3 [default = 0];
     public static final int SHIFT_FIELD_NUMBER = 3;
     private float shift_;
     /**
@@ -60979,8 +61601,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -61101,9 +61722,8 @@ public final class Caffe {
      * Protobuf type {@code caffe.PowerParameter}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.PowerParameter)
-        caffe.Caffe.PowerParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.PowerParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_PowerParameter_descriptor;
@@ -61234,6 +61854,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional float power = 1 [default = 1];
       private float power_ = 1F;
       /**
        * <code>optional float power = 1 [default = 1];</code>
@@ -61282,6 +61903,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float scale = 2 [default = 1];
       private float scale_ = 1F;
       /**
        * <code>optional float scale = 2 [default = 1];</code>
@@ -61314,6 +61936,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float shift = 3 [default = 0];
       private float shift_ ;
       /**
        * <code>optional float shift = 3 [default = 0];</code>
@@ -61357,10 +61980,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.PowerParameter)
   }
 
-  public interface PythonParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.PythonParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface PythonParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional string module = 1;
     /**
      * <code>optional string module = 1;</code>
      */
@@ -61375,6 +61998,7 @@ public final class Caffe {
     com.google.protobuf.ByteString
         getModuleBytes();
 
+    // optional string layer = 2;
     /**
      * <code>optional string layer = 2;</code>
      */
@@ -61389,6 +62013,7 @@ public final class Caffe {
     com.google.protobuf.ByteString
         getLayerBytes();
 
+    // optional string param_str = 3 [default = ""];
     /**
      * <code>optional string param_str = 3 [default = ""];</code>
      *
@@ -61424,6 +62049,7 @@ public final class Caffe {
     com.google.protobuf.ByteString
         getParamStrBytes();
 
+    // optional bool share_in_parallel = 4 [default = false];
     /**
      * <code>optional bool share_in_parallel = 4 [default = false];</code>
      *
@@ -61449,9 +62075,8 @@ public final class Caffe {
    * Protobuf type {@code caffe.PythonParameter}
    */
   public static final class PythonParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.PythonParameter)
-      PythonParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements PythonParameterOrBuilder {
     // Use PythonParameter.newBuilder() to construct.
     private PythonParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -61498,21 +62123,18 @@ public final class Caffe {
               break;
             }
             case 10: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000001;
-              module_ = bs;
+              module_ = input.readBytes();
               break;
             }
             case 18: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000002;
-              layer_ = bs;
+              layer_ = input.readBytes();
               break;
             }
             case 26: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000004;
-              paramStr_ = bs;
+              paramStr_ = input.readBytes();
               break;
             }
             case 32: {
@@ -61560,6 +62182,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional string module = 1;
     public static final int MODULE_FIELD_NUMBER = 1;
     private java.lang.Object module_;
     /**
@@ -61602,6 +62225,7 @@ public final class Caffe {
       }
     }
 
+    // optional string layer = 2;
     public static final int LAYER_FIELD_NUMBER = 2;
     private java.lang.Object layer_;
     /**
@@ -61644,6 +62268,7 @@ public final class Caffe {
       }
     }
 
+    // optional string param_str = 3 [default = ""];
     public static final int PARAM_STR_FIELD_NUMBER = 3;
     private java.lang.Object paramStr_;
     /**
@@ -61707,6 +62332,7 @@ public final class Caffe {
       }
     }
 
+    // optional bool share_in_parallel = 4 [default = false];
     public static final int SHARE_IN_PARALLEL_FIELD_NUMBER = 4;
     private boolean shareInParallel_;
     /**
@@ -61743,8 +62369,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -61872,9 +62497,8 @@ public final class Caffe {
      * Protobuf type {@code caffe.PythonParameter}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.PythonParameter)
-        caffe.Caffe.PythonParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.PythonParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_PythonParameter_descriptor;
@@ -62020,6 +62644,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional string module = 1;
       private java.lang.Object module_ = "";
       /**
        * <code>optional string module = 1;</code>
@@ -62033,12 +62658,9 @@ public final class Caffe {
       public java.lang.String getModule() {
         java.lang.Object ref = module_;
         if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            module_ = s;
-          }
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          module_ = s;
           return s;
         } else {
           return (java.lang.String) ref;
@@ -62096,6 +62718,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional string layer = 2;
       private java.lang.Object layer_ = "";
       /**
        * <code>optional string layer = 2;</code>
@@ -62109,12 +62732,9 @@ public final class Caffe {
       public java.lang.String getLayer() {
         java.lang.Object ref = layer_;
         if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            layer_ = s;
-          }
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          layer_ = s;
           return s;
         } else {
           return (java.lang.String) ref;
@@ -62172,6 +62792,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional string param_str = 3 [default = ""];
       private java.lang.Object paramStr_ = "";
       /**
        * <code>optional string param_str = 3 [default = ""];</code>
@@ -62199,12 +62820,9 @@ public final class Caffe {
       public java.lang.String getParamStr() {
         java.lang.Object ref = paramStr_;
         if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            paramStr_ = s;
-          }
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          paramStr_ = s;
           return s;
         } else {
           return (java.lang.String) ref;
@@ -62290,6 +62908,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional bool share_in_parallel = 4 [default = false];
       private boolean shareInParallel_ ;
       /**
        * <code>optional bool share_in_parallel = 4 [default = false];</code>
@@ -62357,10 +62976,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.PythonParameter)
   }
 
-  public interface ReductionParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.ReductionParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface ReductionParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional .caffe.ReductionParameter.ReductionOp operation = 1 [default = SUM];
     /**
      * <code>optional .caffe.ReductionParameter.ReductionOp operation = 1 [default = SUM];</code>
      *
@@ -62378,6 +62997,7 @@ public final class Caffe {
      */
     caffe.Caffe.ReductionParameter.ReductionOp getOperation();
 
+    // optional int32 axis = 2 [default = 0];
     /**
      * <code>optional int32 axis = 2 [default = 0];</code>
      *
@@ -62419,6 +63039,7 @@ public final class Caffe {
      */
     int getAxis();
 
+    // optional float coeff = 3 [default = 1];
     /**
      * <code>optional float coeff = 3 [default = 1];</code>
      *
@@ -62444,9 +63065,8 @@ public final class Caffe {
    * </pre>
    */
   public static final class ReductionParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.ReductionParameter)
-      ReductionParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements ReductionParameterOrBuilder {
     // Use ReductionParameter.newBuilder() to construct.
     private ReductionParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -62653,6 +63273,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional .caffe.ReductionParameter.ReductionOp operation = 1 [default = SUM];
     public static final int OPERATION_FIELD_NUMBER = 1;
     private caffe.Caffe.ReductionParameter.ReductionOp operation_;
     /**
@@ -62676,6 +63297,7 @@ public final class Caffe {
       return operation_;
     }
 
+    // optional int32 axis = 2 [default = 0];
     public static final int AXIS_FIELD_NUMBER = 2;
     private int axis_;
     /**
@@ -62723,6 +63345,7 @@ public final class Caffe {
       return axis_;
     }
 
+    // optional float coeff = 3 [default = 1];
     public static final int COEFF_FIELD_NUMBER = 3;
     private float coeff_;
     /**
@@ -62754,8 +63377,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -62880,9 +63502,8 @@ public final class Caffe {
      * </pre>
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.ReductionParameter)
-        caffe.Caffe.ReductionParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.ReductionParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_ReductionParameter_descriptor;
@@ -63013,6 +63634,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional .caffe.ReductionParameter.ReductionOp operation = 1 [default = SUM];
       private caffe.Caffe.ReductionParameter.ReductionOp operation_ = caffe.Caffe.ReductionParameter.ReductionOp.SUM;
       /**
        * <code>optional .caffe.ReductionParameter.ReductionOp operation = 1 [default = SUM];</code>
@@ -63064,6 +63686,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional int32 axis = 2 [default = 0];
       private int axis_ ;
       /**
        * <code>optional int32 axis = 2 [default = 0];</code>
@@ -63160,6 +63783,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float coeff = 3 [default = 1];
       private float coeff_ = 1F;
       /**
        * <code>optional float coeff = 3 [default = 1];</code>
@@ -63219,10 +63843,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.ReductionParameter)
   }
 
-  public interface ReLUParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.ReLUParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface ReLUParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional float negative_slope = 1 [default = 0];
     /**
      * <code>optional float negative_slope = 1 [default = 0];</code>
      *
@@ -63248,6 +63872,7 @@ public final class Caffe {
      */
     float getNegativeSlope();
 
+    // optional .caffe.ReLUParameter.Engine engine = 2 [default = DEFAULT];
     /**
      * <code>optional .caffe.ReLUParameter.Engine engine = 2 [default = DEFAULT];</code>
      */
@@ -63265,9 +63890,8 @@ public final class Caffe {
    * </pre>
    */
   public static final class ReLUParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.ReLUParameter)
-      ReLUParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements ReLUParameterOrBuilder {
     // Use ReLUParameter.newBuilder() to construct.
     private ReLUParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -63460,6 +64084,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional float negative_slope = 1 [default = 0];
     public static final int NEGATIVE_SLOPE_FIELD_NUMBER = 1;
     private float negativeSlope_;
     /**
@@ -63491,6 +64116,7 @@ public final class Caffe {
       return negativeSlope_;
     }
 
+    // optional .caffe.ReLUParameter.Engine engine = 2 [default = DEFAULT];
     public static final int ENGINE_FIELD_NUMBER = 2;
     private caffe.Caffe.ReLUParameter.Engine engine_;
     /**
@@ -63513,8 +64139,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -63632,9 +64257,8 @@ public final class Caffe {
      * </pre>
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.ReLUParameter)
-        caffe.Caffe.ReLUParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.ReLUParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_ReLUParameter_descriptor;
@@ -63756,6 +64380,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional float negative_slope = 1 [default = 0];
       private float negativeSlope_ ;
       /**
        * <code>optional float negative_slope = 1 [default = 0];</code>
@@ -63820,6 +64445,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional .caffe.ReLUParameter.Engine engine = 2 [default = DEFAULT];
       private caffe.Caffe.ReLUParameter.Engine engine_ = caffe.Caffe.ReLUParameter.Engine.DEFAULT;
       /**
        * <code>optional .caffe.ReLUParameter.Engine engine = 2 [default = DEFAULT];</code>
@@ -63866,10 +64492,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.ReLUParameter)
   }
 
-  public interface ReshapeParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.ReshapeParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface ReshapeParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional .caffe.BlobShape shape = 1;
     /**
      * <code>optional .caffe.BlobShape shape = 1;</code>
      *
@@ -63879,13 +64505,16 @@ public final class Caffe {
      * Exactly one dimension may be set to -1, in which case its value is
      * inferred from the count of the bottom blob and the remaining dimensions.
      * For example, suppose we want to reshape a 2D blob "input" with shape 2 x 8:
+     *
      *   layer {
      *     type: "Reshape" bottom: "input" top: "output"
      *     reshape_param { ... }
      *   }
+     *
      * If "input" is 2D with shape 2 x 8, then the following reshape_param
      * specifications are all equivalent, producing a 3D blob "output" with shape
      * 2 x 2 x 4:
+     *
      *   reshape_param { shape { dim:  2  dim: 2  dim:  4 } }
      *   reshape_param { shape { dim:  0  dim: 2  dim:  4 } }
      *   reshape_param { shape { dim:  0  dim: 2  dim: -1 } }
@@ -63902,13 +64531,16 @@ public final class Caffe {
      * Exactly one dimension may be set to -1, in which case its value is
      * inferred from the count of the bottom blob and the remaining dimensions.
      * For example, suppose we want to reshape a 2D blob "input" with shape 2 x 8:
+     *
      *   layer {
      *     type: "Reshape" bottom: "input" top: "output"
      *     reshape_param { ... }
      *   }
+     *
      * If "input" is 2D with shape 2 x 8, then the following reshape_param
      * specifications are all equivalent, producing a 3D blob "output" with shape
      * 2 x 2 x 4:
+     *
      *   reshape_param { shape { dim:  2  dim: 2  dim:  4 } }
      *   reshape_param { shape { dim:  0  dim: 2  dim:  4 } }
      *   reshape_param { shape { dim:  0  dim: 2  dim: -1 } }
@@ -63925,13 +64557,16 @@ public final class Caffe {
      * Exactly one dimension may be set to -1, in which case its value is
      * inferred from the count of the bottom blob and the remaining dimensions.
      * For example, suppose we want to reshape a 2D blob "input" with shape 2 x 8:
+     *
      *   layer {
      *     type: "Reshape" bottom: "input" top: "output"
      *     reshape_param { ... }
      *   }
+     *
      * If "input" is 2D with shape 2 x 8, then the following reshape_param
      * specifications are all equivalent, producing a 3D blob "output" with shape
      * 2 x 2 x 4:
+     *
      *   reshape_param { shape { dim:  2  dim: 2  dim:  4 } }
      *   reshape_param { shape { dim:  0  dim: 2  dim:  4 } }
      *   reshape_param { shape { dim:  0  dim: 2  dim: -1 } }
@@ -63940,6 +64575,7 @@ public final class Caffe {
      */
     caffe.Caffe.BlobShapeOrBuilder getShapeOrBuilder();
 
+    // optional int32 axis = 2 [default = 0];
     /**
      * <code>optional int32 axis = 2 [default = 0];</code>
      *
@@ -63948,28 +64584,36 @@ public final class Caffe {
      * replaced by (included in) the reshape. By default (axis == 0 and
      * num_axes == -1), the entire bottom blob shape is included in the reshape,
      * and hence the shape field must specify the entire output shape.
+     *
      * axis may be non-zero to retain some portion of the beginning of the input
      * shape (and may be negative to index from the end; e.g., -1 to begin the
      * reshape after the last axis, including nothing in the reshape,
      * -2 to include only the last axis, etc.).
+     *
      * For example, suppose "input" is a 2D blob with shape 2 x 8.
      * Then the following ReshapeLayer specifications are all equivalent,
      * producing a blob "output" with shape 2 x 2 x 4:
+     *
      *   reshape_param { shape { dim: 2  dim: 2  dim: 4 } }
      *   reshape_param { shape { dim: 2  dim: 4 } axis:  1 }
      *   reshape_param { shape { dim: 2  dim: 4 } axis: -3 }
+     *
      * num_axes specifies the extent of the reshape.
      * If num_axes &gt;= 0 (and axis &gt;= 0), the reshape will be performed only on
      * input axes in the range [axis, axis+num_axes].
      * num_axes may also be -1, the default, to include all remaining axes
      * (starting from axis).
+     *
      * For example, suppose "input" is a 2D blob with shape 2 x 8.
      * Then the following ReshapeLayer specifications are equivalent,
      * producing a blob "output" with shape 1 x 2 x 8.
+     *
      *   reshape_param { shape { dim:  1  dim: 2  dim:  8 } }
      *   reshape_param { shape { dim:  1  dim: 2  }  num_axes: 1 }
      *   reshape_param { shape { dim:  1  }  num_axes: 0 }
+     *
      * On the other hand, these would produce output blob shape 2 x 1 x 8:
+     *
      *   reshape_param { shape { dim: 2  dim: 1  dim: 8  }  }
      *   reshape_param { shape { dim: 1 }  axis: 1  num_axes: 0 }
      * </pre>
@@ -63983,34 +64627,43 @@ public final class Caffe {
      * replaced by (included in) the reshape. By default (axis == 0 and
      * num_axes == -1), the entire bottom blob shape is included in the reshape,
      * and hence the shape field must specify the entire output shape.
+     *
      * axis may be non-zero to retain some portion of the beginning of the input
      * shape (and may be negative to index from the end; e.g., -1 to begin the
      * reshape after the last axis, including nothing in the reshape,
      * -2 to include only the last axis, etc.).
+     *
      * For example, suppose "input" is a 2D blob with shape 2 x 8.
      * Then the following ReshapeLayer specifications are all equivalent,
      * producing a blob "output" with shape 2 x 2 x 4:
+     *
      *   reshape_param { shape { dim: 2  dim: 2  dim: 4 } }
      *   reshape_param { shape { dim: 2  dim: 4 } axis:  1 }
      *   reshape_param { shape { dim: 2  dim: 4 } axis: -3 }
+     *
      * num_axes specifies the extent of the reshape.
      * If num_axes &gt;= 0 (and axis &gt;= 0), the reshape will be performed only on
      * input axes in the range [axis, axis+num_axes].
      * num_axes may also be -1, the default, to include all remaining axes
      * (starting from axis).
+     *
      * For example, suppose "input" is a 2D blob with shape 2 x 8.
      * Then the following ReshapeLayer specifications are equivalent,
      * producing a blob "output" with shape 1 x 2 x 8.
+     *
      *   reshape_param { shape { dim:  1  dim: 2  dim:  8 } }
      *   reshape_param { shape { dim:  1  dim: 2  }  num_axes: 1 }
      *   reshape_param { shape { dim:  1  }  num_axes: 0 }
+     *
      * On the other hand, these would produce output blob shape 2 x 1 x 8:
+     *
      *   reshape_param { shape { dim: 2  dim: 1  dim: 8  }  }
      *   reshape_param { shape { dim: 1 }  axis: 1  num_axes: 0 }
      * </pre>
      */
     int getAxis();
 
+    // optional int32 num_axes = 3 [default = -1];
     /**
      * <code>optional int32 num_axes = 3 [default = -1];</code>
      */
@@ -64024,9 +64677,8 @@ public final class Caffe {
    * Protobuf type {@code caffe.ReshapeParameter}
    */
   public static final class ReshapeParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.ReshapeParameter)
-      ReshapeParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements ReshapeParameterOrBuilder {
     // Use ReshapeParameter.newBuilder() to construct.
     private ReshapeParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -64135,6 +64787,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional .caffe.BlobShape shape = 1;
     public static final int SHAPE_FIELD_NUMBER = 1;
     private caffe.Caffe.BlobShape shape_;
     /**
@@ -64146,13 +64799,16 @@ public final class Caffe {
      * Exactly one dimension may be set to -1, in which case its value is
      * inferred from the count of the bottom blob and the remaining dimensions.
      * For example, suppose we want to reshape a 2D blob "input" with shape 2 x 8:
+     *
      *   layer {
      *     type: "Reshape" bottom: "input" top: "output"
      *     reshape_param { ... }
      *   }
+     *
      * If "input" is 2D with shape 2 x 8, then the following reshape_param
      * specifications are all equivalent, producing a 3D blob "output" with shape
      * 2 x 2 x 4:
+     *
      *   reshape_param { shape { dim:  2  dim: 2  dim:  4 } }
      *   reshape_param { shape { dim:  0  dim: 2  dim:  4 } }
      *   reshape_param { shape { dim:  0  dim: 2  dim: -1 } }
@@ -64171,13 +64827,16 @@ public final class Caffe {
      * Exactly one dimension may be set to -1, in which case its value is
      * inferred from the count of the bottom blob and the remaining dimensions.
      * For example, suppose we want to reshape a 2D blob "input" with shape 2 x 8:
+     *
      *   layer {
      *     type: "Reshape" bottom: "input" top: "output"
      *     reshape_param { ... }
      *   }
+     *
      * If "input" is 2D with shape 2 x 8, then the following reshape_param
      * specifications are all equivalent, producing a 3D blob "output" with shape
      * 2 x 2 x 4:
+     *
      *   reshape_param { shape { dim:  2  dim: 2  dim:  4 } }
      *   reshape_param { shape { dim:  0  dim: 2  dim:  4 } }
      *   reshape_param { shape { dim:  0  dim: 2  dim: -1 } }
@@ -64196,13 +64855,16 @@ public final class Caffe {
      * Exactly one dimension may be set to -1, in which case its value is
      * inferred from the count of the bottom blob and the remaining dimensions.
      * For example, suppose we want to reshape a 2D blob "input" with shape 2 x 8:
+     *
      *   layer {
      *     type: "Reshape" bottom: "input" top: "output"
      *     reshape_param { ... }
      *   }
+     *
      * If "input" is 2D with shape 2 x 8, then the following reshape_param
      * specifications are all equivalent, producing a 3D blob "output" with shape
      * 2 x 2 x 4:
+     *
      *   reshape_param { shape { dim:  2  dim: 2  dim:  4 } }
      *   reshape_param { shape { dim:  0  dim: 2  dim:  4 } }
      *   reshape_param { shape { dim:  0  dim: 2  dim: -1 } }
@@ -64213,6 +64875,7 @@ public final class Caffe {
       return shape_;
     }
 
+    // optional int32 axis = 2 [default = 0];
     public static final int AXIS_FIELD_NUMBER = 2;
     private int axis_;
     /**
@@ -64223,28 +64886,36 @@ public final class Caffe {
      * replaced by (included in) the reshape. By default (axis == 0 and
      * num_axes == -1), the entire bottom blob shape is included in the reshape,
      * and hence the shape field must specify the entire output shape.
+     *
      * axis may be non-zero to retain some portion of the beginning of the input
      * shape (and may be negative to index from the end; e.g., -1 to begin the
      * reshape after the last axis, including nothing in the reshape,
      * -2 to include only the last axis, etc.).
+     *
      * For example, suppose "input" is a 2D blob with shape 2 x 8.
      * Then the following ReshapeLayer specifications are all equivalent,
      * producing a blob "output" with shape 2 x 2 x 4:
+     *
      *   reshape_param { shape { dim: 2  dim: 2  dim: 4 } }
      *   reshape_param { shape { dim: 2  dim: 4 } axis:  1 }
      *   reshape_param { shape { dim: 2  dim: 4 } axis: -3 }
+     *
      * num_axes specifies the extent of the reshape.
      * If num_axes &gt;= 0 (and axis &gt;= 0), the reshape will be performed only on
      * input axes in the range [axis, axis+num_axes].
      * num_axes may also be -1, the default, to include all remaining axes
      * (starting from axis).
+     *
      * For example, suppose "input" is a 2D blob with shape 2 x 8.
      * Then the following ReshapeLayer specifications are equivalent,
      * producing a blob "output" with shape 1 x 2 x 8.
+     *
      *   reshape_param { shape { dim:  1  dim: 2  dim:  8 } }
      *   reshape_param { shape { dim:  1  dim: 2  }  num_axes: 1 }
      *   reshape_param { shape { dim:  1  }  num_axes: 0 }
+     *
      * On the other hand, these would produce output blob shape 2 x 1 x 8:
+     *
      *   reshape_param { shape { dim: 2  dim: 1  dim: 8  }  }
      *   reshape_param { shape { dim: 1 }  axis: 1  num_axes: 0 }
      * </pre>
@@ -64260,28 +64931,36 @@ public final class Caffe {
      * replaced by (included in) the reshape. By default (axis == 0 and
      * num_axes == -1), the entire bottom blob shape is included in the reshape,
      * and hence the shape field must specify the entire output shape.
+     *
      * axis may be non-zero to retain some portion of the beginning of the input
      * shape (and may be negative to index from the end; e.g., -1 to begin the
      * reshape after the last axis, including nothing in the reshape,
      * -2 to include only the last axis, etc.).
+     *
      * For example, suppose "input" is a 2D blob with shape 2 x 8.
      * Then the following ReshapeLayer specifications are all equivalent,
      * producing a blob "output" with shape 2 x 2 x 4:
+     *
      *   reshape_param { shape { dim: 2  dim: 2  dim: 4 } }
      *   reshape_param { shape { dim: 2  dim: 4 } axis:  1 }
      *   reshape_param { shape { dim: 2  dim: 4 } axis: -3 }
+     *
      * num_axes specifies the extent of the reshape.
      * If num_axes &gt;= 0 (and axis &gt;= 0), the reshape will be performed only on
      * input axes in the range [axis, axis+num_axes].
      * num_axes may also be -1, the default, to include all remaining axes
      * (starting from axis).
+     *
      * For example, suppose "input" is a 2D blob with shape 2 x 8.
      * Then the following ReshapeLayer specifications are equivalent,
      * producing a blob "output" with shape 1 x 2 x 8.
+     *
      *   reshape_param { shape { dim:  1  dim: 2  dim:  8 } }
      *   reshape_param { shape { dim:  1  dim: 2  }  num_axes: 1 }
      *   reshape_param { shape { dim:  1  }  num_axes: 0 }
+     *
      * On the other hand, these would produce output blob shape 2 x 1 x 8:
+     *
      *   reshape_param { shape { dim: 2  dim: 1  dim: 8  }  }
      *   reshape_param { shape { dim: 1 }  axis: 1  num_axes: 0 }
      * </pre>
@@ -64290,6 +64969,7 @@ public final class Caffe {
       return axis_;
     }
 
+    // optional int32 num_axes = 3 [default = -1];
     public static final int NUM_AXES_FIELD_NUMBER = 3;
     private int numAxes_;
     /**
@@ -64313,8 +64993,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -64435,9 +65114,8 @@ public final class Caffe {
      * Protobuf type {@code caffe.ReshapeParameter}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.ReshapeParameter)
-        caffe.Caffe.ReshapeParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.ReshapeParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_ReshapeParameter_descriptor;
@@ -64577,6 +65255,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional .caffe.BlobShape shape = 1;
       private caffe.Caffe.BlobShape shape_ = caffe.Caffe.BlobShape.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.BlobShape, caffe.Caffe.BlobShape.Builder, caffe.Caffe.BlobShapeOrBuilder> shapeBuilder_;
@@ -64589,13 +65268,16 @@ public final class Caffe {
        * Exactly one dimension may be set to -1, in which case its value is
        * inferred from the count of the bottom blob and the remaining dimensions.
        * For example, suppose we want to reshape a 2D blob "input" with shape 2 x 8:
+       *
        *   layer {
        *     type: "Reshape" bottom: "input" top: "output"
        *     reshape_param { ... }
        *   }
+       *
        * If "input" is 2D with shape 2 x 8, then the following reshape_param
        * specifications are all equivalent, producing a 3D blob "output" with shape
        * 2 x 2 x 4:
+       *
        *   reshape_param { shape { dim:  2  dim: 2  dim:  4 } }
        *   reshape_param { shape { dim:  0  dim: 2  dim:  4 } }
        *   reshape_param { shape { dim:  0  dim: 2  dim: -1 } }
@@ -64614,13 +65296,16 @@ public final class Caffe {
        * Exactly one dimension may be set to -1, in which case its value is
        * inferred from the count of the bottom blob and the remaining dimensions.
        * For example, suppose we want to reshape a 2D blob "input" with shape 2 x 8:
+       *
        *   layer {
        *     type: "Reshape" bottom: "input" top: "output"
        *     reshape_param { ... }
        *   }
+       *
        * If "input" is 2D with shape 2 x 8, then the following reshape_param
        * specifications are all equivalent, producing a 3D blob "output" with shape
        * 2 x 2 x 4:
+       *
        *   reshape_param { shape { dim:  2  dim: 2  dim:  4 } }
        *   reshape_param { shape { dim:  0  dim: 2  dim:  4 } }
        *   reshape_param { shape { dim:  0  dim: 2  dim: -1 } }
@@ -64643,13 +65328,16 @@ public final class Caffe {
        * Exactly one dimension may be set to -1, in which case its value is
        * inferred from the count of the bottom blob and the remaining dimensions.
        * For example, suppose we want to reshape a 2D blob "input" with shape 2 x 8:
+       *
        *   layer {
        *     type: "Reshape" bottom: "input" top: "output"
        *     reshape_param { ... }
        *   }
+       *
        * If "input" is 2D with shape 2 x 8, then the following reshape_param
        * specifications are all equivalent, producing a 3D blob "output" with shape
        * 2 x 2 x 4:
+       *
        *   reshape_param { shape { dim:  2  dim: 2  dim:  4 } }
        *   reshape_param { shape { dim:  0  dim: 2  dim:  4 } }
        *   reshape_param { shape { dim:  0  dim: 2  dim: -1 } }
@@ -64678,13 +65366,16 @@ public final class Caffe {
        * Exactly one dimension may be set to -1, in which case its value is
        * inferred from the count of the bottom blob and the remaining dimensions.
        * For example, suppose we want to reshape a 2D blob "input" with shape 2 x 8:
+       *
        *   layer {
        *     type: "Reshape" bottom: "input" top: "output"
        *     reshape_param { ... }
        *   }
+       *
        * If "input" is 2D with shape 2 x 8, then the following reshape_param
        * specifications are all equivalent, producing a 3D blob "output" with shape
        * 2 x 2 x 4:
+       *
        *   reshape_param { shape { dim:  2  dim: 2  dim:  4 } }
        *   reshape_param { shape { dim:  0  dim: 2  dim:  4 } }
        *   reshape_param { shape { dim:  0  dim: 2  dim: -1 } }
@@ -64711,13 +65402,16 @@ public final class Caffe {
        * Exactly one dimension may be set to -1, in which case its value is
        * inferred from the count of the bottom blob and the remaining dimensions.
        * For example, suppose we want to reshape a 2D blob "input" with shape 2 x 8:
+       *
        *   layer {
        *     type: "Reshape" bottom: "input" top: "output"
        *     reshape_param { ... }
        *   }
+       *
        * If "input" is 2D with shape 2 x 8, then the following reshape_param
        * specifications are all equivalent, producing a 3D blob "output" with shape
        * 2 x 2 x 4:
+       *
        *   reshape_param { shape { dim:  2  dim: 2  dim:  4 } }
        *   reshape_param { shape { dim:  0  dim: 2  dim:  4 } }
        *   reshape_param { shape { dim:  0  dim: 2  dim: -1 } }
@@ -64749,13 +65443,16 @@ public final class Caffe {
        * Exactly one dimension may be set to -1, in which case its value is
        * inferred from the count of the bottom blob and the remaining dimensions.
        * For example, suppose we want to reshape a 2D blob "input" with shape 2 x 8:
+       *
        *   layer {
        *     type: "Reshape" bottom: "input" top: "output"
        *     reshape_param { ... }
        *   }
+       *
        * If "input" is 2D with shape 2 x 8, then the following reshape_param
        * specifications are all equivalent, producing a 3D blob "output" with shape
        * 2 x 2 x 4:
+       *
        *   reshape_param { shape { dim:  2  dim: 2  dim:  4 } }
        *   reshape_param { shape { dim:  0  dim: 2  dim:  4 } }
        *   reshape_param { shape { dim:  0  dim: 2  dim: -1 } }
@@ -64781,13 +65478,16 @@ public final class Caffe {
        * Exactly one dimension may be set to -1, in which case its value is
        * inferred from the count of the bottom blob and the remaining dimensions.
        * For example, suppose we want to reshape a 2D blob "input" with shape 2 x 8:
+       *
        *   layer {
        *     type: "Reshape" bottom: "input" top: "output"
        *     reshape_param { ... }
        *   }
+       *
        * If "input" is 2D with shape 2 x 8, then the following reshape_param
        * specifications are all equivalent, producing a 3D blob "output" with shape
        * 2 x 2 x 4:
+       *
        *   reshape_param { shape { dim:  2  dim: 2  dim:  4 } }
        *   reshape_param { shape { dim:  0  dim: 2  dim:  4 } }
        *   reshape_param { shape { dim:  0  dim: 2  dim: -1 } }
@@ -64808,13 +65508,16 @@ public final class Caffe {
        * Exactly one dimension may be set to -1, in which case its value is
        * inferred from the count of the bottom blob and the remaining dimensions.
        * For example, suppose we want to reshape a 2D blob "input" with shape 2 x 8:
+       *
        *   layer {
        *     type: "Reshape" bottom: "input" top: "output"
        *     reshape_param { ... }
        *   }
+       *
        * If "input" is 2D with shape 2 x 8, then the following reshape_param
        * specifications are all equivalent, producing a 3D blob "output" with shape
        * 2 x 2 x 4:
+       *
        *   reshape_param { shape { dim:  2  dim: 2  dim:  4 } }
        *   reshape_param { shape { dim:  0  dim: 2  dim:  4 } }
        *   reshape_param { shape { dim:  0  dim: 2  dim: -1 } }
@@ -64837,13 +65540,16 @@ public final class Caffe {
        * Exactly one dimension may be set to -1, in which case its value is
        * inferred from the count of the bottom blob and the remaining dimensions.
        * For example, suppose we want to reshape a 2D blob "input" with shape 2 x 8:
+       *
        *   layer {
        *     type: "Reshape" bottom: "input" top: "output"
        *     reshape_param { ... }
        *   }
+       *
        * If "input" is 2D with shape 2 x 8, then the following reshape_param
        * specifications are all equivalent, producing a 3D blob "output" with shape
        * 2 x 2 x 4:
+       *
        *   reshape_param { shape { dim:  2  dim: 2  dim:  4 } }
        *   reshape_param { shape { dim:  0  dim: 2  dim:  4 } }
        *   reshape_param { shape { dim:  0  dim: 2  dim: -1 } }
@@ -64856,7 +65562,7 @@ public final class Caffe {
         if (shapeBuilder_ == null) {
           shapeBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.BlobShape, caffe.Caffe.BlobShape.Builder, caffe.Caffe.BlobShapeOrBuilder>(
-                  getShape(),
+                  shape_,
                   getParentForChildren(),
                   isClean());
           shape_ = null;
@@ -64864,6 +65570,7 @@ public final class Caffe {
         return shapeBuilder_;
       }
 
+      // optional int32 axis = 2 [default = 0];
       private int axis_ ;
       /**
        * <code>optional int32 axis = 2 [default = 0];</code>
@@ -64873,28 +65580,36 @@ public final class Caffe {
        * replaced by (included in) the reshape. By default (axis == 0 and
        * num_axes == -1), the entire bottom blob shape is included in the reshape,
        * and hence the shape field must specify the entire output shape.
+       *
        * axis may be non-zero to retain some portion of the beginning of the input
        * shape (and may be negative to index from the end; e.g., -1 to begin the
        * reshape after the last axis, including nothing in the reshape,
        * -2 to include only the last axis, etc.).
+       *
        * For example, suppose "input" is a 2D blob with shape 2 x 8.
        * Then the following ReshapeLayer specifications are all equivalent,
        * producing a blob "output" with shape 2 x 2 x 4:
+       *
        *   reshape_param { shape { dim: 2  dim: 2  dim: 4 } }
        *   reshape_param { shape { dim: 2  dim: 4 } axis:  1 }
        *   reshape_param { shape { dim: 2  dim: 4 } axis: -3 }
+       *
        * num_axes specifies the extent of the reshape.
        * If num_axes &gt;= 0 (and axis &gt;= 0), the reshape will be performed only on
        * input axes in the range [axis, axis+num_axes].
        * num_axes may also be -1, the default, to include all remaining axes
        * (starting from axis).
+       *
        * For example, suppose "input" is a 2D blob with shape 2 x 8.
        * Then the following ReshapeLayer specifications are equivalent,
        * producing a blob "output" with shape 1 x 2 x 8.
+       *
        *   reshape_param { shape { dim:  1  dim: 2  dim:  8 } }
        *   reshape_param { shape { dim:  1  dim: 2  }  num_axes: 1 }
        *   reshape_param { shape { dim:  1  }  num_axes: 0 }
+       *
        * On the other hand, these would produce output blob shape 2 x 1 x 8:
+       *
        *   reshape_param { shape { dim: 2  dim: 1  dim: 8  }  }
        *   reshape_param { shape { dim: 1 }  axis: 1  num_axes: 0 }
        * </pre>
@@ -64910,28 +65625,36 @@ public final class Caffe {
        * replaced by (included in) the reshape. By default (axis == 0 and
        * num_axes == -1), the entire bottom blob shape is included in the reshape,
        * and hence the shape field must specify the entire output shape.
+       *
        * axis may be non-zero to retain some portion of the beginning of the input
        * shape (and may be negative to index from the end; e.g., -1 to begin the
        * reshape after the last axis, including nothing in the reshape,
        * -2 to include only the last axis, etc.).
+       *
        * For example, suppose "input" is a 2D blob with shape 2 x 8.
        * Then the following ReshapeLayer specifications are all equivalent,
        * producing a blob "output" with shape 2 x 2 x 4:
+       *
        *   reshape_param { shape { dim: 2  dim: 2  dim: 4 } }
        *   reshape_param { shape { dim: 2  dim: 4 } axis:  1 }
        *   reshape_param { shape { dim: 2  dim: 4 } axis: -3 }
+       *
        * num_axes specifies the extent of the reshape.
        * If num_axes &gt;= 0 (and axis &gt;= 0), the reshape will be performed only on
        * input axes in the range [axis, axis+num_axes].
        * num_axes may also be -1, the default, to include all remaining axes
        * (starting from axis).
+       *
        * For example, suppose "input" is a 2D blob with shape 2 x 8.
        * Then the following ReshapeLayer specifications are equivalent,
        * producing a blob "output" with shape 1 x 2 x 8.
+       *
        *   reshape_param { shape { dim:  1  dim: 2  dim:  8 } }
        *   reshape_param { shape { dim:  1  dim: 2  }  num_axes: 1 }
        *   reshape_param { shape { dim:  1  }  num_axes: 0 }
+       *
        * On the other hand, these would produce output blob shape 2 x 1 x 8:
+       *
        *   reshape_param { shape { dim: 2  dim: 1  dim: 8  }  }
        *   reshape_param { shape { dim: 1 }  axis: 1  num_axes: 0 }
        * </pre>
@@ -64947,28 +65670,36 @@ public final class Caffe {
        * replaced by (included in) the reshape. By default (axis == 0 and
        * num_axes == -1), the entire bottom blob shape is included in the reshape,
        * and hence the shape field must specify the entire output shape.
+       *
        * axis may be non-zero to retain some portion of the beginning of the input
        * shape (and may be negative to index from the end; e.g., -1 to begin the
        * reshape after the last axis, including nothing in the reshape,
        * -2 to include only the last axis, etc.).
+       *
        * For example, suppose "input" is a 2D blob with shape 2 x 8.
        * Then the following ReshapeLayer specifications are all equivalent,
        * producing a blob "output" with shape 2 x 2 x 4:
+       *
        *   reshape_param { shape { dim: 2  dim: 2  dim: 4 } }
        *   reshape_param { shape { dim: 2  dim: 4 } axis:  1 }
        *   reshape_param { shape { dim: 2  dim: 4 } axis: -3 }
+       *
        * num_axes specifies the extent of the reshape.
        * If num_axes &gt;= 0 (and axis &gt;= 0), the reshape will be performed only on
        * input axes in the range [axis, axis+num_axes].
        * num_axes may also be -1, the default, to include all remaining axes
        * (starting from axis).
+       *
        * For example, suppose "input" is a 2D blob with shape 2 x 8.
        * Then the following ReshapeLayer specifications are equivalent,
        * producing a blob "output" with shape 1 x 2 x 8.
+       *
        *   reshape_param { shape { dim:  1  dim: 2  dim:  8 } }
        *   reshape_param { shape { dim:  1  dim: 2  }  num_axes: 1 }
        *   reshape_param { shape { dim:  1  }  num_axes: 0 }
+       *
        * On the other hand, these would produce output blob shape 2 x 1 x 8:
+       *
        *   reshape_param { shape { dim: 2  dim: 1  dim: 8  }  }
        *   reshape_param { shape { dim: 1 }  axis: 1  num_axes: 0 }
        * </pre>
@@ -64987,28 +65718,36 @@ public final class Caffe {
        * replaced by (included in) the reshape. By default (axis == 0 and
        * num_axes == -1), the entire bottom blob shape is included in the reshape,
        * and hence the shape field must specify the entire output shape.
+       *
        * axis may be non-zero to retain some portion of the beginning of the input
        * shape (and may be negative to index from the end; e.g., -1 to begin the
        * reshape after the last axis, including nothing in the reshape,
        * -2 to include only the last axis, etc.).
+       *
        * For example, suppose "input" is a 2D blob with shape 2 x 8.
        * Then the following ReshapeLayer specifications are all equivalent,
        * producing a blob "output" with shape 2 x 2 x 4:
+       *
        *   reshape_param { shape { dim: 2  dim: 2  dim: 4 } }
        *   reshape_param { shape { dim: 2  dim: 4 } axis:  1 }
        *   reshape_param { shape { dim: 2  dim: 4 } axis: -3 }
+       *
        * num_axes specifies the extent of the reshape.
        * If num_axes &gt;= 0 (and axis &gt;= 0), the reshape will be performed only on
        * input axes in the range [axis, axis+num_axes].
        * num_axes may also be -1, the default, to include all remaining axes
        * (starting from axis).
+       *
        * For example, suppose "input" is a 2D blob with shape 2 x 8.
        * Then the following ReshapeLayer specifications are equivalent,
        * producing a blob "output" with shape 1 x 2 x 8.
+       *
        *   reshape_param { shape { dim:  1  dim: 2  dim:  8 } }
        *   reshape_param { shape { dim:  1  dim: 2  }  num_axes: 1 }
        *   reshape_param { shape { dim:  1  }  num_axes: 0 }
+       *
        * On the other hand, these would produce output blob shape 2 x 1 x 8:
+       *
        *   reshape_param { shape { dim: 2  dim: 1  dim: 8  }  }
        *   reshape_param { shape { dim: 1 }  axis: 1  num_axes: 0 }
        * </pre>
@@ -65020,6 +65759,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional int32 num_axes = 3 [default = -1];
       private int numAxes_ = -1;
       /**
        * <code>optional int32 num_axes = 3 [default = -1];</code>
@@ -65063,10 +65803,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.ReshapeParameter)
   }
 
-  public interface ScaleParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.ScaleParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface ScaleParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional int32 axis = 1 [default = 1];
     /**
      * <code>optional int32 axis = 1 [default = 1];</code>
      *
@@ -65074,6 +65814,7 @@ public final class Caffe {
      * The first axis of bottom[0] (the first input Blob) along which to apply
      * bottom[1] (the second input Blob).  May be negative to index from the end
      * (e.g., -1 for the last axis).
+     *
      * For example, if bottom[0] is 4D with shape 100x3x40x60, the output
      * top[0] will have the same shape, and bottom[1] may have any of the
      * following shapes (for the given value of axis):
@@ -65093,6 +65834,7 @@ public final class Caffe {
      * The first axis of bottom[0] (the first input Blob) along which to apply
      * bottom[1] (the second input Blob).  May be negative to index from the end
      * (e.g., -1 for the last axis).
+     *
      * For example, if bottom[0] is 4D with shape 100x3x40x60, the output
      * top[0] will have the same shape, and bottom[1] may have any of the
      * following shapes (for the given value of axis):
@@ -65106,6 +65848,7 @@ public final class Caffe {
      */
     int getAxis();
 
+    // optional int32 num_axes = 2 [default = 1];
     /**
      * <code>optional int32 num_axes = 2 [default = 1];</code>
      *
@@ -65133,6 +65876,7 @@ public final class Caffe {
      */
     int getNumAxes();
 
+    // optional .caffe.FillerParameter filler = 3;
     /**
      * <code>optional .caffe.FillerParameter filler = 3;</code>
      *
@@ -65170,6 +65914,7 @@ public final class Caffe {
      */
     caffe.Caffe.FillerParameterOrBuilder getFillerOrBuilder();
 
+    // optional bool bias_term = 4 [default = false];
     /**
      * <code>optional bool bias_term = 4 [default = false];</code>
      *
@@ -65189,6 +65934,7 @@ public final class Caffe {
      */
     boolean getBiasTerm();
 
+    // optional .caffe.FillerParameter bias_filler = 5;
     /**
      * <code>optional .caffe.FillerParameter bias_filler = 5;</code>
      */
@@ -65206,9 +65952,8 @@ public final class Caffe {
    * Protobuf type {@code caffe.ScaleParameter}
    */
   public static final class ScaleParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.ScaleParameter)
-      ScaleParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements ScaleParameterOrBuilder {
     // Use ScaleParameter.newBuilder() to construct.
     private ScaleParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -65335,6 +66080,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional int32 axis = 1 [default = 1];
     public static final int AXIS_FIELD_NUMBER = 1;
     private int axis_;
     /**
@@ -65344,6 +66090,7 @@ public final class Caffe {
      * The first axis of bottom[0] (the first input Blob) along which to apply
      * bottom[1] (the second input Blob).  May be negative to index from the end
      * (e.g., -1 for the last axis).
+     *
      * For example, if bottom[0] is 4D with shape 100x3x40x60, the output
      * top[0] will have the same shape, and bottom[1] may have any of the
      * following shapes (for the given value of axis):
@@ -65365,6 +66112,7 @@ public final class Caffe {
      * The first axis of bottom[0] (the first input Blob) along which to apply
      * bottom[1] (the second input Blob).  May be negative to index from the end
      * (e.g., -1 for the last axis).
+     *
      * For example, if bottom[0] is 4D with shape 100x3x40x60, the output
      * top[0] will have the same shape, and bottom[1] may have any of the
      * following shapes (for the given value of axis):
@@ -65380,6 +66128,7 @@ public final class Caffe {
       return axis_;
     }
 
+    // optional int32 num_axes = 2 [default = 1];
     public static final int NUM_AXES_FIELD_NUMBER = 2;
     private int numAxes_;
     /**
@@ -65413,6 +66162,7 @@ public final class Caffe {
       return numAxes_;
     }
 
+    // optional .caffe.FillerParameter filler = 3;
     public static final int FILLER_FIELD_NUMBER = 3;
     private caffe.Caffe.FillerParameter filler_;
     /**
@@ -65458,6 +66208,7 @@ public final class Caffe {
       return filler_;
     }
 
+    // optional bool bias_term = 4 [default = false];
     public static final int BIAS_TERM_FIELD_NUMBER = 4;
     private boolean biasTerm_;
     /**
@@ -65483,6 +66234,7 @@ public final class Caffe {
       return biasTerm_;
     }
 
+    // optional .caffe.FillerParameter bias_filler = 5;
     public static final int BIAS_FILLER_FIELD_NUMBER = 5;
     private caffe.Caffe.FillerParameter biasFiller_;
     /**
@@ -65514,8 +66266,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -65650,9 +66401,8 @@ public final class Caffe {
      * Protobuf type {@code caffe.ScaleParameter}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.ScaleParameter)
-        caffe.Caffe.ScaleParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.ScaleParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_ScaleParameter_descriptor;
@@ -65819,6 +66569,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional int32 axis = 1 [default = 1];
       private int axis_ = 1;
       /**
        * <code>optional int32 axis = 1 [default = 1];</code>
@@ -65827,6 +66578,7 @@ public final class Caffe {
        * The first axis of bottom[0] (the first input Blob) along which to apply
        * bottom[1] (the second input Blob).  May be negative to index from the end
        * (e.g., -1 for the last axis).
+       *
        * For example, if bottom[0] is 4D with shape 100x3x40x60, the output
        * top[0] will have the same shape, and bottom[1] may have any of the
        * following shapes (for the given value of axis):
@@ -65848,6 +66600,7 @@ public final class Caffe {
        * The first axis of bottom[0] (the first input Blob) along which to apply
        * bottom[1] (the second input Blob).  May be negative to index from the end
        * (e.g., -1 for the last axis).
+       *
        * For example, if bottom[0] is 4D with shape 100x3x40x60, the output
        * top[0] will have the same shape, and bottom[1] may have any of the
        * following shapes (for the given value of axis):
@@ -65869,6 +66622,7 @@ public final class Caffe {
        * The first axis of bottom[0] (the first input Blob) along which to apply
        * bottom[1] (the second input Blob).  May be negative to index from the end
        * (e.g., -1 for the last axis).
+       *
        * For example, if bottom[0] is 4D with shape 100x3x40x60, the output
        * top[0] will have the same shape, and bottom[1] may have any of the
        * following shapes (for the given value of axis):
@@ -65893,6 +66647,7 @@ public final class Caffe {
        * The first axis of bottom[0] (the first input Blob) along which to apply
        * bottom[1] (the second input Blob).  May be negative to index from the end
        * (e.g., -1 for the last axis).
+       *
        * For example, if bottom[0] is 4D with shape 100x3x40x60, the output
        * top[0] will have the same shape, and bottom[1] may have any of the
        * following shapes (for the given value of axis):
@@ -65911,6 +66666,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional int32 num_axes = 2 [default = 1];
       private int numAxes_ = 1;
       /**
        * <code>optional int32 num_axes = 2 [default = 1];</code>
@@ -65979,6 +66735,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional .caffe.FillerParameter filler = 3;
       private caffe.Caffe.FillerParameter filler_ = caffe.Caffe.FillerParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.FillerParameter, caffe.Caffe.FillerParameter.Builder, caffe.Caffe.FillerParameterOrBuilder> fillerBuilder_;
@@ -66159,7 +66916,7 @@ public final class Caffe {
         if (fillerBuilder_ == null) {
           fillerBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.FillerParameter, caffe.Caffe.FillerParameter.Builder, caffe.Caffe.FillerParameterOrBuilder>(
-                  getFiller(),
+                  filler_,
                   getParentForChildren(),
                   isClean());
           filler_ = null;
@@ -66167,6 +66924,7 @@ public final class Caffe {
         return fillerBuilder_;
       }
 
+      // optional bool bias_term = 4 [default = false];
       private boolean biasTerm_ ;
       /**
        * <code>optional bool bias_term = 4 [default = false];</code>
@@ -66219,6 +66977,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional .caffe.FillerParameter bias_filler = 5;
       private caffe.Caffe.FillerParameter biasFiller_ = caffe.Caffe.FillerParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.FillerParameter, caffe.Caffe.FillerParameter.Builder, caffe.Caffe.FillerParameterOrBuilder> biasFillerBuilder_;
@@ -66327,7 +67086,7 @@ public final class Caffe {
         if (biasFillerBuilder_ == null) {
           biasFillerBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.FillerParameter, caffe.Caffe.FillerParameter.Builder, caffe.Caffe.FillerParameterOrBuilder>(
-                  getBiasFiller(),
+                  biasFiller_,
                   getParentForChildren(),
                   isClean());
           biasFiller_ = null;
@@ -66346,10 +67105,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.ScaleParameter)
   }
 
-  public interface SigmoidParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.SigmoidParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface SigmoidParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional .caffe.SigmoidParameter.Engine engine = 1 [default = DEFAULT];
     /**
      * <code>optional .caffe.SigmoidParameter.Engine engine = 1 [default = DEFAULT];</code>
      */
@@ -66363,9 +67122,8 @@ public final class Caffe {
    * Protobuf type {@code caffe.SigmoidParameter}
    */
   public static final class SigmoidParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.SigmoidParameter)
-      SigmoidParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements SigmoidParameterOrBuilder {
     // Use SigmoidParameter.newBuilder() to construct.
     private SigmoidParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -66553,6 +67311,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional .caffe.SigmoidParameter.Engine engine = 1 [default = DEFAULT];
     public static final int ENGINE_FIELD_NUMBER = 1;
     private caffe.Caffe.SigmoidParameter.Engine engine_;
     /**
@@ -66574,8 +67333,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -66682,9 +67440,8 @@ public final class Caffe {
      * Protobuf type {@code caffe.SigmoidParameter}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.SigmoidParameter)
-        caffe.Caffe.SigmoidParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.SigmoidParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_SigmoidParameter_descriptor;
@@ -66797,6 +67554,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional .caffe.SigmoidParameter.Engine engine = 1 [default = DEFAULT];
       private caffe.Caffe.SigmoidParameter.Engine engine_ = caffe.Caffe.SigmoidParameter.Engine.DEFAULT;
       /**
        * <code>optional .caffe.SigmoidParameter.Engine engine = 1 [default = DEFAULT];</code>
@@ -66843,10 +67601,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.SigmoidParameter)
   }
 
-  public interface SliceParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.SliceParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface SliceParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional int32 axis = 3 [default = 1];
     /**
      * <code>optional int32 axis = 3 [default = 1];</code>
      *
@@ -66868,6 +67626,7 @@ public final class Caffe {
      */
     int getAxis();
 
+    // repeated uint32 slice_point = 2;
     /**
      * <code>repeated uint32 slice_point = 2;</code>
      */
@@ -66881,6 +67640,7 @@ public final class Caffe {
      */
     int getSlicePoint(int index);
 
+    // optional uint32 slice_dim = 1 [default = 1];
     /**
      * <code>optional uint32 slice_dim = 1 [default = 1];</code>
      *
@@ -66902,9 +67662,8 @@ public final class Caffe {
    * Protobuf type {@code caffe.SliceParameter}
    */
   public static final class SliceParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.SliceParameter)
-      SliceParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements SliceParameterOrBuilder {
     // Use SliceParameter.newBuilder() to construct.
     private SliceParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -67024,6 +67783,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional int32 axis = 3 [default = 1];
     public static final int AXIS_FIELD_NUMBER = 3;
     private int axis_;
     /**
@@ -67051,6 +67811,7 @@ public final class Caffe {
       return axis_;
     }
 
+    // repeated uint32 slice_point = 2;
     public static final int SLICE_POINT_FIELD_NUMBER = 2;
     private java.util.List<java.lang.Integer> slicePoint_;
     /**
@@ -67073,6 +67834,7 @@ public final class Caffe {
       return slicePoint_.get(index);
     }
 
+    // optional uint32 slice_dim = 1 [default = 1];
     public static final int SLICE_DIM_FIELD_NUMBER = 1;
     private int sliceDim_;
     /**
@@ -67104,8 +67866,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -67231,9 +67992,8 @@ public final class Caffe {
      * Protobuf type {@code caffe.SliceParameter}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.SliceParameter)
-        caffe.Caffe.SliceParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.SliceParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_SliceParameter_descriptor;
@@ -67372,6 +68132,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional int32 axis = 3 [default = 1];
       private int axis_ = 1;
       /**
        * <code>optional int32 axis = 3 [default = 1];</code>
@@ -67428,6 +68189,7 @@ public final class Caffe {
         return this;
       }
 
+      // repeated uint32 slice_point = 2;
       private java.util.List<java.lang.Integer> slicePoint_ = java.util.Collections.emptyList();
       private void ensureSlicePointIsMutable() {
         if (!((bitField0_ & 0x00000002) == 0x00000002)) {
@@ -67479,8 +68241,7 @@ public final class Caffe {
       public Builder addAllSlicePoint(
           java.lang.Iterable<? extends java.lang.Integer> values) {
         ensureSlicePointIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, slicePoint_);
+        super.addAll(values, slicePoint_);
         onChanged();
         return this;
       }
@@ -67494,6 +68255,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 slice_dim = 1 [default = 1];
       private int sliceDim_ = 1;
       /**
        * <code>optional uint32 slice_dim = 1 [default = 1];</code>
@@ -67553,10 +68315,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.SliceParameter)
   }
 
-  public interface SoftmaxParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.SoftmaxParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface SoftmaxParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional .caffe.SoftmaxParameter.Engine engine = 1 [default = DEFAULT];
     /**
      * <code>optional .caffe.SoftmaxParameter.Engine engine = 1 [default = DEFAULT];</code>
      */
@@ -67566,6 +68328,7 @@ public final class Caffe {
      */
     caffe.Caffe.SoftmaxParameter.Engine getEngine();
 
+    // optional int32 axis = 2 [default = 1];
     /**
      * <code>optional int32 axis = 2 [default = 1];</code>
      *
@@ -67595,9 +68358,8 @@ public final class Caffe {
    * </pre>
    */
   public static final class SoftmaxParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.SoftmaxParameter)
-      SoftmaxParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements SoftmaxParameterOrBuilder {
     // Use SoftmaxParameter.newBuilder() to construct.
     private SoftmaxParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -67790,6 +68552,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional .caffe.SoftmaxParameter.Engine engine = 1 [default = DEFAULT];
     public static final int ENGINE_FIELD_NUMBER = 1;
     private caffe.Caffe.SoftmaxParameter.Engine engine_;
     /**
@@ -67805,6 +68568,7 @@ public final class Caffe {
       return engine_;
     }
 
+    // optional int32 axis = 2 [default = 1];
     public static final int AXIS_FIELD_NUMBER = 2;
     private int axis_;
     /**
@@ -67839,8 +68603,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -67958,9 +68721,8 @@ public final class Caffe {
      * </pre>
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.SoftmaxParameter)
-        caffe.Caffe.SoftmaxParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.SoftmaxParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_SoftmaxParameter_descriptor;
@@ -68082,6 +68844,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional .caffe.SoftmaxParameter.Engine engine = 1 [default = DEFAULT];
       private caffe.Caffe.SoftmaxParameter.Engine engine_ = caffe.Caffe.SoftmaxParameter.Engine.DEFAULT;
       /**
        * <code>optional .caffe.SoftmaxParameter.Engine engine = 1 [default = DEFAULT];</code>
@@ -68117,6 +68880,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional int32 axis = 2 [default = 1];
       private int axis_ = 1;
       /**
        * <code>optional int32 axis = 2 [default = 1];</code>
@@ -68184,10 +68948,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.SoftmaxParameter)
   }
 
-  public interface TanHParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.TanHParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface TanHParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional .caffe.TanHParameter.Engine engine = 1 [default = DEFAULT];
     /**
      * <code>optional .caffe.TanHParameter.Engine engine = 1 [default = DEFAULT];</code>
      */
@@ -68201,9 +68965,8 @@ public final class Caffe {
    * Protobuf type {@code caffe.TanHParameter}
    */
   public static final class TanHParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.TanHParameter)
-      TanHParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements TanHParameterOrBuilder {
     // Use TanHParameter.newBuilder() to construct.
     private TanHParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -68391,6 +69154,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional .caffe.TanHParameter.Engine engine = 1 [default = DEFAULT];
     public static final int ENGINE_FIELD_NUMBER = 1;
     private caffe.Caffe.TanHParameter.Engine engine_;
     /**
@@ -68412,8 +69176,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -68520,9 +69283,8 @@ public final class Caffe {
      * Protobuf type {@code caffe.TanHParameter}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.TanHParameter)
-        caffe.Caffe.TanHParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.TanHParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_TanHParameter_descriptor;
@@ -68635,6 +69397,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional .caffe.TanHParameter.Engine engine = 1 [default = DEFAULT];
       private caffe.Caffe.TanHParameter.Engine engine_ = caffe.Caffe.TanHParameter.Engine.DEFAULT;
       /**
        * <code>optional .caffe.TanHParameter.Engine engine = 1 [default = DEFAULT];</code>
@@ -68681,10 +69444,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.TanHParameter)
   }
 
-  public interface TileParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.TileParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface TileParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional int32 axis = 1 [default = 1];
     /**
      * <code>optional int32 axis = 1 [default = 1];</code>
      *
@@ -68702,6 +69465,7 @@ public final class Caffe {
      */
     int getAxis();
 
+    // optional int32 tiles = 2;
     /**
      * <code>optional int32 tiles = 2;</code>
      *
@@ -68727,9 +69491,8 @@ public final class Caffe {
    * </pre>
    */
   public static final class TileParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.TileParameter)
-      TileParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements TileParameterOrBuilder {
     // Use TileParameter.newBuilder() to construct.
     private TileParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -68825,6 +69588,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional int32 axis = 1 [default = 1];
     public static final int AXIS_FIELD_NUMBER = 1;
     private int axis_;
     /**
@@ -68848,6 +69612,7 @@ public final class Caffe {
       return axis_;
     }
 
+    // optional int32 tiles = 2;
     public static final int TILES_FIELD_NUMBER = 2;
     private int tiles_;
     /**
@@ -68878,8 +69643,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -68997,9 +69761,8 @@ public final class Caffe {
      * </pre>
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.TileParameter)
-        caffe.Caffe.TileParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.TileParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_TileParameter_descriptor;
@@ -69121,6 +69884,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional int32 axis = 1 [default = 1];
       private int axis_ = 1;
       /**
        * <code>optional int32 axis = 1 [default = 1];</code>
@@ -69169,6 +69933,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional int32 tiles = 2;
       private int tiles_ ;
       /**
        * <code>optional int32 tiles = 2;</code>
@@ -69228,10 +69993,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.TileParameter)
   }
 
-  public interface ThresholdParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.ThresholdParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface ThresholdParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional float threshold = 1 [default = 0];
     /**
      * <code>optional float threshold = 1 [default = 0];</code>
      *
@@ -69257,9 +70022,8 @@ public final class Caffe {
    * </pre>
    */
   public static final class ThresholdParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.ThresholdParameter)
-      ThresholdParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements ThresholdParameterOrBuilder {
     // Use ThresholdParameter.newBuilder() to construct.
     private ThresholdParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -69350,6 +70114,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional float threshold = 1 [default = 0];
     public static final int THRESHOLD_FIELD_NUMBER = 1;
     private float threshold_;
     /**
@@ -69379,8 +70144,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -69491,9 +70255,8 @@ public final class Caffe {
      * </pre>
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.ThresholdParameter)
-        caffe.Caffe.ThresholdParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.ThresholdParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_ThresholdParameter_descriptor;
@@ -69606,6 +70369,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional float threshold = 1 [default = 0];
       private float threshold_ ;
       /**
        * <code>optional float threshold = 1 [default = 0];</code>
@@ -69665,10 +70429,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.ThresholdParameter)
   }
 
-  public interface WindowDataParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.WindowDataParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface WindowDataParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional string source = 1;
     /**
      * <code>optional string source = 1;</code>
      *
@@ -69695,6 +70459,7 @@ public final class Caffe {
     com.google.protobuf.ByteString
         getSourceBytes();
 
+    // optional float scale = 2 [default = 1];
     /**
      * <code>optional float scale = 2 [default = 1];</code>
      *
@@ -69716,6 +70481,7 @@ public final class Caffe {
      */
     float getScale();
 
+    // optional string mean_file = 3;
     /**
      * <code>optional string mean_file = 3;</code>
      */
@@ -69730,6 +70496,7 @@ public final class Caffe {
     com.google.protobuf.ByteString
         getMeanFileBytes();
 
+    // optional uint32 batch_size = 4;
     /**
      * <code>optional uint32 batch_size = 4;</code>
      *
@@ -69747,6 +70514,7 @@ public final class Caffe {
      */
     int getBatchSize();
 
+    // optional uint32 crop_size = 5 [default = 0];
     /**
      * <code>optional uint32 crop_size = 5 [default = 0];</code>
      *
@@ -69764,6 +70532,7 @@ public final class Caffe {
      */
     int getCropSize();
 
+    // optional bool mirror = 6 [default = false];
     /**
      * <code>optional bool mirror = 6 [default = false];</code>
      *
@@ -69781,6 +70550,7 @@ public final class Caffe {
      */
     boolean getMirror();
 
+    // optional float fg_threshold = 7 [default = 0.5];
     /**
      * <code>optional float fg_threshold = 7 [default = 0.5];</code>
      *
@@ -69798,6 +70568,7 @@ public final class Caffe {
      */
     float getFgThreshold();
 
+    // optional float bg_threshold = 8 [default = 0.5];
     /**
      * <code>optional float bg_threshold = 8 [default = 0.5];</code>
      *
@@ -69815,6 +70586,7 @@ public final class Caffe {
      */
     float getBgThreshold();
 
+    // optional float fg_fraction = 9 [default = 0.25];
     /**
      * <code>optional float fg_fraction = 9 [default = 0.25];</code>
      *
@@ -69832,6 +70604,7 @@ public final class Caffe {
      */
     float getFgFraction();
 
+    // optional uint32 context_pad = 10 [default = 0];
     /**
      * <code>optional uint32 context_pad = 10 [default = 0];</code>
      *
@@ -69851,6 +70624,7 @@ public final class Caffe {
      */
     int getContextPad();
 
+    // optional string crop_mode = 11 [default = "warp"];
     /**
      * <code>optional string crop_mode = 11 [default = "warp"];</code>
      *
@@ -69883,6 +70657,7 @@ public final class Caffe {
     com.google.protobuf.ByteString
         getCropModeBytes();
 
+    // optional bool cache_images = 12 [default = false];
     /**
      * <code>optional bool cache_images = 12 [default = false];</code>
      *
@@ -69900,6 +70675,7 @@ public final class Caffe {
      */
     boolean getCacheImages();
 
+    // optional string root_folder = 13 [default = ""];
     /**
      * <code>optional string root_folder = 13 [default = ""];</code>
      *
@@ -69930,9 +70706,8 @@ public final class Caffe {
    * Protobuf type {@code caffe.WindowDataParameter}
    */
   public static final class WindowDataParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.WindowDataParameter)
-      WindowDataParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements WindowDataParameterOrBuilder {
     // Use WindowDataParameter.newBuilder() to construct.
     private WindowDataParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -69979,9 +70754,8 @@ public final class Caffe {
               break;
             }
             case 10: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000001;
-              source_ = bs;
+              source_ = input.readBytes();
               break;
             }
             case 21: {
@@ -69990,9 +70764,8 @@ public final class Caffe {
               break;
             }
             case 26: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000004;
-              meanFile_ = bs;
+              meanFile_ = input.readBytes();
               break;
             }
             case 32: {
@@ -70031,9 +70804,8 @@ public final class Caffe {
               break;
             }
             case 90: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000400;
-              cropMode_ = bs;
+              cropMode_ = input.readBytes();
               break;
             }
             case 96: {
@@ -70042,9 +70814,8 @@ public final class Caffe {
               break;
             }
             case 106: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00001000;
-              rootFolder_ = bs;
+              rootFolder_ = input.readBytes();
               break;
             }
           }
@@ -70087,6 +70858,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional string source = 1;
     public static final int SOURCE_FIELD_NUMBER = 1;
     private java.lang.Object source_;
     /**
@@ -70141,6 +70913,7 @@ public final class Caffe {
       }
     }
 
+    // optional float scale = 2 [default = 1];
     public static final int SCALE_FIELD_NUMBER = 2;
     private float scale_;
     /**
@@ -70168,6 +70941,7 @@ public final class Caffe {
       return scale_;
     }
 
+    // optional string mean_file = 3;
     public static final int MEAN_FILE_FIELD_NUMBER = 3;
     private java.lang.Object meanFile_;
     /**
@@ -70210,6 +70984,7 @@ public final class Caffe {
       }
     }
 
+    // optional uint32 batch_size = 4;
     public static final int BATCH_SIZE_FIELD_NUMBER = 4;
     private int batchSize_;
     /**
@@ -70233,6 +71008,7 @@ public final class Caffe {
       return batchSize_;
     }
 
+    // optional uint32 crop_size = 5 [default = 0];
     public static final int CROP_SIZE_FIELD_NUMBER = 5;
     private int cropSize_;
     /**
@@ -70256,6 +71032,7 @@ public final class Caffe {
       return cropSize_;
     }
 
+    // optional bool mirror = 6 [default = false];
     public static final int MIRROR_FIELD_NUMBER = 6;
     private boolean mirror_;
     /**
@@ -70279,6 +71056,7 @@ public final class Caffe {
       return mirror_;
     }
 
+    // optional float fg_threshold = 7 [default = 0.5];
     public static final int FG_THRESHOLD_FIELD_NUMBER = 7;
     private float fgThreshold_;
     /**
@@ -70302,6 +71080,7 @@ public final class Caffe {
       return fgThreshold_;
     }
 
+    // optional float bg_threshold = 8 [default = 0.5];
     public static final int BG_THRESHOLD_FIELD_NUMBER = 8;
     private float bgThreshold_;
     /**
@@ -70325,6 +71104,7 @@ public final class Caffe {
       return bgThreshold_;
     }
 
+    // optional float fg_fraction = 9 [default = 0.25];
     public static final int FG_FRACTION_FIELD_NUMBER = 9;
     private float fgFraction_;
     /**
@@ -70348,6 +71128,7 @@ public final class Caffe {
       return fgFraction_;
     }
 
+    // optional uint32 context_pad = 10 [default = 0];
     public static final int CONTEXT_PAD_FIELD_NUMBER = 10;
     private int contextPad_;
     /**
@@ -70373,6 +71154,7 @@ public final class Caffe {
       return contextPad_;
     }
 
+    // optional string crop_mode = 11 [default = "warp"];
     public static final int CROP_MODE_FIELD_NUMBER = 11;
     private java.lang.Object cropMode_;
     /**
@@ -70433,6 +71215,7 @@ public final class Caffe {
       }
     }
 
+    // optional bool cache_images = 12 [default = false];
     public static final int CACHE_IMAGES_FIELD_NUMBER = 12;
     private boolean cacheImages_;
     /**
@@ -70456,6 +71239,7 @@ public final class Caffe {
       return cacheImages_;
     }
 
+    // optional string root_folder = 13 [default = ""];
     public static final int ROOT_FOLDER_FIELD_NUMBER = 13;
     private java.lang.Object rootFolder_;
     /**
@@ -70528,8 +71312,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -70720,9 +71503,8 @@ public final class Caffe {
      * Protobuf type {@code caffe.WindowDataParameter}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.WindowDataParameter)
-        caffe.Caffe.WindowDataParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.WindowDataParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_WindowDataParameter_descriptor;
@@ -70951,6 +71733,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional string source = 1;
       private java.lang.Object source_ = "";
       /**
        * <code>optional string source = 1;</code>
@@ -70972,12 +71755,9 @@ public final class Caffe {
       public java.lang.String getSource() {
         java.lang.Object ref = source_;
         if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            source_ = s;
-          }
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          source_ = s;
           return s;
         } else {
           return (java.lang.String) ref;
@@ -71051,6 +71831,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float scale = 2 [default = 1];
       private float scale_ = 1F;
       /**
        * <code>optional float scale = 2 [default = 1];</code>
@@ -71107,6 +71888,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional string mean_file = 3;
       private java.lang.Object meanFile_ = "";
       /**
        * <code>optional string mean_file = 3;</code>
@@ -71120,12 +71902,9 @@ public final class Caffe {
       public java.lang.String getMeanFile() {
         java.lang.Object ref = meanFile_;
         if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            meanFile_ = s;
-          }
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          meanFile_ = s;
           return s;
         } else {
           return (java.lang.String) ref;
@@ -71183,6 +71962,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 batch_size = 4;
       private int batchSize_ ;
       /**
        * <code>optional uint32 batch_size = 4;</code>
@@ -71231,6 +72011,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 crop_size = 5 [default = 0];
       private int cropSize_ ;
       /**
        * <code>optional uint32 crop_size = 5 [default = 0];</code>
@@ -71279,6 +72060,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional bool mirror = 6 [default = false];
       private boolean mirror_ ;
       /**
        * <code>optional bool mirror = 6 [default = false];</code>
@@ -71327,6 +72109,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float fg_threshold = 7 [default = 0.5];
       private float fgThreshold_ = 0.5F;
       /**
        * <code>optional float fg_threshold = 7 [default = 0.5];</code>
@@ -71375,6 +72158,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float bg_threshold = 8 [default = 0.5];
       private float bgThreshold_ = 0.5F;
       /**
        * <code>optional float bg_threshold = 8 [default = 0.5];</code>
@@ -71423,6 +72207,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float fg_fraction = 9 [default = 0.25];
       private float fgFraction_ = 0.25F;
       /**
        * <code>optional float fg_fraction = 9 [default = 0.25];</code>
@@ -71471,6 +72256,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 context_pad = 10 [default = 0];
       private int contextPad_ ;
       /**
        * <code>optional uint32 context_pad = 10 [default = 0];</code>
@@ -71523,6 +72309,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional string crop_mode = 11 [default = "warp"];
       private java.lang.Object cropMode_ = "warp";
       /**
        * <code>optional string crop_mode = 11 [default = "warp"];</code>
@@ -71548,12 +72335,9 @@ public final class Caffe {
       public java.lang.String getCropMode() {
         java.lang.Object ref = cropMode_;
         if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            cropMode_ = s;
-          }
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          cropMode_ = s;
           return s;
         } else {
           return (java.lang.String) ref;
@@ -71635,6 +72419,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional bool cache_images = 12 [default = false];
       private boolean cacheImages_ ;
       /**
        * <code>optional bool cache_images = 12 [default = false];</code>
@@ -71683,6 +72468,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional string root_folder = 13 [default = ""];
       private java.lang.Object rootFolder_ = "";
       /**
        * <code>optional string root_folder = 13 [default = ""];</code>
@@ -71704,12 +72490,9 @@ public final class Caffe {
       public java.lang.String getRootFolder() {
         java.lang.Object ref = rootFolder_;
         if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            rootFolder_ = s;
-          }
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          rootFolder_ = s;
           return s;
         } else {
           return (java.lang.String) ref;
@@ -71794,10 +72577,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.WindowDataParameter)
   }
 
-  public interface SPPParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.SPPParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface SPPParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional uint32 pyramid_height = 1;
     /**
      * <code>optional uint32 pyramid_height = 1;</code>
      */
@@ -71807,6 +72590,7 @@ public final class Caffe {
      */
     int getPyramidHeight();
 
+    // optional .caffe.SPPParameter.PoolMethod pool = 2 [default = MAX];
     /**
      * <code>optional .caffe.SPPParameter.PoolMethod pool = 2 [default = MAX];</code>
      *
@@ -71824,6 +72608,7 @@ public final class Caffe {
      */
     caffe.Caffe.SPPParameter.PoolMethod getPool();
 
+    // optional .caffe.SPPParameter.Engine engine = 6 [default = DEFAULT];
     /**
      * <code>optional .caffe.SPPParameter.Engine engine = 6 [default = DEFAULT];</code>
      */
@@ -71837,9 +72622,8 @@ public final class Caffe {
    * Protobuf type {@code caffe.SPPParameter}
    */
   public static final class SPPParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.SPPParameter)
-      SPPParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements SPPParameterOrBuilder {
     // Use SPPParameter.newBuilder() to construct.
     private SPPParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -72134,6 +72918,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional uint32 pyramid_height = 1;
     public static final int PYRAMID_HEIGHT_FIELD_NUMBER = 1;
     private int pyramidHeight_;
     /**
@@ -72149,6 +72934,7 @@ public final class Caffe {
       return pyramidHeight_;
     }
 
+    // optional .caffe.SPPParameter.PoolMethod pool = 2 [default = MAX];
     public static final int POOL_FIELD_NUMBER = 2;
     private caffe.Caffe.SPPParameter.PoolMethod pool_;
     /**
@@ -72172,6 +72958,7 @@ public final class Caffe {
       return pool_;
     }
 
+    // optional .caffe.SPPParameter.Engine engine = 6 [default = DEFAULT];
     public static final int ENGINE_FIELD_NUMBER = 6;
     private caffe.Caffe.SPPParameter.Engine engine_;
     /**
@@ -72195,8 +72982,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -72317,9 +73103,8 @@ public final class Caffe {
      * Protobuf type {@code caffe.SPPParameter}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.SPPParameter)
-        caffe.Caffe.SPPParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.SPPParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_SPPParameter_descriptor;
@@ -72450,6 +73235,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional uint32 pyramid_height = 1;
       private int pyramidHeight_ ;
       /**
        * <code>optional uint32 pyramid_height = 1;</code>
@@ -72482,6 +73268,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional .caffe.SPPParameter.PoolMethod pool = 2 [default = MAX];
       private caffe.Caffe.SPPParameter.PoolMethod pool_ = caffe.Caffe.SPPParameter.PoolMethod.MAX;
       /**
        * <code>optional .caffe.SPPParameter.PoolMethod pool = 2 [default = MAX];</code>
@@ -72533,6 +73320,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional .caffe.SPPParameter.Engine engine = 6 [default = DEFAULT];
       private caffe.Caffe.SPPParameter.Engine engine_ = caffe.Caffe.SPPParameter.Engine.DEFAULT;
       /**
        * <code>optional .caffe.SPPParameter.Engine engine = 6 [default = DEFAULT];</code>
@@ -72579,15 +73367,15 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.SPPParameter)
   }
 
-  public interface V1LayerParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.V1LayerParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface V1LayerParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // repeated string bottom = 2;
     /**
      * <code>repeated string bottom = 2;</code>
      */
-    com.google.protobuf.ProtocolStringList
-        getBottomList();
+    java.util.List<java.lang.String>
+    getBottomList();
     /**
      * <code>repeated string bottom = 2;</code>
      */
@@ -72602,11 +73390,12 @@ public final class Caffe {
     com.google.protobuf.ByteString
         getBottomBytes(int index);
 
+    // repeated string top = 3;
     /**
      * <code>repeated string top = 3;</code>
      */
-    com.google.protobuf.ProtocolStringList
-        getTopList();
+    java.util.List<java.lang.String>
+    getTopList();
     /**
      * <code>repeated string top = 3;</code>
      */
@@ -72621,6 +73410,7 @@ public final class Caffe {
     com.google.protobuf.ByteString
         getTopBytes(int index);
 
+    // optional string name = 4;
     /**
      * <code>optional string name = 4;</code>
      */
@@ -72635,6 +73425,7 @@ public final class Caffe {
     com.google.protobuf.ByteString
         getNameBytes();
 
+    // repeated .caffe.NetStateRule include = 32;
     /**
      * <code>repeated .caffe.NetStateRule include = 32;</code>
      */
@@ -72659,6 +73450,7 @@ public final class Caffe {
     caffe.Caffe.NetStateRuleOrBuilder getIncludeOrBuilder(
         int index);
 
+    // repeated .caffe.NetStateRule exclude = 33;
     /**
      * <code>repeated .caffe.NetStateRule exclude = 33;</code>
      */
@@ -72683,6 +73475,7 @@ public final class Caffe {
     caffe.Caffe.NetStateRuleOrBuilder getExcludeOrBuilder(
         int index);
 
+    // optional .caffe.V1LayerParameter.LayerType type = 5;
     /**
      * <code>optional .caffe.V1LayerParameter.LayerType type = 5;</code>
      */
@@ -72692,6 +73485,7 @@ public final class Caffe {
      */
     caffe.Caffe.V1LayerParameter.LayerType getType();
 
+    // repeated .caffe.BlobProto blobs = 6;
     /**
      * <code>repeated .caffe.BlobProto blobs = 6;</code>
      */
@@ -72716,11 +73510,12 @@ public final class Caffe {
     caffe.Caffe.BlobProtoOrBuilder getBlobsOrBuilder(
         int index);
 
+    // repeated string param = 1001;
     /**
      * <code>repeated string param = 1001;</code>
      */
-    com.google.protobuf.ProtocolStringList
-        getParamList();
+    java.util.List<java.lang.String>
+    getParamList();
     /**
      * <code>repeated string param = 1001;</code>
      */
@@ -72735,6 +73530,7 @@ public final class Caffe {
     com.google.protobuf.ByteString
         getParamBytes(int index);
 
+    // repeated .caffe.V1LayerParameter.DimCheckMode blob_share_mode = 1002;
     /**
      * <code>repeated .caffe.V1LayerParameter.DimCheckMode blob_share_mode = 1002;</code>
      */
@@ -72748,6 +73544,7 @@ public final class Caffe {
      */
     caffe.Caffe.V1LayerParameter.DimCheckMode getBlobShareMode(int index);
 
+    // repeated float blobs_lr = 7;
     /**
      * <code>repeated float blobs_lr = 7;</code>
      */
@@ -72761,6 +73558,7 @@ public final class Caffe {
      */
     float getBlobsLr(int index);
 
+    // repeated float weight_decay = 8;
     /**
      * <code>repeated float weight_decay = 8;</code>
      */
@@ -72774,6 +73572,7 @@ public final class Caffe {
      */
     float getWeightDecay(int index);
 
+    // repeated float loss_weight = 35;
     /**
      * <code>repeated float loss_weight = 35;</code>
      */
@@ -72787,6 +73586,7 @@ public final class Caffe {
      */
     float getLossWeight(int index);
 
+    // optional .caffe.AccuracyParameter accuracy_param = 27;
     /**
      * <code>optional .caffe.AccuracyParameter accuracy_param = 27;</code>
      */
@@ -72800,6 +73600,7 @@ public final class Caffe {
      */
     caffe.Caffe.AccuracyParameterOrBuilder getAccuracyParamOrBuilder();
 
+    // optional .caffe.ArgMaxParameter argmax_param = 23;
     /**
      * <code>optional .caffe.ArgMaxParameter argmax_param = 23;</code>
      */
@@ -72813,6 +73614,7 @@ public final class Caffe {
      */
     caffe.Caffe.ArgMaxParameterOrBuilder getArgmaxParamOrBuilder();
 
+    // optional .caffe.ConcatParameter concat_param = 9;
     /**
      * <code>optional .caffe.ConcatParameter concat_param = 9;</code>
      */
@@ -72826,6 +73628,7 @@ public final class Caffe {
      */
     caffe.Caffe.ConcatParameterOrBuilder getConcatParamOrBuilder();
 
+    // optional .caffe.ContrastiveLossParameter contrastive_loss_param = 40;
     /**
      * <code>optional .caffe.ContrastiveLossParameter contrastive_loss_param = 40;</code>
      */
@@ -72839,6 +73642,7 @@ public final class Caffe {
      */
     caffe.Caffe.ContrastiveLossParameterOrBuilder getContrastiveLossParamOrBuilder();
 
+    // optional .caffe.ConvolutionParameter convolution_param = 10;
     /**
      * <code>optional .caffe.ConvolutionParameter convolution_param = 10;</code>
      */
@@ -72852,6 +73656,7 @@ public final class Caffe {
      */
     caffe.Caffe.ConvolutionParameterOrBuilder getConvolutionParamOrBuilder();
 
+    // optional .caffe.DataParameter data_param = 11;
     /**
      * <code>optional .caffe.DataParameter data_param = 11;</code>
      */
@@ -72865,6 +73670,7 @@ public final class Caffe {
      */
     caffe.Caffe.DataParameterOrBuilder getDataParamOrBuilder();
 
+    // optional .caffe.DropoutParameter dropout_param = 12;
     /**
      * <code>optional .caffe.DropoutParameter dropout_param = 12;</code>
      */
@@ -72878,6 +73684,7 @@ public final class Caffe {
      */
     caffe.Caffe.DropoutParameterOrBuilder getDropoutParamOrBuilder();
 
+    // optional .caffe.DummyDataParameter dummy_data_param = 26;
     /**
      * <code>optional .caffe.DummyDataParameter dummy_data_param = 26;</code>
      */
@@ -72891,6 +73698,7 @@ public final class Caffe {
      */
     caffe.Caffe.DummyDataParameterOrBuilder getDummyDataParamOrBuilder();
 
+    // optional .caffe.EltwiseParameter eltwise_param = 24;
     /**
      * <code>optional .caffe.EltwiseParameter eltwise_param = 24;</code>
      */
@@ -72904,6 +73712,7 @@ public final class Caffe {
      */
     caffe.Caffe.EltwiseParameterOrBuilder getEltwiseParamOrBuilder();
 
+    // optional .caffe.ExpParameter exp_param = 41;
     /**
      * <code>optional .caffe.ExpParameter exp_param = 41;</code>
      */
@@ -72917,6 +73726,7 @@ public final class Caffe {
      */
     caffe.Caffe.ExpParameterOrBuilder getExpParamOrBuilder();
 
+    // optional .caffe.HDF5DataParameter hdf5_data_param = 13;
     /**
      * <code>optional .caffe.HDF5DataParameter hdf5_data_param = 13;</code>
      */
@@ -72930,6 +73740,7 @@ public final class Caffe {
      */
     caffe.Caffe.HDF5DataParameterOrBuilder getHdf5DataParamOrBuilder();
 
+    // optional .caffe.HDF5OutputParameter hdf5_output_param = 14;
     /**
      * <code>optional .caffe.HDF5OutputParameter hdf5_output_param = 14;</code>
      */
@@ -72943,6 +73754,7 @@ public final class Caffe {
      */
     caffe.Caffe.HDF5OutputParameterOrBuilder getHdf5OutputParamOrBuilder();
 
+    // optional .caffe.HingeLossParameter hinge_loss_param = 29;
     /**
      * <code>optional .caffe.HingeLossParameter hinge_loss_param = 29;</code>
      */
@@ -72956,6 +73768,7 @@ public final class Caffe {
      */
     caffe.Caffe.HingeLossParameterOrBuilder getHingeLossParamOrBuilder();
 
+    // optional .caffe.ImageDataParameter image_data_param = 15;
     /**
      * <code>optional .caffe.ImageDataParameter image_data_param = 15;</code>
      */
@@ -72969,6 +73782,7 @@ public final class Caffe {
      */
     caffe.Caffe.ImageDataParameterOrBuilder getImageDataParamOrBuilder();
 
+    // optional .caffe.InfogainLossParameter infogain_loss_param = 16;
     /**
      * <code>optional .caffe.InfogainLossParameter infogain_loss_param = 16;</code>
      */
@@ -72982,6 +73796,7 @@ public final class Caffe {
      */
     caffe.Caffe.InfogainLossParameterOrBuilder getInfogainLossParamOrBuilder();
 
+    // optional .caffe.InnerProductParameter inner_product_param = 17;
     /**
      * <code>optional .caffe.InnerProductParameter inner_product_param = 17;</code>
      */
@@ -72995,6 +73810,7 @@ public final class Caffe {
      */
     caffe.Caffe.InnerProductParameterOrBuilder getInnerProductParamOrBuilder();
 
+    // optional .caffe.LRNParameter lrn_param = 18;
     /**
      * <code>optional .caffe.LRNParameter lrn_param = 18;</code>
      */
@@ -73008,6 +73824,7 @@ public final class Caffe {
      */
     caffe.Caffe.LRNParameterOrBuilder getLrnParamOrBuilder();
 
+    // optional .caffe.MemoryDataParameter memory_data_param = 22;
     /**
      * <code>optional .caffe.MemoryDataParameter memory_data_param = 22;</code>
      */
@@ -73021,6 +73838,7 @@ public final class Caffe {
      */
     caffe.Caffe.MemoryDataParameterOrBuilder getMemoryDataParamOrBuilder();
 
+    // optional .caffe.MVNParameter mvn_param = 34;
     /**
      * <code>optional .caffe.MVNParameter mvn_param = 34;</code>
      */
@@ -73034,6 +73852,7 @@ public final class Caffe {
      */
     caffe.Caffe.MVNParameterOrBuilder getMvnParamOrBuilder();
 
+    // optional .caffe.PoolingParameter pooling_param = 19;
     /**
      * <code>optional .caffe.PoolingParameter pooling_param = 19;</code>
      */
@@ -73047,6 +73866,7 @@ public final class Caffe {
      */
     caffe.Caffe.PoolingParameterOrBuilder getPoolingParamOrBuilder();
 
+    // optional .caffe.PowerParameter power_param = 21;
     /**
      * <code>optional .caffe.PowerParameter power_param = 21;</code>
      */
@@ -73060,6 +73880,7 @@ public final class Caffe {
      */
     caffe.Caffe.PowerParameterOrBuilder getPowerParamOrBuilder();
 
+    // optional .caffe.ReLUParameter relu_param = 30;
     /**
      * <code>optional .caffe.ReLUParameter relu_param = 30;</code>
      */
@@ -73073,6 +73894,7 @@ public final class Caffe {
      */
     caffe.Caffe.ReLUParameterOrBuilder getReluParamOrBuilder();
 
+    // optional .caffe.SigmoidParameter sigmoid_param = 38;
     /**
      * <code>optional .caffe.SigmoidParameter sigmoid_param = 38;</code>
      */
@@ -73086,6 +73908,7 @@ public final class Caffe {
      */
     caffe.Caffe.SigmoidParameterOrBuilder getSigmoidParamOrBuilder();
 
+    // optional .caffe.SoftmaxParameter softmax_param = 39;
     /**
      * <code>optional .caffe.SoftmaxParameter softmax_param = 39;</code>
      */
@@ -73099,6 +73922,7 @@ public final class Caffe {
      */
     caffe.Caffe.SoftmaxParameterOrBuilder getSoftmaxParamOrBuilder();
 
+    // optional .caffe.SliceParameter slice_param = 31;
     /**
      * <code>optional .caffe.SliceParameter slice_param = 31;</code>
      */
@@ -73112,6 +73936,7 @@ public final class Caffe {
      */
     caffe.Caffe.SliceParameterOrBuilder getSliceParamOrBuilder();
 
+    // optional .caffe.TanHParameter tanh_param = 37;
     /**
      * <code>optional .caffe.TanHParameter tanh_param = 37;</code>
      */
@@ -73125,6 +73950,7 @@ public final class Caffe {
      */
     caffe.Caffe.TanHParameterOrBuilder getTanhParamOrBuilder();
 
+    // optional .caffe.ThresholdParameter threshold_param = 25;
     /**
      * <code>optional .caffe.ThresholdParameter threshold_param = 25;</code>
      */
@@ -73138,6 +73964,7 @@ public final class Caffe {
      */
     caffe.Caffe.ThresholdParameterOrBuilder getThresholdParamOrBuilder();
 
+    // optional .caffe.WindowDataParameter window_data_param = 20;
     /**
      * <code>optional .caffe.WindowDataParameter window_data_param = 20;</code>
      */
@@ -73151,6 +73978,7 @@ public final class Caffe {
      */
     caffe.Caffe.WindowDataParameterOrBuilder getWindowDataParamOrBuilder();
 
+    // optional .caffe.TransformationParameter transform_param = 36;
     /**
      * <code>optional .caffe.TransformationParameter transform_param = 36;</code>
      */
@@ -73164,6 +73992,7 @@ public final class Caffe {
      */
     caffe.Caffe.TransformationParameterOrBuilder getTransformParamOrBuilder();
 
+    // optional .caffe.LossParameter loss_param = 42;
     /**
      * <code>optional .caffe.LossParameter loss_param = 42;</code>
      */
@@ -73177,6 +74006,7 @@ public final class Caffe {
      */
     caffe.Caffe.LossParameterOrBuilder getLossParamOrBuilder();
 
+    // optional .caffe.V0LayerParameter layer = 1;
     /**
      * <code>optional .caffe.V0LayerParameter layer = 1;</code>
      */
@@ -73198,9 +74028,8 @@ public final class Caffe {
    * </pre>
    */
   public static final class V1LayerParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.V1LayerParameter)
-      V1LayerParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements V1LayerParameterOrBuilder {
     // Use V1LayerParameter.newBuilder() to construct.
     private V1LayerParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -73261,27 +74090,24 @@ public final class Caffe {
               break;
             }
             case 18: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               if (!((mutable_bitField0_ & 0x00000001) == 0x00000001)) {
                 bottom_ = new com.google.protobuf.LazyStringArrayList();
                 mutable_bitField0_ |= 0x00000001;
               }
-              bottom_.add(bs);
+              bottom_.add(input.readBytes());
               break;
             }
             case 26: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               if (!((mutable_bitField0_ & 0x00000002) == 0x00000002)) {
                 top_ = new com.google.protobuf.LazyStringArrayList();
                 mutable_bitField0_ |= 0x00000002;
               }
-              top_.add(bs);
+              top_.add(input.readBytes());
               break;
             }
             case 34: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000001;
-              name_ = bs;
+              name_ = input.readBytes();
               break;
             }
             case 40: {
@@ -73773,12 +74599,11 @@ public final class Caffe {
               break;
             }
             case 8010: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               if (!((mutable_bitField0_ & 0x00000080) == 0x00000080)) {
                 param_ = new com.google.protobuf.LazyStringArrayList();
                 mutable_bitField0_ |= 0x00000080;
               }
-              param_.add(bs);
+              param_.add(input.readBytes());
               break;
             }
             case 8016: {
@@ -73786,7 +74611,7 @@ public final class Caffe {
               caffe.Caffe.V1LayerParameter.DimCheckMode value = caffe.Caffe.V1LayerParameter.DimCheckMode.valueOf(rawValue);
               if (value == null) {
                 unknownFields.mergeVarintField(1002, rawValue);
-                } else {
+              } else {
                 if (!((mutable_bitField0_ & 0x00000100) == 0x00000100)) {
                   blobShareMode_ = new java.util.ArrayList<caffe.Caffe.V1LayerParameter.DimCheckMode>();
                   mutable_bitField0_ |= 0x00000100;
@@ -73803,7 +74628,7 @@ public final class Caffe {
                 caffe.Caffe.V1LayerParameter.DimCheckMode value = caffe.Caffe.V1LayerParameter.DimCheckMode.valueOf(rawValue);
                 if (value == null) {
                   unknownFields.mergeVarintField(1002, rawValue);
-                  } else {
+                } else {
                   if (!((mutable_bitField0_ & 0x00000100) == 0x00000100)) {
                     blobShareMode_ = new java.util.ArrayList<caffe.Caffe.V1LayerParameter.DimCheckMode>();
                     mutable_bitField0_ |= 0x00000100;
@@ -73823,10 +74648,10 @@ public final class Caffe {
             e.getMessage()).setUnfinishedMessage(this);
       } finally {
         if (((mutable_bitField0_ & 0x00000001) == 0x00000001)) {
-          bottom_ = bottom_.getUnmodifiableView();
+          bottom_ = new com.google.protobuf.UnmodifiableLazyStringList(bottom_);
         }
         if (((mutable_bitField0_ & 0x00000002) == 0x00000002)) {
-          top_ = top_.getUnmodifiableView();
+          top_ = new com.google.protobuf.UnmodifiableLazyStringList(top_);
         }
         if (((mutable_bitField0_ & 0x00000040) == 0x00000040)) {
           blobs_ = java.util.Collections.unmodifiableList(blobs_);
@@ -73847,7 +74672,7 @@ public final class Caffe {
           lossWeight_ = java.util.Collections.unmodifiableList(lossWeight_);
         }
         if (((mutable_bitField0_ & 0x00000080) == 0x00000080)) {
-          param_ = param_.getUnmodifiableView();
+          param_ = new com.google.protobuf.UnmodifiableLazyStringList(param_);
         }
         if (((mutable_bitField0_ & 0x00000100) == 0x00000100)) {
           blobShareMode_ = java.util.Collections.unmodifiableList(blobShareMode_);
@@ -74391,12 +75216,13 @@ public final class Caffe {
 
     private int bitField0_;
     private int bitField1_;
+    // repeated string bottom = 2;
     public static final int BOTTOM_FIELD_NUMBER = 2;
     private com.google.protobuf.LazyStringList bottom_;
     /**
      * <code>repeated string bottom = 2;</code>
      */
-    public com.google.protobuf.ProtocolStringList
+    public java.util.List<java.lang.String>
         getBottomList() {
       return bottom_;
     }
@@ -74420,12 +75246,13 @@ public final class Caffe {
       return bottom_.getByteString(index);
     }
 
+    // repeated string top = 3;
     public static final int TOP_FIELD_NUMBER = 3;
     private com.google.protobuf.LazyStringList top_;
     /**
      * <code>repeated string top = 3;</code>
      */
-    public com.google.protobuf.ProtocolStringList
+    public java.util.List<java.lang.String>
         getTopList() {
       return top_;
     }
@@ -74449,6 +75276,7 @@ public final class Caffe {
       return top_.getByteString(index);
     }
 
+    // optional string name = 4;
     public static final int NAME_FIELD_NUMBER = 4;
     private java.lang.Object name_;
     /**
@@ -74491,6 +75319,7 @@ public final class Caffe {
       }
     }
 
+    // repeated .caffe.NetStateRule include = 32;
     public static final int INCLUDE_FIELD_NUMBER = 32;
     private java.util.List<caffe.Caffe.NetStateRule> include_;
     /**
@@ -74526,6 +75355,7 @@ public final class Caffe {
       return include_.get(index);
     }
 
+    // repeated .caffe.NetStateRule exclude = 33;
     public static final int EXCLUDE_FIELD_NUMBER = 33;
     private java.util.List<caffe.Caffe.NetStateRule> exclude_;
     /**
@@ -74561,6 +75391,7 @@ public final class Caffe {
       return exclude_.get(index);
     }
 
+    // optional .caffe.V1LayerParameter.LayerType type = 5;
     public static final int TYPE_FIELD_NUMBER = 5;
     private caffe.Caffe.V1LayerParameter.LayerType type_;
     /**
@@ -74576,6 +75407,7 @@ public final class Caffe {
       return type_;
     }
 
+    // repeated .caffe.BlobProto blobs = 6;
     public static final int BLOBS_FIELD_NUMBER = 6;
     private java.util.List<caffe.Caffe.BlobProto> blobs_;
     /**
@@ -74611,12 +75443,13 @@ public final class Caffe {
       return blobs_.get(index);
     }
 
+    // repeated string param = 1001;
     public static final int PARAM_FIELD_NUMBER = 1001;
     private com.google.protobuf.LazyStringList param_;
     /**
      * <code>repeated string param = 1001;</code>
      */
-    public com.google.protobuf.ProtocolStringList
+    public java.util.List<java.lang.String>
         getParamList() {
       return param_;
     }
@@ -74640,6 +75473,7 @@ public final class Caffe {
       return param_.getByteString(index);
     }
 
+    // repeated .caffe.V1LayerParameter.DimCheckMode blob_share_mode = 1002;
     public static final int BLOB_SHARE_MODE_FIELD_NUMBER = 1002;
     private java.util.List<caffe.Caffe.V1LayerParameter.DimCheckMode> blobShareMode_;
     /**
@@ -74661,6 +75495,7 @@ public final class Caffe {
       return blobShareMode_.get(index);
     }
 
+    // repeated float blobs_lr = 7;
     public static final int BLOBS_LR_FIELD_NUMBER = 7;
     private java.util.List<java.lang.Float> blobsLr_;
     /**
@@ -74683,6 +75518,7 @@ public final class Caffe {
       return blobsLr_.get(index);
     }
 
+    // repeated float weight_decay = 8;
     public static final int WEIGHT_DECAY_FIELD_NUMBER = 8;
     private java.util.List<java.lang.Float> weightDecay_;
     /**
@@ -74705,6 +75541,7 @@ public final class Caffe {
       return weightDecay_.get(index);
     }
 
+    // repeated float loss_weight = 35;
     public static final int LOSS_WEIGHT_FIELD_NUMBER = 35;
     private java.util.List<java.lang.Float> lossWeight_;
     /**
@@ -74727,6 +75564,7 @@ public final class Caffe {
       return lossWeight_.get(index);
     }
 
+    // optional .caffe.AccuracyParameter accuracy_param = 27;
     public static final int ACCURACY_PARAM_FIELD_NUMBER = 27;
     private caffe.Caffe.AccuracyParameter accuracyParam_;
     /**
@@ -74748,6 +75586,7 @@ public final class Caffe {
       return accuracyParam_;
     }
 
+    // optional .caffe.ArgMaxParameter argmax_param = 23;
     public static final int ARGMAX_PARAM_FIELD_NUMBER = 23;
     private caffe.Caffe.ArgMaxParameter argmaxParam_;
     /**
@@ -74769,6 +75608,7 @@ public final class Caffe {
       return argmaxParam_;
     }
 
+    // optional .caffe.ConcatParameter concat_param = 9;
     public static final int CONCAT_PARAM_FIELD_NUMBER = 9;
     private caffe.Caffe.ConcatParameter concatParam_;
     /**
@@ -74790,6 +75630,7 @@ public final class Caffe {
       return concatParam_;
     }
 
+    // optional .caffe.ContrastiveLossParameter contrastive_loss_param = 40;
     public static final int CONTRASTIVE_LOSS_PARAM_FIELD_NUMBER = 40;
     private caffe.Caffe.ContrastiveLossParameter contrastiveLossParam_;
     /**
@@ -74811,6 +75652,7 @@ public final class Caffe {
       return contrastiveLossParam_;
     }
 
+    // optional .caffe.ConvolutionParameter convolution_param = 10;
     public static final int CONVOLUTION_PARAM_FIELD_NUMBER = 10;
     private caffe.Caffe.ConvolutionParameter convolutionParam_;
     /**
@@ -74832,6 +75674,7 @@ public final class Caffe {
       return convolutionParam_;
     }
 
+    // optional .caffe.DataParameter data_param = 11;
     public static final int DATA_PARAM_FIELD_NUMBER = 11;
     private caffe.Caffe.DataParameter dataParam_;
     /**
@@ -74853,6 +75696,7 @@ public final class Caffe {
       return dataParam_;
     }
 
+    // optional .caffe.DropoutParameter dropout_param = 12;
     public static final int DROPOUT_PARAM_FIELD_NUMBER = 12;
     private caffe.Caffe.DropoutParameter dropoutParam_;
     /**
@@ -74874,6 +75718,7 @@ public final class Caffe {
       return dropoutParam_;
     }
 
+    // optional .caffe.DummyDataParameter dummy_data_param = 26;
     public static final int DUMMY_DATA_PARAM_FIELD_NUMBER = 26;
     private caffe.Caffe.DummyDataParameter dummyDataParam_;
     /**
@@ -74895,6 +75740,7 @@ public final class Caffe {
       return dummyDataParam_;
     }
 
+    // optional .caffe.EltwiseParameter eltwise_param = 24;
     public static final int ELTWISE_PARAM_FIELD_NUMBER = 24;
     private caffe.Caffe.EltwiseParameter eltwiseParam_;
     /**
@@ -74916,6 +75762,7 @@ public final class Caffe {
       return eltwiseParam_;
     }
 
+    // optional .caffe.ExpParameter exp_param = 41;
     public static final int EXP_PARAM_FIELD_NUMBER = 41;
     private caffe.Caffe.ExpParameter expParam_;
     /**
@@ -74937,6 +75784,7 @@ public final class Caffe {
       return expParam_;
     }
 
+    // optional .caffe.HDF5DataParameter hdf5_data_param = 13;
     public static final int HDF5_DATA_PARAM_FIELD_NUMBER = 13;
     private caffe.Caffe.HDF5DataParameter hdf5DataParam_;
     /**
@@ -74958,6 +75806,7 @@ public final class Caffe {
       return hdf5DataParam_;
     }
 
+    // optional .caffe.HDF5OutputParameter hdf5_output_param = 14;
     public static final int HDF5_OUTPUT_PARAM_FIELD_NUMBER = 14;
     private caffe.Caffe.HDF5OutputParameter hdf5OutputParam_;
     /**
@@ -74979,6 +75828,7 @@ public final class Caffe {
       return hdf5OutputParam_;
     }
 
+    // optional .caffe.HingeLossParameter hinge_loss_param = 29;
     public static final int HINGE_LOSS_PARAM_FIELD_NUMBER = 29;
     private caffe.Caffe.HingeLossParameter hingeLossParam_;
     /**
@@ -75000,6 +75850,7 @@ public final class Caffe {
       return hingeLossParam_;
     }
 
+    // optional .caffe.ImageDataParameter image_data_param = 15;
     public static final int IMAGE_DATA_PARAM_FIELD_NUMBER = 15;
     private caffe.Caffe.ImageDataParameter imageDataParam_;
     /**
@@ -75021,6 +75872,7 @@ public final class Caffe {
       return imageDataParam_;
     }
 
+    // optional .caffe.InfogainLossParameter infogain_loss_param = 16;
     public static final int INFOGAIN_LOSS_PARAM_FIELD_NUMBER = 16;
     private caffe.Caffe.InfogainLossParameter infogainLossParam_;
     /**
@@ -75042,6 +75894,7 @@ public final class Caffe {
       return infogainLossParam_;
     }
 
+    // optional .caffe.InnerProductParameter inner_product_param = 17;
     public static final int INNER_PRODUCT_PARAM_FIELD_NUMBER = 17;
     private caffe.Caffe.InnerProductParameter innerProductParam_;
     /**
@@ -75063,6 +75916,7 @@ public final class Caffe {
       return innerProductParam_;
     }
 
+    // optional .caffe.LRNParameter lrn_param = 18;
     public static final int LRN_PARAM_FIELD_NUMBER = 18;
     private caffe.Caffe.LRNParameter lrnParam_;
     /**
@@ -75084,6 +75938,7 @@ public final class Caffe {
       return lrnParam_;
     }
 
+    // optional .caffe.MemoryDataParameter memory_data_param = 22;
     public static final int MEMORY_DATA_PARAM_FIELD_NUMBER = 22;
     private caffe.Caffe.MemoryDataParameter memoryDataParam_;
     /**
@@ -75105,6 +75960,7 @@ public final class Caffe {
       return memoryDataParam_;
     }
 
+    // optional .caffe.MVNParameter mvn_param = 34;
     public static final int MVN_PARAM_FIELD_NUMBER = 34;
     private caffe.Caffe.MVNParameter mvnParam_;
     /**
@@ -75126,6 +75982,7 @@ public final class Caffe {
       return mvnParam_;
     }
 
+    // optional .caffe.PoolingParameter pooling_param = 19;
     public static final int POOLING_PARAM_FIELD_NUMBER = 19;
     private caffe.Caffe.PoolingParameter poolingParam_;
     /**
@@ -75147,6 +76004,7 @@ public final class Caffe {
       return poolingParam_;
     }
 
+    // optional .caffe.PowerParameter power_param = 21;
     public static final int POWER_PARAM_FIELD_NUMBER = 21;
     private caffe.Caffe.PowerParameter powerParam_;
     /**
@@ -75168,6 +76026,7 @@ public final class Caffe {
       return powerParam_;
     }
 
+    // optional .caffe.ReLUParameter relu_param = 30;
     public static final int RELU_PARAM_FIELD_NUMBER = 30;
     private caffe.Caffe.ReLUParameter reluParam_;
     /**
@@ -75189,6 +76048,7 @@ public final class Caffe {
       return reluParam_;
     }
 
+    // optional .caffe.SigmoidParameter sigmoid_param = 38;
     public static final int SIGMOID_PARAM_FIELD_NUMBER = 38;
     private caffe.Caffe.SigmoidParameter sigmoidParam_;
     /**
@@ -75210,6 +76070,7 @@ public final class Caffe {
       return sigmoidParam_;
     }
 
+    // optional .caffe.SoftmaxParameter softmax_param = 39;
     public static final int SOFTMAX_PARAM_FIELD_NUMBER = 39;
     private caffe.Caffe.SoftmaxParameter softmaxParam_;
     /**
@@ -75231,6 +76092,7 @@ public final class Caffe {
       return softmaxParam_;
     }
 
+    // optional .caffe.SliceParameter slice_param = 31;
     public static final int SLICE_PARAM_FIELD_NUMBER = 31;
     private caffe.Caffe.SliceParameter sliceParam_;
     /**
@@ -75252,6 +76114,7 @@ public final class Caffe {
       return sliceParam_;
     }
 
+    // optional .caffe.TanHParameter tanh_param = 37;
     public static final int TANH_PARAM_FIELD_NUMBER = 37;
     private caffe.Caffe.TanHParameter tanhParam_;
     /**
@@ -75273,6 +76136,7 @@ public final class Caffe {
       return tanhParam_;
     }
 
+    // optional .caffe.ThresholdParameter threshold_param = 25;
     public static final int THRESHOLD_PARAM_FIELD_NUMBER = 25;
     private caffe.Caffe.ThresholdParameter thresholdParam_;
     /**
@@ -75294,6 +76158,7 @@ public final class Caffe {
       return thresholdParam_;
     }
 
+    // optional .caffe.WindowDataParameter window_data_param = 20;
     public static final int WINDOW_DATA_PARAM_FIELD_NUMBER = 20;
     private caffe.Caffe.WindowDataParameter windowDataParam_;
     /**
@@ -75315,6 +76180,7 @@ public final class Caffe {
       return windowDataParam_;
     }
 
+    // optional .caffe.TransformationParameter transform_param = 36;
     public static final int TRANSFORM_PARAM_FIELD_NUMBER = 36;
     private caffe.Caffe.TransformationParameter transformParam_;
     /**
@@ -75336,6 +76202,7 @@ public final class Caffe {
       return transformParam_;
     }
 
+    // optional .caffe.LossParameter loss_param = 42;
     public static final int LOSS_PARAM_FIELD_NUMBER = 42;
     private caffe.Caffe.LossParameter lossParam_;
     /**
@@ -75357,6 +76224,7 @@ public final class Caffe {
       return lossParam_;
     }
 
+    // optional .caffe.V0LayerParameter layer = 1;
     public static final int LAYER_FIELD_NUMBER = 1;
     private caffe.Caffe.V0LayerParameter layer_;
     /**
@@ -75426,8 +76294,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -75858,9 +76725,8 @@ public final class Caffe {
      * </pre>
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.V1LayerParameter)
-        caffe.Caffe.V1LayerParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.V1LayerParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_V1LayerParameter_descriptor;
@@ -76180,12 +77046,14 @@ public final class Caffe {
         int to_bitField0_ = 0;
         int to_bitField1_ = 0;
         if (((bitField0_ & 0x00000001) == 0x00000001)) {
-          bottom_ = bottom_.getUnmodifiableView();
+          bottom_ = new com.google.protobuf.UnmodifiableLazyStringList(
+              bottom_);
           bitField0_ = (bitField0_ & ~0x00000001);
         }
         result.bottom_ = bottom_;
         if (((bitField0_ & 0x00000002) == 0x00000002)) {
-          top_ = top_.getUnmodifiableView();
+          top_ = new com.google.protobuf.UnmodifiableLazyStringList(
+              top_);
           bitField0_ = (bitField0_ & ~0x00000002);
         }
         result.top_ = top_;
@@ -76225,7 +77093,8 @@ public final class Caffe {
           result.blobs_ = blobsBuilder_.build();
         }
         if (((bitField0_ & 0x00000080) == 0x00000080)) {
-          param_ = param_.getUnmodifiableView();
+          param_ = new com.google.protobuf.UnmodifiableLazyStringList(
+              param_);
           bitField0_ = (bitField0_ & ~0x00000080);
         }
         result.param_ = param_;
@@ -76791,6 +77660,7 @@ public final class Caffe {
       private int bitField0_;
       private int bitField1_;
 
+      // repeated string bottom = 2;
       private com.google.protobuf.LazyStringList bottom_ = com.google.protobuf.LazyStringArrayList.EMPTY;
       private void ensureBottomIsMutable() {
         if (!((bitField0_ & 0x00000001) == 0x00000001)) {
@@ -76801,9 +77671,9 @@ public final class Caffe {
       /**
        * <code>repeated string bottom = 2;</code>
        */
-      public com.google.protobuf.ProtocolStringList
+      public java.util.List<java.lang.String>
           getBottomList() {
-        return bottom_.getUnmodifiableView();
+        return java.util.Collections.unmodifiableList(bottom_);
       }
       /**
        * <code>repeated string bottom = 2;</code>
@@ -76856,8 +77726,7 @@ public final class Caffe {
       public Builder addAllBottom(
           java.lang.Iterable<java.lang.String> values) {
         ensureBottomIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, bottom_);
+        super.addAll(values, bottom_);
         onChanged();
         return this;
       }
@@ -76884,6 +77753,7 @@ public final class Caffe {
         return this;
       }
 
+      // repeated string top = 3;
       private com.google.protobuf.LazyStringList top_ = com.google.protobuf.LazyStringArrayList.EMPTY;
       private void ensureTopIsMutable() {
         if (!((bitField0_ & 0x00000002) == 0x00000002)) {
@@ -76894,9 +77764,9 @@ public final class Caffe {
       /**
        * <code>repeated string top = 3;</code>
        */
-      public com.google.protobuf.ProtocolStringList
+      public java.util.List<java.lang.String>
           getTopList() {
-        return top_.getUnmodifiableView();
+        return java.util.Collections.unmodifiableList(top_);
       }
       /**
        * <code>repeated string top = 3;</code>
@@ -76949,8 +77819,7 @@ public final class Caffe {
       public Builder addAllTop(
           java.lang.Iterable<java.lang.String> values) {
         ensureTopIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, top_);
+        super.addAll(values, top_);
         onChanged();
         return this;
       }
@@ -76977,6 +77846,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional string name = 4;
       private java.lang.Object name_ = "";
       /**
        * <code>optional string name = 4;</code>
@@ -76990,12 +77860,9 @@ public final class Caffe {
       public java.lang.String getName() {
         java.lang.Object ref = name_;
         if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            name_ = s;
-          }
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          name_ = s;
           return s;
         } else {
           return (java.lang.String) ref;
@@ -77053,6 +77920,7 @@ public final class Caffe {
         return this;
       }
 
+      // repeated .caffe.NetStateRule include = 32;
       private java.util.List<caffe.Caffe.NetStateRule> include_ =
         java.util.Collections.emptyList();
       private void ensureIncludeIsMutable() {
@@ -77194,8 +78062,7 @@ public final class Caffe {
           java.lang.Iterable<? extends caffe.Caffe.NetStateRule> values) {
         if (includeBuilder_ == null) {
           ensureIncludeIsMutable();
-          com.google.protobuf.AbstractMessageLite.Builder.addAll(
-              values, include_);
+          super.addAll(values, include_);
           onChanged();
         } else {
           includeBuilder_.addAllMessages(values);
@@ -77293,6 +78160,7 @@ public final class Caffe {
         return includeBuilder_;
       }
 
+      // repeated .caffe.NetStateRule exclude = 33;
       private java.util.List<caffe.Caffe.NetStateRule> exclude_ =
         java.util.Collections.emptyList();
       private void ensureExcludeIsMutable() {
@@ -77434,8 +78302,7 @@ public final class Caffe {
           java.lang.Iterable<? extends caffe.Caffe.NetStateRule> values) {
         if (excludeBuilder_ == null) {
           ensureExcludeIsMutable();
-          com.google.protobuf.AbstractMessageLite.Builder.addAll(
-              values, exclude_);
+          super.addAll(values, exclude_);
           onChanged();
         } else {
           excludeBuilder_.addAllMessages(values);
@@ -77533,6 +78400,7 @@ public final class Caffe {
         return excludeBuilder_;
       }
 
+      // optional .caffe.V1LayerParameter.LayerType type = 5;
       private caffe.Caffe.V1LayerParameter.LayerType type_ = caffe.Caffe.V1LayerParameter.LayerType.NONE;
       /**
        * <code>optional .caffe.V1LayerParameter.LayerType type = 5;</code>
@@ -77568,6 +78436,7 @@ public final class Caffe {
         return this;
       }
 
+      // repeated .caffe.BlobProto blobs = 6;
       private java.util.List<caffe.Caffe.BlobProto> blobs_ =
         java.util.Collections.emptyList();
       private void ensureBlobsIsMutable() {
@@ -77709,8 +78578,7 @@ public final class Caffe {
           java.lang.Iterable<? extends caffe.Caffe.BlobProto> values) {
         if (blobsBuilder_ == null) {
           ensureBlobsIsMutable();
-          com.google.protobuf.AbstractMessageLite.Builder.addAll(
-              values, blobs_);
+          super.addAll(values, blobs_);
           onChanged();
         } else {
           blobsBuilder_.addAllMessages(values);
@@ -77808,6 +78676,7 @@ public final class Caffe {
         return blobsBuilder_;
       }
 
+      // repeated string param = 1001;
       private com.google.protobuf.LazyStringList param_ = com.google.protobuf.LazyStringArrayList.EMPTY;
       private void ensureParamIsMutable() {
         if (!((bitField0_ & 0x00000080) == 0x00000080)) {
@@ -77818,9 +78687,9 @@ public final class Caffe {
       /**
        * <code>repeated string param = 1001;</code>
        */
-      public com.google.protobuf.ProtocolStringList
+      public java.util.List<java.lang.String>
           getParamList() {
-        return param_.getUnmodifiableView();
+        return java.util.Collections.unmodifiableList(param_);
       }
       /**
        * <code>repeated string param = 1001;</code>
@@ -77873,8 +78742,7 @@ public final class Caffe {
       public Builder addAllParam(
           java.lang.Iterable<java.lang.String> values) {
         ensureParamIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, param_);
+        super.addAll(values, param_);
         onChanged();
         return this;
       }
@@ -77901,6 +78769,7 @@ public final class Caffe {
         return this;
       }
 
+      // repeated .caffe.V1LayerParameter.DimCheckMode blob_share_mode = 1002;
       private java.util.List<caffe.Caffe.V1LayerParameter.DimCheckMode> blobShareMode_ =
         java.util.Collections.emptyList();
       private void ensureBlobShareModeIsMutable() {
@@ -77958,8 +78827,7 @@ public final class Caffe {
       public Builder addAllBlobShareMode(
           java.lang.Iterable<? extends caffe.Caffe.V1LayerParameter.DimCheckMode> values) {
         ensureBlobShareModeIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, blobShareMode_);
+        super.addAll(values, blobShareMode_);
         onChanged();
         return this;
       }
@@ -77973,6 +78841,7 @@ public final class Caffe {
         return this;
       }
 
+      // repeated float blobs_lr = 7;
       private java.util.List<java.lang.Float> blobsLr_ = java.util.Collections.emptyList();
       private void ensureBlobsLrIsMutable() {
         if (!((bitField0_ & 0x00000200) == 0x00000200)) {
@@ -78024,8 +78893,7 @@ public final class Caffe {
       public Builder addAllBlobsLr(
           java.lang.Iterable<? extends java.lang.Float> values) {
         ensureBlobsLrIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, blobsLr_);
+        super.addAll(values, blobsLr_);
         onChanged();
         return this;
       }
@@ -78039,6 +78907,7 @@ public final class Caffe {
         return this;
       }
 
+      // repeated float weight_decay = 8;
       private java.util.List<java.lang.Float> weightDecay_ = java.util.Collections.emptyList();
       private void ensureWeightDecayIsMutable() {
         if (!((bitField0_ & 0x00000400) == 0x00000400)) {
@@ -78090,8 +78959,7 @@ public final class Caffe {
       public Builder addAllWeightDecay(
           java.lang.Iterable<? extends java.lang.Float> values) {
         ensureWeightDecayIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, weightDecay_);
+        super.addAll(values, weightDecay_);
         onChanged();
         return this;
       }
@@ -78105,6 +78973,7 @@ public final class Caffe {
         return this;
       }
 
+      // repeated float loss_weight = 35;
       private java.util.List<java.lang.Float> lossWeight_ = java.util.Collections.emptyList();
       private void ensureLossWeightIsMutable() {
         if (!((bitField0_ & 0x00000800) == 0x00000800)) {
@@ -78156,8 +79025,7 @@ public final class Caffe {
       public Builder addAllLossWeight(
           java.lang.Iterable<? extends java.lang.Float> values) {
         ensureLossWeightIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, lossWeight_);
+        super.addAll(values, lossWeight_);
         onChanged();
         return this;
       }
@@ -78171,6 +79039,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional .caffe.AccuracyParameter accuracy_param = 27;
       private caffe.Caffe.AccuracyParameter accuracyParam_ = caffe.Caffe.AccuracyParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.AccuracyParameter, caffe.Caffe.AccuracyParameter.Builder, caffe.Caffe.AccuracyParameterOrBuilder> accuracyParamBuilder_;
@@ -78279,7 +79148,7 @@ public final class Caffe {
         if (accuracyParamBuilder_ == null) {
           accuracyParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.AccuracyParameter, caffe.Caffe.AccuracyParameter.Builder, caffe.Caffe.AccuracyParameterOrBuilder>(
-                  getAccuracyParam(),
+                  accuracyParam_,
                   getParentForChildren(),
                   isClean());
           accuracyParam_ = null;
@@ -78287,6 +79156,7 @@ public final class Caffe {
         return accuracyParamBuilder_;
       }
 
+      // optional .caffe.ArgMaxParameter argmax_param = 23;
       private caffe.Caffe.ArgMaxParameter argmaxParam_ = caffe.Caffe.ArgMaxParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.ArgMaxParameter, caffe.Caffe.ArgMaxParameter.Builder, caffe.Caffe.ArgMaxParameterOrBuilder> argmaxParamBuilder_;
@@ -78395,7 +79265,7 @@ public final class Caffe {
         if (argmaxParamBuilder_ == null) {
           argmaxParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.ArgMaxParameter, caffe.Caffe.ArgMaxParameter.Builder, caffe.Caffe.ArgMaxParameterOrBuilder>(
-                  getArgmaxParam(),
+                  argmaxParam_,
                   getParentForChildren(),
                   isClean());
           argmaxParam_ = null;
@@ -78403,6 +79273,7 @@ public final class Caffe {
         return argmaxParamBuilder_;
       }
 
+      // optional .caffe.ConcatParameter concat_param = 9;
       private caffe.Caffe.ConcatParameter concatParam_ = caffe.Caffe.ConcatParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.ConcatParameter, caffe.Caffe.ConcatParameter.Builder, caffe.Caffe.ConcatParameterOrBuilder> concatParamBuilder_;
@@ -78511,7 +79382,7 @@ public final class Caffe {
         if (concatParamBuilder_ == null) {
           concatParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.ConcatParameter, caffe.Caffe.ConcatParameter.Builder, caffe.Caffe.ConcatParameterOrBuilder>(
-                  getConcatParam(),
+                  concatParam_,
                   getParentForChildren(),
                   isClean());
           concatParam_ = null;
@@ -78519,6 +79390,7 @@ public final class Caffe {
         return concatParamBuilder_;
       }
 
+      // optional .caffe.ContrastiveLossParameter contrastive_loss_param = 40;
       private caffe.Caffe.ContrastiveLossParameter contrastiveLossParam_ = caffe.Caffe.ContrastiveLossParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.ContrastiveLossParameter, caffe.Caffe.ContrastiveLossParameter.Builder, caffe.Caffe.ContrastiveLossParameterOrBuilder> contrastiveLossParamBuilder_;
@@ -78627,7 +79499,7 @@ public final class Caffe {
         if (contrastiveLossParamBuilder_ == null) {
           contrastiveLossParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.ContrastiveLossParameter, caffe.Caffe.ContrastiveLossParameter.Builder, caffe.Caffe.ContrastiveLossParameterOrBuilder>(
-                  getContrastiveLossParam(),
+                  contrastiveLossParam_,
                   getParentForChildren(),
                   isClean());
           contrastiveLossParam_ = null;
@@ -78635,6 +79507,7 @@ public final class Caffe {
         return contrastiveLossParamBuilder_;
       }
 
+      // optional .caffe.ConvolutionParameter convolution_param = 10;
       private caffe.Caffe.ConvolutionParameter convolutionParam_ = caffe.Caffe.ConvolutionParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.ConvolutionParameter, caffe.Caffe.ConvolutionParameter.Builder, caffe.Caffe.ConvolutionParameterOrBuilder> convolutionParamBuilder_;
@@ -78743,7 +79616,7 @@ public final class Caffe {
         if (convolutionParamBuilder_ == null) {
           convolutionParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.ConvolutionParameter, caffe.Caffe.ConvolutionParameter.Builder, caffe.Caffe.ConvolutionParameterOrBuilder>(
-                  getConvolutionParam(),
+                  convolutionParam_,
                   getParentForChildren(),
                   isClean());
           convolutionParam_ = null;
@@ -78751,6 +79624,7 @@ public final class Caffe {
         return convolutionParamBuilder_;
       }
 
+      // optional .caffe.DataParameter data_param = 11;
       private caffe.Caffe.DataParameter dataParam_ = caffe.Caffe.DataParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.DataParameter, caffe.Caffe.DataParameter.Builder, caffe.Caffe.DataParameterOrBuilder> dataParamBuilder_;
@@ -78859,7 +79733,7 @@ public final class Caffe {
         if (dataParamBuilder_ == null) {
           dataParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.DataParameter, caffe.Caffe.DataParameter.Builder, caffe.Caffe.DataParameterOrBuilder>(
-                  getDataParam(),
+                  dataParam_,
                   getParentForChildren(),
                   isClean());
           dataParam_ = null;
@@ -78867,6 +79741,7 @@ public final class Caffe {
         return dataParamBuilder_;
       }
 
+      // optional .caffe.DropoutParameter dropout_param = 12;
       private caffe.Caffe.DropoutParameter dropoutParam_ = caffe.Caffe.DropoutParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.DropoutParameter, caffe.Caffe.DropoutParameter.Builder, caffe.Caffe.DropoutParameterOrBuilder> dropoutParamBuilder_;
@@ -78975,7 +79850,7 @@ public final class Caffe {
         if (dropoutParamBuilder_ == null) {
           dropoutParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.DropoutParameter, caffe.Caffe.DropoutParameter.Builder, caffe.Caffe.DropoutParameterOrBuilder>(
-                  getDropoutParam(),
+                  dropoutParam_,
                   getParentForChildren(),
                   isClean());
           dropoutParam_ = null;
@@ -78983,6 +79858,7 @@ public final class Caffe {
         return dropoutParamBuilder_;
       }
 
+      // optional .caffe.DummyDataParameter dummy_data_param = 26;
       private caffe.Caffe.DummyDataParameter dummyDataParam_ = caffe.Caffe.DummyDataParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.DummyDataParameter, caffe.Caffe.DummyDataParameter.Builder, caffe.Caffe.DummyDataParameterOrBuilder> dummyDataParamBuilder_;
@@ -79091,7 +79967,7 @@ public final class Caffe {
         if (dummyDataParamBuilder_ == null) {
           dummyDataParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.DummyDataParameter, caffe.Caffe.DummyDataParameter.Builder, caffe.Caffe.DummyDataParameterOrBuilder>(
-                  getDummyDataParam(),
+                  dummyDataParam_,
                   getParentForChildren(),
                   isClean());
           dummyDataParam_ = null;
@@ -79099,6 +79975,7 @@ public final class Caffe {
         return dummyDataParamBuilder_;
       }
 
+      // optional .caffe.EltwiseParameter eltwise_param = 24;
       private caffe.Caffe.EltwiseParameter eltwiseParam_ = caffe.Caffe.EltwiseParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.EltwiseParameter, caffe.Caffe.EltwiseParameter.Builder, caffe.Caffe.EltwiseParameterOrBuilder> eltwiseParamBuilder_;
@@ -79207,7 +80084,7 @@ public final class Caffe {
         if (eltwiseParamBuilder_ == null) {
           eltwiseParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.EltwiseParameter, caffe.Caffe.EltwiseParameter.Builder, caffe.Caffe.EltwiseParameterOrBuilder>(
-                  getEltwiseParam(),
+                  eltwiseParam_,
                   getParentForChildren(),
                   isClean());
           eltwiseParam_ = null;
@@ -79215,6 +80092,7 @@ public final class Caffe {
         return eltwiseParamBuilder_;
       }
 
+      // optional .caffe.ExpParameter exp_param = 41;
       private caffe.Caffe.ExpParameter expParam_ = caffe.Caffe.ExpParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.ExpParameter, caffe.Caffe.ExpParameter.Builder, caffe.Caffe.ExpParameterOrBuilder> expParamBuilder_;
@@ -79323,7 +80201,7 @@ public final class Caffe {
         if (expParamBuilder_ == null) {
           expParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.ExpParameter, caffe.Caffe.ExpParameter.Builder, caffe.Caffe.ExpParameterOrBuilder>(
-                  getExpParam(),
+                  expParam_,
                   getParentForChildren(),
                   isClean());
           expParam_ = null;
@@ -79331,6 +80209,7 @@ public final class Caffe {
         return expParamBuilder_;
       }
 
+      // optional .caffe.HDF5DataParameter hdf5_data_param = 13;
       private caffe.Caffe.HDF5DataParameter hdf5DataParam_ = caffe.Caffe.HDF5DataParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.HDF5DataParameter, caffe.Caffe.HDF5DataParameter.Builder, caffe.Caffe.HDF5DataParameterOrBuilder> hdf5DataParamBuilder_;
@@ -79439,7 +80318,7 @@ public final class Caffe {
         if (hdf5DataParamBuilder_ == null) {
           hdf5DataParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.HDF5DataParameter, caffe.Caffe.HDF5DataParameter.Builder, caffe.Caffe.HDF5DataParameterOrBuilder>(
-                  getHdf5DataParam(),
+                  hdf5DataParam_,
                   getParentForChildren(),
                   isClean());
           hdf5DataParam_ = null;
@@ -79447,6 +80326,7 @@ public final class Caffe {
         return hdf5DataParamBuilder_;
       }
 
+      // optional .caffe.HDF5OutputParameter hdf5_output_param = 14;
       private caffe.Caffe.HDF5OutputParameter hdf5OutputParam_ = caffe.Caffe.HDF5OutputParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.HDF5OutputParameter, caffe.Caffe.HDF5OutputParameter.Builder, caffe.Caffe.HDF5OutputParameterOrBuilder> hdf5OutputParamBuilder_;
@@ -79555,7 +80435,7 @@ public final class Caffe {
         if (hdf5OutputParamBuilder_ == null) {
           hdf5OutputParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.HDF5OutputParameter, caffe.Caffe.HDF5OutputParameter.Builder, caffe.Caffe.HDF5OutputParameterOrBuilder>(
-                  getHdf5OutputParam(),
+                  hdf5OutputParam_,
                   getParentForChildren(),
                   isClean());
           hdf5OutputParam_ = null;
@@ -79563,6 +80443,7 @@ public final class Caffe {
         return hdf5OutputParamBuilder_;
       }
 
+      // optional .caffe.HingeLossParameter hinge_loss_param = 29;
       private caffe.Caffe.HingeLossParameter hingeLossParam_ = caffe.Caffe.HingeLossParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.HingeLossParameter, caffe.Caffe.HingeLossParameter.Builder, caffe.Caffe.HingeLossParameterOrBuilder> hingeLossParamBuilder_;
@@ -79671,7 +80552,7 @@ public final class Caffe {
         if (hingeLossParamBuilder_ == null) {
           hingeLossParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.HingeLossParameter, caffe.Caffe.HingeLossParameter.Builder, caffe.Caffe.HingeLossParameterOrBuilder>(
-                  getHingeLossParam(),
+                  hingeLossParam_,
                   getParentForChildren(),
                   isClean());
           hingeLossParam_ = null;
@@ -79679,6 +80560,7 @@ public final class Caffe {
         return hingeLossParamBuilder_;
       }
 
+      // optional .caffe.ImageDataParameter image_data_param = 15;
       private caffe.Caffe.ImageDataParameter imageDataParam_ = caffe.Caffe.ImageDataParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.ImageDataParameter, caffe.Caffe.ImageDataParameter.Builder, caffe.Caffe.ImageDataParameterOrBuilder> imageDataParamBuilder_;
@@ -79787,7 +80669,7 @@ public final class Caffe {
         if (imageDataParamBuilder_ == null) {
           imageDataParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.ImageDataParameter, caffe.Caffe.ImageDataParameter.Builder, caffe.Caffe.ImageDataParameterOrBuilder>(
-                  getImageDataParam(),
+                  imageDataParam_,
                   getParentForChildren(),
                   isClean());
           imageDataParam_ = null;
@@ -79795,6 +80677,7 @@ public final class Caffe {
         return imageDataParamBuilder_;
       }
 
+      // optional .caffe.InfogainLossParameter infogain_loss_param = 16;
       private caffe.Caffe.InfogainLossParameter infogainLossParam_ = caffe.Caffe.InfogainLossParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.InfogainLossParameter, caffe.Caffe.InfogainLossParameter.Builder, caffe.Caffe.InfogainLossParameterOrBuilder> infogainLossParamBuilder_;
@@ -79903,7 +80786,7 @@ public final class Caffe {
         if (infogainLossParamBuilder_ == null) {
           infogainLossParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.InfogainLossParameter, caffe.Caffe.InfogainLossParameter.Builder, caffe.Caffe.InfogainLossParameterOrBuilder>(
-                  getInfogainLossParam(),
+                  infogainLossParam_,
                   getParentForChildren(),
                   isClean());
           infogainLossParam_ = null;
@@ -79911,6 +80794,7 @@ public final class Caffe {
         return infogainLossParamBuilder_;
       }
 
+      // optional .caffe.InnerProductParameter inner_product_param = 17;
       private caffe.Caffe.InnerProductParameter innerProductParam_ = caffe.Caffe.InnerProductParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.InnerProductParameter, caffe.Caffe.InnerProductParameter.Builder, caffe.Caffe.InnerProductParameterOrBuilder> innerProductParamBuilder_;
@@ -80019,7 +80903,7 @@ public final class Caffe {
         if (innerProductParamBuilder_ == null) {
           innerProductParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.InnerProductParameter, caffe.Caffe.InnerProductParameter.Builder, caffe.Caffe.InnerProductParameterOrBuilder>(
-                  getInnerProductParam(),
+                  innerProductParam_,
                   getParentForChildren(),
                   isClean());
           innerProductParam_ = null;
@@ -80027,6 +80911,7 @@ public final class Caffe {
         return innerProductParamBuilder_;
       }
 
+      // optional .caffe.LRNParameter lrn_param = 18;
       private caffe.Caffe.LRNParameter lrnParam_ = caffe.Caffe.LRNParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.LRNParameter, caffe.Caffe.LRNParameter.Builder, caffe.Caffe.LRNParameterOrBuilder> lrnParamBuilder_;
@@ -80135,7 +81020,7 @@ public final class Caffe {
         if (lrnParamBuilder_ == null) {
           lrnParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.LRNParameter, caffe.Caffe.LRNParameter.Builder, caffe.Caffe.LRNParameterOrBuilder>(
-                  getLrnParam(),
+                  lrnParam_,
                   getParentForChildren(),
                   isClean());
           lrnParam_ = null;
@@ -80143,6 +81028,7 @@ public final class Caffe {
         return lrnParamBuilder_;
       }
 
+      // optional .caffe.MemoryDataParameter memory_data_param = 22;
       private caffe.Caffe.MemoryDataParameter memoryDataParam_ = caffe.Caffe.MemoryDataParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.MemoryDataParameter, caffe.Caffe.MemoryDataParameter.Builder, caffe.Caffe.MemoryDataParameterOrBuilder> memoryDataParamBuilder_;
@@ -80251,7 +81137,7 @@ public final class Caffe {
         if (memoryDataParamBuilder_ == null) {
           memoryDataParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.MemoryDataParameter, caffe.Caffe.MemoryDataParameter.Builder, caffe.Caffe.MemoryDataParameterOrBuilder>(
-                  getMemoryDataParam(),
+                  memoryDataParam_,
                   getParentForChildren(),
                   isClean());
           memoryDataParam_ = null;
@@ -80259,6 +81145,7 @@ public final class Caffe {
         return memoryDataParamBuilder_;
       }
 
+      // optional .caffe.MVNParameter mvn_param = 34;
       private caffe.Caffe.MVNParameter mvnParam_ = caffe.Caffe.MVNParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.MVNParameter, caffe.Caffe.MVNParameter.Builder, caffe.Caffe.MVNParameterOrBuilder> mvnParamBuilder_;
@@ -80367,7 +81254,7 @@ public final class Caffe {
         if (mvnParamBuilder_ == null) {
           mvnParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.MVNParameter, caffe.Caffe.MVNParameter.Builder, caffe.Caffe.MVNParameterOrBuilder>(
-                  getMvnParam(),
+                  mvnParam_,
                   getParentForChildren(),
                   isClean());
           mvnParam_ = null;
@@ -80375,6 +81262,7 @@ public final class Caffe {
         return mvnParamBuilder_;
       }
 
+      // optional .caffe.PoolingParameter pooling_param = 19;
       private caffe.Caffe.PoolingParameter poolingParam_ = caffe.Caffe.PoolingParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.PoolingParameter, caffe.Caffe.PoolingParameter.Builder, caffe.Caffe.PoolingParameterOrBuilder> poolingParamBuilder_;
@@ -80483,7 +81371,7 @@ public final class Caffe {
         if (poolingParamBuilder_ == null) {
           poolingParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.PoolingParameter, caffe.Caffe.PoolingParameter.Builder, caffe.Caffe.PoolingParameterOrBuilder>(
-                  getPoolingParam(),
+                  poolingParam_,
                   getParentForChildren(),
                   isClean());
           poolingParam_ = null;
@@ -80491,6 +81379,7 @@ public final class Caffe {
         return poolingParamBuilder_;
       }
 
+      // optional .caffe.PowerParameter power_param = 21;
       private caffe.Caffe.PowerParameter powerParam_ = caffe.Caffe.PowerParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.PowerParameter, caffe.Caffe.PowerParameter.Builder, caffe.Caffe.PowerParameterOrBuilder> powerParamBuilder_;
@@ -80599,7 +81488,7 @@ public final class Caffe {
         if (powerParamBuilder_ == null) {
           powerParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.PowerParameter, caffe.Caffe.PowerParameter.Builder, caffe.Caffe.PowerParameterOrBuilder>(
-                  getPowerParam(),
+                  powerParam_,
                   getParentForChildren(),
                   isClean());
           powerParam_ = null;
@@ -80607,6 +81496,7 @@ public final class Caffe {
         return powerParamBuilder_;
       }
 
+      // optional .caffe.ReLUParameter relu_param = 30;
       private caffe.Caffe.ReLUParameter reluParam_ = caffe.Caffe.ReLUParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.ReLUParameter, caffe.Caffe.ReLUParameter.Builder, caffe.Caffe.ReLUParameterOrBuilder> reluParamBuilder_;
@@ -80715,7 +81605,7 @@ public final class Caffe {
         if (reluParamBuilder_ == null) {
           reluParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.ReLUParameter, caffe.Caffe.ReLUParameter.Builder, caffe.Caffe.ReLUParameterOrBuilder>(
-                  getReluParam(),
+                  reluParam_,
                   getParentForChildren(),
                   isClean());
           reluParam_ = null;
@@ -80723,6 +81613,7 @@ public final class Caffe {
         return reluParamBuilder_;
       }
 
+      // optional .caffe.SigmoidParameter sigmoid_param = 38;
       private caffe.Caffe.SigmoidParameter sigmoidParam_ = caffe.Caffe.SigmoidParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.SigmoidParameter, caffe.Caffe.SigmoidParameter.Builder, caffe.Caffe.SigmoidParameterOrBuilder> sigmoidParamBuilder_;
@@ -80831,7 +81722,7 @@ public final class Caffe {
         if (sigmoidParamBuilder_ == null) {
           sigmoidParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.SigmoidParameter, caffe.Caffe.SigmoidParameter.Builder, caffe.Caffe.SigmoidParameterOrBuilder>(
-                  getSigmoidParam(),
+                  sigmoidParam_,
                   getParentForChildren(),
                   isClean());
           sigmoidParam_ = null;
@@ -80839,6 +81730,7 @@ public final class Caffe {
         return sigmoidParamBuilder_;
       }
 
+      // optional .caffe.SoftmaxParameter softmax_param = 39;
       private caffe.Caffe.SoftmaxParameter softmaxParam_ = caffe.Caffe.SoftmaxParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.SoftmaxParameter, caffe.Caffe.SoftmaxParameter.Builder, caffe.Caffe.SoftmaxParameterOrBuilder> softmaxParamBuilder_;
@@ -80947,7 +81839,7 @@ public final class Caffe {
         if (softmaxParamBuilder_ == null) {
           softmaxParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.SoftmaxParameter, caffe.Caffe.SoftmaxParameter.Builder, caffe.Caffe.SoftmaxParameterOrBuilder>(
-                  getSoftmaxParam(),
+                  softmaxParam_,
                   getParentForChildren(),
                   isClean());
           softmaxParam_ = null;
@@ -80955,6 +81847,7 @@ public final class Caffe {
         return softmaxParamBuilder_;
       }
 
+      // optional .caffe.SliceParameter slice_param = 31;
       private caffe.Caffe.SliceParameter sliceParam_ = caffe.Caffe.SliceParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.SliceParameter, caffe.Caffe.SliceParameter.Builder, caffe.Caffe.SliceParameterOrBuilder> sliceParamBuilder_;
@@ -81063,7 +81956,7 @@ public final class Caffe {
         if (sliceParamBuilder_ == null) {
           sliceParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.SliceParameter, caffe.Caffe.SliceParameter.Builder, caffe.Caffe.SliceParameterOrBuilder>(
-                  getSliceParam(),
+                  sliceParam_,
                   getParentForChildren(),
                   isClean());
           sliceParam_ = null;
@@ -81071,6 +81964,7 @@ public final class Caffe {
         return sliceParamBuilder_;
       }
 
+      // optional .caffe.TanHParameter tanh_param = 37;
       private caffe.Caffe.TanHParameter tanhParam_ = caffe.Caffe.TanHParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.TanHParameter, caffe.Caffe.TanHParameter.Builder, caffe.Caffe.TanHParameterOrBuilder> tanhParamBuilder_;
@@ -81179,7 +82073,7 @@ public final class Caffe {
         if (tanhParamBuilder_ == null) {
           tanhParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.TanHParameter, caffe.Caffe.TanHParameter.Builder, caffe.Caffe.TanHParameterOrBuilder>(
-                  getTanhParam(),
+                  tanhParam_,
                   getParentForChildren(),
                   isClean());
           tanhParam_ = null;
@@ -81187,6 +82081,7 @@ public final class Caffe {
         return tanhParamBuilder_;
       }
 
+      // optional .caffe.ThresholdParameter threshold_param = 25;
       private caffe.Caffe.ThresholdParameter thresholdParam_ = caffe.Caffe.ThresholdParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.ThresholdParameter, caffe.Caffe.ThresholdParameter.Builder, caffe.Caffe.ThresholdParameterOrBuilder> thresholdParamBuilder_;
@@ -81295,7 +82190,7 @@ public final class Caffe {
         if (thresholdParamBuilder_ == null) {
           thresholdParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.ThresholdParameter, caffe.Caffe.ThresholdParameter.Builder, caffe.Caffe.ThresholdParameterOrBuilder>(
-                  getThresholdParam(),
+                  thresholdParam_,
                   getParentForChildren(),
                   isClean());
           thresholdParam_ = null;
@@ -81303,6 +82198,7 @@ public final class Caffe {
         return thresholdParamBuilder_;
       }
 
+      // optional .caffe.WindowDataParameter window_data_param = 20;
       private caffe.Caffe.WindowDataParameter windowDataParam_ = caffe.Caffe.WindowDataParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.WindowDataParameter, caffe.Caffe.WindowDataParameter.Builder, caffe.Caffe.WindowDataParameterOrBuilder> windowDataParamBuilder_;
@@ -81411,7 +82307,7 @@ public final class Caffe {
         if (windowDataParamBuilder_ == null) {
           windowDataParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.WindowDataParameter, caffe.Caffe.WindowDataParameter.Builder, caffe.Caffe.WindowDataParameterOrBuilder>(
-                  getWindowDataParam(),
+                  windowDataParam_,
                   getParentForChildren(),
                   isClean());
           windowDataParam_ = null;
@@ -81419,6 +82315,7 @@ public final class Caffe {
         return windowDataParamBuilder_;
       }
 
+      // optional .caffe.TransformationParameter transform_param = 36;
       private caffe.Caffe.TransformationParameter transformParam_ = caffe.Caffe.TransformationParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.TransformationParameter, caffe.Caffe.TransformationParameter.Builder, caffe.Caffe.TransformationParameterOrBuilder> transformParamBuilder_;
@@ -81527,7 +82424,7 @@ public final class Caffe {
         if (transformParamBuilder_ == null) {
           transformParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.TransformationParameter, caffe.Caffe.TransformationParameter.Builder, caffe.Caffe.TransformationParameterOrBuilder>(
-                  getTransformParam(),
+                  transformParam_,
                   getParentForChildren(),
                   isClean());
           transformParam_ = null;
@@ -81535,6 +82432,7 @@ public final class Caffe {
         return transformParamBuilder_;
       }
 
+      // optional .caffe.LossParameter loss_param = 42;
       private caffe.Caffe.LossParameter lossParam_ = caffe.Caffe.LossParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.LossParameter, caffe.Caffe.LossParameter.Builder, caffe.Caffe.LossParameterOrBuilder> lossParamBuilder_;
@@ -81643,7 +82541,7 @@ public final class Caffe {
         if (lossParamBuilder_ == null) {
           lossParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.LossParameter, caffe.Caffe.LossParameter.Builder, caffe.Caffe.LossParameterOrBuilder>(
-                  getLossParam(),
+                  lossParam_,
                   getParentForChildren(),
                   isClean());
           lossParam_ = null;
@@ -81651,6 +82549,7 @@ public final class Caffe {
         return lossParamBuilder_;
       }
 
+      // optional .caffe.V0LayerParameter layer = 1;
       private caffe.Caffe.V0LayerParameter layer_ = caffe.Caffe.V0LayerParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.V0LayerParameter, caffe.Caffe.V0LayerParameter.Builder, caffe.Caffe.V0LayerParameterOrBuilder> layerBuilder_;
@@ -81759,7 +82658,7 @@ public final class Caffe {
         if (layerBuilder_ == null) {
           layerBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.V0LayerParameter, caffe.Caffe.V0LayerParameter.Builder, caffe.Caffe.V0LayerParameterOrBuilder>(
-                  getLayer(),
+                  layer_,
                   getParentForChildren(),
                   isClean());
           layer_ = null;
@@ -81778,10 +82677,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.V1LayerParameter)
   }
 
-  public interface V0LayerParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.V0LayerParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface V0LayerParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional string name = 1;
     /**
      * <code>optional string name = 1;</code>
      *
@@ -81808,6 +82707,7 @@ public final class Caffe {
     com.google.protobuf.ByteString
         getNameBytes();
 
+    // optional string type = 2;
     /**
      * <code>optional string type = 2;</code>
      *
@@ -81834,6 +82734,7 @@ public final class Caffe {
     com.google.protobuf.ByteString
         getTypeBytes();
 
+    // optional uint32 num_output = 3;
     /**
      * <code>optional uint32 num_output = 3;</code>
      *
@@ -81851,6 +82752,7 @@ public final class Caffe {
      */
     int getNumOutput();
 
+    // optional bool biasterm = 4 [default = true];
     /**
      * <code>optional bool biasterm = 4 [default = true];</code>
      *
@@ -81868,6 +82770,7 @@ public final class Caffe {
      */
     boolean getBiasterm();
 
+    // optional .caffe.FillerParameter weight_filler = 5;
     /**
      * <code>optional .caffe.FillerParameter weight_filler = 5;</code>
      *
@@ -81893,6 +82796,7 @@ public final class Caffe {
      */
     caffe.Caffe.FillerParameterOrBuilder getWeightFillerOrBuilder();
 
+    // optional .caffe.FillerParameter bias_filler = 6;
     /**
      * <code>optional .caffe.FillerParameter bias_filler = 6;</code>
      *
@@ -81918,6 +82822,7 @@ public final class Caffe {
      */
     caffe.Caffe.FillerParameterOrBuilder getBiasFillerOrBuilder();
 
+    // optional uint32 pad = 7 [default = 0];
     /**
      * <code>optional uint32 pad = 7 [default = 0];</code>
      *
@@ -81935,6 +82840,7 @@ public final class Caffe {
      */
     int getPad();
 
+    // optional uint32 kernelsize = 8;
     /**
      * <code>optional uint32 kernelsize = 8;</code>
      *
@@ -81952,6 +82858,7 @@ public final class Caffe {
      */
     int getKernelsize();
 
+    // optional uint32 group = 9 [default = 1];
     /**
      * <code>optional uint32 group = 9 [default = 1];</code>
      *
@@ -81969,6 +82876,7 @@ public final class Caffe {
      */
     int getGroup();
 
+    // optional uint32 stride = 10 [default = 1];
     /**
      * <code>optional uint32 stride = 10 [default = 1];</code>
      *
@@ -81986,6 +82894,7 @@ public final class Caffe {
      */
     int getStride();
 
+    // optional .caffe.V0LayerParameter.PoolMethod pool = 11 [default = MAX];
     /**
      * <code>optional .caffe.V0LayerParameter.PoolMethod pool = 11 [default = MAX];</code>
      *
@@ -82003,6 +82912,7 @@ public final class Caffe {
      */
     caffe.Caffe.V0LayerParameter.PoolMethod getPool();
 
+    // optional float dropout_ratio = 12 [default = 0.5];
     /**
      * <code>optional float dropout_ratio = 12 [default = 0.5];</code>
      *
@@ -82020,6 +82930,7 @@ public final class Caffe {
      */
     float getDropoutRatio();
 
+    // optional uint32 local_size = 13 [default = 5];
     /**
      * <code>optional uint32 local_size = 13 [default = 5];</code>
      *
@@ -82037,6 +82948,7 @@ public final class Caffe {
      */
     int getLocalSize();
 
+    // optional float alpha = 14 [default = 1];
     /**
      * <code>optional float alpha = 14 [default = 1];</code>
      *
@@ -82054,6 +82966,7 @@ public final class Caffe {
      */
     float getAlpha();
 
+    // optional float beta = 15 [default = 0.75];
     /**
      * <code>optional float beta = 15 [default = 0.75];</code>
      *
@@ -82071,6 +82984,7 @@ public final class Caffe {
      */
     float getBeta();
 
+    // optional float k = 22 [default = 1];
     /**
      * <code>optional float k = 22 [default = 1];</code>
      */
@@ -82080,6 +82994,7 @@ public final class Caffe {
      */
     float getK();
 
+    // optional string source = 16;
     /**
      * <code>optional string source = 16;</code>
      *
@@ -82106,6 +83021,7 @@ public final class Caffe {
     com.google.protobuf.ByteString
         getSourceBytes();
 
+    // optional float scale = 17 [default = 1];
     /**
      * <code>optional float scale = 17 [default = 1];</code>
      *
@@ -82127,6 +83043,7 @@ public final class Caffe {
      */
     float getScale();
 
+    // optional string meanfile = 18;
     /**
      * <code>optional string meanfile = 18;</code>
      */
@@ -82141,6 +83058,7 @@ public final class Caffe {
     com.google.protobuf.ByteString
         getMeanfileBytes();
 
+    // optional uint32 batchsize = 19;
     /**
      * <code>optional uint32 batchsize = 19;</code>
      *
@@ -82158,6 +83076,7 @@ public final class Caffe {
      */
     int getBatchsize();
 
+    // optional uint32 cropsize = 20 [default = 0];
     /**
      * <code>optional uint32 cropsize = 20 [default = 0];</code>
      *
@@ -82175,6 +83094,7 @@ public final class Caffe {
      */
     int getCropsize();
 
+    // optional bool mirror = 21 [default = false];
     /**
      * <code>optional bool mirror = 21 [default = false];</code>
      *
@@ -82192,6 +83112,7 @@ public final class Caffe {
      */
     boolean getMirror();
 
+    // repeated .caffe.BlobProto blobs = 50;
     /**
      * <code>repeated .caffe.BlobProto blobs = 50;</code>
      *
@@ -82236,6 +83157,7 @@ public final class Caffe {
     caffe.Caffe.BlobProtoOrBuilder getBlobsOrBuilder(
         int index);
 
+    // repeated float blobs_lr = 51;
     /**
      * <code>repeated float blobs_lr = 51;</code>
      *
@@ -82264,6 +83186,7 @@ public final class Caffe {
      */
     float getBlobsLr(int index);
 
+    // repeated float weight_decay = 52;
     /**
      * <code>repeated float weight_decay = 52;</code>
      *
@@ -82289,6 +83212,7 @@ public final class Caffe {
      */
     float getWeightDecay(int index);
 
+    // optional uint32 rand_skip = 53 [default = 0];
     /**
      * <code>optional uint32 rand_skip = 53 [default = 0];</code>
      *
@@ -82312,6 +83236,7 @@ public final class Caffe {
      */
     int getRandSkip();
 
+    // optional float det_fg_threshold = 54 [default = 0.5];
     /**
      * <code>optional float det_fg_threshold = 54 [default = 0.5];</code>
      *
@@ -82331,6 +83256,7 @@ public final class Caffe {
      */
     float getDetFgThreshold();
 
+    // optional float det_bg_threshold = 55 [default = 0.5];
     /**
      * <code>optional float det_bg_threshold = 55 [default = 0.5];</code>
      *
@@ -82348,6 +83274,7 @@ public final class Caffe {
      */
     float getDetBgThreshold();
 
+    // optional float det_fg_fraction = 56 [default = 0.25];
     /**
      * <code>optional float det_fg_fraction = 56 [default = 0.25];</code>
      *
@@ -82365,6 +83292,7 @@ public final class Caffe {
      */
     float getDetFgFraction();
 
+    // optional uint32 det_context_pad = 58 [default = 0];
     /**
      * <code>optional uint32 det_context_pad = 58 [default = 0];</code>
      *
@@ -82384,6 +83312,7 @@ public final class Caffe {
      */
     int getDetContextPad();
 
+    // optional string det_crop_mode = 59 [default = "warp"];
     /**
      * <code>optional string det_crop_mode = 59 [default = "warp"];</code>
      *
@@ -82416,6 +83345,7 @@ public final class Caffe {
     com.google.protobuf.ByteString
         getDetCropModeBytes();
 
+    // optional int32 new_num = 60 [default = 0];
     /**
      * <code>optional int32 new_num = 60 [default = 0];</code>
      *
@@ -82433,6 +83363,7 @@ public final class Caffe {
      */
     int getNewNum();
 
+    // optional int32 new_channels = 61 [default = 0];
     /**
      * <code>optional int32 new_channels = 61 [default = 0];</code>
      */
@@ -82442,6 +83373,7 @@ public final class Caffe {
      */
     int getNewChannels();
 
+    // optional int32 new_height = 62 [default = 0];
     /**
      * <code>optional int32 new_height = 62 [default = 0];</code>
      */
@@ -82451,6 +83383,7 @@ public final class Caffe {
      */
     int getNewHeight();
 
+    // optional int32 new_width = 63 [default = 0];
     /**
      * <code>optional int32 new_width = 63 [default = 0];</code>
      */
@@ -82460,6 +83393,7 @@ public final class Caffe {
      */
     int getNewWidth();
 
+    // optional bool shuffle_images = 64 [default = false];
     /**
      * <code>optional bool shuffle_images = 64 [default = false];</code>
      *
@@ -82479,6 +83413,7 @@ public final class Caffe {
      */
     boolean getShuffleImages();
 
+    // optional uint32 concat_dim = 65 [default = 1];
     /**
      * <code>optional uint32 concat_dim = 65 [default = 1];</code>
      *
@@ -82500,6 +83435,7 @@ public final class Caffe {
      */
     int getConcatDim();
 
+    // optional .caffe.HDF5OutputParameter hdf5_output_param = 1001;
     /**
      * <code>optional .caffe.HDF5OutputParameter hdf5_output_param = 1001;</code>
      */
@@ -82522,9 +83458,8 @@ public final class Caffe {
    * </pre>
    */
   public static final class V0LayerParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.V0LayerParameter)
-      V0LayerParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements V0LayerParameterOrBuilder {
     // Use V0LayerParameter.newBuilder() to construct.
     private V0LayerParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -82572,15 +83507,13 @@ public final class Caffe {
               break;
             }
             case 10: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000001;
-              name_ = bs;
+              name_ = input.readBytes();
               break;
             }
             case 18: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000002;
-              type_ = bs;
+              type_ = input.readBytes();
               break;
             }
             case 24: {
@@ -82671,9 +83604,8 @@ public final class Caffe {
               break;
             }
             case 130: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00010000;
-              source_ = bs;
+              source_ = input.readBytes();
               break;
             }
             case 141: {
@@ -82682,9 +83614,8 @@ public final class Caffe {
               break;
             }
             case 146: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00040000;
-              meanfile_ = bs;
+              meanfile_ = input.readBytes();
               break;
             }
             case 152: {
@@ -82783,9 +83714,8 @@ public final class Caffe {
               break;
             }
             case 474: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x08000000;
-              detCropMode_ = bs;
+              detCropMode_ = input.readBytes();
               break;
             }
             case 480: {
@@ -82972,6 +83902,7 @@ public final class Caffe {
 
     private int bitField0_;
     private int bitField1_;
+    // optional string name = 1;
     public static final int NAME_FIELD_NUMBER = 1;
     private java.lang.Object name_;
     /**
@@ -83026,6 +83957,7 @@ public final class Caffe {
       }
     }
 
+    // optional string type = 2;
     public static final int TYPE_FIELD_NUMBER = 2;
     private java.lang.Object type_;
     /**
@@ -83080,6 +84012,7 @@ public final class Caffe {
       }
     }
 
+    // optional uint32 num_output = 3;
     public static final int NUM_OUTPUT_FIELD_NUMBER = 3;
     private int numOutput_;
     /**
@@ -83103,6 +84036,7 @@ public final class Caffe {
       return numOutput_;
     }
 
+    // optional bool biasterm = 4 [default = true];
     public static final int BIASTERM_FIELD_NUMBER = 4;
     private boolean biasterm_;
     /**
@@ -83126,6 +84060,7 @@ public final class Caffe {
       return biasterm_;
     }
 
+    // optional .caffe.FillerParameter weight_filler = 5;
     public static final int WEIGHT_FILLER_FIELD_NUMBER = 5;
     private caffe.Caffe.FillerParameter weightFiller_;
     /**
@@ -83159,6 +84094,7 @@ public final class Caffe {
       return weightFiller_;
     }
 
+    // optional .caffe.FillerParameter bias_filler = 6;
     public static final int BIAS_FILLER_FIELD_NUMBER = 6;
     private caffe.Caffe.FillerParameter biasFiller_;
     /**
@@ -83192,6 +84128,7 @@ public final class Caffe {
       return biasFiller_;
     }
 
+    // optional uint32 pad = 7 [default = 0];
     public static final int PAD_FIELD_NUMBER = 7;
     private int pad_;
     /**
@@ -83215,6 +84152,7 @@ public final class Caffe {
       return pad_;
     }
 
+    // optional uint32 kernelsize = 8;
     public static final int KERNELSIZE_FIELD_NUMBER = 8;
     private int kernelsize_;
     /**
@@ -83238,6 +84176,7 @@ public final class Caffe {
       return kernelsize_;
     }
 
+    // optional uint32 group = 9 [default = 1];
     public static final int GROUP_FIELD_NUMBER = 9;
     private int group_;
     /**
@@ -83261,6 +84200,7 @@ public final class Caffe {
       return group_;
     }
 
+    // optional uint32 stride = 10 [default = 1];
     public static final int STRIDE_FIELD_NUMBER = 10;
     private int stride_;
     /**
@@ -83284,6 +84224,7 @@ public final class Caffe {
       return stride_;
     }
 
+    // optional .caffe.V0LayerParameter.PoolMethod pool = 11 [default = MAX];
     public static final int POOL_FIELD_NUMBER = 11;
     private caffe.Caffe.V0LayerParameter.PoolMethod pool_;
     /**
@@ -83307,6 +84248,7 @@ public final class Caffe {
       return pool_;
     }
 
+    // optional float dropout_ratio = 12 [default = 0.5];
     public static final int DROPOUT_RATIO_FIELD_NUMBER = 12;
     private float dropoutRatio_;
     /**
@@ -83330,6 +84272,7 @@ public final class Caffe {
       return dropoutRatio_;
     }
 
+    // optional uint32 local_size = 13 [default = 5];
     public static final int LOCAL_SIZE_FIELD_NUMBER = 13;
     private int localSize_;
     /**
@@ -83353,6 +84296,7 @@ public final class Caffe {
       return localSize_;
     }
 
+    // optional float alpha = 14 [default = 1];
     public static final int ALPHA_FIELD_NUMBER = 14;
     private float alpha_;
     /**
@@ -83376,6 +84320,7 @@ public final class Caffe {
       return alpha_;
     }
 
+    // optional float beta = 15 [default = 0.75];
     public static final int BETA_FIELD_NUMBER = 15;
     private float beta_;
     /**
@@ -83399,6 +84344,7 @@ public final class Caffe {
       return beta_;
     }
 
+    // optional float k = 22 [default = 1];
     public static final int K_FIELD_NUMBER = 22;
     private float k_;
     /**
@@ -83414,6 +84360,7 @@ public final class Caffe {
       return k_;
     }
 
+    // optional string source = 16;
     public static final int SOURCE_FIELD_NUMBER = 16;
     private java.lang.Object source_;
     /**
@@ -83468,6 +84415,7 @@ public final class Caffe {
       }
     }
 
+    // optional float scale = 17 [default = 1];
     public static final int SCALE_FIELD_NUMBER = 17;
     private float scale_;
     /**
@@ -83495,6 +84443,7 @@ public final class Caffe {
       return scale_;
     }
 
+    // optional string meanfile = 18;
     public static final int MEANFILE_FIELD_NUMBER = 18;
     private java.lang.Object meanfile_;
     /**
@@ -83537,6 +84486,7 @@ public final class Caffe {
       }
     }
 
+    // optional uint32 batchsize = 19;
     public static final int BATCHSIZE_FIELD_NUMBER = 19;
     private int batchsize_;
     /**
@@ -83560,6 +84510,7 @@ public final class Caffe {
       return batchsize_;
     }
 
+    // optional uint32 cropsize = 20 [default = 0];
     public static final int CROPSIZE_FIELD_NUMBER = 20;
     private int cropsize_;
     /**
@@ -83583,6 +84534,7 @@ public final class Caffe {
       return cropsize_;
     }
 
+    // optional bool mirror = 21 [default = false];
     public static final int MIRROR_FIELD_NUMBER = 21;
     private boolean mirror_;
     /**
@@ -83606,6 +84558,7 @@ public final class Caffe {
       return mirror_;
     }
 
+    // repeated .caffe.BlobProto blobs = 50;
     public static final int BLOBS_FIELD_NUMBER = 50;
     private java.util.List<caffe.Caffe.BlobProto> blobs_;
     /**
@@ -83661,6 +84614,7 @@ public final class Caffe {
       return blobs_.get(index);
     }
 
+    // repeated float blobs_lr = 51;
     public static final int BLOBS_LR_FIELD_NUMBER = 51;
     private java.util.List<java.lang.Float> blobsLr_;
     /**
@@ -83698,6 +84652,7 @@ public final class Caffe {
       return blobsLr_.get(index);
     }
 
+    // repeated float weight_decay = 52;
     public static final int WEIGHT_DECAY_FIELD_NUMBER = 52;
     private java.util.List<java.lang.Float> weightDecay_;
     /**
@@ -83732,6 +84687,7 @@ public final class Caffe {
       return weightDecay_.get(index);
     }
 
+    // optional uint32 rand_skip = 53 [default = 0];
     public static final int RAND_SKIP_FIELD_NUMBER = 53;
     private int randSkip_;
     /**
@@ -83761,6 +84717,7 @@ public final class Caffe {
       return randSkip_;
     }
 
+    // optional float det_fg_threshold = 54 [default = 0.5];
     public static final int DET_FG_THRESHOLD_FIELD_NUMBER = 54;
     private float detFgThreshold_;
     /**
@@ -83786,6 +84743,7 @@ public final class Caffe {
       return detFgThreshold_;
     }
 
+    // optional float det_bg_threshold = 55 [default = 0.5];
     public static final int DET_BG_THRESHOLD_FIELD_NUMBER = 55;
     private float detBgThreshold_;
     /**
@@ -83809,6 +84767,7 @@ public final class Caffe {
       return detBgThreshold_;
     }
 
+    // optional float det_fg_fraction = 56 [default = 0.25];
     public static final int DET_FG_FRACTION_FIELD_NUMBER = 56;
     private float detFgFraction_;
     /**
@@ -83832,6 +84791,7 @@ public final class Caffe {
       return detFgFraction_;
     }
 
+    // optional uint32 det_context_pad = 58 [default = 0];
     public static final int DET_CONTEXT_PAD_FIELD_NUMBER = 58;
     private int detContextPad_;
     /**
@@ -83857,6 +84817,7 @@ public final class Caffe {
       return detContextPad_;
     }
 
+    // optional string det_crop_mode = 59 [default = "warp"];
     public static final int DET_CROP_MODE_FIELD_NUMBER = 59;
     private java.lang.Object detCropMode_;
     /**
@@ -83917,6 +84878,7 @@ public final class Caffe {
       }
     }
 
+    // optional int32 new_num = 60 [default = 0];
     public static final int NEW_NUM_FIELD_NUMBER = 60;
     private int newNum_;
     /**
@@ -83940,6 +84902,7 @@ public final class Caffe {
       return newNum_;
     }
 
+    // optional int32 new_channels = 61 [default = 0];
     public static final int NEW_CHANNELS_FIELD_NUMBER = 61;
     private int newChannels_;
     /**
@@ -83955,6 +84918,7 @@ public final class Caffe {
       return newChannels_;
     }
 
+    // optional int32 new_height = 62 [default = 0];
     public static final int NEW_HEIGHT_FIELD_NUMBER = 62;
     private int newHeight_;
     /**
@@ -83970,6 +84934,7 @@ public final class Caffe {
       return newHeight_;
     }
 
+    // optional int32 new_width = 63 [default = 0];
     public static final int NEW_WIDTH_FIELD_NUMBER = 63;
     private int newWidth_;
     /**
@@ -83985,6 +84950,7 @@ public final class Caffe {
       return newWidth_;
     }
 
+    // optional bool shuffle_images = 64 [default = false];
     public static final int SHUFFLE_IMAGES_FIELD_NUMBER = 64;
     private boolean shuffleImages_;
     /**
@@ -84010,6 +84976,7 @@ public final class Caffe {
       return shuffleImages_;
     }
 
+    // optional uint32 concat_dim = 65 [default = 1];
     public static final int CONCAT_DIM_FIELD_NUMBER = 65;
     private int concatDim_;
     /**
@@ -84037,6 +85004,7 @@ public final class Caffe {
       return concatDim_;
     }
 
+    // optional .caffe.HDF5OutputParameter hdf5_output_param = 1001;
     public static final int HDF5_OUTPUT_PARAM_FIELD_NUMBER = 1001;
     private caffe.Caffe.HDF5OutputParameter hdf5OutputParam_;
     /**
@@ -84101,8 +85069,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -84477,9 +85444,8 @@ public final class Caffe {
      * </pre>
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.V0LayerParameter)
-        caffe.Caffe.V0LayerParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.V0LayerParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_V0LayerParameter_descriptor;
@@ -85015,6 +85981,7 @@ public final class Caffe {
       private int bitField0_;
       private int bitField1_;
 
+      // optional string name = 1;
       private java.lang.Object name_ = "";
       /**
        * <code>optional string name = 1;</code>
@@ -85036,12 +86003,9 @@ public final class Caffe {
       public java.lang.String getName() {
         java.lang.Object ref = name_;
         if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            name_ = s;
-          }
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          name_ = s;
           return s;
         } else {
           return (java.lang.String) ref;
@@ -85115,6 +86079,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional string type = 2;
       private java.lang.Object type_ = "";
       /**
        * <code>optional string type = 2;</code>
@@ -85136,12 +86101,9 @@ public final class Caffe {
       public java.lang.String getType() {
         java.lang.Object ref = type_;
         if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            type_ = s;
-          }
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          type_ = s;
           return s;
         } else {
           return (java.lang.String) ref;
@@ -85215,6 +86177,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 num_output = 3;
       private int numOutput_ ;
       /**
        * <code>optional uint32 num_output = 3;</code>
@@ -85263,6 +86226,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional bool biasterm = 4 [default = true];
       private boolean biasterm_ = true;
       /**
        * <code>optional bool biasterm = 4 [default = true];</code>
@@ -85311,6 +86275,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional .caffe.FillerParameter weight_filler = 5;
       private caffe.Caffe.FillerParameter weightFiller_ = caffe.Caffe.FillerParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.FillerParameter, caffe.Caffe.FillerParameter.Builder, caffe.Caffe.FillerParameterOrBuilder> weightFillerBuilder_;
@@ -85455,7 +86420,7 @@ public final class Caffe {
         if (weightFillerBuilder_ == null) {
           weightFillerBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.FillerParameter, caffe.Caffe.FillerParameter.Builder, caffe.Caffe.FillerParameterOrBuilder>(
-                  getWeightFiller(),
+                  weightFiller_,
                   getParentForChildren(),
                   isClean());
           weightFiller_ = null;
@@ -85463,6 +86428,7 @@ public final class Caffe {
         return weightFillerBuilder_;
       }
 
+      // optional .caffe.FillerParameter bias_filler = 6;
       private caffe.Caffe.FillerParameter biasFiller_ = caffe.Caffe.FillerParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.FillerParameter, caffe.Caffe.FillerParameter.Builder, caffe.Caffe.FillerParameterOrBuilder> biasFillerBuilder_;
@@ -85607,7 +86573,7 @@ public final class Caffe {
         if (biasFillerBuilder_ == null) {
           biasFillerBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.FillerParameter, caffe.Caffe.FillerParameter.Builder, caffe.Caffe.FillerParameterOrBuilder>(
-                  getBiasFiller(),
+                  biasFiller_,
                   getParentForChildren(),
                   isClean());
           biasFiller_ = null;
@@ -85615,6 +86581,7 @@ public final class Caffe {
         return biasFillerBuilder_;
       }
 
+      // optional uint32 pad = 7 [default = 0];
       private int pad_ ;
       /**
        * <code>optional uint32 pad = 7 [default = 0];</code>
@@ -85663,6 +86630,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 kernelsize = 8;
       private int kernelsize_ ;
       /**
        * <code>optional uint32 kernelsize = 8;</code>
@@ -85711,6 +86679,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 group = 9 [default = 1];
       private int group_ = 1;
       /**
        * <code>optional uint32 group = 9 [default = 1];</code>
@@ -85759,6 +86728,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 stride = 10 [default = 1];
       private int stride_ = 1;
       /**
        * <code>optional uint32 stride = 10 [default = 1];</code>
@@ -85807,6 +86777,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional .caffe.V0LayerParameter.PoolMethod pool = 11 [default = MAX];
       private caffe.Caffe.V0LayerParameter.PoolMethod pool_ = caffe.Caffe.V0LayerParameter.PoolMethod.MAX;
       /**
        * <code>optional .caffe.V0LayerParameter.PoolMethod pool = 11 [default = MAX];</code>
@@ -85858,6 +86829,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float dropout_ratio = 12 [default = 0.5];
       private float dropoutRatio_ = 0.5F;
       /**
        * <code>optional float dropout_ratio = 12 [default = 0.5];</code>
@@ -85906,6 +86878,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 local_size = 13 [default = 5];
       private int localSize_ = 5;
       /**
        * <code>optional uint32 local_size = 13 [default = 5];</code>
@@ -85954,6 +86927,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float alpha = 14 [default = 1];
       private float alpha_ = 1F;
       /**
        * <code>optional float alpha = 14 [default = 1];</code>
@@ -86002,6 +86976,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float beta = 15 [default = 0.75];
       private float beta_ = 0.75F;
       /**
        * <code>optional float beta = 15 [default = 0.75];</code>
@@ -86050,6 +87025,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float k = 22 [default = 1];
       private float k_ = 1F;
       /**
        * <code>optional float k = 22 [default = 1];</code>
@@ -86082,6 +87058,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional string source = 16;
       private java.lang.Object source_ = "";
       /**
        * <code>optional string source = 16;</code>
@@ -86103,12 +87080,9 @@ public final class Caffe {
       public java.lang.String getSource() {
         java.lang.Object ref = source_;
         if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            source_ = s;
-          }
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          source_ = s;
           return s;
         } else {
           return (java.lang.String) ref;
@@ -86182,6 +87156,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float scale = 17 [default = 1];
       private float scale_ = 1F;
       /**
        * <code>optional float scale = 17 [default = 1];</code>
@@ -86238,6 +87213,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional string meanfile = 18;
       private java.lang.Object meanfile_ = "";
       /**
        * <code>optional string meanfile = 18;</code>
@@ -86251,12 +87227,9 @@ public final class Caffe {
       public java.lang.String getMeanfile() {
         java.lang.Object ref = meanfile_;
         if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            meanfile_ = s;
-          }
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          meanfile_ = s;
           return s;
         } else {
           return (java.lang.String) ref;
@@ -86314,6 +87287,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 batchsize = 19;
       private int batchsize_ ;
       /**
        * <code>optional uint32 batchsize = 19;</code>
@@ -86362,6 +87336,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 cropsize = 20 [default = 0];
       private int cropsize_ ;
       /**
        * <code>optional uint32 cropsize = 20 [default = 0];</code>
@@ -86410,6 +87385,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional bool mirror = 21 [default = false];
       private boolean mirror_ ;
       /**
        * <code>optional bool mirror = 21 [default = false];</code>
@@ -86458,6 +87434,7 @@ public final class Caffe {
         return this;
       }
 
+      // repeated .caffe.BlobProto blobs = 50;
       private java.util.List<caffe.Caffe.BlobProto> blobs_ =
         java.util.Collections.emptyList();
       private void ensureBlobsIsMutable() {
@@ -86639,8 +87616,7 @@ public final class Caffe {
           java.lang.Iterable<? extends caffe.Caffe.BlobProto> values) {
         if (blobsBuilder_ == null) {
           ensureBlobsIsMutable();
-          com.google.protobuf.AbstractMessageLite.Builder.addAll(
-              values, blobs_);
+          super.addAll(values, blobs_);
           onChanged();
         } else {
           blobsBuilder_.addAllMessages(values);
@@ -86770,6 +87746,7 @@ public final class Caffe {
         return blobsBuilder_;
       }
 
+      // repeated float blobs_lr = 51;
       private java.util.List<java.lang.Float> blobsLr_ = java.util.Collections.emptyList();
       private void ensureBlobsLrIsMutable() {
         if (!((bitField0_ & 0x00800000) == 0x00800000)) {
@@ -86851,8 +87828,7 @@ public final class Caffe {
       public Builder addAllBlobsLr(
           java.lang.Iterable<? extends java.lang.Float> values) {
         ensureBlobsLrIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, blobsLr_);
+        super.addAll(values, blobsLr_);
         onChanged();
         return this;
       }
@@ -86871,6 +87847,7 @@ public final class Caffe {
         return this;
       }
 
+      // repeated float weight_decay = 52;
       private java.util.List<java.lang.Float> weightDecay_ = java.util.Collections.emptyList();
       private void ensureWeightDecayIsMutable() {
         if (!((bitField0_ & 0x01000000) == 0x01000000)) {
@@ -86946,8 +87923,7 @@ public final class Caffe {
       public Builder addAllWeightDecay(
           java.lang.Iterable<? extends java.lang.Float> values) {
         ensureWeightDecayIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, weightDecay_);
+        super.addAll(values, weightDecay_);
         onChanged();
         return this;
       }
@@ -86965,6 +87941,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 rand_skip = 53 [default = 0];
       private int randSkip_ ;
       /**
        * <code>optional uint32 rand_skip = 53 [default = 0];</code>
@@ -87025,6 +88002,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float det_fg_threshold = 54 [default = 0.5];
       private float detFgThreshold_ = 0.5F;
       /**
        * <code>optional float det_fg_threshold = 54 [default = 0.5];</code>
@@ -87077,6 +88055,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float det_bg_threshold = 55 [default = 0.5];
       private float detBgThreshold_ = 0.5F;
       /**
        * <code>optional float det_bg_threshold = 55 [default = 0.5];</code>
@@ -87125,6 +88104,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional float det_fg_fraction = 56 [default = 0.25];
       private float detFgFraction_ = 0.25F;
       /**
        * <code>optional float det_fg_fraction = 56 [default = 0.25];</code>
@@ -87173,6 +88153,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 det_context_pad = 58 [default = 0];
       private int detContextPad_ ;
       /**
        * <code>optional uint32 det_context_pad = 58 [default = 0];</code>
@@ -87225,6 +88206,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional string det_crop_mode = 59 [default = "warp"];
       private java.lang.Object detCropMode_ = "warp";
       /**
        * <code>optional string det_crop_mode = 59 [default = "warp"];</code>
@@ -87250,12 +88232,9 @@ public final class Caffe {
       public java.lang.String getDetCropMode() {
         java.lang.Object ref = detCropMode_;
         if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            detCropMode_ = s;
-          }
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          detCropMode_ = s;
           return s;
         } else {
           return (java.lang.String) ref;
@@ -87337,6 +88316,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional int32 new_num = 60 [default = 0];
       private int newNum_ ;
       /**
        * <code>optional int32 new_num = 60 [default = 0];</code>
@@ -87385,6 +88365,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional int32 new_channels = 61 [default = 0];
       private int newChannels_ ;
       /**
        * <code>optional int32 new_channels = 61 [default = 0];</code>
@@ -87417,6 +88398,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional int32 new_height = 62 [default = 0];
       private int newHeight_ ;
       /**
        * <code>optional int32 new_height = 62 [default = 0];</code>
@@ -87449,6 +88431,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional int32 new_width = 63 [default = 0];
       private int newWidth_ ;
       /**
        * <code>optional int32 new_width = 63 [default = 0];</code>
@@ -87481,6 +88464,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional bool shuffle_images = 64 [default = false];
       private boolean shuffleImages_ ;
       /**
        * <code>optional bool shuffle_images = 64 [default = false];</code>
@@ -87533,6 +88517,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional uint32 concat_dim = 65 [default = 1];
       private int concatDim_ = 1;
       /**
        * <code>optional uint32 concat_dim = 65 [default = 1];</code>
@@ -87589,6 +88574,7 @@ public final class Caffe {
         return this;
       }
 
+      // optional .caffe.HDF5OutputParameter hdf5_output_param = 1001;
       private caffe.Caffe.HDF5OutputParameter hdf5OutputParam_ = caffe.Caffe.HDF5OutputParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.HDF5OutputParameter, caffe.Caffe.HDF5OutputParameter.Builder, caffe.Caffe.HDF5OutputParameterOrBuilder> hdf5OutputParamBuilder_;
@@ -87697,7 +88683,7 @@ public final class Caffe {
         if (hdf5OutputParamBuilder_ == null) {
           hdf5OutputParamBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.HDF5OutputParameter, caffe.Caffe.HDF5OutputParameter.Builder, caffe.Caffe.HDF5OutputParameterOrBuilder>(
-                  getHdf5OutputParam(),
+                  hdf5OutputParam_,
                   getParentForChildren(),
                   isClean());
           hdf5OutputParam_ = null;
@@ -87716,10 +88702,10 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.V0LayerParameter)
   }
 
-  public interface PReLUParameterOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:caffe.PReLUParameter)
-      com.google.protobuf.MessageOrBuilder {
+  public interface PReLUParameterOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
 
+    // optional .caffe.FillerParameter filler = 1;
     /**
      * <code>optional .caffe.FillerParameter filler = 1;</code>
      *
@@ -87745,6 +88731,7 @@ public final class Caffe {
      */
     caffe.Caffe.FillerParameterOrBuilder getFillerOrBuilder();
 
+    // optional bool channel_shared = 2 [default = false];
     /**
      * <code>optional bool channel_shared = 2 [default = false];</code>
      *
@@ -87771,9 +88758,8 @@ public final class Caffe {
    * </pre>
    */
   public static final class PReLUParameter extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:caffe.PReLUParameter)
-      PReLUParameterOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements PReLUParameterOrBuilder {
     // Use PReLUParameter.newBuilder() to construct.
     private PReLUParameter(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -87877,6 +88863,7 @@ public final class Caffe {
     }
 
     private int bitField0_;
+    // optional .caffe.FillerParameter filler = 1;
     public static final int FILLER_FIELD_NUMBER = 1;
     private caffe.Caffe.FillerParameter filler_;
     /**
@@ -87910,6 +88897,7 @@ public final class Caffe {
       return filler_;
     }
 
+    // optional bool channel_shared = 2 [default = false];
     public static final int CHANNEL_SHARED_FIELD_NUMBER = 2;
     private boolean channelShared_;
     /**
@@ -87940,8 +88928,7 @@ public final class Caffe {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -88060,9 +89047,8 @@ public final class Caffe {
      * </pre>
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:caffe.PReLUParameter)
-        caffe.Caffe.PReLUParameterOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements caffe.Caffe.PReLUParameterOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return caffe.Caffe.internal_static_caffe_PReLUParameter_descriptor;
@@ -88193,6 +89179,7 @@ public final class Caffe {
       }
       private int bitField0_;
 
+      // optional .caffe.FillerParameter filler = 1;
       private caffe.Caffe.FillerParameter filler_ = caffe.Caffe.FillerParameter.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           caffe.Caffe.FillerParameter, caffe.Caffe.FillerParameter.Builder, caffe.Caffe.FillerParameterOrBuilder> fillerBuilder_;
@@ -88337,7 +89324,7 @@ public final class Caffe {
         if (fillerBuilder_ == null) {
           fillerBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               caffe.Caffe.FillerParameter, caffe.Caffe.FillerParameter.Builder, caffe.Caffe.FillerParameterOrBuilder>(
-                  getFiller(),
+                  filler_,
                   getParentForChildren(),
                   isClean());
           filler_ = null;
@@ -88345,6 +89332,7 @@ public final class Caffe {
         return fillerBuilder_;
       }
 
+      // optional bool channel_shared = 2 [default = false];
       private boolean channelShared_ ;
       /**
        * <code>optional bool channel_shared = 2 [default = false];</code>
@@ -88404,297 +89392,297 @@ public final class Caffe {
     // @@protoc_insertion_point(class_scope:caffe.PReLUParameter)
   }
 
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_BlobShape_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_BlobShape_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_BlobProto_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_BlobProto_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_BlobProtoVector_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_BlobProtoVector_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_Datum_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_Datum_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_FillerParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_FillerParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_NetParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_NetParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_SolverParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_SolverParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_SolverState_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_SolverState_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_NetState_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_NetState_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_NetStateRule_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_NetStateRule_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_ParamSpec_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_ParamSpec_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_LayerParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_LayerParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_TransformationParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_TransformationParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_LossParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_LossParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_AccuracyParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_AccuracyParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_ArgMaxParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_ArgMaxParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_ConcatParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_ConcatParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_BatchNormParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_BatchNormParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_BiasParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_BiasParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_ContrastiveLossParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_ContrastiveLossParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_ConvolutionParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_ConvolutionParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_CropParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_CropParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_DataParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_DataParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_DropoutParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_DropoutParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_DummyDataParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_DummyDataParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_EltwiseParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_EltwiseParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_ELUParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_ELUParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_EmbedParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_EmbedParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_ExpParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_ExpParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_FlattenParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_FlattenParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_HDF5DataParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_HDF5DataParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_HDF5OutputParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_HDF5OutputParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_HingeLossParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_HingeLossParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_ImageDataParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_ImageDataParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_InfogainLossParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_InfogainLossParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_InnerProductParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_InnerProductParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_InputParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_InputParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_LogParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_LogParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_LRNParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_LRNParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_MemoryDataParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_MemoryDataParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_MVNParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_MVNParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_PoolingParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_PoolingParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_PowerParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_PowerParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_PythonParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_PythonParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_ReductionParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_ReductionParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_ReLUParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_ReLUParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_ReshapeParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_ReshapeParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_ScaleParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_ScaleParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_SigmoidParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_SigmoidParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_SliceParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_SliceParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_SoftmaxParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_SoftmaxParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_TanHParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_TanHParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_TileParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_TileParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_ThresholdParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_ThresholdParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_WindowDataParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_WindowDataParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_SPPParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_SPPParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_V1LayerParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_V1LayerParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_V0LayerParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_caffe_V0LayerParameter_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_caffe_PReLUParameter_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
@@ -89086,371 +90074,371 @@ public final class Caffe {
       "e\022\t\n\005TRAIN\020\000\022\010\n\004TEST\020\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
-        new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
-          public com.google.protobuf.ExtensionRegistry assignDescriptors(
-              com.google.protobuf.Descriptors.FileDescriptor root) {
-            descriptor = root;
-            return null;
-          }
-        };
+      new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
+        public com.google.protobuf.ExtensionRegistry assignDescriptors(
+            com.google.protobuf.Descriptors.FileDescriptor root) {
+          descriptor = root;
+          internal_static_caffe_BlobShape_descriptor =
+            getDescriptor().getMessageTypes().get(0);
+          internal_static_caffe_BlobShape_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_BlobShape_descriptor,
+              new java.lang.String[] { "Dim", });
+          internal_static_caffe_BlobProto_descriptor =
+            getDescriptor().getMessageTypes().get(1);
+          internal_static_caffe_BlobProto_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_BlobProto_descriptor,
+              new java.lang.String[] { "Shape", "Data", "Diff", "DoubleData", "DoubleDiff", "Num", "Channels", "Height", "Width", });
+          internal_static_caffe_BlobProtoVector_descriptor =
+            getDescriptor().getMessageTypes().get(2);
+          internal_static_caffe_BlobProtoVector_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_BlobProtoVector_descriptor,
+              new java.lang.String[] { "Blobs", });
+          internal_static_caffe_Datum_descriptor =
+            getDescriptor().getMessageTypes().get(3);
+          internal_static_caffe_Datum_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_Datum_descriptor,
+              new java.lang.String[] { "Channels", "Height", "Width", "Data", "Label", "FloatData", "Encoded", });
+          internal_static_caffe_FillerParameter_descriptor =
+            getDescriptor().getMessageTypes().get(4);
+          internal_static_caffe_FillerParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_FillerParameter_descriptor,
+              new java.lang.String[] { "Type", "Value", "Min", "Max", "Mean", "Std", "Sparse", "VarianceNorm", });
+          internal_static_caffe_NetParameter_descriptor =
+            getDescriptor().getMessageTypes().get(5);
+          internal_static_caffe_NetParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_NetParameter_descriptor,
+              new java.lang.String[] { "Name", "Input", "InputShape", "InputDim", "ForceBackward", "State", "DebugInfo", "Layer", "Layers", });
+          internal_static_caffe_SolverParameter_descriptor =
+            getDescriptor().getMessageTypes().get(6);
+          internal_static_caffe_SolverParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_SolverParameter_descriptor,
+              new java.lang.String[] { "Net", "NetParam", "TrainNet", "TestNet", "TrainNetParam", "TestNetParam", "TrainState", "TestState", "TestIter", "TestInterval", "TestComputeLoss", "TestInitialization", "BaseLr", "Display", "AverageLoss", "MaxIter", "IterSize", "LrPolicy", "Gamma", "Power", "Momentum", "WeightDecay", "RegularizationType", "Stepsize", "Stepvalue", "ClipGradients", "Snapshot", "SnapshotPrefix", "SnapshotDiff", "SnapshotFormat", "SolverMode", "DeviceId", "RandomSeed", "Type", "Delta", "Momentum2", "RmsDecay", "DebugInfo", "SnapshotAfterTrain", "SolverType", });
+          internal_static_caffe_SolverState_descriptor =
+            getDescriptor().getMessageTypes().get(7);
+          internal_static_caffe_SolverState_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_SolverState_descriptor,
+              new java.lang.String[] { "Iter", "LearnedNet", "History", "CurrentStep", });
+          internal_static_caffe_NetState_descriptor =
+            getDescriptor().getMessageTypes().get(8);
+          internal_static_caffe_NetState_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_NetState_descriptor,
+              new java.lang.String[] { "Phase", "Level", "Stage", });
+          internal_static_caffe_NetStateRule_descriptor =
+            getDescriptor().getMessageTypes().get(9);
+          internal_static_caffe_NetStateRule_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_NetStateRule_descriptor,
+              new java.lang.String[] { "Phase", "MinLevel", "MaxLevel", "Stage", "NotStage", });
+          internal_static_caffe_ParamSpec_descriptor =
+            getDescriptor().getMessageTypes().get(10);
+          internal_static_caffe_ParamSpec_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_ParamSpec_descriptor,
+              new java.lang.String[] { "Name", "ShareMode", "LrMult", "DecayMult", });
+          internal_static_caffe_LayerParameter_descriptor =
+            getDescriptor().getMessageTypes().get(11);
+          internal_static_caffe_LayerParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_LayerParameter_descriptor,
+              new java.lang.String[] { "Name", "Type", "Bottom", "Top", "Phase", "LossWeight", "Param", "Blobs", "PropagateDown", "Include", "Exclude", "TransformParam", "LossParam", "AccuracyParam", "ArgmaxParam", "BatchNormParam", "BiasParam", "ConcatParam", "ContrastiveLossParam", "ConvolutionParam", "CropParam", "DataParam", "DropoutParam", "DummyDataParam", "EltwiseParam", "EluParam", "EmbedParam", "ExpParam", "FlattenParam", "Hdf5DataParam", "Hdf5OutputParam", "HingeLossParam", "ImageDataParam", "InfogainLossParam", "InnerProductParam", "InputParam", "LogParam", "LrnParam", "MemoryDataParam", "MvnParam", "PoolingParam", "PowerParam", "PreluParam", "PythonParam", "ReductionParam", "ReluParam", "ReshapeParam", "ScaleParam", "SigmoidParam", "SoftmaxParam", "SppParam", "SliceParam", "TanhParam", "ThresholdParam", "TileParam", "WindowDataParam", });
+          internal_static_caffe_TransformationParameter_descriptor =
+            getDescriptor().getMessageTypes().get(12);
+          internal_static_caffe_TransformationParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_TransformationParameter_descriptor,
+              new java.lang.String[] { "Scale", "Mirror", "CropSize", "MeanFile", "MeanValue", "ForceColor", "ForceGray", });
+          internal_static_caffe_LossParameter_descriptor =
+            getDescriptor().getMessageTypes().get(13);
+          internal_static_caffe_LossParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_LossParameter_descriptor,
+              new java.lang.String[] { "IgnoreLabel", "Normalization", "Normalize", });
+          internal_static_caffe_AccuracyParameter_descriptor =
+            getDescriptor().getMessageTypes().get(14);
+          internal_static_caffe_AccuracyParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_AccuracyParameter_descriptor,
+              new java.lang.String[] { "TopK", "Axis", "IgnoreLabel", });
+          internal_static_caffe_ArgMaxParameter_descriptor =
+            getDescriptor().getMessageTypes().get(15);
+          internal_static_caffe_ArgMaxParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_ArgMaxParameter_descriptor,
+              new java.lang.String[] { "OutMaxVal", "TopK", "Axis", });
+          internal_static_caffe_ConcatParameter_descriptor =
+            getDescriptor().getMessageTypes().get(16);
+          internal_static_caffe_ConcatParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_ConcatParameter_descriptor,
+              new java.lang.String[] { "Axis", "ConcatDim", });
+          internal_static_caffe_BatchNormParameter_descriptor =
+            getDescriptor().getMessageTypes().get(17);
+          internal_static_caffe_BatchNormParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_BatchNormParameter_descriptor,
+              new java.lang.String[] { "UseGlobalStats", "MovingAverageFraction", "Eps", });
+          internal_static_caffe_BiasParameter_descriptor =
+            getDescriptor().getMessageTypes().get(18);
+          internal_static_caffe_BiasParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_BiasParameter_descriptor,
+              new java.lang.String[] { "Axis", "NumAxes", "Filler", });
+          internal_static_caffe_ContrastiveLossParameter_descriptor =
+            getDescriptor().getMessageTypes().get(19);
+          internal_static_caffe_ContrastiveLossParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_ContrastiveLossParameter_descriptor,
+              new java.lang.String[] { "Margin", "LegacyVersion", });
+          internal_static_caffe_ConvolutionParameter_descriptor =
+            getDescriptor().getMessageTypes().get(20);
+          internal_static_caffe_ConvolutionParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_ConvolutionParameter_descriptor,
+              new java.lang.String[] { "NumOutput", "BiasTerm", "Pad", "KernelSize", "Stride", "Dilation", "PadH", "PadW", "KernelH", "KernelW", "StrideH", "StrideW", "Group", "WeightFiller", "BiasFiller", "Engine", "Axis", "ForceNdIm2Col", });
+          internal_static_caffe_CropParameter_descriptor =
+            getDescriptor().getMessageTypes().get(21);
+          internal_static_caffe_CropParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_CropParameter_descriptor,
+              new java.lang.String[] { "Axis", "Offset", });
+          internal_static_caffe_DataParameter_descriptor =
+            getDescriptor().getMessageTypes().get(22);
+          internal_static_caffe_DataParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_DataParameter_descriptor,
+              new java.lang.String[] { "Source", "BatchSize", "RandSkip", "Backend", "Scale", "MeanFile", "CropSize", "Mirror", "ForceEncodedColor", "Prefetch", });
+          internal_static_caffe_DropoutParameter_descriptor =
+            getDescriptor().getMessageTypes().get(23);
+          internal_static_caffe_DropoutParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_DropoutParameter_descriptor,
+              new java.lang.String[] { "DropoutRatio", });
+          internal_static_caffe_DummyDataParameter_descriptor =
+            getDescriptor().getMessageTypes().get(24);
+          internal_static_caffe_DummyDataParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_DummyDataParameter_descriptor,
+              new java.lang.String[] { "DataFiller", "Shape", "Num", "Channels", "Height", "Width", });
+          internal_static_caffe_EltwiseParameter_descriptor =
+            getDescriptor().getMessageTypes().get(25);
+          internal_static_caffe_EltwiseParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_EltwiseParameter_descriptor,
+              new java.lang.String[] { "Operation", "Coeff", "StableProdGrad", });
+          internal_static_caffe_ELUParameter_descriptor =
+            getDescriptor().getMessageTypes().get(26);
+          internal_static_caffe_ELUParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_ELUParameter_descriptor,
+              new java.lang.String[] { "Alpha", });
+          internal_static_caffe_EmbedParameter_descriptor =
+            getDescriptor().getMessageTypes().get(27);
+          internal_static_caffe_EmbedParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_EmbedParameter_descriptor,
+              new java.lang.String[] { "NumOutput", "InputDim", "BiasTerm", "WeightFiller", "BiasFiller", });
+          internal_static_caffe_ExpParameter_descriptor =
+            getDescriptor().getMessageTypes().get(28);
+          internal_static_caffe_ExpParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_ExpParameter_descriptor,
+              new java.lang.String[] { "Base", "Scale", "Shift", });
+          internal_static_caffe_FlattenParameter_descriptor =
+            getDescriptor().getMessageTypes().get(29);
+          internal_static_caffe_FlattenParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_FlattenParameter_descriptor,
+              new java.lang.String[] { "Axis", "EndAxis", });
+          internal_static_caffe_HDF5DataParameter_descriptor =
+            getDescriptor().getMessageTypes().get(30);
+          internal_static_caffe_HDF5DataParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_HDF5DataParameter_descriptor,
+              new java.lang.String[] { "Source", "BatchSize", "Shuffle", });
+          internal_static_caffe_HDF5OutputParameter_descriptor =
+            getDescriptor().getMessageTypes().get(31);
+          internal_static_caffe_HDF5OutputParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_HDF5OutputParameter_descriptor,
+              new java.lang.String[] { "FileName", });
+          internal_static_caffe_HingeLossParameter_descriptor =
+            getDescriptor().getMessageTypes().get(32);
+          internal_static_caffe_HingeLossParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_HingeLossParameter_descriptor,
+              new java.lang.String[] { "Norm", });
+          internal_static_caffe_ImageDataParameter_descriptor =
+            getDescriptor().getMessageTypes().get(33);
+          internal_static_caffe_ImageDataParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_ImageDataParameter_descriptor,
+              new java.lang.String[] { "Source", "BatchSize", "RandSkip", "Shuffle", "NewHeight", "NewWidth", "IsColor", "Scale", "MeanFile", "CropSize", "Mirror", "RootFolder", });
+          internal_static_caffe_InfogainLossParameter_descriptor =
+            getDescriptor().getMessageTypes().get(34);
+          internal_static_caffe_InfogainLossParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_InfogainLossParameter_descriptor,
+              new java.lang.String[] { "Source", });
+          internal_static_caffe_InnerProductParameter_descriptor =
+            getDescriptor().getMessageTypes().get(35);
+          internal_static_caffe_InnerProductParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_InnerProductParameter_descriptor,
+              new java.lang.String[] { "NumOutput", "BiasTerm", "WeightFiller", "BiasFiller", "Axis", "Transpose", });
+          internal_static_caffe_InputParameter_descriptor =
+            getDescriptor().getMessageTypes().get(36);
+          internal_static_caffe_InputParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_InputParameter_descriptor,
+              new java.lang.String[] { "Shape", });
+          internal_static_caffe_LogParameter_descriptor =
+            getDescriptor().getMessageTypes().get(37);
+          internal_static_caffe_LogParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_LogParameter_descriptor,
+              new java.lang.String[] { "Base", "Scale", "Shift", });
+          internal_static_caffe_LRNParameter_descriptor =
+            getDescriptor().getMessageTypes().get(38);
+          internal_static_caffe_LRNParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_LRNParameter_descriptor,
+              new java.lang.String[] { "LocalSize", "Alpha", "Beta", "NormRegion", "K", "Engine", });
+          internal_static_caffe_MemoryDataParameter_descriptor =
+            getDescriptor().getMessageTypes().get(39);
+          internal_static_caffe_MemoryDataParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_MemoryDataParameter_descriptor,
+              new java.lang.String[] { "BatchSize", "Channels", "Height", "Width", });
+          internal_static_caffe_MVNParameter_descriptor =
+            getDescriptor().getMessageTypes().get(40);
+          internal_static_caffe_MVNParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_MVNParameter_descriptor,
+              new java.lang.String[] { "NormalizeVariance", "AcrossChannels", "Eps", });
+          internal_static_caffe_PoolingParameter_descriptor =
+            getDescriptor().getMessageTypes().get(41);
+          internal_static_caffe_PoolingParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_PoolingParameter_descriptor,
+              new java.lang.String[] { "Pool", "Pad", "PadH", "PadW", "KernelSize", "KernelH", "KernelW", "Stride", "StrideH", "StrideW", "Engine", "GlobalPooling", });
+          internal_static_caffe_PowerParameter_descriptor =
+            getDescriptor().getMessageTypes().get(42);
+          internal_static_caffe_PowerParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_PowerParameter_descriptor,
+              new java.lang.String[] { "Power", "Scale", "Shift", });
+          internal_static_caffe_PythonParameter_descriptor =
+            getDescriptor().getMessageTypes().get(43);
+          internal_static_caffe_PythonParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_PythonParameter_descriptor,
+              new java.lang.String[] { "Module", "Layer", "ParamStr", "ShareInParallel", });
+          internal_static_caffe_ReductionParameter_descriptor =
+            getDescriptor().getMessageTypes().get(44);
+          internal_static_caffe_ReductionParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_ReductionParameter_descriptor,
+              new java.lang.String[] { "Operation", "Axis", "Coeff", });
+          internal_static_caffe_ReLUParameter_descriptor =
+            getDescriptor().getMessageTypes().get(45);
+          internal_static_caffe_ReLUParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_ReLUParameter_descriptor,
+              new java.lang.String[] { "NegativeSlope", "Engine", });
+          internal_static_caffe_ReshapeParameter_descriptor =
+            getDescriptor().getMessageTypes().get(46);
+          internal_static_caffe_ReshapeParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_ReshapeParameter_descriptor,
+              new java.lang.String[] { "Shape", "Axis", "NumAxes", });
+          internal_static_caffe_ScaleParameter_descriptor =
+            getDescriptor().getMessageTypes().get(47);
+          internal_static_caffe_ScaleParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_ScaleParameter_descriptor,
+              new java.lang.String[] { "Axis", "NumAxes", "Filler", "BiasTerm", "BiasFiller", });
+          internal_static_caffe_SigmoidParameter_descriptor =
+            getDescriptor().getMessageTypes().get(48);
+          internal_static_caffe_SigmoidParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_SigmoidParameter_descriptor,
+              new java.lang.String[] { "Engine", });
+          internal_static_caffe_SliceParameter_descriptor =
+            getDescriptor().getMessageTypes().get(49);
+          internal_static_caffe_SliceParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_SliceParameter_descriptor,
+              new java.lang.String[] { "Axis", "SlicePoint", "SliceDim", });
+          internal_static_caffe_SoftmaxParameter_descriptor =
+            getDescriptor().getMessageTypes().get(50);
+          internal_static_caffe_SoftmaxParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_SoftmaxParameter_descriptor,
+              new java.lang.String[] { "Engine", "Axis", });
+          internal_static_caffe_TanHParameter_descriptor =
+            getDescriptor().getMessageTypes().get(51);
+          internal_static_caffe_TanHParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_TanHParameter_descriptor,
+              new java.lang.String[] { "Engine", });
+          internal_static_caffe_TileParameter_descriptor =
+            getDescriptor().getMessageTypes().get(52);
+          internal_static_caffe_TileParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_TileParameter_descriptor,
+              new java.lang.String[] { "Axis", "Tiles", });
+          internal_static_caffe_ThresholdParameter_descriptor =
+            getDescriptor().getMessageTypes().get(53);
+          internal_static_caffe_ThresholdParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_ThresholdParameter_descriptor,
+              new java.lang.String[] { "Threshold", });
+          internal_static_caffe_WindowDataParameter_descriptor =
+            getDescriptor().getMessageTypes().get(54);
+          internal_static_caffe_WindowDataParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_WindowDataParameter_descriptor,
+              new java.lang.String[] { "Source", "Scale", "MeanFile", "BatchSize", "CropSize", "Mirror", "FgThreshold", "BgThreshold", "FgFraction", "ContextPad", "CropMode", "CacheImages", "RootFolder", });
+          internal_static_caffe_SPPParameter_descriptor =
+            getDescriptor().getMessageTypes().get(55);
+          internal_static_caffe_SPPParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_SPPParameter_descriptor,
+              new java.lang.String[] { "PyramidHeight", "Pool", "Engine", });
+          internal_static_caffe_V1LayerParameter_descriptor =
+            getDescriptor().getMessageTypes().get(56);
+          internal_static_caffe_V1LayerParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_V1LayerParameter_descriptor,
+              new java.lang.String[] { "Bottom", "Top", "Name", "Include", "Exclude", "Type", "Blobs", "Param", "BlobShareMode", "BlobsLr", "WeightDecay", "LossWeight", "AccuracyParam", "ArgmaxParam", "ConcatParam", "ContrastiveLossParam", "ConvolutionParam", "DataParam", "DropoutParam", "DummyDataParam", "EltwiseParam", "ExpParam", "Hdf5DataParam", "Hdf5OutputParam", "HingeLossParam", "ImageDataParam", "InfogainLossParam", "InnerProductParam", "LrnParam", "MemoryDataParam", "MvnParam", "PoolingParam", "PowerParam", "ReluParam", "SigmoidParam", "SoftmaxParam", "SliceParam", "TanhParam", "ThresholdParam", "WindowDataParam", "TransformParam", "LossParam", "Layer", });
+          internal_static_caffe_V0LayerParameter_descriptor =
+            getDescriptor().getMessageTypes().get(57);
+          internal_static_caffe_V0LayerParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_V0LayerParameter_descriptor,
+              new java.lang.String[] { "Name", "Type", "NumOutput", "Biasterm", "WeightFiller", "BiasFiller", "Pad", "Kernelsize", "Group", "Stride", "Pool", "DropoutRatio", "LocalSize", "Alpha", "Beta", "K", "Source", "Scale", "Meanfile", "Batchsize", "Cropsize", "Mirror", "Blobs", "BlobsLr", "WeightDecay", "RandSkip", "DetFgThreshold", "DetBgThreshold", "DetFgFraction", "DetContextPad", "DetCropMode", "NewNum", "NewChannels", "NewHeight", "NewWidth", "ShuffleImages", "ConcatDim", "Hdf5OutputParam", });
+          internal_static_caffe_PReLUParameter_descriptor =
+            getDescriptor().getMessageTypes().get(58);
+          internal_static_caffe_PReLUParameter_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_caffe_PReLUParameter_descriptor,
+              new java.lang.String[] { "Filler", "ChannelShared", });
+          return null;
+        }
+      };
     com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
         new com.google.protobuf.Descriptors.FileDescriptor[] {
         }, assigner);
-    internal_static_caffe_BlobShape_descriptor =
-      getDescriptor().getMessageTypes().get(0);
-    internal_static_caffe_BlobShape_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_BlobShape_descriptor,
-        new java.lang.String[] { "Dim", });
-    internal_static_caffe_BlobProto_descriptor =
-      getDescriptor().getMessageTypes().get(1);
-    internal_static_caffe_BlobProto_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_BlobProto_descriptor,
-        new java.lang.String[] { "Shape", "Data", "Diff", "DoubleData", "DoubleDiff", "Num", "Channels", "Height", "Width", });
-    internal_static_caffe_BlobProtoVector_descriptor =
-      getDescriptor().getMessageTypes().get(2);
-    internal_static_caffe_BlobProtoVector_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_BlobProtoVector_descriptor,
-        new java.lang.String[] { "Blobs", });
-    internal_static_caffe_Datum_descriptor =
-      getDescriptor().getMessageTypes().get(3);
-    internal_static_caffe_Datum_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_Datum_descriptor,
-        new java.lang.String[] { "Channels", "Height", "Width", "Data", "Label", "FloatData", "Encoded", });
-    internal_static_caffe_FillerParameter_descriptor =
-      getDescriptor().getMessageTypes().get(4);
-    internal_static_caffe_FillerParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_FillerParameter_descriptor,
-        new java.lang.String[] { "Type", "Value", "Min", "Max", "Mean", "Std", "Sparse", "VarianceNorm", });
-    internal_static_caffe_NetParameter_descriptor =
-      getDescriptor().getMessageTypes().get(5);
-    internal_static_caffe_NetParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_NetParameter_descriptor,
-        new java.lang.String[] { "Name", "Input", "InputShape", "InputDim", "ForceBackward", "State", "DebugInfo", "Layer", "Layers", });
-    internal_static_caffe_SolverParameter_descriptor =
-      getDescriptor().getMessageTypes().get(6);
-    internal_static_caffe_SolverParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_SolverParameter_descriptor,
-        new java.lang.String[] { "Net", "NetParam", "TrainNet", "TestNet", "TrainNetParam", "TestNetParam", "TrainState", "TestState", "TestIter", "TestInterval", "TestComputeLoss", "TestInitialization", "BaseLr", "Display", "AverageLoss", "MaxIter", "IterSize", "LrPolicy", "Gamma", "Power", "Momentum", "WeightDecay", "RegularizationType", "Stepsize", "Stepvalue", "ClipGradients", "Snapshot", "SnapshotPrefix", "SnapshotDiff", "SnapshotFormat", "SolverMode", "DeviceId", "RandomSeed", "Type", "Delta", "Momentum2", "RmsDecay", "DebugInfo", "SnapshotAfterTrain", "SolverType", });
-    internal_static_caffe_SolverState_descriptor =
-      getDescriptor().getMessageTypes().get(7);
-    internal_static_caffe_SolverState_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_SolverState_descriptor,
-        new java.lang.String[] { "Iter", "LearnedNet", "History", "CurrentStep", });
-    internal_static_caffe_NetState_descriptor =
-      getDescriptor().getMessageTypes().get(8);
-    internal_static_caffe_NetState_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_NetState_descriptor,
-        new java.lang.String[] { "Phase", "Level", "Stage", });
-    internal_static_caffe_NetStateRule_descriptor =
-      getDescriptor().getMessageTypes().get(9);
-    internal_static_caffe_NetStateRule_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_NetStateRule_descriptor,
-        new java.lang.String[] { "Phase", "MinLevel", "MaxLevel", "Stage", "NotStage", });
-    internal_static_caffe_ParamSpec_descriptor =
-      getDescriptor().getMessageTypes().get(10);
-    internal_static_caffe_ParamSpec_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_ParamSpec_descriptor,
-        new java.lang.String[] { "Name", "ShareMode", "LrMult", "DecayMult", });
-    internal_static_caffe_LayerParameter_descriptor =
-      getDescriptor().getMessageTypes().get(11);
-    internal_static_caffe_LayerParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_LayerParameter_descriptor,
-        new java.lang.String[] { "Name", "Type", "Bottom", "Top", "Phase", "LossWeight", "Param", "Blobs", "PropagateDown", "Include", "Exclude", "TransformParam", "LossParam", "AccuracyParam", "ArgmaxParam", "BatchNormParam", "BiasParam", "ConcatParam", "ContrastiveLossParam", "ConvolutionParam", "CropParam", "DataParam", "DropoutParam", "DummyDataParam", "EltwiseParam", "EluParam", "EmbedParam", "ExpParam", "FlattenParam", "Hdf5DataParam", "Hdf5OutputParam", "HingeLossParam", "ImageDataParam", "InfogainLossParam", "InnerProductParam", "InputParam", "LogParam", "LrnParam", "MemoryDataParam", "MvnParam", "PoolingParam", "PowerParam", "PreluParam", "PythonParam", "ReductionParam", "ReluParam", "ReshapeParam", "ScaleParam", "SigmoidParam", "SoftmaxParam", "SppParam", "SliceParam", "TanhParam", "ThresholdParam", "TileParam", "WindowDataParam", });
-    internal_static_caffe_TransformationParameter_descriptor =
-      getDescriptor().getMessageTypes().get(12);
-    internal_static_caffe_TransformationParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_TransformationParameter_descriptor,
-        new java.lang.String[] { "Scale", "Mirror", "CropSize", "MeanFile", "MeanValue", "ForceColor", "ForceGray", });
-    internal_static_caffe_LossParameter_descriptor =
-      getDescriptor().getMessageTypes().get(13);
-    internal_static_caffe_LossParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_LossParameter_descriptor,
-        new java.lang.String[] { "IgnoreLabel", "Normalization", "Normalize", });
-    internal_static_caffe_AccuracyParameter_descriptor =
-      getDescriptor().getMessageTypes().get(14);
-    internal_static_caffe_AccuracyParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_AccuracyParameter_descriptor,
-        new java.lang.String[] { "TopK", "Axis", "IgnoreLabel", });
-    internal_static_caffe_ArgMaxParameter_descriptor =
-      getDescriptor().getMessageTypes().get(15);
-    internal_static_caffe_ArgMaxParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_ArgMaxParameter_descriptor,
-        new java.lang.String[] { "OutMaxVal", "TopK", "Axis", });
-    internal_static_caffe_ConcatParameter_descriptor =
-      getDescriptor().getMessageTypes().get(16);
-    internal_static_caffe_ConcatParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_ConcatParameter_descriptor,
-        new java.lang.String[] { "Axis", "ConcatDim", });
-    internal_static_caffe_BatchNormParameter_descriptor =
-      getDescriptor().getMessageTypes().get(17);
-    internal_static_caffe_BatchNormParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_BatchNormParameter_descriptor,
-        new java.lang.String[] { "UseGlobalStats", "MovingAverageFraction", "Eps", });
-    internal_static_caffe_BiasParameter_descriptor =
-      getDescriptor().getMessageTypes().get(18);
-    internal_static_caffe_BiasParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_BiasParameter_descriptor,
-        new java.lang.String[] { "Axis", "NumAxes", "Filler", });
-    internal_static_caffe_ContrastiveLossParameter_descriptor =
-      getDescriptor().getMessageTypes().get(19);
-    internal_static_caffe_ContrastiveLossParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_ContrastiveLossParameter_descriptor,
-        new java.lang.String[] { "Margin", "LegacyVersion", });
-    internal_static_caffe_ConvolutionParameter_descriptor =
-      getDescriptor().getMessageTypes().get(20);
-    internal_static_caffe_ConvolutionParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_ConvolutionParameter_descriptor,
-        new java.lang.String[] { "NumOutput", "BiasTerm", "Pad", "KernelSize", "Stride", "Dilation", "PadH", "PadW", "KernelH", "KernelW", "StrideH", "StrideW", "Group", "WeightFiller", "BiasFiller", "Engine", "Axis", "ForceNdIm2Col", });
-    internal_static_caffe_CropParameter_descriptor =
-      getDescriptor().getMessageTypes().get(21);
-    internal_static_caffe_CropParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_CropParameter_descriptor,
-        new java.lang.String[] { "Axis", "Offset", });
-    internal_static_caffe_DataParameter_descriptor =
-      getDescriptor().getMessageTypes().get(22);
-    internal_static_caffe_DataParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_DataParameter_descriptor,
-        new java.lang.String[] { "Source", "BatchSize", "RandSkip", "Backend", "Scale", "MeanFile", "CropSize", "Mirror", "ForceEncodedColor", "Prefetch", });
-    internal_static_caffe_DropoutParameter_descriptor =
-      getDescriptor().getMessageTypes().get(23);
-    internal_static_caffe_DropoutParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_DropoutParameter_descriptor,
-        new java.lang.String[] { "DropoutRatio", });
-    internal_static_caffe_DummyDataParameter_descriptor =
-      getDescriptor().getMessageTypes().get(24);
-    internal_static_caffe_DummyDataParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_DummyDataParameter_descriptor,
-        new java.lang.String[] { "DataFiller", "Shape", "Num", "Channels", "Height", "Width", });
-    internal_static_caffe_EltwiseParameter_descriptor =
-      getDescriptor().getMessageTypes().get(25);
-    internal_static_caffe_EltwiseParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_EltwiseParameter_descriptor,
-        new java.lang.String[] { "Operation", "Coeff", "StableProdGrad", });
-    internal_static_caffe_ELUParameter_descriptor =
-      getDescriptor().getMessageTypes().get(26);
-    internal_static_caffe_ELUParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_ELUParameter_descriptor,
-        new java.lang.String[] { "Alpha", });
-    internal_static_caffe_EmbedParameter_descriptor =
-      getDescriptor().getMessageTypes().get(27);
-    internal_static_caffe_EmbedParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_EmbedParameter_descriptor,
-        new java.lang.String[] { "NumOutput", "InputDim", "BiasTerm", "WeightFiller", "BiasFiller", });
-    internal_static_caffe_ExpParameter_descriptor =
-      getDescriptor().getMessageTypes().get(28);
-    internal_static_caffe_ExpParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_ExpParameter_descriptor,
-        new java.lang.String[] { "Base", "Scale", "Shift", });
-    internal_static_caffe_FlattenParameter_descriptor =
-      getDescriptor().getMessageTypes().get(29);
-    internal_static_caffe_FlattenParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_FlattenParameter_descriptor,
-        new java.lang.String[] { "Axis", "EndAxis", });
-    internal_static_caffe_HDF5DataParameter_descriptor =
-      getDescriptor().getMessageTypes().get(30);
-    internal_static_caffe_HDF5DataParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_HDF5DataParameter_descriptor,
-        new java.lang.String[] { "Source", "BatchSize", "Shuffle", });
-    internal_static_caffe_HDF5OutputParameter_descriptor =
-      getDescriptor().getMessageTypes().get(31);
-    internal_static_caffe_HDF5OutputParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_HDF5OutputParameter_descriptor,
-        new java.lang.String[] { "FileName", });
-    internal_static_caffe_HingeLossParameter_descriptor =
-      getDescriptor().getMessageTypes().get(32);
-    internal_static_caffe_HingeLossParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_HingeLossParameter_descriptor,
-        new java.lang.String[] { "Norm", });
-    internal_static_caffe_ImageDataParameter_descriptor =
-      getDescriptor().getMessageTypes().get(33);
-    internal_static_caffe_ImageDataParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_ImageDataParameter_descriptor,
-        new java.lang.String[] { "Source", "BatchSize", "RandSkip", "Shuffle", "NewHeight", "NewWidth", "IsColor", "Scale", "MeanFile", "CropSize", "Mirror", "RootFolder", });
-    internal_static_caffe_InfogainLossParameter_descriptor =
-      getDescriptor().getMessageTypes().get(34);
-    internal_static_caffe_InfogainLossParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_InfogainLossParameter_descriptor,
-        new java.lang.String[] { "Source", });
-    internal_static_caffe_InnerProductParameter_descriptor =
-      getDescriptor().getMessageTypes().get(35);
-    internal_static_caffe_InnerProductParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_InnerProductParameter_descriptor,
-        new java.lang.String[] { "NumOutput", "BiasTerm", "WeightFiller", "BiasFiller", "Axis", "Transpose", });
-    internal_static_caffe_InputParameter_descriptor =
-      getDescriptor().getMessageTypes().get(36);
-    internal_static_caffe_InputParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_InputParameter_descriptor,
-        new java.lang.String[] { "Shape", });
-    internal_static_caffe_LogParameter_descriptor =
-      getDescriptor().getMessageTypes().get(37);
-    internal_static_caffe_LogParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_LogParameter_descriptor,
-        new java.lang.String[] { "Base", "Scale", "Shift", });
-    internal_static_caffe_LRNParameter_descriptor =
-      getDescriptor().getMessageTypes().get(38);
-    internal_static_caffe_LRNParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_LRNParameter_descriptor,
-        new java.lang.String[] { "LocalSize", "Alpha", "Beta", "NormRegion", "K", "Engine", });
-    internal_static_caffe_MemoryDataParameter_descriptor =
-      getDescriptor().getMessageTypes().get(39);
-    internal_static_caffe_MemoryDataParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_MemoryDataParameter_descriptor,
-        new java.lang.String[] { "BatchSize", "Channels", "Height", "Width", });
-    internal_static_caffe_MVNParameter_descriptor =
-      getDescriptor().getMessageTypes().get(40);
-    internal_static_caffe_MVNParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_MVNParameter_descriptor,
-        new java.lang.String[] { "NormalizeVariance", "AcrossChannels", "Eps", });
-    internal_static_caffe_PoolingParameter_descriptor =
-      getDescriptor().getMessageTypes().get(41);
-    internal_static_caffe_PoolingParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_PoolingParameter_descriptor,
-        new java.lang.String[] { "Pool", "Pad", "PadH", "PadW", "KernelSize", "KernelH", "KernelW", "Stride", "StrideH", "StrideW", "Engine", "GlobalPooling", });
-    internal_static_caffe_PowerParameter_descriptor =
-      getDescriptor().getMessageTypes().get(42);
-    internal_static_caffe_PowerParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_PowerParameter_descriptor,
-        new java.lang.String[] { "Power", "Scale", "Shift", });
-    internal_static_caffe_PythonParameter_descriptor =
-      getDescriptor().getMessageTypes().get(43);
-    internal_static_caffe_PythonParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_PythonParameter_descriptor,
-        new java.lang.String[] { "Module", "Layer", "ParamStr", "ShareInParallel", });
-    internal_static_caffe_ReductionParameter_descriptor =
-      getDescriptor().getMessageTypes().get(44);
-    internal_static_caffe_ReductionParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_ReductionParameter_descriptor,
-        new java.lang.String[] { "Operation", "Axis", "Coeff", });
-    internal_static_caffe_ReLUParameter_descriptor =
-      getDescriptor().getMessageTypes().get(45);
-    internal_static_caffe_ReLUParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_ReLUParameter_descriptor,
-        new java.lang.String[] { "NegativeSlope", "Engine", });
-    internal_static_caffe_ReshapeParameter_descriptor =
-      getDescriptor().getMessageTypes().get(46);
-    internal_static_caffe_ReshapeParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_ReshapeParameter_descriptor,
-        new java.lang.String[] { "Shape", "Axis", "NumAxes", });
-    internal_static_caffe_ScaleParameter_descriptor =
-      getDescriptor().getMessageTypes().get(47);
-    internal_static_caffe_ScaleParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_ScaleParameter_descriptor,
-        new java.lang.String[] { "Axis", "NumAxes", "Filler", "BiasTerm", "BiasFiller", });
-    internal_static_caffe_SigmoidParameter_descriptor =
-      getDescriptor().getMessageTypes().get(48);
-    internal_static_caffe_SigmoidParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_SigmoidParameter_descriptor,
-        new java.lang.String[] { "Engine", });
-    internal_static_caffe_SliceParameter_descriptor =
-      getDescriptor().getMessageTypes().get(49);
-    internal_static_caffe_SliceParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_SliceParameter_descriptor,
-        new java.lang.String[] { "Axis", "SlicePoint", "SliceDim", });
-    internal_static_caffe_SoftmaxParameter_descriptor =
-      getDescriptor().getMessageTypes().get(50);
-    internal_static_caffe_SoftmaxParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_SoftmaxParameter_descriptor,
-        new java.lang.String[] { "Engine", "Axis", });
-    internal_static_caffe_TanHParameter_descriptor =
-      getDescriptor().getMessageTypes().get(51);
-    internal_static_caffe_TanHParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_TanHParameter_descriptor,
-        new java.lang.String[] { "Engine", });
-    internal_static_caffe_TileParameter_descriptor =
-      getDescriptor().getMessageTypes().get(52);
-    internal_static_caffe_TileParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_TileParameter_descriptor,
-        new java.lang.String[] { "Axis", "Tiles", });
-    internal_static_caffe_ThresholdParameter_descriptor =
-      getDescriptor().getMessageTypes().get(53);
-    internal_static_caffe_ThresholdParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_ThresholdParameter_descriptor,
-        new java.lang.String[] { "Threshold", });
-    internal_static_caffe_WindowDataParameter_descriptor =
-      getDescriptor().getMessageTypes().get(54);
-    internal_static_caffe_WindowDataParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_WindowDataParameter_descriptor,
-        new java.lang.String[] { "Source", "Scale", "MeanFile", "BatchSize", "CropSize", "Mirror", "FgThreshold", "BgThreshold", "FgFraction", "ContextPad", "CropMode", "CacheImages", "RootFolder", });
-    internal_static_caffe_SPPParameter_descriptor =
-      getDescriptor().getMessageTypes().get(55);
-    internal_static_caffe_SPPParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_SPPParameter_descriptor,
-        new java.lang.String[] { "PyramidHeight", "Pool", "Engine", });
-    internal_static_caffe_V1LayerParameter_descriptor =
-      getDescriptor().getMessageTypes().get(56);
-    internal_static_caffe_V1LayerParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_V1LayerParameter_descriptor,
-        new java.lang.String[] { "Bottom", "Top", "Name", "Include", "Exclude", "Type", "Blobs", "Param", "BlobShareMode", "BlobsLr", "WeightDecay", "LossWeight", "AccuracyParam", "ArgmaxParam", "ConcatParam", "ContrastiveLossParam", "ConvolutionParam", "DataParam", "DropoutParam", "DummyDataParam", "EltwiseParam", "ExpParam", "Hdf5DataParam", "Hdf5OutputParam", "HingeLossParam", "ImageDataParam", "InfogainLossParam", "InnerProductParam", "LrnParam", "MemoryDataParam", "MvnParam", "PoolingParam", "PowerParam", "ReluParam", "SigmoidParam", "SoftmaxParam", "SliceParam", "TanhParam", "ThresholdParam", "WindowDataParam", "TransformParam", "LossParam", "Layer", });
-    internal_static_caffe_V0LayerParameter_descriptor =
-      getDescriptor().getMessageTypes().get(57);
-    internal_static_caffe_V0LayerParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_V0LayerParameter_descriptor,
-        new java.lang.String[] { "Name", "Type", "NumOutput", "Biasterm", "WeightFiller", "BiasFiller", "Pad", "Kernelsize", "Group", "Stride", "Pool", "DropoutRatio", "LocalSize", "Alpha", "Beta", "K", "Source", "Scale", "Meanfile", "Batchsize", "Cropsize", "Mirror", "Blobs", "BlobsLr", "WeightDecay", "RandSkip", "DetFgThreshold", "DetBgThreshold", "DetFgFraction", "DetContextPad", "DetCropMode", "NewNum", "NewChannels", "NewHeight", "NewWidth", "ShuffleImages", "ConcatDim", "Hdf5OutputParam", });
-    internal_static_caffe_PReLUParameter_descriptor =
-      getDescriptor().getMessageTypes().get(58);
-    internal_static_caffe_PReLUParameter_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_caffe_PReLUParameter_descriptor,
-        new java.lang.String[] { "Filler", "ChannelShared", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)

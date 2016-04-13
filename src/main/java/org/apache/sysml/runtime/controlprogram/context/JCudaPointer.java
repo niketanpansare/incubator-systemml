@@ -75,7 +75,7 @@ public class JCudaPointer extends GPUPointer {
 	}
 
 	@Override
-	void copyFromDeviceToHost() throws DMLRuntimeException {
+	public void copyFromDeviceToHost() throws DMLRuntimeException {
 		if(mat.getNumRows() <= 0 || mat.getNumColumns() <= 0) {
 			throw new DMLRuntimeException("Unknown matrix dimensions");
 		}
@@ -87,6 +87,7 @@ public class JCudaPointer extends GPUPointer {
 				double [] data = mat.getDenseBlock();
 				if(data == null) {
 					mat.allocateDenseBlock();
+					data = mat.getDenseBlock();
 				}
 				cudaMemcpy(Pointer.to(data), jcudaPointer, mat.getNumRows()*mat.getNumColumns() * Sizeof.DOUBLE, cudaMemcpyDeviceToHost);
 			}

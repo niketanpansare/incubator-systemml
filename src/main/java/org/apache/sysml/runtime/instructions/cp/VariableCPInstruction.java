@@ -690,6 +690,9 @@ public class VariableCPInstruction extends CPInstruction
 		
 		// do the actual copy!
 		ec.setVariable(input2.getName(), dd);
+		if(dd != null && dd instanceof MatrixObject && ((MatrixObject)dd).getMatrixBlock() != null 
+				&& ((MatrixObject)dd).getMatrixBlock().gpuPointer != null)
+			((MatrixObject)dd).getMatrixBlock().gpuPointer.numReferences++;
 	}
 	
 	/**

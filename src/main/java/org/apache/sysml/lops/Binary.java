@@ -52,10 +52,20 @@ public class Binary extends Lop
 		this(input1, input2, op, dt, vt, et, 1);
 	}
 	
+	
 	public Binary(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt, ExecType et, int k) {
 		super(Lop.Type.Binary, dt, vt);
 		init(input1, input2, op, dt, vt, et);	
 		numThreads = k;
+	}
+
+	boolean isLeftTransposed; boolean isRightTransposed;
+	public Binary(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt, ExecType et, 
+			boolean isLeftTransposed, boolean isRightTransposed) {
+		super(Lop.Type.Binary, dt, vt);
+		init(input1, input2, op, dt, vt, et);
+		this.isLeftTransposed = isLeftTransposed;
+		this.isRightTransposed = isRightTransposed;
 	}
 	
 	private void init(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt, ExecType et) 
@@ -76,7 +86,7 @@ public class Binary extends Lop
 			lps.addCompatibility(JobType.REBLOCK);
 			this.lps.setProperties( inputs, et, ExecLocation.Reduce, breaksAlignment, aligner, definesMRJob );
 		}
-		else if ( et == ExecType.CP || et == ExecType.SPARK ){
+		else if ( et == ExecType.CP || et == ExecType.SPARK || et == ExecType.GPU ){
 			lps.addCompatibility(JobType.INVALID);
 			this.lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
 		}
@@ -183,7 +193,13 @@ public class Binary extends Lop
 		if( operation == OperationTypes.MATMULT && getExecType()==ExecType.CP ) {
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( numThreads );
-		}	
+		}
+		else if( operation == OperationTypes.MATMULT && getExecType()==ExecType.GPU ) {
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( isLeftTransposed );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( isRightTransposed );
+		}
 		
 		return sb.toString();
 	}

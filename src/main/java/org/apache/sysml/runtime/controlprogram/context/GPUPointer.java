@@ -23,8 +23,9 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 public abstract class GPUPointer {
 
-	boolean isDeviceCopyModified = false;
+	public boolean isDeviceCopyModified = false;
 	volatile boolean isLocked = false;
+	public int numReferences = 1;
 	
 	MatrixBlock mat = null;
 	protected GPUPointer(MatrixBlock mat)  {
@@ -36,7 +37,7 @@ public abstract class GPUPointer {
 	abstract void deallocateMemoryOnDevice() throws DMLRuntimeException;
 	abstract long getSizeOnDevice() throws DMLRuntimeException;
 	abstract void copyFromHostToDevice() throws DMLRuntimeException;
-	abstract void copyFromDeviceToHost() throws DMLRuntimeException;
+	public abstract void copyFromDeviceToHost() throws DMLRuntimeException; // Called by export()
 	
 	static GPUPointer createGPUPointer(MatrixBlock mat, GPUContext gpuCtx) throws DMLRuntimeException {
 		if(gpuCtx instanceof JCudaContext) {

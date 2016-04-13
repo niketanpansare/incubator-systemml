@@ -50,6 +50,33 @@ public class MatrixMultiplicationTest extends AutomatedTestBase
 
 		// negative tests
 	}
+	
+	@Test
+	public void testMatrixMultiplication1() {
+		int m = 25;
+		int n = 14;
+		int k = 21;
+
+		TestConfiguration config = availableTestConfigurations.get("MatrixMultiplicationTest");
+		config.addVariable("m", m);
+		config.addVariable("n1", n);
+		config.addVariable("n2", n);
+		config.addVariable("k", k);
+
+		loadTestConfiguration(config);
+
+		double[][] a = getRandomMatrix(m, n, -1, 1, 1, -1);
+		double[][] b = getRandomMatrix(n, k, -1, 1, 1, -1);
+		double[][] c = TestUtils.performMatrixMultiplication(a, b);
+
+		writeInputMatrix("a", a);
+		writeInputMatrix("b", b);
+		writeExpectedMatrix("c", c);
+
+		runTest();
+
+		compareResults(0.00000000001);
+	}
 
 	@Test
 	public void testMatrixMultiplication() {

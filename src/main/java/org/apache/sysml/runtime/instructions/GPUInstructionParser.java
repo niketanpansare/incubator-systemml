@@ -23,6 +23,7 @@ import java.util.HashMap;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction.CPINSTRUCTION_TYPE;
+import org.apache.sysml.runtime.instructions.gpu.AggregateBinaryGPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.ConvolutionGPUInstruction;
 
 public class GPUInstructionParser  extends InstructionParser 
@@ -32,6 +33,7 @@ public class GPUInstructionParser  extends InstructionParser
 		String2GPUInstructionType = new HashMap<String, CPINSTRUCTION_TYPE>();
 		String2GPUInstructionType.put( "conv2d"      , CPINSTRUCTION_TYPE.Convolution);
 		String2GPUInstructionType.put( "conv2d_backward_filter"      , CPINSTRUCTION_TYPE.Convolution);
+		String2GPUInstructionType.put( "ba+*"   	, CPINSTRUCTION_TYPE.AggregateBinary);
 		
 	}
 	
@@ -57,8 +59,15 @@ public class GPUInstructionParser  extends InstructionParser
 			if ( str == null || str.isEmpty() ) 
 				return null;
 			
+			if(cptype == null) {
+				throw new DMLRuntimeException("The instruction is not GPU-enabled:" + str);
+			}
+			
 			switch(cptype) 
 			{
+				case AggregateBinary:
+					return AggregateBinaryGPUInstruction.parseInstruction(str);
+					
 				case Convolution:
 					return ConvolutionGPUInstruction.parseInstruction(str);
 					

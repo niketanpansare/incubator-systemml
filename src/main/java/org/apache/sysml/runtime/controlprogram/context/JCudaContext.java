@@ -29,7 +29,9 @@ import java.util.Comparator;
 
 import jcuda.Pointer;
 import jcuda.driver.JCudaDriver;
+import jcuda.jcublas.JCublas;
 import jcuda.jcublas.JCublas2;
+import jcuda.jcublas.cublasHandle;
 import jcuda.jcudnn.JCudnn;
 import jcuda.jcudnn.cudnnConvolutionDescriptor;
 import jcuda.jcudnn.cudnnFilterDescriptor;
@@ -39,6 +41,8 @@ import jcuda.jcudnn.cudnnHandle;
 import static jcuda.jcudnn.JCudnn.cudnnConvolutionBackwardFilter;
 import static jcuda.jcudnn.JCudnn.cudnnConvolutionForward;
 import static jcuda.jcudnn.JCudnn.cudnnCreate;
+import static jcuda.jcublas.JCublas2.cublasCreate;
+import static jcuda.jcublas.JCublas2.cublasDestroy;
 import static jcuda.jcudnn.JCudnn.cudnnCreateConvolutionDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnCreateFilterDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnCreateTensorDescriptor;
@@ -59,6 +63,8 @@ import static jcuda.driver.JCudaDriver.cuInit;
 import static jcuda.driver.JCudaDriver.cuDeviceGetCount;
 import static jcuda.runtime.JCuda.cudaMemGetInfo;
 import static jcuda.runtime.cudaError.cudaSuccess;
+import static jcuda.jcublas.cublasOperation.CUBLAS_OP_T;
+import static jcuda.jcublas.cublasOperation.CUBLAS_OP_N;
 
 /**
  * Setup:
@@ -73,6 +79,7 @@ public class JCudaContext extends GPUContext {
 	
 	public static boolean DEBUG = true;
 	public cudnnHandle cudnnHandle;
+	public cublasHandle cublasHandle;
 	
 	public static long totalNumBytes = 0;
 	public static long availableNumBytesWithoutUtilFactor = 0;
@@ -114,6 +121,9 @@ public class JCudaContext extends GPUContext {
 	public JCudaContext() {
 		cudnnHandle = new cudnnHandle();
 		cudnnCreate(cudnnHandle);
+		cublasHandle = new cublasHandle();
+		cublasCreate(cublasHandle);
+		
 		long free [] = { 0 };
         long total [] = { 0 };
         if(cudaMemGetInfo(free, total) == cudaSuccess) {
@@ -130,6 +140,7 @@ public class JCudaContext extends GPUContext {
 	@Override
 	public void destroy() {
 		cudnnDestroy(cudnnHandle);
+		cublasDestroy(cublasHandle);
 	}
 	
 	public Pointer pointerTo(double value) {
@@ -187,7 +198,7 @@ public class JCudaContext extends GPUContext {
 				allocatedPointers.add(mat.gpuPointer);
 			}
 			if (isInput) {
-				mat.gpuPointer.copyFromHostToDevice();
+				mat.gpuPointer.copyFromHostToDevice(); // TODO: Remove this as it can be performed in acquireRead !!!
 			}
 //			else {
 //				mat.gpuPointer.copyFromHostToDevice();
@@ -269,10 +280,17 @@ public class JCudaContext extends GPUContext {
 	@Override
 	public void remove(MatrixBlock mat) throws DMLRuntimeException {
 		if(mat != null && mat.gpuPointer != null) {
-			synchronized(evictionLock) {
-				allocatedPointers.remove(mat.gpuPointer);
+			if(mat.gpuPointer.numReferences <= 1) {
+				synchronized(evictionLock) {
+					allocatedPointers.remove(mat.gpuPointer);
+				}
+				mat.gpuPointer.deallocateMemoryOnDevice();
+				mat.gpuPointer = null;
 			}
-			mat.gpuPointer.deallocateMemoryOnDevice();
+			else {
+				mat.gpuPointer.numReferences--;
+			}
+			
 		}
 	}
 
@@ -434,6 +452,64 @@ public class JCudaContext extends GPUContext {
 	@Override
 	public void copyDeviceToHost(MatrixBlock mat) throws DMLRuntimeException {
 		mat.gpuPointer.copyFromDeviceToHost();
+	}
+
+
+	@Override
+	public void matmult(MatrixBlock left1, MatrixBlock right1, MatrixBlock output, 
+			boolean isLeftTransposed, boolean isRightTransposed) throws DMLRuntimeException {
+		if(left1.isInSparseFormat() || right1.isInSparseFormat()) {
+			throw new DMLRuntimeException("Sparse GPU matrix multiplication is not implemented");
+		}
+		
+		// Since CuBLAS expects inputs in column-major format,
+		// reverse the order of matrix-multiplication and take care of dimension mismatch.
+		MatrixBlock left = right1; 
+		MatrixBlock right = left1;
+		
+		char transa = isLeftTransposed ? 'T' : 'N';
+		char transb = isRightTransposed ? 'T' : 'N';
+		// Note: the dimensions are swapped
+		int m = isLeftTransposed ? left.getNumRows() : left.getNumColumns() ;
+		int n = isRightTransposed ? right.getNumColumns() : right.getNumRows();
+		int k = isLeftTransposed ?  left.getNumColumns() : left.getNumRows();
+		int k1 = isRightTransposed ?  right.getNumRows() : right.getNumColumns();
+		if(k != k1) 
+			throw new DMLRuntimeException("Dimension mismatch: " + k + " != " + k1);
+		
+		double alpha = 1;
+		double beta = 0;
+		
+		int lda = isLeftTransposed ?  k : m;
+		int ldb = isRightTransposed ? n : k;
+		int ldc = m;
+		
+		Pointer A = (Pointer) prepare(left, true, true);
+		Pointer B = (Pointer) prepare(right, true, true);
+		Pointer C = (Pointer) prepare(output, false, true);
+		
+		JCublas.cublasDgemm(transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc);
+		
+		unlock(left, false);
+		unlock(right, false);
+		unlock(output, true);
+	}
+	
+	private void transpose(Pointer A, Pointer ret, int numRows, int numCols) {
+		Pointer alpha = null; 
+		Pointer beta = null;
+		try {
+			alpha = pointerTo(1.0);
+			beta = pointerTo(0.0);
+			JCublas2.cublasDgeam(cublasHandle, CUBLAS_OP_T, CUBLAS_OP_N, numCols, numRows, 
+					alpha, A, numRows, beta, A, numCols, ret, numCols);
+		}
+		finally {
+			if(alpha != null)
+				cudaFree(alpha);
+			if(beta != null)
+				cudaFree(beta);
+		}
 	}
 	
 }

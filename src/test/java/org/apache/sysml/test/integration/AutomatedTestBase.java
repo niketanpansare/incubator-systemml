@@ -1154,7 +1154,8 @@ public abstract class AutomatedTestBase
 		}
 		//use optional config file since default under SystemML/DML
 		args.add("-config="+ getCurConfigFile().getPath());
-		
+		if(TEST_GPU)
+			args.add("-usegpu");
 		
 		// program-specific parameters
 		if ( newWay ) {

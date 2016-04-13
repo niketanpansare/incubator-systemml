@@ -700,11 +700,14 @@
 
 
 	<dependencies>
-		<!--  For reading Caffe files -->
+		<!--  For reading Caffe files.
+		Note: using 2.6+ will cause java.lang.NoSuchMethodError: org.apache.hadoop.yarn.proto.YarnProtos$LocalResourceProto.hashLong(J)I
+		as proto3 doesn't keep backward compatibility with proto2.
+		 -->
 		<dependency>
 			<groupId>com.google.protobuf</groupId>
 			<artifactId>protobuf-java</artifactId>
-			<version>2.6.1</version>
+			<version>2.5.0</version>
 			<scope>provided</scope>  
 		</dependency>
 		
