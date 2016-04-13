@@ -245,14 +245,16 @@ public class DataExpression extends DataIdentifier
 			dataExpr.setRandDefault();
 		}
 		
-		else if (functionName.equals("matrix") || functionName.equals("tensor")){
+		else if (functionName.equals("matrix")) {
+			// Temporarily removing tensor() built-in function
+			// || functionName.equals("tensor")){}
 			dop = Expression.DataOp.MATRIX;
 			dataExpr = new DataExpression(dop, new HashMap<String,Expression>(),
 					filename, blp, bcp, elp, ecp);
 		
-			if(functionName.equals("tensor")) {
-				passedParamExprs = getMatrixParametersForTensorFn(dataExpr, passedParamExprs, filename, blp, bcp, elp, ecp); 
-			}
+//			if(functionName.equals("tensor")) {
+//				passedParamExprs = getMatrixParametersForTensorFn(dataExpr, passedParamExprs, filename, blp, bcp, elp, ecp); 
+//			}
 			
 			int namedParamCount = 0, unnamedParamCount = 0;
 			for (ParameterExpression currExpr : passedParamExprs) {

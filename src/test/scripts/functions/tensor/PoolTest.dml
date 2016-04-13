@@ -28,7 +28,7 @@ pad=$7
 poolMode=$8
 
 # Assumption: NCHW image format
-x=tensor(seq(1, numImg*numChannels*imgSize*imgSize), shape=[numImg, numChannels, imgSize, imgSize])
+x=matrix(seq(1, numImg*numChannels*imgSize*imgSize), rows=numImg, cols=numChannels*imgSize*imgSize)
 if(poolMode == "max") {
 	output = max_pool(x, stride=[stride, stride], padding=[pad, pad], input_shape=[numImg, numChannels, imgSize, imgSize], pool_size=[poolSize1, poolSize2])
 }

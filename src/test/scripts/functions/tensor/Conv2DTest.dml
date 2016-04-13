@@ -27,8 +27,8 @@ stride=$6
 pad=$7
 
 # Assumption: NCHW image format
-x=tensor(seq(1, numImg*numChannels*imgSize*imgSize), shape=[numImg, numChannels, imgSize, imgSize])
-w=tensor(seq(1, numFilters*numChannels*filterSize*filterSize), shape=[numFilters, numChannels, filterSize, filterSize])
+x=matrix(seq(1, numImg*numChannels*imgSize*imgSize), rows=numImg, cols=numChannels*imgSize*imgSize)
+w=matrix(seq(1, numFilters*numChannels*filterSize*filterSize), rows=numFilters, cols=numChannels*filterSize*filterSize)
 output = conv2d(x, w, padding=[pad, pad], stride=[stride, stride], input_shape=[numImg, numChannels, imgSize, imgSize], filter_shape=[numFilters, numChannels, filterSize, filterSize])
 
 write(output, $8, format="text")

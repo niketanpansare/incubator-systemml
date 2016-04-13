@@ -30,7 +30,7 @@ P = $8
 Q = $9
 
 # Assumption: NCHW image format
-w=tensor(seq(1, numFilters*numChannels*filterSize*filterSize), shape=[numFilters, numChannels, filterSize, filterSize])
-dout=tensor(seq(1, numImg*numFilters*P*Q), shape=[numImg, numFilters, P, Q])
+w=matrix(seq(1, numFilters*numChannels*filterSize*filterSize), rows=numFilters, cols=numChannels*filterSize*filterSize)
+dout=matrix(seq(1, numImg*numFilters*P*Q), rows=numImg, cols=numFilters*P*Q)
 dx = conv2d_backward_data(w, dout, stride=[stride, stride], padding=[pad, pad], input_shape=[numImg, numChannels, imgSize, imgSize], filter_shape=[numFilters, numChannels, filterSize, filterSize])
 write(dx, $10, format="text")

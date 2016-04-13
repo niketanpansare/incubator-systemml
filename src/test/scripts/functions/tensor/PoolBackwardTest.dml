@@ -31,8 +31,8 @@ P = $9
 Q = $10
 
 # Assumption: NCHW image format
-x=tensor(seq(1, numImg*numChannels*imgSize*imgSize), shape=[numImg, numChannels, imgSize, imgSize])
-dout=tensor(seq(1, numImg*numChannels*P*Q), shape=[numImg, numChannels, P, Q])
+x=matrix(seq(1, numImg*numChannels*imgSize*imgSize), rows=numImg, cols=numChannels*imgSize*imgSize)
+dout=matrix(seq(1, numImg*numChannels*P*Q), rows=numImg, cols=numChannels*P*Q)
 if(poolMode == "max") {
 	output = max_pool_backward(x, dout, stride=[stride, stride], padding=[pad, pad], input_shape=[numImg, numChannels, imgSize, imgSize], pool_size=[poolSize1, poolSize2])
 }

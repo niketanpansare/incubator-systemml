@@ -86,7 +86,7 @@ public abstract class AutomatedTestBase
 	public static final boolean EXCEPTION_EXPECTED = true;
 	public static final boolean EXCEPTION_NOT_EXPECTED = false;
 	
-	public static final boolean TEST_GPU = true;
+	public static final boolean TEST_GPU = false;
 	
 	protected ScriptType scriptType;
 	
