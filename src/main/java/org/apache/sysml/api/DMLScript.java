@@ -67,6 +67,7 @@ import org.apache.sysml.runtime.controlprogram.caching.CacheStatistics;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
+import org.apache.sysml.runtime.controlprogram.context.GPUContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
@@ -692,9 +693,8 @@ public class DMLScript
 		}
 		finally //ensure cleanup/shutdown
 		{	
-			if(ec != null && ec.gpuCtx != null) {
-				ec.gpuCtx.destroy();
-				ec.gpuCtx = null;
+			if(GPUContext.getCurrentContext() != null) {
+				GPUContext.getCurrentContext().destroy();
 			}
 			
 			if(ec != null && ec instanceof SparkExecutionContext) {

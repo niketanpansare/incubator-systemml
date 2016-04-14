@@ -25,6 +25,7 @@ import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.runtime.controlprogram.context.GPUContext;
 import org.apache.sysml.runtime.functionobjects.SwapIndex;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
@@ -141,10 +142,11 @@ public class ConvolutionGPUInstruction extends UnaryCPInstruction {
 				if(image.isInSparseFormat() || filter.isInSparseFormat()) {
 					throw new DMLRuntimeException("Sparse convolution not implemented");
 				}
-				
-				if(ec.gpuCtx != null) {
+				GPUContext gpuCtx = GPUContext.getCurrentContext();
+				if(gpuCtx != null) {
 					outputBlock = allocateReusableNonZeroedDenseOutputBlock(N, K * P * Q);
-					ec.gpuCtx.conv2d(image, filter, outputBlock, N, C, H, W,
+					gpuCtx.prepareOutput(outputBlock);
+					gpuCtx.conv2d(image, filter, outputBlock, N, C, H, W,
 							K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
 					// TODO: For now always copy the device data to host
 					// ec.gpuCtx.copyDeviceToHost(outputBlock);
@@ -158,9 +160,9 @@ public class ConvolutionGPUInstruction extends UnaryCPInstruction {
 				MatrixBlock dout = ec.getMatrixInputForGPUInstruction(_in2.getName());
 				if(image.isInSparseFormat() || dout.isInSparseFormat())
 					throw new DMLRuntimeException("Sparse convolution backward not implemented");
-				if(ec.gpuCtx != null) {
+				if(GPUContext.getCurrentContext() != null) {
 					outputBlock = allocateReusableNonZeroedDenseOutputBlock(K, C * R * S);
-					ec.gpuCtx.conv2d_backward_filter(image, dout, outputBlock, N, C, H, W,
+					GPUContext.getCurrentContext().conv2d_backward_filter(image, dout, outputBlock, N, C, H, W,
 							K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
 					// TODO: For now always copy the device data to host
 					// ec.gpuCtx.copyDeviceToHost(outputBlock);
@@ -177,8 +179,8 @@ public class ConvolutionGPUInstruction extends UnaryCPInstruction {
 			throw new DMLRuntimeException("Unsupported op code " + instOpcode);
 		}
 		// release inputs/outputs
-		ec.releaseMatrixInput(input1.getName());
-		ec.releaseMatrixInput(_in2.getName());
+		ec.releaseMatrixInputForGPUInstruction(input1.getName());
+		ec.releaseMatrixInputForGPUInstruction(_in2.getName());
 		ec.setMatrixOutputForGPUInstruction(output.getName(), outputBlock);
 	}
 	

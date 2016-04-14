@@ -751,7 +751,7 @@ public class VariableCPInstruction extends CPInstruction
 		//cleanup matrix data on fs/hdfs (if necessary)
 		if ( input1_data instanceof MatrixObject ) {
 			MatrixObject mo = (MatrixObject) input1_data;
-			mo.cleanupGPUData(ec);
+			ec.cleanupGPUData( mo );
 			ec.cleanupMatrixObject( mo );
 		}
 	}

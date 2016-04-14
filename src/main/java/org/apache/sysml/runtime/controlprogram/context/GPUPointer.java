@@ -37,7 +37,7 @@ public abstract class GPUPointer {
 	abstract void deallocateMemoryOnDevice() throws DMLRuntimeException;
 	abstract long getSizeOnDevice() throws DMLRuntimeException;
 	abstract void copyFromHostToDevice() throws DMLRuntimeException;
-	public abstract void copyFromDeviceToHost() throws DMLRuntimeException; // Called by export()
+	abstract void copyFromDeviceToHost() throws DMLRuntimeException; // Called by export()
 	
 	static GPUPointer createGPUPointer(MatrixBlock mat, GPUContext gpuCtx) throws DMLRuntimeException {
 		if(gpuCtx instanceof JCudaContext) {

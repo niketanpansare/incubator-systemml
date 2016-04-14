@@ -32,7 +32,7 @@ import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
-import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.runtime.controlprogram.context.GPUContext;
 import org.apache.sysml.runtime.controlprogram.context.GPUPointer;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.spark.data.BroadcastObject;
@@ -63,6 +63,8 @@ import org.apache.sysml.runtime.util.MapReduceTool;
  */
 public class MatrixObject extends CacheableData<MatrixBlock>
 {
+	
+	public boolean flag = true;
 	private static final long serialVersionUID = 6374712373206495637L;
 
 	/**
@@ -352,6 +354,28 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	// ***                                       ***
 	// *********************************************
 	
+	public void copyFromDeviceToHostIfDeviceCopyModified() throws CacheException {
+		GPUContext gpuCtx = GPUContext.getCurrentContext();
+		GPUPointer gpuPointer = getGPUPointer();
+		if(gpuCtx != null && gpuPointer != null) {
+//			if(gpuPointer.isDeviceCopyModified) {
+				try {
+					gpuCtx.copyDeviceToHost(_data);
+				} catch (DMLRuntimeException e) {
+					throw new CacheException(e);
+				}
+//			}
+			
+			if(isUpdateInPlaceEnabled()) {
+				// For in-place matrix objects, be conservative and remove the GPU pointers eagerly
+				try {
+					GPUContext.getCurrentContext().remove(getMatrixBlock());
+				} catch (DMLRuntimeException e) {
+					throw new CacheException(e);
+				}
+			}
+		}
+	}
 	
 	/**
 	 * Acquires a shared "read-only" lock, produces the reference to the matrix data,
@@ -370,6 +394,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	public synchronized MatrixBlock acquireRead()
 		throws CacheException
 	{
+		
 		if( LOG.isTraceEnabled() )
 			LOG.trace("Acquire read "+getVarName());
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
@@ -381,6 +406,9 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		if( _data == null )
 			getCache();
 		
+		if(flag)
+			copyFromDeviceToHostIfDeviceCopyModified();
+			
 		//read data from HDFS/RDD if required
 		//(probe data for cache_nowrite / jvm_reuse)  
 		if( isEmpty(true) && _data==null ) 
@@ -467,6 +495,8 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		//get object from cache
 		if( _data == null )
 			getCache();
+		if(flag)
+			copyFromDeviceToHostIfDeviceCopyModified();
 		
 		//read data from HDFS if required
 		if( isEmpty(true) && _data == null )
@@ -536,6 +566,9 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			throw new CacheException("acquireModify with empty matrix block.");
 		_data = newData; 
 		updateStatusPinned(true);
+		
+		if(flag)
+			copyFromDeviceToHostIfDeviceCopyModified();
 		
 		if( DMLScript.STATISTICS ){
 			long t1 = System.nanoTime();
@@ -616,12 +649,6 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			CacheStatistics.incrementReleaseTime(t1-t0);
 		}
 	}
-	
-	public void cleanupGPUData(ExecutionContext ec) throws DMLRuntimeException {
-		if(DMLScript.USE_GPU && ec.gpuCtx != null) {
-			ec.gpuCtx.remove(_data);
-		}
-	}
 
 	/**
 	 * Sets the matrix data reference to <code>null</code>, abandons the old matrix.
@@ -651,7 +678,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			freeEvictedBlob();	
 		
 		// clear the in-memory data
-		_data = null;	
+		_data = null;
 		clearCache();
 		
 		// clear rdd/broadcast back refs
@@ -731,14 +758,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 				getCache();
 			super.acquire( false, _data==null ); //incl. read matrix if evicted	
 			
-			GPUPointer gpuPointer = getGPUPointer();
-			if( gpuPointer != null && gpuPointer.isDeviceCopyModified) {
-				try {
-					gpuPointer.copyFromDeviceToHost();
-				} catch (DMLRuntimeException e) {
-					throw new CacheException(e);
-				}
-			}
+			copyFromDeviceToHostIfDeviceCopyModified();
 			
 			// b) write the matrix 
 			try
@@ -1336,6 +1356,8 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			// Write the matrix to HDFS in requested format
 			OutputInfo oinfo = (outputFormat != null ? OutputInfo.stringToOutputInfo (outputFormat) 
 					                                 : InputInfo.getMatchingOutputInfo (iimd.getInputInfo ()));
+			
+			copyFromDeviceToHostIfDeviceCopyModified();
 			
 			// when outputFormat is binaryblock, make sure that matrixCharacteristics has correct blocking dimensions
 			// note: this is only required if singlenode (due to binarycell default) 

@@ -112,8 +112,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	protected long nonZeros   = 0;
 	
 	//matrix data (sparse or dense)
-	protected double[] denseBlock    = null;
-	protected SparseBlock sparseBlock = null;
+	public double[] denseBlock    = null;
+	public SparseBlock sparseBlock = null;
 	public GPUPointer gpuPointer = null;
 		
 	//sparse-block-specific attributes (allocation only)

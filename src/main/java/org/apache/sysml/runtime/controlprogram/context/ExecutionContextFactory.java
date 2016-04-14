@@ -63,7 +63,7 @@ public class ExecutionContextFactory
 		}
 		
 		if(DMLScript.USE_GPU) {
-			ec.gpuCtx = new JCudaContext();
+			GPUContext.createGPUContext();
 		}
 		
 		return ec;

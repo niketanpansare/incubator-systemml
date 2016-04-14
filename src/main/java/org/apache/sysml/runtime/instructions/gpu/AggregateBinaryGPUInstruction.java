@@ -22,6 +22,7 @@ import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.runtime.controlprogram.context.GPUContext;
 import org.apache.sysml.runtime.functionobjects.Multiply;
 import org.apache.sysml.runtime.functionobjects.Plus;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
@@ -96,8 +97,10 @@ public class AggregateBinaryGPUInstruction extends BinaryCPInstruction
         int rlen = isLeftTransposed ? m1.getNumColumns() : m1.getNumRows();
         int clen = isRightTransposed ? m2.getNumRows() : m2.getNumColumns();
         MatrixBlock soresBlock = new MatrixBlock(rlen, clen, false);
-        if(ec.gpuCtx != null) {
-        	ec.gpuCtx.matmult(m1, m2, soresBlock, isLeftTransposed, isRightTransposed);
+        GPUContext gpuCtx = GPUContext.getCurrentContext();
+        if(gpuCtx != null) {
+        	gpuCtx.prepareOutput(soresBlock);
+        	gpuCtx.matmult(m1, m2, soresBlock, isLeftTransposed, isRightTransposed);
         	soresBlock.setNonZeros(rlen*clen); // Worst case estimate
         	soresBlock.setNumRows(rlen);
         	soresBlock.setNumColumns(clen);
@@ -107,8 +110,8 @@ public class AggregateBinaryGPUInstruction extends BinaryCPInstruction
 		}
 			
 		//release inputs/outputs
-		ec.releaseMatrixInput(input1.getName());
-		ec.releaseMatrixInput(input2.getName());
+		ec.releaseMatrixInputForGPUInstruction(input1.getName());
+		ec.releaseMatrixInputForGPUInstruction(input2.getName());
 		ec.setMatrixOutputForGPUInstruction(output.getName(), soresBlock);
 	}
 }

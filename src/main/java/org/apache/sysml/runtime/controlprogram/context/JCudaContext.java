@@ -119,6 +119,10 @@ public class JCudaContext extends GPUContext {
 	
 	
 	public JCudaContext() {
+		if(GPUContext.currContext != null) {
+			throw new RuntimeException("Cannot create multiple JCudaContext");
+		}
+		GPUContext.currContext = this;
 		cudnnHandle = new cudnnHandle();
 		cudnnCreate(cudnnHandle);
 		cublasHandle = new cublasHandle();
@@ -139,6 +143,7 @@ public class JCudaContext extends GPUContext {
 
 	@Override
 	public void destroy() {
+		currContext = null;
 		cudnnDestroy(cudnnHandle);
 		cublasDestroy(cublasHandle);
 	}
@@ -180,7 +185,7 @@ public class JCudaContext extends GPUContext {
 	}
 
 	@Override
-	public Object prepare(MatrixBlock mat, boolean isInput, boolean lock)
+	public void prepare(MatrixBlock mat, boolean isInput, boolean lock)
 			throws DMLRuntimeException {
 		if(mat.gpuPointer == null) {
 			mat.gpuPointer = GPUPointer.createGPUPointer(mat, this);
@@ -198,14 +203,11 @@ public class JCudaContext extends GPUContext {
 				allocatedPointers.add(mat.gpuPointer);
 			}
 			if (isInput) {
-				mat.gpuPointer.copyFromHostToDevice(); // TODO: Remove this as it can be performed in acquireRead !!!
+				mat.gpuPointer.copyFromHostToDevice();
 			}
-//			else {
-//				mat.gpuPointer.copyFromHostToDevice();
-//			}
 		}
 		mat.gpuPointer.isLocked = lock;
-		return ((JCudaPointer)mat.gpuPointer).jcudaPointer; 
+		// return ((JCudaPointer)mat.gpuPointer).jcudaPointer; 
 	}
 	
 	Boolean evictionLock = new Boolean(true);
@@ -315,9 +317,12 @@ public class JCudaContext extends GPUContext {
 			filterDesc = gpuCtx.allocateFilterDescriptor(K, C, R, S);
 			
 			// Allocate data
-			Pointer imagePointer = (Pointer) gpuCtx.prepare(image, true, true);
-			Pointer filterPointer = (Pointer) gpuCtx.prepare(filter, true, true);
-			Pointer dstPointer = (Pointer) gpuCtx.prepare(outputBlock, false, true);
+			// (Pointer) gpuCtx.prepare(image, true, true);
+			// (Pointer) gpuCtx.prepare(filter, true, true);
+			
+			Pointer imagePointer = ((JCudaPointer)image.gpuPointer).jcudaPointer; 
+			Pointer filterPointer = ((JCudaPointer)filter.gpuPointer).jcudaPointer; 
+			Pointer dstPointer = ((JCudaPointer)outputBlock.gpuPointer).jcudaPointer; 
 			
 			int padding [] = { pad_h, pad_w }; 
 			int strides [] = { stride_h, stride_w };
@@ -342,9 +347,6 @@ public class JCudaContext extends GPUContext {
 			if(status != jcuda.jcudnn.cudnnStatus.CUDNN_STATUS_SUCCESS) {
 				throw new DMLRuntimeException("Could not executed cudnnConvolutionForward: " + jcuda.jcudnn.cudnnStatus.stringFor(status));
 			}
-			gpuCtx.unlock(image, false);
-			gpuCtx.unlock(filter, false);
-			gpuCtx.unlock(outputBlock, true);
 		}
 		finally {
 			
@@ -399,9 +401,9 @@ public class JCudaContext extends GPUContext {
 			dwDesc = gpuCtx.allocateFilterDescriptor(K, C, R, S);
 			
 			// Allocate data
-			Pointer imagePointer = (Pointer) gpuCtx.prepare(image, true, true);
-			Pointer doutPointer =  (Pointer) gpuCtx.prepare(dout, true, true);
-			Pointer dwPointer = (Pointer) gpuCtx.prepare(outputBlock, false, true);
+			Pointer imagePointer = ((JCudaPointer)image.gpuPointer).jcudaPointer; 
+			Pointer doutPointer = ((JCudaPointer)dout.gpuPointer).jcudaPointer; 
+			Pointer dwPointer = ((JCudaPointer)outputBlock.gpuPointer).jcudaPointer; 
 			
 			alpha = gpuCtx.pointerTo(1.0); // TODO
 			beta = gpuCtx.pointerTo(0.0f);
@@ -422,10 +424,6 @@ public class JCudaContext extends GPUContext {
 			if(status != jcuda.jcudnn.cudnnStatus.CUDNN_STATUS_SUCCESS) {
 				throw new DMLRuntimeException("Could not executed cudnnConvolutionBackwardFilter: " + jcuda.jcudnn.cudnnStatus.stringFor(status));
 			}
-			
-			gpuCtx.unlock(image, false);
-			gpuCtx.unlock(dout, false);
-			gpuCtx.unlock(outputBlock, true);
 		}
 		finally {
 			if(alpha != null)
@@ -457,7 +455,7 @@ public class JCudaContext extends GPUContext {
 
 	@Override
 	public void matmult(MatrixBlock left1, MatrixBlock right1, MatrixBlock output, 
-			boolean isLeftTransposed, boolean isRightTransposed) throws DMLRuntimeException {
+			boolean isLeftTransposed1, boolean isRightTransposed1) throws DMLRuntimeException {
 		if(left1.isInSparseFormat() || right1.isInSparseFormat()) {
 			throw new DMLRuntimeException("Sparse GPU matrix multiplication is not implemented");
 		}
@@ -466,6 +464,8 @@ public class JCudaContext extends GPUContext {
 		// reverse the order of matrix-multiplication and take care of dimension mismatch.
 		MatrixBlock left = right1; 
 		MatrixBlock right = left1;
+		boolean isLeftTransposed = isRightTransposed1; 
+		boolean isRightTransposed = isLeftTransposed1; 
 		
 		char transa = isLeftTransposed ? 'T' : 'N';
 		char transb = isRightTransposed ? 'T' : 'N';
@@ -484,15 +484,11 @@ public class JCudaContext extends GPUContext {
 		int ldb = isRightTransposed ? n : k;
 		int ldc = m;
 		
-		Pointer A = (Pointer) prepare(left, true, true);
-		Pointer B = (Pointer) prepare(right, true, true);
-		Pointer C = (Pointer) prepare(output, false, true);
+		Pointer A = ((JCudaPointer)left.gpuPointer).jcudaPointer;
+		Pointer B = ((JCudaPointer)right.gpuPointer).jcudaPointer;
+		Pointer C = ((JCudaPointer)output.gpuPointer).jcudaPointer;
 		
 		JCublas.cublasDgemm(transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc);
-		
-		unlock(left, false);
-		unlock(right, false);
-		unlock(output, true);
 	}
 	
 	private void transpose(Pointer A, Pointer ret, int numRows, int numCols) {
