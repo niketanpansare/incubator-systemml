@@ -2397,10 +2397,8 @@ public class Dag<N extends Lop>
 							DataExpression.DELIM_DELIMITER, DataExpression.DEFAULT_DELIM_DELIMITER);
 					
 					Instruction createvarInst = VariableCPInstruction.prepareCreateVariableInstruction(
-					        oparams.getLabel(),
-							oparams.getFile_name(), 
-							true, 
-							OutputInfo.outputInfoToString(OutputInfo.CSVOutputInfo),
+					        oparams.getLabel(), oparams.getFile_name(), true, 
+					        DataType.MATRIX, OutputInfo.outputInfoToString(OutputInfo.CSVOutputInfo),
 							new MatrixCharacteristics(oparams.getNumRows(), oparams.getNumCols(), -1, -1, oparams.getNnz()), oparams.getUpdateInPlace(), 
 							false, delimLop.getStringValue(), true
 						);
@@ -2429,7 +2427,8 @@ public class Dag<N extends Lop>
 				// generate temporary filename and a variable name to hold the
 				// output produced by "rootNode"
 				oparams.setFile_name(getFilePath() + "temp" + job_id.getNextID());
-				oparams.setLabel(Lop.MATRIX_VAR_NAME_PREFIX + var_index.getNextID());
+				oparams.setLabel( (node.getDataType()==DataType.MATRIX ? Lop.MATRIX_VAR_NAME_PREFIX :
+						Lop.FRAME_VAR_NAME_PREFIX) + var_index.getNextID());
 
 				// generate an instruction that creates a symbol table entry for the new variable
 				//String createInst = prepareVariableInstruction("createvar", node);
@@ -2439,7 +2438,7 @@ public class Dag<N extends Lop>
 				Instruction createvarInst = VariableCPInstruction.prepareCreateVariableInstruction(
 									        oparams.getLabel(),
 											oparams.getFile_name(), 
-											true, 
+											true, node.getDataType(),
 											OutputInfo.outputInfoToString(getOutputInfo(node, false)),
 											new MatrixCharacteristics(oparams.getNumRows(), oparams.getNumCols(), rpb, cpb, oparams.getNnz()),
 											oparams.getUpdateInPlace()
@@ -2471,7 +2470,7 @@ public class Dag<N extends Lop>
 						Instruction createvarInst = VariableCPInstruction.prepareCreateVariableInstruction(
 								fnOutParams.getLabel(),
 								getFilePath() + fnOutParams.getLabel(), 
-								true, 
+								true, fnOut.getDataType(),
 								OutputInfo.outputInfoToString(getOutputInfo(fnOut, false)),
 								new MatrixCharacteristics(fnOutParams.getNumRows(), fnOutParams.getNumCols(), (int)fnOutParams.getRowsInBlock(), (int)fnOutParams.getColsInBlock(), fnOutParams.getNnz()),
 								oparams.getUpdateInPlace()
@@ -2587,7 +2586,7 @@ public class Dag<N extends Lop>
 						Instruction createvarInst = VariableCPInstruction.prepareCreateVariableInstruction(
 													tempVarName, 
 													tempFileName, 
-													true, 
+													true, node.getDataType(),
 													OutputInfo.outputInfoToString(out.getOutInfo()), 
 													new MatrixCharacteristics(oparams.getNumRows(), oparams.getNumCols(), rpb, cpb, oparams.getNnz()),
 													oparams.getUpdateInPlace()
@@ -2697,7 +2696,7 @@ public class Dag<N extends Lop>
 							createvarInst= VariableCPInstruction.prepareCreateVariableInstruction(
 													oparams.getLabel(), 
 													tempFileName, 
-													false, 
+													false, node.getDataType(),
 													OutputInfo.outputInfoToString(getOutputInfo(node, false)), 
 													new MatrixCharacteristics(oparams.getNumRows(), oparams.getNumCols(), rpb, cpb, oparams.getNnz()),
 													oparams.getUpdateInPlace()
@@ -2725,7 +2724,7 @@ public class Dag<N extends Lop>
 							createvarInst= VariableCPInstruction.prepareCreateVariableInstruction(
 									                oparams.getLabel(), 
 									                fnameStr, 
-									                false, 
+									                false, node.getDataType(),
 									                OutputInfo.outputInfoToString(getOutputInfo(node, false)), 
 									                new MatrixCharacteristics(oparams.getNumRows(), oparams.getNumCols(), rpb, cpb, oparams.getNnz()),
 													oparams.getUpdateInPlace()

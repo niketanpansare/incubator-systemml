@@ -20,21 +20,29 @@
 package org.apache.sysml.runtime.controlprogram.caching;
 
 
+import java.io.IOException;
+
+import org.apache.commons.lang.mutable.MutableBoolean;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
+import org.apache.sysml.runtime.io.FrameReader;
+import org.apache.sysml.runtime.io.FrameReaderFactory;
+import org.apache.sysml.runtime.io.FrameWriter;
+import org.apache.sysml.runtime.io.FrameWriterFactory;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixDimensionsMetaData;
+import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.MetaData;
 import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
+import org.apache.sysml.runtime.matrix.data.OutputInfo;
 
 public class FrameObject extends CacheableData<FrameBlock>
 {
 	private static final long serialVersionUID = 1755082174281927785L;
 
-	/** Holds meta data on frame characteristics (required for nrow etc)*/
-	private MetaData _metaData = null;
-	
 	/**
 	 * 
 	 */
@@ -70,22 +78,8 @@ public class FrameObject extends CacheableData<FrameBlock>
 	public FrameObject(FrameObject fo) {
 		super(fo);
 	}
-	
-	@Override
-	public void setMetaData(MetaData md) {
-		_metaData = md;
-	}
-	
-	@Override
-	public MetaData getMetaData() {
-		return _metaData;
-	}
 
 	@Override
-	public void removeMetaData() {
-		_metaData = null;
-	}
-	
 	public void refreshMetaData() 
 		throws CacheException
 	{
@@ -96,92 +90,75 @@ public class FrameObject extends CacheableData<FrameBlock>
 		mc.setDimension( _data.getNumRows(),_data.getNumColumns() );	
 	}
 	
-	////////////////////////////////////
-	// high-level cache API (pseudo-integrated)
+	/**
+	 * 
+	 * @return
+	 */
+	public long getNumRows() {
+		MatrixCharacteristics mc = getMatrixCharacteristics();
+		return mc.getRows();
+	}
 
+	/**
+	 * 
+	 * @return
+	 */
+	public long getNumColumns() {
+		MatrixCharacteristics mc = getMatrixCharacteristics();
+		return mc.getCols();
+	}
 
 	@Override
-	public FrameBlock acquireRead() 
-		throws CacheException 
+	protected FrameBlock readBlobFromCache(String fname) throws IOException {
+		return (FrameBlock)LazyWriteBuffer.readBlock(fname, false);
+	}
+
+	@Override
+	protected FrameBlock readBlobFromHDFS(String fname, long rlen, long clen)
+		throws IOException 
 	{
-		//read in=memory frame if necessary
-		if( _data == null ) {
-			// TODO @Arvind: please integrate readers here for now
+		MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
+		MatrixCharacteristics mc = iimd.getMatrixCharacteristics();
+		
+		FrameBlock data = null;
+		try {
+			FrameReader reader = FrameReaderFactory.createFrameReader(
+					iimd.getInputInfo());
+			data = reader.readFrameFromHDFS(fname, mc.getRows(), mc.getCols()); 
 		}
-		
-		return _data;
+		catch( DMLRuntimeException ex ) {
+			throw new IOException(ex);
+		}
+			
+		//sanity check correct output
+		if( data == null )
+			throw new IOException("Unable to load frame from file: "+fname);
+						
+		return data;
 	}
 
 	@Override
-	public FrameBlock acquireModify() 
-		throws CacheException 
+	protected FrameBlock readBlobFromRDD(RDDObject rdd, MutableBoolean status)
+			throws IOException 
 	{
-		return _data;
+		//TODO support for distributed frame representations
+		throw new IOException("Not implemented yet.");
 	}
 
 	@Override
-	public FrameBlock acquireModify(FrameBlock newData) 
-		throws CacheException 
+	protected void writeBlobToHDFS(String fname, String ofmt, int rep, FileFormatProperties fprop) 
+		throws IOException, DMLRuntimeException 
 	{
-		//set data and update meta data
-		_data = newData;
-		refreshMetaData();
-		
-		return _data;
+		OutputInfo oinfo = OutputInfo.stringToOutputInfo(ofmt);
+		FrameWriter writer = FrameWriterFactory.createFrameWriter(oinfo);
+		writer.writeFrameToHDFS(_data, fname, getNumRows(), getNumColumns());
 	}
 
 	@Override
-	public void release() 
-		throws CacheException 
+	protected void writeBlobFromRDDtoHDFS(RDDObject rdd, String fname, String ofmt) 
+		throws IOException, DMLRuntimeException 
 	{
-		//do nothing
-	}
-
-	@Override
-	public void clearData() 
-		throws CacheException 
-	{
-		if( isCleanupEnabled() )
-			_data = null;
-	}
-
-	@Override
-	public void exportData(String fName, String outputFormat, int replication, FileFormatProperties formatProperties) 
-		throws CacheException 
-	{
-		// TODO @Arvind: please integrate writers here for now		
-	}
-	
-	////////////////////////////////////
-	// currently unsupported caching api
-	
-	@Override
-	protected boolean isBlobPresent() {
-		throw new RuntimeException("Caching not implemented yet for FrameObject.");
-	}
-
-	@Override
-	protected void evictBlobFromMemory(FrameBlock mb) throws CacheException {
-		throw new RuntimeException("Caching not implemented yet for FrameObject.");
-	}
-
-	@Override
-	protected void restoreBlobIntoMemory() throws CacheException {
-		throw new RuntimeException("Caching not implemented yet for FrameObject.");
-	}
-
-	@Override
-	protected void freeEvictedBlob() {
-		throw new RuntimeException("Caching not implemented yet for FrameObject.");
-	}
-
-	@Override
-	protected boolean isBelowCachingThreshold() {
-		throw new RuntimeException("Caching not implemented yet for FrameObject.");
-	}
-
-	@Override
-	public String getDebugName() {
-		throw new RuntimeException("Caching not implemented yet for FrameObject.");
+		//TODO support for distributed frame representations
+		throw new IOException("Not implemented yet.");
 	}
 }

@@ -57,7 +57,6 @@ import org.apache.sysml.udf.ExternalFunctionInvocationInstruction;
 import org.apache.sysml.udf.FunctionParameter;
 import org.apache.sysml.udf.Matrix;
 import org.apache.sysml.udf.PackageFunction;
-import org.apache.sysml.udf.PackageRuntimeException;
 import org.apache.sysml.udf.Scalar;
 import org.apache.sysml.udf.FunctionParameter.FunctionParameterType;
 import org.apache.sysml.udf.BinaryObject;
@@ -182,7 +181,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 			}
 		}
 		catch (Exception e){
-			throw new PackageRuntimeException(this.printBlockErrorLocation() + "Error exporting input variables to HDFS", e);
+			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error exporting input variables to HDFS", e);
 		}
 		
 		// convert block to cell
@@ -194,7 +193,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 				this.executeInstructions(tempInst,ec);
 			} catch (Exception e) {
 				
-				throw new PackageRuntimeException(this.printBlockErrorLocation() + "Error executing "
+				throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error executing "
 						+ tempInst.toString(), e);
 			}
 		}
@@ -207,7 +206,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 					executeInstruction(ec, (ExternalFunctionInvocationInstruction) _inst.get(i));
 			} 
 			catch(Exception e) {
-				throw new PackageRuntimeException(this.printBlockErrorLocation() + 
+				throw new DMLRuntimeException(this.printBlockErrorLocation() + 
 						"Failed to execute instruction " + _inst.get(i).toString(), e);
 			}
 		}
@@ -222,7 +221,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 				this.executeInstructions(tempInst, ec);
 			} catch (Exception e) {
 				
-				throw new PackageRuntimeException(this.printBlockErrorLocation() + "Failed to execute instruction "
+				throw new DMLRuntimeException(this.printBlockErrorLocation() + "Failed to execute instruction "
 						+ cell2BlockInst.toString(), e);
 			}
 		}
@@ -238,7 +237,6 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	 * @param params
 	 * @return
 	 */
-
 	protected String getParameterString(ArrayList<DataIdentifier> params) {
 		String parameterString = "";
 
@@ -292,7 +290,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 		// class name cannot be null, however, configFile and execLocation can
 		// be null
 		if (className == null)
-			throw new PackageRuntimeException(this.printBlockErrorLocation() + ExternalFunctionStatement.CLASS_NAME + " not provided!");
+			throw new RuntimeException(this.printBlockErrorLocation() + ExternalFunctionStatement.CLASS_NAME + " not provided!");
 
 		// assemble input and output param strings
 		String inputParameterString = getParameterString(getInputParams());
@@ -394,15 +392,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 					}
 					// create metadata instructions to populate symbol table 
 					// with variables that hold blocked matrices
-					
-			  		/*StringBuilder mtdInst = new StringBuilder();
-					mtdInst.append("CP" + Lops.OPERAND_DELIMITOR + "createvar");
-			 		mtdInst.append(Lops.OPERAND_DELIMITOR + outLabels.get(i) + Lops.DATATYPE_PREFIX + matrices.get(i).getDataType() + Lops.VALUETYPE_PREFIX + matrices.get(i).getValueType());
-			  		mtdInst.append(Lops.OPERAND_DELIMITOR + outputs[i] + Lops.DATATYPE_PREFIX + DataType.SCALAR + Lops.VALUETYPE_PREFIX + ValueType.STRING);
-			  		mtdInst.append(Lops.OPERAND_DELIMITOR + OutputInfo.outputInfoToString(OutputInfo.BinaryBlockOutputInfo) ) ;
-					c2binst.add(CPInstructionParser.parseSingleInstruction(mtdInst.toString()));*/
-					Instruction createInst = VariableCPInstruction.prepareCreateVariableInstruction(outLabels.get(i), outputs[i], false, OutputInfo.outputInfoToString(OutputInfo.BinaryBlockOutputInfo));
-					
+					Instruction createInst = VariableCPInstruction.prepareCreateMatrixVariableInstruction(outLabels.get(i), outputs[i], false, OutputInfo.outputInfoToString(OutputInfo.BinaryBlockOutputInfo));
 					createInst.setLocation(matrices.get(i));
 					
 					c2binst.add(createInst);
@@ -427,7 +417,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 					//c2binst.add(CPInstructionParser.parseSingleInstruction("CP" + Lops.OPERAND_DELIMITOR + "cpvar"+Lops.OPERAND_DELIMITOR+ outLabels.get(i) + Lops.OPERAND_DELIMITOR + matrices.get(i).getName()));
 				}
 			} catch (Exception e) {
-				throw new PackageRuntimeException(this.printBlockErrorLocation() + "error generating instructions", e);
+				throw new RuntimeException(this.printBlockErrorLocation() + "error generating instructions", e);
 			}
 			
 			//LOGGING instructions
@@ -516,16 +506,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 					}
 					// create metadata instructions to populate symbol table 
 					// with variables that hold unblocked matrices
-				 	
-					/*StringBuilder mtdInst = new StringBuilder();
-					mtdInst.append("CP" + Lops.OPERAND_DELIMITOR + "createvar");
-						mtdInst.append(Lops.OPERAND_DELIMITOR + outLabels.get(i) + Lops.DATATYPE_PREFIX + matrices.get(i).getDataType() + Lops.VALUETYPE_PREFIX + matrices.get(i).getValueType());
-				 		mtdInst.append(Lops.OPERAND_DELIMITOR + outputs[i] + Lops.DATATYPE_PREFIX + DataType.SCALAR + Lops.VALUETYPE_PREFIX + ValueType.STRING);
-				 		mtdInst.append(Lops.OPERAND_DELIMITOR + OutputInfo.outputInfoToString(OutputInfo.TextCellOutputInfo) ) ;
-					b2cinst.add(CPInstructionParser.parseSingleInstruction(mtdInst.toString()));*/
-					
-			 		Instruction createInst = VariableCPInstruction.prepareCreateVariableInstruction(outLabels.get(i), outputs[i], false, OutputInfo.outputInfoToString(OutputInfo.TextCellOutputInfo));
-			 		
+				 	Instruction createInst = VariableCPInstruction.prepareCreateMatrixVariableInstruction(outLabels.get(i), outputs[i], false, OutputInfo.outputInfoToString(OutputInfo.TextCellOutputInfo));			 		
 			 		createInst.setLocation(matrices.get(i));
 			 		
 			 		b2cinst.add(createInst);
@@ -550,7 +531,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 						b2cinst.add(rmInst);
 				}
 			} catch (Exception e) {
-				throw new PackageRuntimeException(e);
+				throw new RuntimeException(e);
 			}
 		
 			//LOG instructions
@@ -565,31 +546,14 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 		
 		//BEGIN FUNCTION PATCH
 		if( !matricesNoReblock.isEmpty() )
-		{
-			//if( b2cinst==null )
-			//	b2cinst = new ArrayList<Instruction>();
-			
+		{	
 			for( int i=0; i<matricesNoReblock.size(); i++ )
 			{
 				String scratchSpaceLoc = ConfigurationManager.getScratchSpace();
-				
-				try{
-					String filename = scratchSpaceLoc +
+				String filename = scratchSpaceLoc +
 							          Lop.FILE_SEPARATOR + Lop.PROCESS_PREFIX + DMLScript.getUUID() + Lop.FILE_SEPARATOR + 
 							           _otherParams.get(ExternalFunctionStatement.CLASS_NAME) + _runID + "_" + i + "Input";
-					//String outLabel = matricesNoReblock.get(i).getName()+"_extFnInput";
-					//Instruction createInst = VariableCPInstruction.prepareCreateVariableInstruction(outLabel, filename, false, OutputInfo.outputInfoToString(OutputInfo.TextCellOutputInfo));
-					//Instruction cpInst = VariableCPInstruction.prepareCopyInstruction( matricesNoReblock.get(i).getName(), outLabel);
-					
-					unBlockedFileNames.put(matricesNoReblock.get(i).getName(), filename); //
-					
-					//b2cinst.add(createInst);
-					//b2cinst.add(cpInst);
-				}
-				catch (Exception e) {
-					throw new PackageRuntimeException(e);
-				}
-							
+				unBlockedFileNames.put(matricesNoReblock.get(i).getName(), filename); 			
 			}
 		}
 		//END FUNCTION PATCH
@@ -612,7 +576,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 		String configFile = inst.getConfigFile();
 
 		if (className == null)
-			throw new PackageRuntimeException(this.printBlockErrorLocation() + "Class name can't be null");
+			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Class name can't be null");
 
 		// create instance of package function.
 		Object o;
@@ -623,11 +587,11 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 		} 
 		catch (Exception e) 
 		{
-			throw new PackageRuntimeException(this.printBlockErrorLocation() + "Error generating package function object " ,e );
+			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error generating package function object " ,e );
 		}
 
 		if (!(o instanceof PackageFunction))
-			throw new PackageRuntimeException(this.printBlockErrorLocation() + "Class is not of type PackageFunction");
+			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Class is not of type PackageFunction");
 
 		PackageFunction func = (PackageFunction) o;
 
@@ -659,7 +623,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 		// make sure they are of equal size first
 
 		if (outputs.size() != returnFunc.getNumFunctionOutputs()) {
-			throw new PackageRuntimeException(
+			throw new DMLRuntimeException(
 					"Number of function outputs ("+returnFunc.getNumFunctionOutputs()+") " +
 					"does not match with declaration ("+outputs.size()+").");
 		}
@@ -677,7 +641,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 
 				if (!(tokens.get(0).equals(getFunctionParameterDataTypeString(FunctionParameterType.Matrix)))
 						|| !(tokens.get(2).equals(getMatrixValueTypeString(m.getValueType())))) {
-					throw new PackageRuntimeException(
+					throw new DMLRuntimeException(
 							"Function output '"+outputs.get(i)+"' does not match with declaration.");
 				}
 
@@ -685,11 +649,6 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 				String varName = tokens.get(1);
 				MatrixObject newVar = createOutputMatrixObject( m ); 
 				newVar.setVarName(varName);
-				
-				/* cleanup not required because done at central position (FunctionCallCPInstruction)
-				MatrixObjectNew oldVar = (MatrixObjectNew)getVariable(varName);
-				if( oldVar!=null )
-					oldVar.clearData();*/
 				
 				//getVariables().put(varName, newVar); //put/override in local symbol table
 				ec.setVariable(varName, newVar);
@@ -703,7 +662,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 				if (!tokens.get(0).equals(getFunctionParameterDataTypeString(FunctionParameterType.Scalar))
 						|| !tokens.get(2).equals(
 								getScalarValueTypeString(s.getScalarType()))) {
-					throw new PackageRuntimeException(
+					throw new DMLRuntimeException(
 							"Function output '"+outputs.get(i)+"' does not match with declaration.");
 				}
 
@@ -727,7 +686,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 					scalarObject = new StringObject(tokens.get(1), s.getValue());
 					break;
 				default:
-					throw new PackageRuntimeException(
+					throw new DMLRuntimeException(
 							"Unknown scalar value type '"+type+"' of output '"+outputs.get(i)+"'.");
 				}
 
@@ -738,17 +697,17 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 
 			if (returnFunc.getFunctionOutput(i).getType() == FunctionParameterType.Object) {
 				if (!tokens.get(0).equals(getFunctionParameterDataTypeString(FunctionParameterType.Object))) {
-					throw new PackageRuntimeException(
+					throw new DMLRuntimeException(
 							"Function output '"+outputs.get(i)+"' does not match with declaration.");
 				}
 
-				throw new PackageRuntimeException(
+				throw new DMLRuntimeException(
 						"Object types not yet supported");
 
 				// continue;
 			}
 
-			throw new PackageRuntimeException(
+			throw new DMLRuntimeException(
 					"Unknown data type '"+returnFunc.getFunctionOutput(i).getType()+"' " +
 					"of output '"+outputs.get(i)+"'.");
 		}
@@ -768,19 +727,11 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	 * @param scalarType
 	 * @return
 	 */
-
 	protected String getScalarValueTypeString(ScalarValueType scalarType) {
-
-		if (scalarType.equals(ScalarValueType.Double))
-			return "Double";
-		if (scalarType.equals(ScalarValueType.Integer))
-			return "Integer";
-		if (scalarType.equals(ScalarValueType.Boolean))
-			return "Boolean";
 		if (scalarType.equals(ScalarValueType.Text))
 			return "String";
-
-		throw new PackageRuntimeException("Unknown scalar value type");
+		else
+			return scalarType.toString();
 	}
 
 	/**
@@ -791,15 +742,12 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	 * @param metaData
 	 * @param variableMapping
 	 */
-	protected void setupInputs (PackageFunction func, String inputParams,
-			LocalVariableMap variableMapping) {
-
+	protected void setupInputs (PackageFunction func, String inputParams, LocalVariableMap variableMapping) {
 		ArrayList<String> inputs = getParameters(inputParams);
 		ArrayList<FunctionParameter> inputObjects = getInputObjects(inputs, variableMapping);
 		func.setNumFunctionInputs(inputObjects.size());
 		for (int i = 0; i < inputObjects.size(); i++)
 			func.setInput(inputObjects.get(i), i);
-
 	}
 
 	/**
@@ -868,17 +816,10 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	 * @return
 	 */
 	protected ScalarValueType getScalarValueType(String string) {
-		if (string.equals("Double"))
-			return ScalarValueType.Double;
-		if (string.equals("Integer"))
-			return ScalarValueType.Integer;
-		if (string.equals("Boolean"))
-			return ScalarValueType.Boolean;
 		if (string.equals("String"))
 			return ScalarValueType.Text;
-
-		throw new PackageRuntimeException("Unknown scalar type");
-
+		else 
+			return ScalarValueType.valueOf(string);
 	}
 
 	/**
@@ -887,15 +828,8 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	 * @param t
 	 * @return
 	 */
-
 	protected String getMatrixValueTypeString(Matrix.ValueType t) {
-		if (t.equals(Matrix.ValueType.Double))
-			return "Double";
-
-		if (t.equals(Matrix.ValueType.Integer))
-			return "Integer";
-
-		throw new PackageRuntimeException("Unknown matrix value type");
+		return t.toString();
 	}
 
 	/**
@@ -904,16 +838,8 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	 * @param string
 	 * @return
 	 */
-
-	protected org.apache.sysml.udf.Matrix.ValueType getMatrixValueType(String string) {
-
-		if (string.equals("Double"))
-			return Matrix.ValueType.Double;
-		if (string.equals("Integer"))
-			return Matrix.ValueType.Integer;
-
-		throw new PackageRuntimeException("Unknown matrix value type");
-
+	protected Matrix.ValueType getMatrixValueType(String string) {
+		return Matrix.ValueType.valueOf(string); 
 	}
 
 	/**
@@ -950,8 +876,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 		if (d.equals(DataType.OBJECT))
 			return "Object";
 
-		throw new PackageRuntimeException("Should never come here");
-
+		throw new RuntimeException("Should never come here");
 	}
 
 	/**
@@ -961,16 +886,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	 * @return
 	 */
 	protected String getFunctionParameterDataTypeString(FunctionParameterType t) {
-		if (t.equals(FunctionParameterType.Matrix))
-			return "Matrix";
-
-		if (t.equals(FunctionParameterType.Scalar))
-			return "Scalar";
-
-		if (t.equals(FunctionParameterType.Object))
-			return "Object";
-
-		throw new PackageRuntimeException("Should never come here");
+		return t.toString();
 	}
 
 	/**
@@ -992,7 +908,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 		if (v.equals(ValueType.STRING))
 			return "String";
 
-		throw new PackageRuntimeException("Should never come here");
+		throw new RuntimeException("Should never come here");
 	}
 
 	public void printMe() {
@@ -1002,8 +918,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 		}
 	}
 	
-	public HashMap<String,String> getOtherParams()
-	{
+	public HashMap<String,String> getOtherParams() {
 		return _otherParams;
 	}
 	

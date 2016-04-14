@@ -131,7 +131,7 @@ public class DataExpression extends DataIdentifier
 	}
 	
 	private static ArrayList<ParameterExpression> getMatrixParametersForTensorFn(DataExpression dataExpr, ArrayList<ParameterExpression> passedParamExprs,
-			String filename, int blp, int bcp, int elp, int ecp) throws DMLParseException {
+			String filename, int blp, int bcp, int elp, int ecp) throws LanguageException {
 		ArrayList<ParameterExpression> newPassedParamExprs = new ArrayList<ParameterExpression>();
 		for(ParameterExpression currExpr : passedParamExprs) {
 			if(currExpr.getName() != null && currExpr.getName().equals("shape")) {
@@ -139,7 +139,7 @@ public class DataExpression extends DataIdentifier
 					// Replace shape by rows and columns
 					ArrayList<Expression> shape = ((ExpressionList) currExpr.getExpr()).getValue();
 					if(shape.size() < 2) {
-						throw new DMLParseException(filename, dataExpr.printErrorLocation(blp, bcp) 
+						throw new LanguageException(filename, dataExpr.printErrorLocation(blp, bcp) 
 								+ "only tensors of shape > 1 supported");
 					}
 					
@@ -155,7 +155,7 @@ public class DataExpression extends DataIdentifier
 					newPassedParamExprs.add(new ParameterExpression("cols", cols));
 				}
 				else {
-					throw new DMLParseException(filename, dataExpr.printErrorLocation(blp, bcp) 
+					throw new LanguageException(filename, dataExpr.printErrorLocation(blp, bcp) 
 							+ "tensor method must have at least shape parameter");
 				}
 			}
@@ -167,8 +167,8 @@ public class DataExpression extends DataIdentifier
 	}
 	
 	public static DataExpression getDataExpression(String functionName, ArrayList<ParameterExpression> passedParamExprs, 
-				String filename, int blp, int bcp, int elp, int ecp) throws DMLParseException {
-		
+				String filename, int blp, int bcp, int elp, int ecp) throws LanguageException 
+	{	
 		if (functionName == null || passedParamExprs == null)
 			return null;
 		
@@ -193,14 +193,13 @@ public class DataExpression extends DataIdentifier
 			
 			// validate the filename is the first parameter
 			if (passedParamExprs.size() < 1){
-				// throw exception -- must be filename as first parameter
-				throw new DMLParseException(dataExpr.getFilename(), dataExpr.printErrorLocation(blp, bcp) + "read method must have at least filename parameter");
+				dataExpr.raiseValidateError("read method must have at least filename parameter", false);
 			}
 			
 			ParameterExpression pexpr = (passedParamExprs.size() == 0) ? null : passedParamExprs.get(0);
 			
 			if ( (pexpr != null) &&  (!(pexpr.getName() == null) || (pexpr.getName() != null && pexpr.getName().equalsIgnoreCase(DataExpression.IO_FILENAME)))){
-				throw new DMLParseException(dataExpr.getFilename(), dataExpr.printErrorLocation(blp, bcp) + "first parameter to read statement must be filename");
+				dataExpr.raiseValidateError("first parameter to read statement must be filename");
 			} else if( pexpr != null ){
 				dataExpr.addVarParam(DataExpression.IO_FILENAME, pexpr.getExpr());
 			}
@@ -211,7 +210,7 @@ public class DataExpression extends DataIdentifier
 				Expression currExpr = passedParamExprs.get(i).getExpr();
 				
 				if (dataExpr.getVarParam(currName) != null){
-					throw new DMLParseException(dataExpr.getFilename(), currExpr.printErrorLocation() + "attempted to add IOStatement parameter " + currName + " more than once");
+					dataExpr.raiseValidateError("attempted to add IOStatement parameter " + currName + " more than once");
 				}
 				// verify parameter names for read function
 				boolean isValidName = false;
@@ -220,7 +219,7 @@ public class DataExpression extends DataIdentifier
 						isValidName = true;
 				}
 				if (!isValidName){
-					throw new DMLParseException(dataExpr.getFilename(), currExpr.printErrorLocation() + "attempted to add invalid read statement parameter " + currName);
+					dataExpr.raiseValidateError("attempted to add invalid read statement parameter " + currName);
 				}	
 				dataExpr.addVarParam(currName, currExpr);
 			}				
@@ -236,9 +235,7 @@ public class DataExpression extends DataIdentifier
 				String pname = currExpr.getName();
 				Expression pexpr = currExpr.getExpr();
 				if (pname == null){
-					throw new DMLParseException(dataExpr.getFilename(), dataExpr.printErrorLocation(blp, bcp) + "for Rand Statment all arguments must be named parameters");	
-					//LOG.error(dataExpr.printErrorLocation(beginLine, beginColumn) + "for Rand Statment all arguments must be named parameters");
-					//throw new ParseException(dataExpr.printErrorLocation(beginLine, beginColumn) + "for Rand Statment all arguments must be named parameters");	
+					dataExpr.raiseValidateError("for Rand Statment all arguments must be named parameters");	
 				}
 				dataExpr.addRandExprParam(pname, pexpr); 
 			}
@@ -266,16 +263,16 @@ public class DataExpression extends DataIdentifier
 
 			// check whether named or unnamed parameters are used
 			if (passedParamExprs.size() < 3){
-				throw new DMLParseException(dataExpr.getFilename(), dataExpr.printErrorLocation(blp, bcp) + "for matrix statement, must specify at least 3 arguments (in order): data, rows, cols");
+				dataExpr.raiseValidateError("for matrix statement, must specify at least 3 arguments (in order): data, rows, cols");
 			}
 			
 			if (unnamedParamCount > 1){
 				
 				if (namedParamCount > 0)
-					throw new DMLParseException(dataExpr.getFilename(), dataExpr.printErrorLocation(blp, bcp) + "for matrix statement, cannot mix named and unnamed parameters");
+					dataExpr.raiseValidateError("for matrix statement, cannot mix named and unnamed parameters");
 				
 				if (unnamedParamCount < 3)
-					throw new DMLParseException(dataExpr.getFilename(), dataExpr.printErrorLocation(blp, bcp) + "for matrix statement, must specify at least 3 arguments (in order): data, rows, cols");
+					dataExpr.raiseValidateError("for matrix statement, must specify at least 3 arguments (in order): data, rows, cols");
 				
 
 				// assume: data, rows, cols, [byRow], [dimNames]
@@ -290,7 +287,7 @@ public class DataExpression extends DataIdentifier
 					dataExpr.addMatrixExprParam(DataExpression.RAND_DIMNAMES,passedParamExprs.get(4).getExpr());
 				
 				if (unnamedParamCount > 5)
-					throw new DMLParseException(dataExpr.getFilename(), dataExpr.printErrorLocation(blp, bcp) + "for matrix statement, at most 5 arguments supported (in order): data, rows, cols, byrow, dimname");
+					dataExpr.raiseValidateError("for matrix statement, at most 5 arguments supported (in order): data, rows, cols, byrow, dimname");
 								   
 				
 			} else {
@@ -298,7 +295,7 @@ public class DataExpression extends DataIdentifier
 				ParameterExpression firstParam = passedParamExprs.get(0);
 				if (firstParam.getName() != null && !firstParam.getName().equals(DataExpression.RAND_DATA)){
 					// throw exception -- must be filename as first parameter
-					throw new DMLParseException(dataExpr.getFilename(), dataExpr.printErrorLocation(blp, bcp) + "matrix method must have data parameter as first parameter or unnamed parameter");
+					dataExpr.raiseValidateError("matrix method must have data parameter as first parameter or unnamed parameter");
 				} else {
 					dataExpr.addMatrixExprParam(DataExpression.RAND_DATA, passedParamExprs.get(0).getExpr());
 				}
@@ -306,7 +303,7 @@ public class DataExpression extends DataIdentifier
 				for (int i=1; i<passedParamExprs.size(); i++){
 					if (passedParamExprs.get(i).getName() == null){
 						// throw exception -- cannot mix named and unnamed parameters
-						throw new DMLParseException(dataExpr.getFilename(), dataExpr.printErrorLocation(blp, bcp) + "for matrix statement, cannot mix named and unnamed parameters, only data parameter can be unnammed");
+						dataExpr.raiseValidateError("for matrix statement, cannot mix named and unnamed parameters, only data parameter can be unnammed");
 					} else {
 						dataExpr.addMatrixExprParam(passedParamExprs.get(i).getName(), passedParamExprs.get(i).getExpr()); 	
 					}
@@ -322,7 +319,8 @@ public class DataExpression extends DataIdentifier
 	
 	} // end method getBuiltinFunctionExpression
 	
-	public void addRandExprParam(String paramName, Expression paramValue) throws DMLParseException
+	public void addRandExprParam(String paramName, Expression paramValue) 
+		throws LanguageException
 	{
 		// check name is valid
 		boolean found = false;
@@ -335,15 +333,14 @@ public class DataExpression extends DataIdentifier
 			}
 		}
 		if (!found){
-			
-			throw new DMLParseException(paramValue.getFilename(), paramValue.printErrorLocation() + "unexpected parameter \"" + paramName +
+			raiseValidateError("unexpected parameter \"" + paramName +
 					"\". Legal parameters for Rand statement are " 
 					+ "(capitalization-sensitive): " 	+ RAND_ROWS 	
 					+ ", " + RAND_COLS		+ ", " + RAND_MIN + ", " + RAND_MAX  	
 					+ ", " + RAND_SPARSITY + ", " + RAND_SEED     + ", " + RAND_PDF + ", " + RAND_LAMBDA);
 		}
 		if (getVarParam(paramName) != null){
-			throw new DMLParseException(paramValue.getFilename(), paramValue.printErrorLocation() + "attempted to add Rand statement parameter " + paramValue + " more than once");
+			raiseValidateError("attempted to add Rand statement parameter " + paramValue + " more than once");
 		}
 		// Process the case where user provides double values to rows or cols
 		if (paramName.equals(RAND_ROWS) && paramValue instanceof DoubleIdentifier){
@@ -363,7 +360,8 @@ public class DataExpression extends DataIdentifier
 		
 	}
 	
-	public void addMatrixExprParam(String paramName, Expression paramValue) throws DMLParseException
+	public void addMatrixExprParam(String paramName, Expression paramValue) 
+		throws LanguageException
 	{
 		// check name is valid
 		boolean found = false;
@@ -376,14 +374,13 @@ public class DataExpression extends DataIdentifier
 		}
 		
 		if (!found){
-			
-			throw new DMLParseException(paramValue.getFilename(), paramValue.printErrorLocation() + "unexpected parameter \"" + paramName +
+			raiseValidateError("unexpected parameter \"" + paramName +
 					"\". Legal parameters for  matrix statement are " 
 					+ "(capitalization-sensitive): " 	+ RAND_DATA + ", " + RAND_ROWS 	
 					+ ", " + RAND_COLS		+ ", " + RAND_BY_ROW);
 		}
-		if (getVarParam(paramName) != null){
-			throw new DMLParseException(paramValue.getFilename(), paramValue.printErrorLocation() + "attempted to add matrix statement parameter " + paramValue + " more than once");
+		if (getVarParam(paramName) != null) {
+			raiseValidateError("attempted to add matrix statement parameter " + paramValue + " more than once");
 		}
 		// Process the case where user provides double values to rows or cols
 		if (paramName.equals(RAND_ROWS) && paramValue instanceof DoubleIdentifier){
@@ -957,11 +954,6 @@ public class DataExpression extends DataIdentifier
 					} else if (!isCSV && ((dim1 != null) || (dim2 != null))) {
 						raiseValidateError("Partial dimension information in read statement", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 					}	
-				}
-				
-				// Table must be in CSV format
-				if ( !isMatrix && !getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase("csv") ) {
-					raiseValidateError("Input data of type 'table' must be in CSV format. Invalid format '" + getVarParam(FORMAT_TYPE)+ "' in statement: " + this.toString(), conditional);
 				}
 				
 				// initialize block dimensions to UNKNOWN 

@@ -38,6 +38,7 @@ import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysml.runtime.util.IndexRange;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 /**
  * 
@@ -74,6 +75,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	public FrameBlock(int ncols, ValueType vt) {
 		this();
 		_schema.addAll(Collections.nCopies(ncols, vt));
+		_colnames = createColNames(ncols);
 	}
 	
 	public FrameBlock(List<ValueType> schema) {
@@ -391,6 +393,10 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	////////
 	// CacheBlock implementation
 	
+	public long getInMemorySize() {
+		return 1;
+	}
+	
 	@Override
 	public long getExactSerializedSize() {
 		//TODO implement getExactSizeOnDisk();
@@ -401,6 +407,11 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	public boolean isShallowSerialize() {
 		//shallow serialize since frames always dense
 		return true;
+	}
+	
+	@Override
+	public void compactEmptyBlock() {
+		//do nothing
 	}
 	
 	///////
@@ -586,14 +597,10 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	/**
 	 * 
 	 * @param src
+	 * @throws DMLRuntimeException 
 	 */
 	public void copy(FrameBlock src) {
-		//allocate 
-		ensureAllocatedColumns(src.getNumRows());
-		
-		//actual copy 
-		for( int i=0; i<src.getNumColumns(); i++ )
-			_coldata.get(i).set(0, src.getNumRows()-1, src._coldata.get(i));
+		copy(0, src.getNumRows()-1, 0, src.getNumColumns()-1, src);
 	}
 
 	/**
@@ -603,16 +610,24 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * @param cl
 	 * @param cu
 	 * @param src
-	 * @throws DMLRuntimeException
 	 */
 	public void copy(int rl, int ru, int cl, int cu, FrameBlock src) 
-		throws DMLRuntimeException
 	{
+		//allocate columns if necessary
 		ensureAllocatedColumns(ru-rl+1);
 		
 		//copy values
-		for( int i=cl; i<=cu; i++ )
-			_coldata.get(i).set(rl, ru, src._coldata.get(i-cl));
+		for( int j=cl; j<=cu; j++ ) {
+			//special case: column memcopy 
+			if( _schema.get(j).equals(src._schema.get(j-cl)) )
+				_coldata.get(j).set(rl, ru, src._coldata.get(j-cl));
+			//general case w/ schema transformation
+			else 
+				for( int i=rl; i<=ru; i++ ) {
+					String tmp = src.get(i-rl, j)!=null ? src.get(i-rl, j).toString() : null;
+					set(i, j, UtilFunctions.stringToObject(_schema.get(j), tmp));
+				}
+		}
 	}
 		
 
