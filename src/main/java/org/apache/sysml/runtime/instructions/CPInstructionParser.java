@@ -215,9 +215,6 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "reshape_col"      , CPINSTRUCTION_TYPE.Convolution);
 		String2CPInstructionType.put( "rotate180"      , CPINSTRUCTION_TYPE.Convolution);
 		String2CPInstructionType.put( "col2im"      , CPINSTRUCTION_TYPE.Convolution);
-		String2CPInstructionType.put( "pooling_pre_reshape"      , CPINSTRUCTION_TYPE.Convolution);
-		String2CPInstructionType.put( "pooling_post_reshape"      , CPINSTRUCTION_TYPE.Convolution);
-		String2CPInstructionType.put( "pooling_backward_reshape"      , CPINSTRUCTION_TYPE.Convolution);
 		String2CPInstructionType.put( "maxpooling"      , CPINSTRUCTION_TYPE.Convolution);
 		String2CPInstructionType.put( "maxpooling_backward"      , CPINSTRUCTION_TYPE.Convolution);
 		

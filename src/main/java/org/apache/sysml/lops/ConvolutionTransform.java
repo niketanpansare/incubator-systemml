@@ -34,8 +34,6 @@ public class ConvolutionTransform extends Lop
 		RESHAPE_COL,
 		ROTATE180,
 		COL2IM,
-		POOLING_PRE_RESHAPE, POOLING_POST_RESHAPE,
-		POOLING_BACKWARD_RESHAPE,
 		MAX_POOLING,
 		MAX_POOLING_BACKWARD,
 		DIRECT_CONV2D, DIRECT_CONV2D_BACKWARD_FILTER
@@ -113,21 +111,12 @@ public class ConvolutionTransform extends Lop
 		
 		case COL2IM:
 			return "col2im";
-		
-		case POOLING_PRE_RESHAPE:
-			return "pooling_pre_reshape";
 			
 		case MAX_POOLING:
 			return "maxpooling";
 			
 		case MAX_POOLING_BACKWARD:
 			return "maxpooling_backward";
-			
-		case POOLING_POST_RESHAPE:
-			return "pooling_post_reshape";
-			
-		case POOLING_BACKWARD_RESHAPE:
-			return "pooling_backward_reshape";
 		
 		case DIRECT_CONV2D:
 			return "conv2d";

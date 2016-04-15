@@ -126,9 +126,6 @@ public class ConvolutionOp extends Hop
 			case RESHAPE_COL:
 			case ROTATE180:
 			case COL2IM:
-			case POOLING_PRE_RESHAPE:
-			case POOLING_POST_RESHAPE:
-			case POOLING_BACKWARD_RESHAPE:
 			case MAX_POOLING:
 			case MAX_POOLING_BACKWARD:
 			case DIRECT_CONV2D:
@@ -159,8 +156,7 @@ public class ConvolutionOp extends Hop
 	
 	public Lop constructConvolutionLops(ExecType et, ArrayList<Hop> inputs) throws HopsException, LopsException {
 		int expectedNumInputs = 13;
-		if(op == ConvOp.POOLING_BACKWARD_RESHAPE || op == ConvOp.MAX_POOLING_BACKWARD
-				|| op == ConvOp.DIRECT_CONV2D || op == ConvOp.DIRECT_CONV2D_BACKWARD_FILTER) {
+		if(op == ConvOp.MAX_POOLING_BACKWARD || op == ConvOp.DIRECT_CONV2D || op == ConvOp.DIRECT_CONV2D_BACKWARD_FILTER) {
 			expectedNumInputs = 14;
 		}
 		

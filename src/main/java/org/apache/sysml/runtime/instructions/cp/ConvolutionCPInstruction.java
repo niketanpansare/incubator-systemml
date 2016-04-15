@@ -242,23 +242,6 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				outputBlock = allocateDenseOutputBlock(ec, N, C * H * W);
 				col2im(matBlock, outputBlock);
 			}
-			else if (instOpcode.equalsIgnoreCase("pooling_pre_reshape")) {
-				this.input = matBlock;
-				outputBlock = allocateDenseOutputBlock(ec, N*C, H*W); 
-				pooling_pre_reshape(matBlock, outputBlock);
-			}
-			else if (instOpcode.equalsIgnoreCase("pooling_post_reshape")) {
-				this.input = matBlock;
-				outputBlock = allocateDenseOutputBlock(ec, N, C*P*Q);
-				pooling_post_reshape(matBlock, outputBlock);
-			}
-			else if (instOpcode.equalsIgnoreCase("pooling_backward_reshape")) {
-				MatrixBlock dout = ec.getMatrixInput(_in2.getName());
-				this.input = dout;
-				outputBlock = allocateOutputBlock(ec, C*R*S, N*P*Q, matBlock.getNonZeros());
-				pooling_backward_reshape(matBlock, dout, outputBlock);
-				ec.releaseMatrixInput(_in2.getName());
-			}
 			else if (instOpcode.equalsIgnoreCase("maxpooling")) {
 				this.input = matBlock;
 				// Is eligible for REUSE_NONZEROED_OUTPUT but cannot guarantee that previous output has been rmvar-ed
@@ -313,12 +296,6 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		if(Q <= 0) {
 			throw new DMLRuntimeException("Width of output patch should be zero");
 		}
-	}
-	
-	private MatrixBlock allocateOutputBlock(ExecutionContext ec, int numRowsOutput, int numColsOutput, long nnz) throws DMLRuntimeException {
-		MatrixBlock outputBlock = new MatrixBlock(numRowsOutput, numColsOutput, nnz);
-		outputBlock.setNonZeros(nnz);
-		return outputBlock;
 	}
 	
 	private MatrixBlock allocateDenseOutputBlock(ExecutionContext ec, int numRowsOutput, int numColsOutput) throws DMLRuntimeException {
@@ -447,88 +424,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			}
 		}
 	}
-
-	// Using indices (matrix of dimension 1 X NCPQ) and values (tensor of shape [N, C, P, Q])
-	// output a sparse matrix of dimension CRS X NPQ ... which is followed by col2im to output tensor of shape [N, C, H, W]
-	// TODO: Fuse these two operations together for pooling.
-	private void pooling_backward_reshape(MatrixBlock indices, MatrixBlock values, MatrixBlock outputBlock) throws DMLRuntimeException {
-		inputArray = null;
-		if (!input.isInSparseFormat())
-			inputArray = input.getDenseBlock();
 		
-		if(indices.getNumRows() != N*C*P*Q || indices.getNumColumns() != 1) {
-			throw new DMLRuntimeException("Incorrect indices in pooling_backward_reshape");
-		}
-		if(values.getNumRows() != N || values.getNumColumns() != C*P*Q) {
-			throw new DMLRuntimeException("Incorrect values in pooling_backward_reshape");
-		}
-		
-		for (int n = 0; n < N; n++) {
-			for (int c = 0; c < C; c++) {
-				for (int p = 0; p < P; p++) {
-					for (int q = 0; q < Q; q++) {
-						// index will have range [1, pool_height*pool_width]
-						int row_index = (int) (c*R*S + indices.quickGetValue(n*C*P*Q + c*P*Q + p*Q + q, 0)-1);
-						double currentVal = outputBlock.quickGetValue(row_index, n*P*Q + p*Q + q);
-						double updatedVal = currentVal + input.quickGetValue(n, c*P*Q + p*Q + q);
-						outputBlock.setValue(row_index, n*P*Q + p*Q + q, updatedVal);
-					}
-				}
-			}
-		}
-	}
-	
-	// Reshape a matrix of dimension (1, N*C*P*Q) of dimension a 4D tensor of dimension (N, C, P, Q)
-	private void pooling_post_reshape(MatrixBlock input, MatrixBlock outputBlock) throws DMLRuntimeException {
-		if(!input.isInSparseFormat()) {
-			// TODO: Do in-place update
-			double [] inputArray = input.getDenseBlock();
-			for(int i = 0; i < inputArray.length; i++) {
-				outputArray[i] = inputArray[i];
-			}
-			return;			
-		}
-		
-		if(input.getNumColumns() != N*C*P*Q || input.getNumRows() != 1) {
-			throw new DMLRuntimeException("Incorrect input dimensions in pooling_post_reshape:" + input.getNumRows() + " " + input.getNumColumns() + " " + N + " " + K*P*Q);
-		}
-		
-		for (int n = 0; n < N; n++) {
-			for (int c = 0; c < C; c++) {
-				for (int p = 0; p < P; p++) {
-					for (int q = 0; q < Q; q++) {
-						outputArray[n*C*P*Q + c*P*Q + p*Q + q] = input.quickGetValue(0, n*C*P*Q + c*P*Q + p*Q + q);
-					}
-				}
-			}
-		}
-	}
-
-	// Reshape a 4D tensor of dimension (N, C, H, W) to a 4D tensor of dimension of dimension (N*C, 1, H, W)
-	private void pooling_pre_reshape(MatrixBlock input, MatrixBlock outputBlock) throws DMLRuntimeException {
-		
-		inputArray = null;
-		if (!input.isInSparseFormat())
-			inputArray = input.getDenseBlock();
-		
-		if(input.getNumColumns() != C*H*W || input.getNumRows() != N) {
-			throw new DMLRuntimeException("Incorrect input dimensions in pooling_pre_reshape:" + input.getNumRows() + " " + input.getNumColumns() + " " + N + " " + K*P*Q);
-		}
-		
-		for (int n = 0; n < N; n++) {
-			for (int c = 0; c < C; c++) {
-				for (int h = 0; h < H; h++) {
-					for (int w = 0; w < W; w++) {		
-						if(inputArray != null)
-							outputArray[(n*C + c)*H*W + h*H + w] = inputArray[n*C*H*W + c*H*W + h*W + w];
-						else
-							outputArray[(n*C + c)*H*W + h*H + w] = input.quickGetValue(n, c*H*W + h*W + w);
-					}
-				}
-			}
-		}
-	}
-	
 	// Reshape a 4D tensor of dimension (N, K, P, Q) to matrix of dimension (K, NPQ)
 	private void rotate180(MatrixBlock input, MatrixBlock outputBlock) throws DMLRuntimeException {
 		inputArray = null;
