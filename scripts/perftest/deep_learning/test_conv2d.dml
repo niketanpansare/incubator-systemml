@@ -1,5 +1,5 @@
 # Remember to provide large enough heap size to discount the effect of garbage collections
-# For example: java -Xmx30g -Xms30g -Xmn3048m -server -jar niketan_systemml.jar -f test_conv2d.dml -explain -exec singlenode -stats
+# For example: java -Xmx30g -Xms30g -Xmn3048m -server -jar systemml-0.10.0-incubating-SNAPSHOT-standalone.jar -f test_conv2d.dml -explain -exec singlenode -stats -args 1000 1
  
 max_iterations = $1
 setup = $2
@@ -28,7 +28,8 @@ else if(setup == 4) {
 	pad = 1
 }
 imgSize = 28
-X = rand(rows=60000, cols=numChannels*imgSize*imgSize)
+n = 60000
+X = rand(rows=n, cols=numChannels*imgSize*imgSize)
 batch_size = 64
 w = rand(rows=numFilters, cols=numChannels*filterSize*filterSize)
 foo = 0
@@ -36,6 +37,7 @@ for(iter in 1:max_iterations) {
         beg = (iter * batch_size) %% n + 1
         end = min(n, beg + batch_size)
         X_batch = X[beg:end, ]
+        n_batch = nrow(X_batch)
         convOut_1 = conv2d(X_batch, w, input_shape=[n_batch,numChannels,imgSize,imgSize], filter_shape=[numFilters,numChannels,filterSize,filterSize], padding=[pad,pad], stride=[1,1])
         foo = foo + min(0.1, sum(convOut_1))
 }
