@@ -312,9 +312,6 @@ public class DMLScript
 				else if( args[i].equalsIgnoreCase("-usegpu") ) {					
 					USE_GPU = true;
 				}
-				else if( args[i].equalsIgnoreCase("-reuseoutput") ) {					
-					REUSE_NONZEROED_OUTPUT = true;
-				}
 				else if( args[i].equalsIgnoreCase("-python") ) {
 					parsePyDML = true;
 				}
@@ -982,8 +979,5 @@ public class DMLScript
 			throw new DMLException("Failed to run SystemML workspace cleanup.", ex);
 		}
 	}
-
-	
-	public static boolean REUSE_NONZEROED_OUTPUT = false;
 	
 }  

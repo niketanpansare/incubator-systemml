@@ -25,7 +25,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -42,6 +41,8 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	// private static final Log LOG = LogFactory.getLog(ConvolutionCPInstruction.class.getName());
 
 	public static boolean ALLOW_MULTI_THREADED_OPS = true;
+	// For now by default, reuse output for 
+	public static boolean REUSE_NONZEROED_OUTPUT = true;
 	
 	private CPOperand _in2; // used for pooling backward
 	private ArrayList<CPOperand> _input_shape;
@@ -210,7 +211,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				// allocateReusableDenseOutputBlock = 0.025 seconds and allocateDenseOutputBlock = 4.7 seconds
 				// For 20000 calls,
 				// allocateReusableDenseOutputBlock = 0.155 seconds and allocateDenseOutputBlock = 62.006 seconds
-				if(DMLScript.REUSE_NONZEROED_OUTPUT)
+				if(ConvolutionCPInstruction.REUSE_NONZEROED_OUTPUT)
 					outputBlock = allocateReusableNonZeroedDenseOutputBlock(ec, C * R * S, N * P * Q);
 				else
 					outputBlock = allocateDenseOutputBlock(ec, C * R * S, N * P * Q);
@@ -228,7 +229,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				checkHeightWidth(ec);
 				this.input = matBlock;
 				// Is eligible for REUSE_NONZEROED_OUTPUT and always an intermediate instruction
-				if(DMLScript.REUSE_NONZEROED_OUTPUT)
+				if(ConvolutionCPInstruction.REUSE_NONZEROED_OUTPUT)
 					outputBlock = allocateReusableNonZeroedDenseOutputBlock(ec, N * P * Q, K);
 				else
 					outputBlock = allocateDenseOutputBlock(ec, N * P * Q, K);
@@ -686,13 +687,13 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 								else
 									outputArray[localIndex] = input.quickGetValue(n, c*H*W + input_row*W + input_col);
 							}
-							else if(DMLScript.REUSE_NONZEROED_OUTPUT) {
+							else if(ConvolutionCPInstruction.REUSE_NONZEROED_OUTPUT) {
 								outputArray[localIndex] = 0;
 							}
 							input_col += stride_w;
 						}
 					} else {
-						if(DMLScript.REUSE_NONZEROED_OUTPUT) {
+						if(ConvolutionCPInstruction.REUSE_NONZEROED_OUTPUT) {
 							for(int i = localIndex; i < localIndex + Q; i++) {
 								outputArray[localIndex] = 0;
 							}
@@ -707,6 +708,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	}
 
 	private SoftReference<double[]> reuseableNonZeroedDoubleArray;
+	
 	private MatrixBlock allocateReusableNonZeroedDenseOutputBlock(ExecutionContext ec, int numRowsOutput, int numColsOutput) throws DMLRuntimeException {
 		long nnz = numRowsOutput * numColsOutput;
 		MatrixBlock outputBlock = new MatrixBlock(numRowsOutput, numColsOutput, nnz);
