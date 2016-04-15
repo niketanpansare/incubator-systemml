@@ -23,7 +23,7 @@ import java.util.Collections;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 
 import java.util.Comparator;
 
@@ -113,7 +113,6 @@ public class JCudaContext extends GPUContext {
 	        	throw new RuntimeException("ERROR: Unable to get memory information of the GPU.");
 	        }
 		}
-		
 		return (long) (availableNumBytesWithoutUtilFactor*GPU_MEMORY_UTILIZATION_FACTOR);
 	}
 	
@@ -152,23 +151,6 @@ public class JCudaContext extends GPUContext {
         return Pointer.to(new double[] { value });
     }
 	
-//	public Pointer allocateDoubleArrayOnGPU(double[] data, int N, int C, int H, int W) {
-//		Pointer ret = new Pointer();
-//		cudaMalloc(ret, N * C * H * W * Sizeof.DOUBLE);
-//		cudaMemcpy(ret, Pointer.to(data), N * C * H * W * Sizeof.DOUBLE, cudaMemcpyHostToDevice);
-//		return ret;
-//	}
-//	
-//	public double [] getDoubleArrayFromDevice(Pointer pointer, int numElements) {
-//		double [] ret = new double[numElements];
-//		cudaMemcpy(Pointer.to(ret), pointer, numElements*Sizeof.DOUBLE, cudaMemcpyDeviceToHost);
-//		return ret;
-//	}
-//	
-//	public void getDoubleArrayFromGPU(Pointer pointer, double [] ret) {
-//		cudaMemcpy(Pointer.to(ret), pointer, ret.length*Sizeof.DOUBLE, cudaMemcpyDeviceToHost);
-//	}
-	
 	public cudnnTensorDescriptor allocateTensorDescriptor(int N, int C, int H, int W) {
 		cudnnTensorDescriptor ret = new cudnnTensorDescriptor();
 		cudnnCreateTensorDescriptor(ret);
@@ -183,10 +165,19 @@ public class JCudaContext extends GPUContext {
 		cudnnSetFilterNdDescriptor(filterDesc, CUDNN_DATA_DOUBLE, 4, filterDim);
 		return filterDesc;
 	}
-
+	
 	@Override
-	public void prepare(MatrixBlock mat, boolean isInput, boolean lock)
-			throws DMLRuntimeException {
+	void acquireRead(MatrixObject mat) throws DMLRuntimeException {
+		prepare(mat, true);
+	}
+	
+	@Override
+	void acquireModify(MatrixObject mat) throws DMLRuntimeException {
+		prepare(mat, false);
+		mat.gpuPointer.isDeviceCopyModified = true;
+	}
+	
+	private void prepare(MatrixObject mat, boolean isInput) throws DMLRuntimeException {
 		if(mat.gpuPointer == null) {
 			mat.gpuPointer = GPUPointer.createGPUPointer(mat, this);
 			long GPUSize = mat.gpuPointer.getSizeOnDevice();
@@ -202,18 +193,17 @@ public class JCudaContext extends GPUContext {
 			synchronized(evictionLock) {
 				allocatedPointers.add(mat.gpuPointer);
 			}
-			if (isInput) {
+			if(isInput)
 				mat.gpuPointer.copyFromHostToDevice();
-			}
 		}
-		mat.gpuPointer.isLocked = lock;
-		// return ((JCudaPointer)mat.gpuPointer).jcudaPointer; 
+		mat.gpuPointer.isLocked = true;
 	}
+
 	
 	Boolean evictionLock = new Boolean(true);
 
 	@Override
-	public void unlock(MatrixBlock mat, boolean isGPUCopyModified) {
+	public void release(MatrixObject mat, boolean isGPUCopyModified) {
 		mat.gpuPointer.isLocked = false;
 		mat.gpuPointer.isDeviceCopyModified = isGPUCopyModified;
 	}
@@ -280,7 +270,7 @@ public class JCudaContext extends GPUContext {
 
 
 	@Override
-	public void remove(MatrixBlock mat) throws DMLRuntimeException {
+	public void remove(MatrixObject mat) throws DMLRuntimeException {
 		if(mat != null && mat.gpuPointer != null) {
 			if(mat.gpuPointer.numReferences <= 1) {
 				synchronized(evictionLock) {
@@ -298,7 +288,7 @@ public class JCudaContext extends GPUContext {
 
 
 	@Override
-	public void conv2d(MatrixBlock image, MatrixBlock filter, MatrixBlock outputBlock, int N, int C, int H, int W,
+	public void conv2d(MatrixObject image, MatrixObject filter, MatrixObject outputBlock, int N, int C, int H, int W,
 			int K, int R, int S, int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q)
 			throws DMLRuntimeException {
 		JCudaContext gpuCtx = (JCudaContext) this;
@@ -379,8 +369,8 @@ public class JCudaContext extends GPUContext {
 
 
 	@Override
-	public void conv2d_backward_filter(MatrixBlock image, MatrixBlock dout,
-			MatrixBlock outputBlock, int N, int C, int H, int W, int K, int R,
+	public void conv2d_backward_filter(MatrixObject image, MatrixObject dout,
+			MatrixObject outputBlock, int N, int C, int H, int W, int K, int R,
 			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
 			int Q) throws DMLRuntimeException {
 		
@@ -447,35 +437,38 @@ public class JCudaContext extends GPUContext {
 	}
 
 
-	@Override
-	public void copyDeviceToHost(MatrixBlock mat) throws DMLRuntimeException {
-		mat.gpuPointer.copyFromDeviceToHost();
-	}
+//	@Override
+//	public void copyDeviceToHost(MatrixBlock mat) throws DMLRuntimeException {
+//		mat.gpuPointer.copyFromDeviceToHost();
+//	}
 
 
 	@Override
-	public void matmult(MatrixBlock left1, MatrixBlock right1, MatrixBlock output, 
+	public void matmult(MatrixObject left1, MatrixObject right1, MatrixObject output, 
 			boolean isLeftTransposed1, boolean isRightTransposed1) throws DMLRuntimeException {
-		if(left1.isInSparseFormat() || right1.isInSparseFormat()) {
+		if(GPUContext.isInSparseFormat(left1) || GPUContext.isInSparseFormat(right1)) {
 			throw new DMLRuntimeException("Sparse GPU matrix multiplication is not implemented");
 		}
 		
 		// Since CuBLAS expects inputs in column-major format,
 		// reverse the order of matrix-multiplication and take care of dimension mismatch.
-		MatrixBlock left = right1; 
-		MatrixBlock right = left1;
+		MatrixObject left = right1; 
+		MatrixObject right = left1;
 		boolean isLeftTransposed = isRightTransposed1; 
 		boolean isRightTransposed = isLeftTransposed1; 
 		
 		char transa = isLeftTransposed ? 'T' : 'N';
 		char transb = isRightTransposed ? 'T' : 'N';
 		// Note: the dimensions are swapped
-		int m = isLeftTransposed ? left.getNumRows() : left.getNumColumns() ;
-		int n = isRightTransposed ? right.getNumColumns() : right.getNumRows();
-		int k = isLeftTransposed ?  left.getNumColumns() : left.getNumRows();
-		int k1 = isRightTransposed ?  right.getNumRows() : right.getNumColumns();
+		int m = (int) (isLeftTransposed ? left.getNumRows() : left.getNumColumns()) ;
+		int n = (int) (isRightTransposed ? right.getNumColumns() : right.getNumRows());
+		int k = (int) (isLeftTransposed ?  left.getNumColumns() : left.getNumRows());
+		int k1 = (int) (isRightTransposed ?  right.getNumRows() : right.getNumColumns());
 		if(k != k1) 
 			throw new DMLRuntimeException("Dimension mismatch: " + k + " != " + k1);
+		
+		if(m == -1 || n == -1 || k == -1)
+			throw new DMLRuntimeException("Incorrect dimensions");
 		
 		double alpha = 1;
 		double beta = 0;

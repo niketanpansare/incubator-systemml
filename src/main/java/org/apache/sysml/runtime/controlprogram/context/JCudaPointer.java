@@ -27,21 +27,21 @@ import jcuda.Pointer;
 import jcuda.Sizeof;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 
 public class JCudaPointer extends GPUPointer {
 	
 	public Pointer jcudaPointer = null;
 
-	JCudaPointer(MatrixBlock mat) {
-		super(mat);
+	JCudaPointer(MatrixObject mat2) {
+		super(mat2);
 	}
 
 	@Override
 	void allocateMemoryOnDevice() throws DMLRuntimeException {
 		if(jcudaPointer == null) {
 			jcudaPointer = new Pointer();
-			if(mat.isInSparseFormat())
+			if(GPUContext.isInSparseFormat(mat))
 				throw new DMLRuntimeException("Sparse format not implemented");
 			else
 				cudaMalloc(jcudaPointer,  mat.getNumRows()*mat.getNumColumns()*Sizeof.DOUBLE);
@@ -54,14 +54,14 @@ public class JCudaPointer extends GPUPointer {
 			cudaFree(jcudaPointer);
 		jcudaPointer = null;
 	}
-
+	
 	@Override
 	void copyFromHostToDevice() throws DMLRuntimeException {
 		if(jcudaPointer != null) {
-			if(mat.isInSparseFormat())
+			if(GPUContext.isInSparseFormat(mat))
 				throw new DMLRuntimeException("Sparse format not implemented");
 			else {
-				double [] data = mat.getDenseBlock();
+				double [] data = mat.getMatrixBlock().getDenseBlock();
 				if(data == null) {
 					throw new DMLRuntimeException("MatrixBlock is not allocated");
 				}
@@ -71,25 +71,20 @@ public class JCudaPointer extends GPUPointer {
 		else {
 			throw new DMLRuntimeException("Cannot copy from host to device without allocating");
 		}
-		isDeviceCopyModified = false;
 	}
 
 	@Override
 	public void copyFromDeviceToHost() throws DMLRuntimeException {
-		if(mat.getNumRows() <= 0 || mat.getNumColumns() <= 0) {
-			throw new DMLRuntimeException("Unknown matrix dimensions");
-		}
-		
 		if(jcudaPointer != null) {
-			if(mat.isInSparseFormat())
+			if(GPUContext.isInSparseFormat(mat))
 				throw new DMLRuntimeException("Sparse format not implemented");
 			else {
-				double [] data = mat.getDenseBlock();
+				double [] data = mat.getMatrixBlock().getDenseBlock();
 				if(data == null) {
-					mat.allocateDenseBlock();
-					data = mat.getDenseBlock();
+					mat.getMatrixBlock().allocateDenseBlock();
+					data = mat.getMatrixBlock().getDenseBlock();
 				}
-				cudaMemcpy(Pointer.to(data), jcudaPointer, mat.getNumRows()*mat.getNumColumns() * Sizeof.DOUBLE, cudaMemcpyDeviceToHost);
+				cudaMemcpy(Pointer.to(data), jcudaPointer, data.length * Sizeof.DOUBLE, cudaMemcpyDeviceToHost);
 			}
 		}
 		else {
@@ -101,11 +96,13 @@ public class JCudaPointer extends GPUPointer {
 	@Override
 	public long getSizeOnDevice() throws DMLRuntimeException {
 		long GPUSize = 0;
-		boolean emptyBlock = (mat.getDenseBlock() == null && mat.getSparseBlock() == null);
-		int rlen = mat.getNumRows();
-		int clen = mat.getNumColumns();
+//		boolean emptyBlock = (mat.getDenseBlock() == null && mat.getSparseBlock() == null);
+		int rlen = (int) mat.getNumRows();
+		int clen = (int) mat.getNumColumns();
 //		long nonZeros = mat.getNonZeros();
-		if (mat.isInSparseFormat() && !emptyBlock) {
+		if(GPUContext.isInSparseFormat(mat)) {
+//		
+//		if (mat.getMatrixBlock().isInSparseFormat() ) { // && !emptyBlock) {
 //			GPUSize = (rlen + 1) * (long) (Integer.SIZE / Byte.SIZE) +
 //					nonZeros * (long) (Integer.SIZE / Byte.SIZE) +
 //					nonZeros * (long) (Double.SIZE / Byte.SIZE);

@@ -21,6 +21,9 @@ package org.apache.sysml.runtime.controlprogram.context;
 import java.util.ArrayList;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.caching.CacheException;
+import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 public abstract class GPUContext {
@@ -38,11 +41,8 @@ public abstract class GPUContext {
 		return currContext;
 	}
 	public abstract void destroy();
-	public void prepareOutput(MatrixBlock mat) throws DMLRuntimeException {
-		prepare(mat, false, true);
-	}
 	// Copying from device <- host occurs here
-	public abstract void copyDeviceToHost(MatrixBlock mat) throws DMLRuntimeException;
+//	public abstract void copyDeviceToHost(MatrixBlock mat) throws DMLRuntimeException;
 	/**
 	 * This method removes GPUPointers and related information from GPUContext.
 	 * This method is called by rmvar, (cleanup for updateInPlace MatrixObject), CP setMatrixOutput and while GPUContext's internal eviction.  
@@ -50,28 +50,39 @@ public abstract class GPUContext {
 	 * @param mat
 	 * @throws DMLRuntimeException
 	 */
-	public abstract void remove(MatrixBlock mat) throws DMLRuntimeException;
-	
+	public abstract void remove(MatrixObject mat) throws DMLRuntimeException;
 	
 	// Copying from device -> host occurs here
-	/**
-	 * This function should prepares GPUPointer for processing of GPUInstruction. 
-	 * If the MatrixBlock is to be used as input, then it should copy the data from host to device. 
-	 * Locking the MatrixBlock ensures that it won't be evicted during the execution.
-	 * 
-	 */
-	abstract void prepare(MatrixBlock mat, boolean isInput, boolean lock) throws DMLRuntimeException;
-	abstract void unlock(MatrixBlock mat, boolean isGPUCopyModified);
+	public void exportData(CacheableData<?> mo) throws CacheException {
+		boolean isDeviceCopyModified = mo.getGPUPointer() != null && mo.getGPUPointer().isDeviceCopyModified;
+		boolean isHostCopyUnavailable = mo.getMatrixBlock() == null || 
+				(mo.getMatrixBlock().getDenseBlock() == null && mo.getMatrixBlock().getSparseBlock() == null); 
+		if(isDeviceCopyModified || isHostCopyUnavailable) {
+			try {
+				mo.getGPUPointer().copyFromDeviceToHost();
+			} catch (DMLRuntimeException e) {
+				throw new CacheException(e);
+			}
+		}
+	}
+	
+	abstract void acquireRead(MatrixObject mat) throws DMLRuntimeException;
+	abstract void acquireModify(MatrixObject mat) throws DMLRuntimeException;
+	abstract void release(MatrixObject mat, boolean isGPUCopyModified);
 	
 	
 	
 	
 	
 	// Operations to be implemented by every GPUContext
-	public abstract void conv2d(MatrixBlock image, MatrixBlock filter, MatrixBlock output, int N, int C, int H, int W,
+	public abstract void conv2d(MatrixObject image, MatrixObject filter, MatrixObject output, int N, int C, int H, int W,
 			int K, int R, int S, int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q) throws DMLRuntimeException;
-	public abstract void conv2d_backward_filter(MatrixBlock image, MatrixBlock dout, MatrixBlock output, int N, int C, int H, int W,
+	public abstract void conv2d_backward_filter(MatrixObject image, MatrixObject dout, MatrixObject output, int N, int C, int H, int W,
 			int K, int R, int S, int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q) throws DMLRuntimeException;
-	public abstract void matmult(MatrixBlock left, MatrixBlock right, MatrixBlock output, boolean isLeftTransposed, boolean isRightTransposed) throws DMLRuntimeException;
+	public abstract void matmult(MatrixObject left, MatrixObject right, MatrixObject output, boolean isLeftTransposed, boolean isRightTransposed) throws DMLRuntimeException;
+	
+	public static boolean isInSparseFormat(MatrixObject mo) {
+		return MatrixBlock.evalSparseFormatInMemory(mo.getNumRows(), mo.getNumColumns(), mo.getNnz());
+	}
 	
 }

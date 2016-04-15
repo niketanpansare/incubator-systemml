@@ -21,6 +21,7 @@ package org.apache.sysml.runtime.instructions.gpu;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.GPUContext;
 import org.apache.sysml.runtime.functionobjects.Multiply;
@@ -90,29 +91,24 @@ public class AggregateBinaryGPUInstruction extends BinaryCPInstruction
 		}
 		
 		//get inputs
-		MatrixBlock m1 = ec.getMatrixInputForGPUInstruction(input1.getName());
-        MatrixBlock m2 = ec.getMatrixInputForGPUInstruction(input2.getName());
-		
+		MatrixObject m1 = ec.getMatrixInputForGPUInstruction(input1.getName());
+        MatrixObject m2 = ec.getMatrixInputForGPUInstruction(input2.getName());
+        
         //compute matrix multiplication
-        int rlen = isLeftTransposed ? m1.getNumColumns() : m1.getNumRows();
-        int clen = isRightTransposed ? m2.getNumRows() : m2.getNumColumns();
-        MatrixBlock soresBlock = new MatrixBlock(rlen, clen, false);
+        int rlen = (int) (isLeftTransposed ? m1.getNumColumns() : m1.getNumRows());
+        int clen = (int) (isRightTransposed ? m2.getNumRows() : m2.getNumColumns());
         GPUContext gpuCtx = GPUContext.getCurrentContext();
+        MatrixObject out = ec.getMatrixOutputForGPUInstruction(output.getName(), rlen, clen);
         if(gpuCtx != null) {
-        	gpuCtx.prepareOutput(soresBlock);
-        	gpuCtx.matmult(m1, m2, soresBlock, isLeftTransposed, isRightTransposed);
-        	soresBlock.setNonZeros(rlen*clen); // Worst case estimate
-        	soresBlock.setNumRows(rlen);
-        	soresBlock.setNumColumns(clen);
+        	gpuCtx.matmult(m1, m2, out, isLeftTransposed, isRightTransposed);
         }
         else {
 			throw new DMLRuntimeException("GPUContext is not initialized");
 		}
-			
 		//release inputs/outputs
 		ec.releaseMatrixInputForGPUInstruction(input1.getName());
 		ec.releaseMatrixInputForGPUInstruction(input2.getName());
-		ec.setMatrixOutputForGPUInstruction(output.getName(), soresBlock);
+		ec.setMatrixOutputForGPUInstruction(output.getName(), out.getMatrixBlock());
 	}
 }
 

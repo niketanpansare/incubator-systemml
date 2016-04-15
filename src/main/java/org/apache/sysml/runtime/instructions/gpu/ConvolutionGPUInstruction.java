@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.GPUContext;
 import org.apache.sysml.runtime.functionobjects.SwapIndex;
@@ -114,7 +115,7 @@ public class ConvolutionGPUInstruction extends UnaryCPInstruction {
 	@Override
 	public void processInstruction(ExecutionContext ec) 
 			throws DMLRuntimeException {
-		MatrixBlock outputBlock = null;
+		MatrixObject out = null;
 		if (instOpcode.equalsIgnoreCase("conv2d") || 
 				instOpcode.equalsIgnoreCase("conv2d_backward_filter")) {
 			
@@ -137,16 +138,16 @@ public class ConvolutionGPUInstruction extends UnaryCPInstruction {
 			Q = (int) ConvolutionUtils.getQ(W, S, stride_w, pad_w);
 			
 			if (instOpcode.equalsIgnoreCase("conv2d")) {
-				MatrixBlock image = ec.getMatrixInputForGPUInstruction(input1.getName());
-				MatrixBlock filter = ec.getMatrixInputForGPUInstruction(_in2.getName());
-				if(image.isInSparseFormat() || filter.isInSparseFormat()) {
+				MatrixObject image = ec.getMatrixInputForGPUInstruction(input1.getName());
+				MatrixObject filter = ec.getMatrixInputForGPUInstruction(_in2.getName());
+				if(image.getMatrixBlock().isInSparseFormat() || filter.getMatrixBlock().isInSparseFormat()) {
 					throw new DMLRuntimeException("Sparse convolution not implemented");
 				}
 				GPUContext gpuCtx = GPUContext.getCurrentContext();
 				if(gpuCtx != null) {
-					outputBlock = allocateReusableNonZeroedDenseOutputBlock(N, K * P * Q);
-					gpuCtx.prepareOutput(outputBlock);
-					gpuCtx.conv2d(image, filter, outputBlock, N, C, H, W,
+					out = ec.getMatrixOutputForGPUInstruction(output.getName(), N, K * P * Q);
+
+					gpuCtx.conv2d(image, filter, out, N, C, H, W,
 							K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
 					// TODO: For now always copy the device data to host
 					// ec.gpuCtx.copyDeviceToHost(outputBlock);
@@ -156,13 +157,13 @@ public class ConvolutionGPUInstruction extends UnaryCPInstruction {
 				}
 			}
 			else if (instOpcode.equalsIgnoreCase("conv2d_backward_filter")) {
-				MatrixBlock image = ec.getMatrixInputForGPUInstruction(input1.getName());
-				MatrixBlock dout = ec.getMatrixInputForGPUInstruction(_in2.getName());
-				if(image.isInSparseFormat() || dout.isInSparseFormat())
+				MatrixObject image = ec.getMatrixInputForGPUInstruction(input1.getName());
+				MatrixObject dout = ec.getMatrixInputForGPUInstruction(_in2.getName());
+				if(image.getMatrixBlock().isInSparseFormat() || dout.getMatrixBlock().isInSparseFormat())
 					throw new DMLRuntimeException("Sparse convolution backward not implemented");
 				if(GPUContext.getCurrentContext() != null) {
-					outputBlock = allocateReusableNonZeroedDenseOutputBlock(K, C * R * S);
-					GPUContext.getCurrentContext().conv2d_backward_filter(image, dout, outputBlock, N, C, H, W,
+					out = ec.getMatrixOutputForGPUInstruction(output.getName(), K, C * R * S);
+					GPUContext.getCurrentContext().conv2d_backward_filter(image, dout, out, N, C, H, W,
 							K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
 					// TODO: For now always copy the device data to host
 					// ec.gpuCtx.copyDeviceToHost(outputBlock);
@@ -181,7 +182,7 @@ public class ConvolutionGPUInstruction extends UnaryCPInstruction {
 		// release inputs/outputs
 		ec.releaseMatrixInputForGPUInstruction(input1.getName());
 		ec.releaseMatrixInputForGPUInstruction(_in2.getName());
-		ec.setMatrixOutputForGPUInstruction(output.getName(), outputBlock);
+		ec.setMatrixOutputForGPUInstruction(output.getName(), out.getMatrixBlock());
 	}
 	
 	

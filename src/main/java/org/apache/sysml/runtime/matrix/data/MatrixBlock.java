@@ -41,7 +41,6 @@ import org.apache.sysml.lops.MapMultChain.ChainType;
 import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
-import org.apache.sysml.runtime.controlprogram.context.GPUPointer;
 import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.functionobjects.CM;
 import org.apache.sysml.runtime.functionobjects.CTable;
@@ -114,7 +113,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	//matrix data (sparse or dense)
 	public double[] denseBlock    = null;
 	public SparseBlock sparseBlock = null;
-	public GPUPointer gpuPointer = null;
 		
 	//sparse-block-specific attributes (allocation only)
 	protected int estimatedNNzsPerRow = -1; 
@@ -430,6 +428,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		if( clearNNZ ) {
 			nonZeros = 0;
 		}
+		
+		sparse = false;
 	}
 	
 	public void setDenseBlock(double [] zeroedOutDenseArray) throws DMLRuntimeException {
@@ -1367,7 +1367,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		this.clen=that.clen;
 		this.sparse=sp;
 		estimatedNNzsPerRow=(int)Math.ceil((double)thatValue.getNonZeros()/(double)rlen);
-		this.gpuPointer = that.gpuPointer;
 		 
 		if(this.sparse && that.sparse)
 			copySparseToSparse(that);

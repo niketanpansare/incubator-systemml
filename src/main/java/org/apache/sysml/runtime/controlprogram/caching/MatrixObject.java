@@ -32,7 +32,6 @@ import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
-import org.apache.sysml.runtime.controlprogram.context.GPUPointer;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -73,16 +72,6 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	private String _partitionCacheName = null; //name of cache block
 	private MatrixBlock _partitionInMemory = null;
 	
-	public GPUPointer gpuPointer = null;
-	public boolean flag = true;
-	
-	public GPUPointer getGPUPointer() {
-		return gpuPointer;
-	}
-	public MatrixBlock getMatrixBlock() {
-		return _data;
-	}
-
 	/**
 	 * Constructor that takes only the HDFS filename.
 	 */

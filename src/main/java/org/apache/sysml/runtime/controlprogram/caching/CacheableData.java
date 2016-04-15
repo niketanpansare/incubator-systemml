@@ -33,6 +33,8 @@ import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.LazyWriteBuffer.RPolicy;
+import org.apache.sysml.runtime.controlprogram.context.GPUContext;
+import org.apache.sysml.runtime.controlprogram.context.GPUPointer;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.spark.data.BroadcastObject;
@@ -43,6 +45,7 @@ import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.MetaData;
 import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.runtime.util.MapReduceTool;
@@ -179,6 +182,18 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	private RDDObject _rddHandle = null; //RDD handle
 	private BroadcastObject _bcHandle = null; //Broadcast handle
 	
+	public GPUPointer gpuPointer = null;
+	
+	public GPUPointer getGPUPointer() {
+		return gpuPointer;
+	}
+	public MatrixBlock getMatrixBlock() {
+		if(_data != null && _data instanceof MatrixBlock)
+			return (MatrixBlock) _data;
+		else
+			return null;
+	}
+	
 	/**
 	 * Basic constructor for any cacheable data.
 	 * 
@@ -203,6 +218,8 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		_hdfsFileName = that._hdfsFileName;
 		_hdfsFileExists = that._hdfsFileExists; 
 		_varName = that._varName;
+		gpuPointer = that.gpuPointer;
+		gpuPointer.numReferences++;
 	}
 
 	
@@ -796,6 +813,8 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			if( _data == null )
 				getCache();
 			acquire( false, _data==null ); //incl. read matrix if evicted	
+			
+			GPUContext.getCurrentContext().exportData(this);
 			
 			// b) write the matrix 
 			try
