@@ -214,7 +214,8 @@ public class ExecutionContext
 	{	
 		MatrixObject mo = (MatrixObject) getVariable(varName);
 		MatrixBlock mb = mo.acquireRead();
-		GPUContext.getCurrentContext().exportData(mo);
+		if(GPUContext.getCurrentContext() != null)
+			GPUContext.getCurrentContext().exportData(mo);
 		return mb;
 	}
 	

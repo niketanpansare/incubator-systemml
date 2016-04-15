@@ -814,7 +814,8 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 				getCache();
 			acquire( false, _data==null ); //incl. read matrix if evicted	
 			
-			GPUContext.getCurrentContext().exportData(this);
+			if(GPUContext.getCurrentContext() != null)
+				GPUContext.getCurrentContext().exportData(this);
 			
 			// b) write the matrix 
 			try
