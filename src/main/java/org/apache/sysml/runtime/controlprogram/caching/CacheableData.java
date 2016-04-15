@@ -219,7 +219,8 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		_hdfsFileExists = that._hdfsFileExists; 
 		_varName = that._varName;
 		gpuPointer = that.gpuPointer;
-		gpuPointer.numReferences++;
+		if(gpuPointer != null)
+			gpuPointer.numReferences++;
 	}
 
 	

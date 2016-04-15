@@ -56,8 +56,9 @@ public abstract class GPUContext {
 	public void exportData(CacheableData<?> mo) throws CacheException {
 		boolean isDeviceCopyModified = mo.getGPUPointer() != null && mo.getGPUPointer().isDeviceCopyModified;
 		boolean isHostCopyUnavailable = mo.getMatrixBlock() == null || 
-				(mo.getMatrixBlock().getDenseBlock() == null && mo.getMatrixBlock().getSparseBlock() == null); 
-		if(isDeviceCopyModified || isHostCopyUnavailable) {
+				(mo.getMatrixBlock().getDenseBlock() == null && mo.getMatrixBlock().getSparseBlock() == null);
+		
+		if(mo.getGPUPointer() != null && (isDeviceCopyModified || isHostCopyUnavailable)) {
 			try {
 				mo.getGPUPointer().copyFromDeviceToHost();
 			} catch (DMLRuntimeException e) {
