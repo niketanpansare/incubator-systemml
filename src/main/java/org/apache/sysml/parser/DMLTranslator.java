@@ -67,7 +67,6 @@ import org.apache.sysml.parser.Expression.ParameterizedBuiltinFunctionOp;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.parser.PrintStatement.PRINTTYPE;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.instructions.cp.ConvolutionCPInstruction;
 
 
 public class DMLTranslator 
@@ -2810,81 +2809,35 @@ public class DMLTranslator
 		case MAX_POOL:
 		{
 			Hop image = expr;
-			if(!ConvolutionCPInstruction.USE_IM2COL_POOLING) {
-				ArrayList<Hop> inHops1 = getALHopsForPoolingForwardIM2COL(image, source, 1, hops);
-				if(source.getOpCode() == BuiltinFunctionOp.MAX_POOL)
-					currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(), Hop.ConvOp.MAX_POOLING, inHops1);
-				else
-					throw new HopsException("Average pooling is not implemented");
-				setBlockSizeAndRefreshSizeInfo(image, currBuiltinOp);
-			}
-			else {
-				ArrayList<Hop> inHops1 = getALHopsForConvOp(image, source, 1, hops);
-				Hop preReshapeMat = new ConvolutionOp("preReshape" + image.getName(), image.getDataType(), image.getValueType(), Hop.ConvOp.POOLING_PRE_RESHAPE, inHops1);
-				
-				ArrayList<Hop> inHops2 = getALHopsForConvOpPoolingIM2COL(preReshapeMat, source, 1, hops);
-				Hop loweredMat = new ConvolutionOp("im2ColReshaped" + image.getName(), image.getDataType(), image.getValueType(), Hop.ConvOp.IM2COL, inHops2);
-				
-				Hop pooledMat = null;
-				if(source.getOpCode() == BuiltinFunctionOp.MAX_POOL)
-					pooledMat = new AggUnaryOp("colMax" + target.getName(), target.getDataType(), target.getValueType(), AggOp.MAX, Direction.Col, loweredMat);
-				else
-					pooledMat = new AggUnaryOp("colAvg" + target.getName(), target.getDataType(), target.getValueType(), AggOp.MEAN, Direction.Col, loweredMat);
-				ArrayList<Hop> inHops3 = getALHopsForConvOp(pooledMat, source, 1, hops);
-				currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(), Hop.ConvOp.POOLING_POST_RESHAPE, inHops3);
-				setBlockSizeAndRefreshSizeInfo(image, currBuiltinOp);
-			}
+			ArrayList<Hop> inHops1 = getALHopsForPoolingForwardIM2COL(image, source, 1, hops);
+			if(source.getOpCode() == BuiltinFunctionOp.MAX_POOL)
+				currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(), Hop.ConvOp.MAX_POOLING, inHops1);
+			else
+				throw new HopsException("Average pooling is not implemented");
+			setBlockSizeAndRefreshSizeInfo(image, currBuiltinOp);
 			break;
 		}
 		case MAX_POOL_BACKWARD:
 		{
 			Hop image = expr;
-			if(!ConvolutionCPInstruction.USE_IM2COL_POOLING) {
-				ArrayList<Hop> inHops1 = getALHopsForConvOpPoolingCOL2IM(image, source, 1, hops); // process dout as well
-				currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(), Hop.ConvOp.MAX_POOLING_BACKWARD, inHops1);
-				setBlockSizeAndRefreshSizeInfo(image, currBuiltinOp);
-			}
-			else {
-				ArrayList<Hop> inHops1 = getALHopsForConvOp(image, source, 2, hops);
-				Hop preReshapeMat = new ConvolutionOp("preReshape" + image.getName(), image.getDataType(), image.getValueType(), Hop.ConvOp.POOLING_PRE_RESHAPE, inHops1);
-				
-				ArrayList<Hop> inHops2 = getALHopsForConvOpPoolingIM2COL(preReshapeMat, source, 2, hops);
-				Hop loweredMat = new ConvolutionOp("im2ColReshaped" + image.getName(), image.getDataType(), image.getValueType(), Hop.ConvOp.IM2COL, inHops2);
-				
-				// Add transpose since we donot have colIndexMax
-				Hop pooledMat = null;
-				Hop loweredMat_T = new ReorgOp("tempTranspose" + image.getName(), image.getDataType(), image.getValueType(), Hop.ReOrgOp.TRANSPOSE, loweredMat);
-				if(source.getOpCode() == BuiltinFunctionOp.MAX_POOL_BACKWARD)
-					pooledMat = new AggUnaryOp("rowIndexMax" + target.getName(), target.getDataType(), target.getValueType(), AggOp.MAXINDEX, Direction.Row, loweredMat_T);
-				else {
-					throw new HopsException("Unsupported operation: " + source.getOpCode().name());
-				}
-	//			else
-	//				pooledMat = new AggUnaryOp(target.getName(), target.getDataType(), target.getValueType(), AggOp.MEAN, Direction.Col, loweredMat);
-				
-				// You now have NCPQ X 1 matrix => pooledMat and (N, C, P, Q) tensor => dout
-				// which has to be placed in (N, C, H, W) matrix
-				// TODO: This can be merged together
-				ArrayList<Hop> inHops3 = getALHopsForConvOp(pooledMat, source, 1, hops); // process dout as well
-				Hop temp1 =  new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(), Hop.ConvOp.POOLING_BACKWARD_RESHAPE, inHops3);
-				ArrayList<Hop> inHops4 = getALHopsForConvOpPoolingCOL2IM(temp1, source, 2, hops);
-				currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(), Hop.ConvOp.COL2IM, inHops4);
-				setBlockSizeAndRefreshSizeInfo(image, currBuiltinOp);
-			}
+			ArrayList<Hop> inHops1 = getALHopsForConvOpPoolingCOL2IM(image, source, 1, hops); // process dout as well
+			currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(), Hop.ConvOp.MAX_POOLING_BACKWARD, inHops1);
+			setBlockSizeAndRefreshSizeInfo(image, currBuiltinOp);
 			break;
 		}
 		case CONV2D_BACKWARD_FILTER:
 		{
 			Hop image = expr;
 			Hop dout = expr2;
+			
 			ArrayList<Hop> inHops1 = getALHopsForConvOp(image, source, 2, hops);
 			Hop x_col = new ConvolutionOp(image.getName(), image.getDataType(), image.getValueType(), Hop.ConvOp.IM2COL, inHops1);
-			Hop x_col_T = new ReorgOp("tempTranspose" + image.getName(), image.getDataType(), image.getValueType(), Hop.ReOrgOp.TRANSPOSE, x_col);
 			
 			ArrayList<Hop> inHops2 = getALHopsForConvOp(dout, source, 2, hops);
 			Hop dout_reshaped = new ConvolutionOp(dout.getName(), dout.getDataType(), dout.getValueType(), Hop.ConvOp.ROTATE180, inHops2);
 			
-			currBuiltinOp = new AggBinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.MULT, AggOp.SUM, dout_reshaped, x_col_T);
+			Hop dfilter1 = new AggBinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.MULT, AggOp.SUM, x_col, dout_reshaped);
+			currBuiltinOp = new ReorgOp("tempTranspose" + image.getName(), image.getDataType(), image.getValueType(), Hop.ReOrgOp.TRANSPOSE, dfilter1);
 			setBlockSizeAndRefreshSizeInfo(image, currBuiltinOp);
 			break;
 		}
@@ -2892,14 +2845,14 @@ public class DMLTranslator
 		{
 			Hop filter = expr;
 			Hop dout = expr2;
-			Hop filter_T = new ReorgOp("tempTranspose" + filter.getName(), filter.getDataType(), filter.getValueType(), Hop.ReOrgOp.TRANSPOSE, filter);
 			
 			ArrayList<Hop> inHops1 = getALHopsForConvOp(dout, source, 2, hops);
 			Hop dout_reshaped = new ConvolutionOp(dout.getName(), dout.getDataType(), dout.getValueType(), Hop.ConvOp.ROTATE180, inHops1);
 			
-			Hop temp1 = new AggBinaryOp("temp" + target.getName(), target.getDataType(), target.getValueType(), OpOp2.MULT, AggOp.SUM, filter_T, dout_reshaped);
+			Hop temp1 = new AggBinaryOp("temp" + target.getName(), target.getDataType(), target.getValueType(), OpOp2.MULT, AggOp.SUM, dout_reshaped, filter);
+			Hop temp2 = new ReorgOp("tempTranspose" + target.getName(), target.getDataType(), target.getValueType(), Hop.ReOrgOp.TRANSPOSE, temp1);
 			
-			ArrayList<Hop> inHops2 = getALHopsForConvOp(temp1, source, 2, hops);
+			ArrayList<Hop> inHops2 = getALHopsForConvOp(temp2, source, 2, hops);
 			currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(), Hop.ConvOp.COL2IM, inHops2);
 			setBlockSizeAndRefreshSizeInfo(filter, currBuiltinOp);
 			break;

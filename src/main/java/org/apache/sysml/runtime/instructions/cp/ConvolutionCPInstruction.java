@@ -42,7 +42,6 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	// private static final Log LOG = LogFactory.getLog(ConvolutionCPInstruction.class.getName());
 
 	public static boolean ALLOW_MULTI_THREADED_OPS = true;
-	public static boolean USE_IM2COL_POOLING = false; // TODO: Remove im2col-based pooling instruction
 	
 	private CPOperand _in2; // used for pooling backward
 	private ArrayList<CPOperand> _input_shape;
@@ -230,9 +229,9 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				this.input = matBlock;
 				// Is eligible for REUSE_NONZEROED_OUTPUT and always an intermediate instruction
 				if(DMLScript.REUSE_NONZEROED_OUTPUT)
-					outputBlock = allocateReusableNonZeroedDenseOutputBlock(ec, K, N * P * Q);
+					outputBlock = allocateReusableNonZeroedDenseOutputBlock(ec, N * P * Q, K);
 				else
-					outputBlock = allocateDenseOutputBlock(ec, K, N * P * Q);
+					outputBlock = allocateDenseOutputBlock(ec, N * P * Q, K);
 				rotate180(matBlock, outputBlock);
 			}
 			else if (instOpcode.equalsIgnoreCase("col2im")) {
@@ -539,7 +538,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		globalIndex = 0; row = 0; 
 		
 		if(input.getNumColumns() != K*P*Q || input.getNumRows() != N) {
-			throw new DMLRuntimeException("Incorrect input dimensions in reshape_col_rev:" + input.getNumRows() + " " + input.getNumColumns() + " " + N + " " + K*P*Q);
+			throw new DMLRuntimeException("Incorrect input dimensions in rotate180:" + input.getNumRows() + " " + input.getNumColumns() + " " + N + " " + K*P*Q);
 		}
 		
 		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(-1);
@@ -556,14 +555,12 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	}
 	
 	public void doRotate180(int n, int k) {
-		if(inputArray != null) {
-			System.arraycopy(inputArray, n*K*P*Q + k*P*Q, outputArray, k*N*P*Q + n*P*Q, P*Q);
-		}
-		else {
-			for (int p = 0; p < P; p++) {
-				for (int q = 0; q < Q; q++) {		
-					outputArray[k*N*P*Q + n*P*Q + p*P + q] = input.quickGetValue(n, k*P*Q + p*Q + q);
-				}
+		for (int p = 0; p < P; p++) {
+			for (int q = 0; q < Q; q++) {
+				if(inputArray != null)
+					outputArray[n*P*Q*K + p*Q*K + q*K + k] = inputArray[n*K*P*Q + k*P*Q + p*Q + q];
+				else
+					outputArray[n*P*Q*K + p*Q*K + q*K + k] = input.quickGetValue(n, k*P*Q + p*Q + q);
 			}
 		}
 	}
