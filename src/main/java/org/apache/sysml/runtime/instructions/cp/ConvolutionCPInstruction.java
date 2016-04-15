@@ -159,7 +159,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				aL.get(index).getValueType(), aL.get(index).isLiteral())
 				.getLongValue();
 	}
-
+	
 	@Override
 	public void processInstruction(ExecutionContext ec)
 			throws DMLRuntimeException {
@@ -440,23 +440,23 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(-1);
 		if(!ALLOW_MULTI_THREADED_OPS || constrainedNumThreads <= 1) {
 			for (int n = 0; n < N; n++) {
-				for (int k = 0; k < K; k++) {
-					doRotate180(n, k);
-				}
+				doRotate180(n);
 			}
 		}
 		else {
-			runParallelConvTask(constrainedNumThreads, K, TaskType.Rotate180);
+			runParallelConvTask(constrainedNumThreads, 1, TaskType.Rotate180);
 		}
 	}
 	
-	public void doRotate180(int n, int k) {
-		for (int p = 0; p < P; p++) {
-			for (int q = 0; q < Q; q++) {
-				if(inputArray != null)
-					outputArray[n*P*Q*K + p*Q*K + q*K + k] = inputArray[n*K*P*Q + k*P*Q + p*Q + q];
-				else
-					outputArray[n*P*Q*K + p*Q*K + q*K + k] = input.quickGetValue(n, k*P*Q + p*Q + q);
+	public void doRotate180(int n) {
+		for (int k = 0; k < K; k++) {
+			for (int p = 0; p < P; p++) {
+				for (int q = 0; q < Q; q++) {
+					if(inputArray != null)
+						outputArray[n*K*P*Q + p*Q*K + q*K + k] = inputArray[n*K*P*Q + k*P*Q + p*Q + q];
+					else
+						outputArray[n*P*Q*K + p*Q*K + q*K + k] = input.quickGetValue(n, k*P*Q + p*Q + q);
+				}
 			}
 		}
 	}
@@ -537,9 +537,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 					break;
 				case Rotate180:
 					for (int n = n1; n < n2; n++) {
-						for (int z = z1; z < z2; z++) {
-							curr.doRotate180(n, z);
-						}
+						curr.doRotate180(n);
 					}
 					break;
 				case Im2Col:
@@ -608,10 +606,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		else {
 			runParallelConvTask(constrainedNumThreads, C, TaskType.Im2Col);
 		}
-		
 	}
-	
-	
 	
 	// Converts a matrix of dimension (CRS, NPQ) to a 4D tensor (N, C, H, W)
 	private void col2im(MatrixBlock input, MatrixBlock outputBlock) throws DMLRuntimeException {
@@ -651,23 +646,14 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 								// Copy from [channel c, height input_row, width input_col]
 								int index = n*C*H*W + c*H*W + input_row*W + input_col;
 								if (inputArray != null) {
-									double val = inputArray[localIndex];
-									synchronized(this) {
-										outputArray[index] += val;
-									}
+									outputArray[index] += inputArray[localIndex];
 								}
 								else {
-									// TODO: Validate this
-									// 4 X 4
-									// 0 1 2  3
-									// 4 5 6  7
-									// 8 9 10 11
+									// TODO: Optimize for sparse input
+									// Note: localIndex = row*N*P*Q + col
 									int row = localIndex / (N*P*Q);
 									int col = localIndex % (N*P*Q);
-									double val = input.quickGetValue(row, col);
-									synchronized(this) {
-										outputArray[index] += val; 
-									}
+									outputArray[index] += input.quickGetValue(row, col); 
 								}
 							}
 							input_col += stride_w;
