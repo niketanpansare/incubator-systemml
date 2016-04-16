@@ -94,4 +94,9 @@ dfilter2 = conv2d_backward_filter(x, dout, stride=[stride_h, stride_w], padding=
 # dfilter1 is same as dfilter2
 ``` 
 
-For full padding, use pad_h = filter_height-1 and pad_w = filter_weight-1.
+# Border mode:
+* To perform valid padding, use `padding = (input_shape-filter_shape)*(stride-1)/ 2`. (Hint: for stride length of 1, `padding = [0, 0]` performs valid padding).
+
+* To perform full padding, use `padding = ((stride-1)*input_shape + (stride+1)*filter_shape - 2*stride) / 2`. (Hint: for stride length of 1, `padding = [filter_h-1, filter_w-1]` performs full padding).
+
+* To perform same padding, use `padding = (input_shape*(stride-1) + filter_shape - stride)/2`. (Hint: for stride length of 1, `padding = [(filter_h-1)/2, (filter_w-1)/2]` performs same padding).

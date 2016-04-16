@@ -3,6 +3,10 @@
  
 max_iterations = $1
 setup = $2
+numFilters = -1
+numChannels = -1
+filterSize = -1
+pad = -1
 if(setup == 1) {
 	numFilters = 20
 	numChannels = 1
@@ -26,6 +30,9 @@ else if(setup == 4) {
 	numChannels = 20
 	filterSize = 3
 	pad = 1
+}
+else {
+	stop('Incorrect setup (needs to be [1, 4]).')
 }
 imgSize = 28
 n = 60000

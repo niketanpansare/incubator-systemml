@@ -14,7 +14,8 @@ The current prototype supports Nvidia's CUDA libraries using JCuda wrapper. The 
 * `org.apache.sysml.runtime.controlprogram.context.JCudaContext`
 * `org.apache.sysml.runtime.controlprogram.context.JCudaPointer`
 
-Setup instructions for JCudaContext:
+### Setup instructions for JCudaContext:
+
 1. Install CUDA 7.5
 2. Install CuDNN v4 from http://developer.download.nvidia.com/compute/redist/cudnn/v4/cudnn-7.0-win-x64-v4.0-prod.zip
 3. Download JCuda binaries version 0.7.5b and JCudnn version 0.7.5. 
