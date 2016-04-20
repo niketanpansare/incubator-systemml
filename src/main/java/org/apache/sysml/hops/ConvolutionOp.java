@@ -334,102 +334,75 @@ public class ConvolutionOp extends Hop
 	{
 		Hop input1 = getInput().get(0);
 		
-//		switch(op) 
-//		{
-//			case IM2COL:
-//			{
-//				parseInput();
-//				_dim1 = getExtractedVal(C, R, S);
-//				_dim2 = getExtractedVal(N, P, Q);
-//				if(input1.getNnz() >= 0) {
-//					// long approxNumPaddedZeros = N*C*(2*(P*R + Q*S));
-//					// long numZerosInOriginalImage = (N*C*H*W - input1.getNnz());
-//					// long conservativeEstNumZeros = (numZerosInOriginalImage + approxNumPaddedZeros);
-//					// Worst-case estimates (assuming only nnz are replicated):
-//					// TODO:
-//					_nnz = _dim1*_dim2; // - numZerosInOriginalImage; 
-//				}
-//				
-//				break;
-//			}
-//			case COL2IM:
-//			{
-//				parseInput();
-//				// Set _dim1, _dim2 and if possible _nnz (use input1.getNnz())
-//				_dim1 = N;
-//				_dim2 = getExtractedVal(C, H, W);
-//				_nnz = _dim1*_dim2;
-//				break;
-//			}
-//			case RESHAPE_COL:
-//			{
-//				parseInput();
-//				_dim1 = N;
-//				_dim2 = getExtractedVal(K, P, Q);
-//				// TODO: nnz
-//				_nnz = _dim1*_dim2;
-//				break;
-//			}
-//			case ROTATE180:
-//			{
-//				parseInput();
-//				_dim1 = K;
-//				_dim2 = getExtractedVal(N, P, Q);
-//				// TODO: nnz
-//				_nnz = _dim1*_dim2;
-//				break;
-//			}
-//			case POOLING_PRE_RESHAPE:
-//			{
-//				parseInput();
-//				// Set _dim1, _dim2 and if possible _nnz (use input1.getNnz())
-//				_dim1 = getExtractedVal(N, C);
-//				_dim2 = getExtractedVal(H, W);
-//				_nnz = _dim1*_dim2;
-//				break;
-//			}
-//			case POOLING_POST_RESHAPE:
-//			{
-//				parseInput();
-//				// Set _dim1, _dim2 and if possible _nnz (use input1.getNnz())
-//				_dim1 = N;
-//				_dim2 = getExtractedVal(C, P, Q);
-//				_nnz = _dim1*_dim2;
-//				break;
-//			}
-//			case POOLING_BACKWARD_RESHAPE:
-//			{
-//				parseInput();
-//				// Set _dim1, _dim2 and if possible _nnz (use input1.getNnz())
-//				_dim1 = getExtractedVal(C, R, S);
-//				_dim2 = getExtractedVal(N, P, Q);
-//				_nnz = _dim1*_dim2;
-//				break;
-//			}
-//			case MAX_POOLING:
-//			{
-//				parseInput();
-//				// Set _dim1, _dim2 and if possible _nnz (use input1.getNnz())
-//				_dim1 = N;
-//				_dim2 = getExtractedVal(C, P, Q);
-//				_nnz = _dim1*_dim2;
-//				break;
-//			}
-//			case MAX_POOLING_BACKWARD:
-//			{
-//				parseInput();
-//				// Set _dim1, _dim2 and if possible _nnz (use input1.getNnz())
-//				_dim1 = N;
-//				_dim2 = getExtractedVal(C, H, W);
-//				_nnz = _dim1*_dim2;
-//				break;
-//			}
-//			default:
-//				throw new RuntimeException("The sizes are not refreshed for " + op.name());
-//		}
-//		if(_dim1 == -1 || _dim2 == -1) {
-//			_nnz = -1;
-//		}
+		switch(op) 
+		{
+			case IM2COL:
+			{
+				parseInput();
+				_dim1 = getExtractedVal(C, R, S);
+				_dim2 = getExtractedVal(N, P, Q);
+				if(input1.getNnz() >= 0) {
+					// long approxNumPaddedZeros = N*C*(2*(P*R + Q*S));
+					// long numZerosInOriginalImage = (N*C*H*W - input1.getNnz());
+					// long conservativeEstNumZeros = (numZerosInOriginalImage + approxNumPaddedZeros);
+					// Worst-case estimates (assuming only nnz are replicated):
+					// TODO:
+					_nnz = _dim1*_dim2; // - numZerosInOriginalImage; 
+				}
+				
+				break;
+			}
+			case COL2IM:
+			{
+				parseInput();
+				// Set _dim1, _dim2 and if possible _nnz (use input1.getNnz())
+				_dim1 = N;
+				_dim2 = getExtractedVal(C, H, W);
+				_nnz = _dim1*_dim2;
+				break;
+			}
+			case RESHAPE_COL:
+			{
+				parseInput();
+				_dim1 = N;
+				_dim2 = getExtractedVal(K, P, Q);
+				// TODO: nnz
+				_nnz = _dim1*_dim2;
+				break;
+			}
+			case ROTATE180:
+			{
+				parseInput();
+				_dim1 = getExtractedVal(N, P, Q);
+				_dim2 = K;
+				// TODO: nnz
+				_nnz = _dim1*_dim2;
+				break;
+			}
+			case MAX_POOLING:
+			{
+				parseInput();
+				// Set _dim1, _dim2 and if possible _nnz (use input1.getNnz())
+				_dim1 = N;
+				_dim2 = getExtractedVal(C, P, Q);
+				_nnz = _dim1*_dim2;
+				break;
+			}
+			case MAX_POOLING_BACKWARD:
+			{
+				parseInput();
+				// Set _dim1, _dim2 and if possible _nnz (use input1.getNnz())
+				_dim1 = N;
+				_dim2 = getExtractedVal(C, H, W);
+				_nnz = _dim1*_dim2;
+				break;
+			}
+			default:
+				throw new RuntimeException("The sizes are not refreshed for " + op.name());
+		}
+		if(_dim1 == -1 || _dim2 == -1) {
+			_nnz = -1;
+		}
 	}
 	
 	private long extractValue(Hop hop) throws DMLRuntimeException {

@@ -107,7 +107,9 @@ public class LibMatrixMult
 		boolean tm2 = checkPrepMatrixMultRightInput(m1,m2);
 		m2 = prepMatrixMultRightInput(m1, m2);
 		ret.sparse = (m1.isUltraSparse() || m2.isUltraSparse());
-		if( !ret.sparse )
+		if(!m1.sparse && !m2.sparse)
+			ret.allocateDenseBlock(true, false);
+		else if( !ret.sparse )
 			ret.allocateDenseBlock();
 		
 		//prepare row-upper for special cases of vector-matrix
@@ -170,7 +172,9 @@ public class LibMatrixMult
 		boolean tm2 = checkPrepMatrixMultRightInput(m1,m2);
 		m2 = prepMatrixMultRightInput(m1, m2);
 		ret.sparse = (m1.isUltraSparse() || m2.isUltraSparse());
-		if( !ret.sparse )
+		if(!m1.sparse && !m2.sparse)
+			ret.allocateDenseBlock(true, false);
+		else if( !ret.sparse )
 			ret.allocateDenseBlock();
 		else
 			ret.allocateSparseRowsBlock();

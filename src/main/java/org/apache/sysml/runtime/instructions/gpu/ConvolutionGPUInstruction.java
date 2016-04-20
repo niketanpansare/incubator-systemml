@@ -18,7 +18,6 @@
  */
 package org.apache.sysml.runtime.instructions.gpu;
 
-import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 
 import org.apache.sysml.parser.Expression.DataType;
@@ -31,7 +30,6 @@ import org.apache.sysml.runtime.functionobjects.SwapIndex;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.cp.UnaryCPInstruction;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
 
@@ -185,27 +183,4 @@ public class ConvolutionGPUInstruction extends UnaryCPInstruction {
 		ec.setMatrixOutputForGPUInstruction(output.getName(), out.getMatrixBlock());
 	}
 	
-	
-	private SoftReference<double[]> reuseableNonZeroedDoubleArray;
-	private MatrixBlock allocateReusableNonZeroedDenseOutputBlock(int numRowsOutput, int numColsOutput) throws DMLRuntimeException {
-		long nnz = numRowsOutput * numColsOutput;
-		MatrixBlock outputBlock = new MatrixBlock(numRowsOutput, numColsOutput, nnz);
-		double[] outputArray = null;
-		if(reuseableNonZeroedDoubleArray != null) {
-			double[] arr = reuseableNonZeroedDoubleArray.get();
-			if(arr != null && arr.length == nnz) {
-				outputBlock.setDenseBlock(arr);
-				outputArray = arr;
-			}
-		}
-		
-		if(outputArray == null) {
-			outputBlock.allocateDenseBlock();
-			outputArray = outputBlock.getDenseBlock();
-			reuseableNonZeroedDoubleArray = new SoftReference<double[]>(outputArray);
-		}
-		
-		outputBlock.setNonZeros(nnz);
-		return outputBlock;
-	}
 }

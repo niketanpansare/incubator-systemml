@@ -27,10 +27,11 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
+import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
-
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -97,6 +98,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	//basic header (int rlen, int clen, byte type)
 	public static final int HEADER_SIZE = 9;
 	
+	public static final boolean REUSE_NONZEROED_OUTPUT = true;
+	// Using hashmap to avoid any performance impacts of multimap
+	public static final HashMap<Integer, SoftReference<double[]>> NON_ZEROED_DOUBLE_ARR = new HashMap<Integer, SoftReference<double[]>>();
+	public static final int NON_ZEROED_DOUBLE_ARR_THRESHOLD = 100;
+	
 	public enum BlockType{
 		EMPTY_BLOCK,  
 		ULTRA_SPARSE_BLOCK, //ultra sparse representation, in-mem same as sparse
@@ -111,8 +117,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	protected long nonZeros   = 0;
 	
 	//matrix data (sparse or dense)
-	public double[] denseBlock    = null;
-	public SparseBlock sparseBlock = null;
+	protected double[] denseBlock    = null;
+	protected SparseBlock sparseBlock = null;
 		
 	//sparse-block-specific attributes (allocation only)
 	protected int estimatedNNzsPerRow = -1; 
@@ -403,6 +409,39 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			allocateDenseBlock();
 	}
 	
+	public void allocateDenseBlock(boolean clearNNZ, boolean zeroOut) 
+			throws RuntimeException 
+		{
+			long limit = (long)rlen * clen;
+			
+			//check max size constraint (16GB dense), since java arrays are limited to 2^(32-1) elements)
+			if( limit > Integer.MAX_VALUE ) {
+				throw new RuntimeException("Dense in-memory matrix block ("+rlen+"x"+clen+") exceeds supported size of "+Integer.MAX_VALUE+" elements (16GB). " +
+						                   "Please, reduce the JVM heapsize to execute this in MR.");
+			}
+			
+			//allocate block if non-existing or too small (guaranteed to be 0-initialized),
+			if(!zeroOut && REUSE_NONZEROED_OUTPUT 
+					&& (denseBlock == null || denseBlock.length < limit) 
+					&& limit >= NON_ZEROED_DOUBLE_ARR_THRESHOLD) {
+				SoftReference<double[]> arr = NON_ZEROED_DOUBLE_ARR.remove(limit);
+				if(arr != null) {
+					denseBlock = arr.get();
+				}
+			}
+			if(denseBlock == null || denseBlock.length < limit) {
+				denseBlock = new double[(int)limit];
+			}
+			
+			
+			//clear nnz if necessary
+			if( clearNNZ ) {
+				nonZeros = 0;
+			}
+			
+			sparse = false;
+		}
+	
 	/**
 	 * 
 	 * @param clearNNZ
@@ -411,25 +450,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public void allocateDenseBlock(boolean clearNNZ) 
 		throws RuntimeException 
 	{
-		long limit = (long)rlen * clen;
-		
-		//check max size constraint (16GB dense), since java arrays are limited to 2^(32-1) elements)
-		if( limit > Integer.MAX_VALUE ) {
-			throw new RuntimeException("Dense in-memory matrix block ("+rlen+"x"+clen+") exceeds supported size of "+Integer.MAX_VALUE+" elements (16GB). " +
-					                   "Please, reduce the JVM heapsize to execute this in MR.");
-		}
-		
-		//allocate block if non-existing or too small (guaranteed to be 0-initialized),
-		if(denseBlock == null || denseBlock.length < limit ) {
-			denseBlock = new double[(int)limit];
-		}
-		
-		//clear nnz if necessary
-		if( clearNNZ ) {
-			nonZeros = 0;
-		}
-		
-		sparse = false;
+		allocateDenseBlock(clearNNZ, false);
 	}
 	
 	public void setDenseBlock(double [] zeroedOutDenseArray) throws DMLRuntimeException {
@@ -5195,7 +5216,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		MatrixBlock m2 = checkType(m2Value);
 		MatrixBlock ret = checkType(result);
 		if( m1.clen != m2.rlen ) {
-			throw new RuntimeException("Dimensions do not match for matrix multiplication ("+m1.clen+"!="+m2.rlen+").");
+			throw new RuntimeException("Dimensions do not match for matrix multiplication ("+m1.clen+"!="+m2.rlen+"). The inputs are of"
+					+ " dimensions [" + m1.rlen + " " + m1.clen + "] and [" + m2.rlen + " " + m2.clen + "]");
 		}
 		if( !(op.binaryFn instanceof Multiply && op.aggOp.increOp.fn instanceof Plus) ) {
 			throw new DMLRuntimeException("Unsupported binary aggregate operation: ("+op.binaryFn+", "+op.aggOp+").");

@@ -19,7 +19,6 @@
 
 package org.apache.sysml.runtime.instructions.cp;
 
-import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -41,8 +40,6 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	// private static final Log LOG = LogFactory.getLog(ConvolutionCPInstruction.class.getName());
 
 	public static boolean ALLOW_MULTI_THREADED_OPS = true;
-	// For now by default, reuse output for 
-	public static boolean REUSE_NONZEROED_OUTPUT = true;
 	
 	private CPOperand _in2; // used for pooling backward
 	private ArrayList<CPOperand> _input_shape;
@@ -211,10 +208,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				// allocateReusableDenseOutputBlock = 0.025 seconds and allocateDenseOutputBlock = 4.7 seconds
 				// For 20000 calls,
 				// allocateReusableDenseOutputBlock = 0.155 seconds and allocateDenseOutputBlock = 62.006 seconds
-				if(ConvolutionCPInstruction.REUSE_NONZEROED_OUTPUT)
-					outputBlock = allocateReusableNonZeroedDenseOutputBlock(ec, C * R * S, N * P * Q);
-				else
-					outputBlock = allocateDenseOutputBlock(ec, C * R * S, N * P * Q);
+				outputBlock = getDenseOutputBlock(ec, C * R * S, N * P * Q, true);
 				im2col(matBlock, outputBlock);
 			}
 			else if (instOpcode.equalsIgnoreCase("reshape_col")) {
@@ -222,17 +216,14 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				this.input = matBlock;
 				// Is eligible for REUSE_NONZEROED_OUTPUT but cannot guarantee that previous output has been rmvar-ed
 				// without somewhat expensive HashMap checks
-				outputBlock = allocateDenseOutputBlock(ec, N, K * P * Q);
+				outputBlock = getDenseOutputBlock(ec, N, K * P * Q, true);
 				reshape_col(matBlock, outputBlock);
 			}
 			else if (instOpcode.equalsIgnoreCase("rotate180")) {
 				checkHeightWidth(ec);
 				this.input = matBlock;
 				// Is eligible for REUSE_NONZEROED_OUTPUT and always an intermediate instruction
-				if(ConvolutionCPInstruction.REUSE_NONZEROED_OUTPUT)
-					outputBlock = allocateReusableNonZeroedDenseOutputBlock(ec, N * P * Q, K);
-				else
-					outputBlock = allocateDenseOutputBlock(ec, N * P * Q, K);
+				outputBlock = getDenseOutputBlock(ec, N * P * Q, K, true);
 				rotate180(matBlock, outputBlock);
 			}
 			else if (instOpcode.equalsIgnoreCase("col2im")) {
@@ -240,14 +231,14 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				checkInputDimensionForCol2im(matBlock);
 				this.input = matBlock;
 				// needs to be zeroed-out
-				outputBlock = allocateDenseOutputBlock(ec, N, C * H * W);
+				outputBlock = getDenseOutputBlock(ec, N, C * H * W, false);
 				col2im(matBlock, outputBlock);
 			}
 			else if (instOpcode.equalsIgnoreCase("maxpooling")) {
 				this.input = matBlock;
 				// Is eligible for REUSE_NONZEROED_OUTPUT but cannot guarantee that previous output has been rmvar-ed
 				// without somewhat expensive HashMap checks
-				outputBlock = allocateDenseOutputBlock(ec, N, C*P*Q);
+				outputBlock = getDenseOutputBlock(ec, N, C*P*Q, true);
 				maxpooling(matBlock, outputBlock);
 			}
 			else if (instOpcode.equalsIgnoreCase("maxpooling_backward")) {
@@ -255,7 +246,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				this.input = matBlock;
 				// Is eligible for REUSE_NONZEROED_OUTPUT but cannot guarantee that previous output has been rmvar-ed
 				// without somewhat expensive HashMap checks
-				outputBlock = allocateDenseOutputBlock(ec, N, C*H*W); 
+				outputBlock = getDenseOutputBlock(ec, N, C*H*W, true); 
 				maxpooling_backward(matBlock, dout, outputBlock);
 				ec.releaseMatrixInput(_in2.getName());
 			}
@@ -268,7 +259,24 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 
 		// release inputs/outputs
 		ec.releaseMatrixInput(input1.getName());
-		ec.setMatrixOutput(output.getName(), outputBlock);
+		ec.setMatrixOutput(getOutputVariableName(), outputBlock);
+	}
+	
+	boolean reuseNonZeroedOutput = false;
+	private MatrixBlock getDenseOutputBlock(ExecutionContext ec, int numRows, int numCols, boolean reuseNonZeroedOutput) throws DMLRuntimeException {
+		MatrixBlock outputBlock = new MatrixBlock(numRows, numCols, numRows * numCols);
+		reuseNonZeroedOutput = false;
+		if(reuseNonZeroedOutput) {
+			reuseNonZeroedOutput = true;
+			outputBlock.allocateDenseBlock(true, !reuseNonZeroedOutput);  
+		}
+		else  {
+			outputBlock.allocateDenseBlock();
+		}
+		outputBlock.setNonZeros(numRows * numCols);
+		outputArray = outputBlock.getDenseBlock();
+		
+		return outputBlock;
 	}
 	
 	int N; int C; int H; int W;
@@ -297,14 +305,6 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		if(Q <= 0) {
 			throw new DMLRuntimeException("Width of output patch should be zero");
 		}
-	}
-	
-	private MatrixBlock allocateDenseOutputBlock(ExecutionContext ec, int numRowsOutput, int numColsOutput) throws DMLRuntimeException {
-		MatrixBlock outputBlock = new MatrixBlock(numRowsOutput, numColsOutput, numRowsOutput * numColsOutput);
-		outputBlock.allocateDenseBlock();
-		outputArray = outputBlock.getDenseBlock();
-		outputBlock.setNonZeros(numRowsOutput * numColsOutput);
-		return outputBlock;
 	}
 
 	private void maxpooling_backward(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock) throws DMLRuntimeException {
@@ -687,13 +687,13 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 								else
 									outputArray[localIndex] = input.quickGetValue(n, c*H*W + input_row*W + input_col);
 							}
-							else if(ConvolutionCPInstruction.REUSE_NONZEROED_OUTPUT) {
+							else if(reuseNonZeroedOutput) {
 								outputArray[localIndex] = 0;
 							}
 							input_col += stride_w;
 						}
 					} else {
-						if(ConvolutionCPInstruction.REUSE_NONZEROED_OUTPUT) {
+						if(reuseNonZeroedOutput) {
 							for(int i = localIndex; i < localIndex + Q; i++) {
 								outputArray[localIndex] = 0;
 							}
@@ -707,31 +707,6 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		
 	}
 
-	private SoftReference<double[]> reuseableNonZeroedDoubleArray;
-	
-	private MatrixBlock allocateReusableNonZeroedDenseOutputBlock(ExecutionContext ec, int numRowsOutput, int numColsOutput) throws DMLRuntimeException {
-		long nnz = numRowsOutput * numColsOutput;
-		MatrixBlock outputBlock = new MatrixBlock(numRowsOutput, numColsOutput, nnz);
-		outputArray = null;
-		if(reuseableNonZeroedDoubleArray != null) {
-			double[] arr = reuseableNonZeroedDoubleArray.get();
-			if(arr != null && arr.length == nnz) {
-				outputBlock.setDenseBlock(arr);
-				outputArray = arr;
-			}
-		}
-		
-		if(outputArray == null) {
-			outputBlock.allocateDenseBlock();
-			outputArray = outputBlock.getDenseBlock();
-			reuseableNonZeroedDoubleArray = new SoftReference<double[]>(outputArray);
-		}
-		
-		outputBlock.setNonZeros(nnz);
-		return outputBlock;
-	}
-	
-	
 	private void checkInputDimensionForIm2col(MatrixBlock matBlock) throws DMLRuntimeException {
 		if((N != matBlock.getNumRows() || C*H*W != matBlock.getNumColumns())) {
 			throw new DMLRuntimeException("Incorrect input shape in conv2d");
