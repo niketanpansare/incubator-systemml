@@ -79,22 +79,24 @@ The additional required argument for max_pool/avg_pool functions is:
 
 ### Explanation of backward functions for conv2d
 
-Consider one-channel 3 X 3 image =  
+Consider one-channel 3 X 3 image =
+  
 | x1 | x2 | x3 |
 |----|----|----|
 | x4 | x5 | x6 |
 | x7 | x8 | x9 |
 
 and one 2 X 2 filter:
+
 | w1 | w2 |
 |----|----|
 | w3 | w4 |
 
 Then, `conv2d(image, filter, stride=[1, 1], padding=[0, 0], input_shape=[1, 1, 3, 3], filter_shape=[1, 1, 2, 2])` produces following tensor:
 
-| w1*x1 + w2*x2 + w3*x4 + w4*x5 | w1*x2 + w2*x3 + w3*x5 + w4*x6 |
-|-------------------------------|-------------------------------|
-| w1*x4 + w2*x5 + w3*x7 + w4*x8 | w1*x5 + w2*x6 + w3*x8 + w4*x9 |
+| `w1*x1 + w2*x2 + w3*x4 + w4*x5` | `w1*x2 + w2*x3 + w3*x5 + w4*x6` |
+|---------------------------------|---------------------------------|
+| `w1*x4 + w2*x5 + w3*x7 + w4*x8` | `w1*x5 + w2*x6 + w3*x8 + w4*x9` |
 
 The above tensor is of dimension `[1, 1, 2, 2]` and will be represented as `1 X 4` matrix in NCHW format as described above.
 
