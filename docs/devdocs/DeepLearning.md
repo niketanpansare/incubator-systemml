@@ -70,6 +70,8 @@ The additional required argument for conv2d/conv2d_backward_filter/conv2d_backwa
 The additional required argument for max_pool/avg_pool functions is:
 * pool_size=[height_pool, width_pool]
 
+The results of these functions are consistent with Nvidia's CuDNN library.
+
 ### Border mode:
 * To perform valid padding, use `padding = (input_shape-filter_shape)*(stride-1)/ 2`. (Hint: for stride length of 1, `padding = [0, 0]` performs valid padding).
 
@@ -92,77 +94,32 @@ and one 2 X 2 filter:
 |----|----|
 | w3 | w4 |
 
-Then, `conv2d(image, filter, stride=[1, 1], padding=[0, 0], input_shape=[1, 1, 3, 3], filter_shape=[1, 1, 2, 2])` produces following tensor:
+Then, `conv2d(x, w, stride=[1, 1], padding=[0, 0], input_shape=[1, 1, 3, 3], filter_shape=[1, 1, 2, 2])` produces following tensor
+of shape `[1, 1, 2, 2]`, which is represented as `1 X 4` matrix in NCHW format:
 
-| `w1*x1 + w2*x2 + w3*x4 + w4*x5` | `w1*x2 + w2*x3 + w3*x5 + w4*x6` |
+| `w1*x1 + w2*x2 + w3*x4 + w4*x5` | `w1*x2 + w2*x3 + w3*x5 + w4*x6` | `w1*x4 + w2*x5 + w3*x7 + w4*x8` | `w1*x5 + w2*x6 + w3*x8 + w4*x9` |
+|---------------------------------|---------------------------------|---------------------------------|---------------------------------|
+
+
+Let the error propagated from above layer is
+
+| y1 | y2 | y3 | y4 |
+|----|----|----|----|
+
+Then `conv2d_backward_filter(x, y, stride=[1, 1], padding=[0, 0], input_shape=[1, 1, 3, 3], filter_shape=[1, 1, 2, 2])` produces following 
+updates for the filter:
+
+| `y1*x1 + y2*x2 + y3*x4 + y4*x5` | `y1*x2 + y2*x3 + y3*x5 + y4*x6` |
 |---------------------------------|---------------------------------|
-| `w1*x4 + w2*x5 + w3*x7 + w4*x8` | `w1*x5 + w2*x6 + w3*x8 + w4*x9` |
+| `y1*x4 + y2*x5 + y3*x7 + y4*x8` | `y1*x5 + y2*x6 + y3*x8 + y4*x9` |
 
-The above tensor is of dimension `[1, 1, 2, 2]` and will be represented as `1 X 4` matrix in NCHW format as described above.
+Note: since the above update is a tensor of shape [1, 1, 2, 2], it will be represented as matrix of dimension [1, 4].
+
+Similarly, `conv2d_backward_data(w, y, stride=[1, 1], padding=[0, 0], input_shape=[1, 1, 3, 3], filter_shape=[1, 1, 2, 2])` produces following 
+updates for the image:
 
 
-
-The function `conv2d_backward_data(filter, dout, zero padding)` performs the operation `conv2d(dout, rotate_4Dtensor(filter), full padding)`
-and `conv2d_backward_filter(x, dout)` performs `flipFirst2Dim( conv2d(flipFirst2Dim(x), flipFirst2Dim(dout) )`. 
-The results of these functions are consistent with Nvidia's CuDNN library.
-
-The function `rotate_4Dtensor` can be implemented using following DML script:
-
-``` python
-rotate_matrix = function(matrix[double] filter) return (matrix[double] ret) {
-        pc = table(seq(1, ncol(filter)), seq(ncol(filter), 1, -1))
-        out1 = filter %*% pc
-        pr = table(seq(1, ncol(filter)), seq(ncol(filter), 1, -1))
-        ret = pr %*% out1
-}
-
-rotate_4Dtensor = function(matrix[double] filter, int dim1, int dim2, int dim3, int dim4) return (matrix[double] ret) {
-        ret = matrix(0, rows=dim2, cols=dim1*dim3*dim4)
-        for(k in 0:(dim1-1)) {
-                for(c in 0:(dim2-1)) {
-                        # ---------------------------------------------------
-                        # Since the tensor is stored in row-major format, the indexing flips the first and second dimensions
-                        outIndex1 = k*dim3*dim4
-                        outIndex2 = (k+1)*dim3*dim4-1
-                        inIndex1 = c*dim3*dim4
-                        inIndex2 = (c+1)*dim3*dim4-1
-                        # ---------------------------------------------------
-                        # Now, extract one channel of one filter and rotate it
-                        oneFilterMap = filter[k+1, (inIndex1+1):(inIndex2+1)]
-                        rotatedOneFilterMap = rotate_matrix(oneFilterMap)
-                        # ---------------------------------------------------
-                        # Place the rotated filter map back
-                        ret[c+1, (outIndex1+1):(outIndex2+1)] = rotatedOneFilterMap
-                }
-        }
-}
-
-flipFirst2Dim = function(matrix[double] filter, int dim1, int dim2, int dim3, int dim4) return (matrix[double] ret) {
-        ret = matrix(0, rows=dim2, cols=dim1*dim3*dim4)
-        for(k in 0:(dim1-1)) {
-                for(c in 0:(dim2-1)) {
-                        # ---------------------------------------------------
-                        # Since the tensor is stored in row-major format, the indexing flips the first and second dimensions
-                        outIndex1 = k*dim3*dim4
-                        outIndex2 = (k+1)*dim3*dim4-1
-                        inIndex1 = c*dim3*dim4
-                        inIndex2 = (c+1)*dim3*dim4-1
-                        # Place the rotated filter map back
-                        ret[c+1, (outIndex1+1):(outIndex2+1)] = filter[k+1, (inIndex1+1):(inIndex2+1)]
-                }
-        }
-}
-
-# Example invocations:
-rotated_filter = rotate_4Dtensor(filter, K, C, R, S)
-dx1 = conv2d(dout, rotated_filter, stride=[stride_h, stride_w], padding=[R-1, S-1], input_shape=[N, K, P, Q], filter_shape=[C, K, R, S])
-dx2 = conv2d_backward_data(filter, dout, stride=[stride_h, stride_w], padding=[pad_h, pad_w], input_shape=[N, C, H, W], filter_shape=[K, C, R, S])
-# dx1 is same as dx2
-
-r_x = flipFirst2Dim(x, N, C, H, W)
-r_d = flipFirst2Dim(dout, N, K, P, Q)
-out = conv2d(r_x, r_d, stride=[stride_h, stride_w], padding=[pad_h, pad_w], input_shape=[C, N, H, W], filter_shape=[K, N, P, Q])
-dfilter1 = flipFirst2Dim(out, C, K, R, S)
-dfilter2 = conv2d_backward_filter(x, dout, stride=[stride_h, stride_w], padding=[pad_h, pad_w], input_shape=[N, C, H, W], filter_shape=[K, C, R, S])
-# dfilter1 is same as dfilter2
-``` 
+| `w1*y1`         | `w2*y1 + w1*y2`                 | `w2*y2`         |
+|-----------------|---------------------------------|-----------------|
+| `w3*y1 + w1*y3` | `w4*y1 + w3*y2 + w2*y3 + w1*y4` | `w4*y2 + w2*y4` |
+| `w3*y3`         | `w4*y3 + w3*y4`                 | `w4*y4`         |
