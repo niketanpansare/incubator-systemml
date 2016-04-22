@@ -33,6 +33,7 @@ public class GPUInstructionParser  extends InstructionParser
 		String2GPUInstructionType = new HashMap<String, CPINSTRUCTION_TYPE>();
 		String2GPUInstructionType.put( "conv2d"      , CPINSTRUCTION_TYPE.Convolution);
 		String2GPUInstructionType.put( "conv2d_backward_filter"      , CPINSTRUCTION_TYPE.Convolution);
+		String2GPUInstructionType.put( "conv2d_backward_data"      , CPINSTRUCTION_TYPE.Convolution);
 		String2GPUInstructionType.put( "ba+*"   	, CPINSTRUCTION_TYPE.AggregateBinary);
 		
 	}

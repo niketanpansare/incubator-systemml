@@ -36,7 +36,7 @@ public class ConvolutionTransform extends Lop
 		COL2IM,
 		MAX_POOLING,
 		MAX_POOLING_BACKWARD,
-		DIRECT_CONV2D, DIRECT_CONV2D_BACKWARD_FILTER
+		DIRECT_CONV2D, DIRECT_CONV2D_BACKWARD_FILTER, DIRECT_CONV2D_BACKWARD_DATA
 	};
 	
 	private OperationTypes operation = null;
@@ -123,6 +123,9 @@ public class ConvolutionTransform extends Lop
 			
 		case DIRECT_CONV2D_BACKWARD_FILTER:
 			return "conv2d_backward_filter";
+			
+		case DIRECT_CONV2D_BACKWARD_DATA:
+			return "conv2d_backward_data";
 			
 		default:
 			throw new UnsupportedOperationException(this.printErrorLocation() + "Instruction is not defined for Transform operation " + operation);

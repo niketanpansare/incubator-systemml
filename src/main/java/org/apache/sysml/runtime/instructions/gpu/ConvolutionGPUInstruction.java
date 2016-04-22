@@ -64,7 +64,8 @@ public class ConvolutionGPUInstruction extends UnaryCPInstruction {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		if (opcode.equalsIgnoreCase("conv2d") ||
-				opcode.equalsIgnoreCase("conv2d_backward_filter")) {
+				opcode.equalsIgnoreCase("conv2d_backward_filter") ||
+				opcode.equalsIgnoreCase("conv2d_backward_data")) {
 			InstructionUtils.checkNumFields(parts, 15);
 			// dout, stride1, stride2, padding1, padding2
 			// input_shape1, input_shape2, input_shape3, input_shape4,
@@ -115,7 +116,8 @@ public class ConvolutionGPUInstruction extends UnaryCPInstruction {
 			throws DMLRuntimeException {
 		MatrixObject out = null;
 		if (instOpcode.equalsIgnoreCase("conv2d") || 
-				instOpcode.equalsIgnoreCase("conv2d_backward_filter")) {
+				instOpcode.equalsIgnoreCase("conv2d_backward_filter") ||
+				instOpcode.equalsIgnoreCase("conv2d_backward_data")) {
 			
 			pad_h = getScalarInput(ec, _padding, 0);
 			pad_w = getScalarInput(ec, _padding, 1);
@@ -141,6 +143,11 @@ public class ConvolutionGPUInstruction extends UnaryCPInstruction {
 				if(image.getMatrixBlock().isInSparseFormat() || filter.getMatrixBlock().isInSparseFormat()) {
 					throw new DMLRuntimeException("Sparse convolution not implemented");
 				}
+				if(image.getNumRows() != N || image.getNumColumns() != C*H*W) 
+					throw new DMLRuntimeException("Incorrect dimensions for image in conv2d");
+				if(filter.getNumRows() != K || filter.getNumColumns() != C*R*S) 
+					throw new DMLRuntimeException("Incorrect dimensions for filter in conv2d");
+				
 				GPUContext gpuCtx = GPUContext.getCurrentContext();
 				if(gpuCtx != null) {
 					out = ec.getMatrixOutputForGPUInstruction(output.getName(), N, K * P * Q);
@@ -158,10 +165,37 @@ public class ConvolutionGPUInstruction extends UnaryCPInstruction {
 				MatrixObject image = ec.getMatrixInputForGPUInstruction(input1.getName());
 				MatrixObject dout = ec.getMatrixInputForGPUInstruction(_in2.getName());
 				if(image.getMatrixBlock().isInSparseFormat() || dout.getMatrixBlock().isInSparseFormat())
-					throw new DMLRuntimeException("Sparse convolution backward not implemented");
+					throw new DMLRuntimeException("Sparse convolution_backward_filter not implemented");
+				if(image.getNumRows() != N || image.getNumColumns() != C*H*W) 
+					throw new DMLRuntimeException("Incorrect dimensions for image in conv2d_backward_filter");
+				if(dout.getNumRows() != N || dout.getNumColumns() != K*P*Q) 
+					throw new DMLRuntimeException("Incorrect dimensions for dout in conv2d_backward_filter: " + 
+							dout.getNumRows() + " != " +  N + " || " + dout.getNumColumns() + " != " + K*P*Q);
 				if(GPUContext.getCurrentContext() != null) {
 					out = ec.getMatrixOutputForGPUInstruction(output.getName(), K, C * R * S);
 					GPUContext.getCurrentContext().conv2d_backward_filter(image, dout, out, N, C, H, W,
+							K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
+					// TODO: For now always copy the device data to host
+					// ec.gpuCtx.copyDeviceToHost(outputBlock);
+				}
+				else {
+					throw new DMLRuntimeException("GPUContext is not initialized");
+				}
+			}
+			else if (instOpcode.equalsIgnoreCase("conv2d_backward_data")) {
+				MatrixObject filter = ec.getMatrixInputForGPUInstruction(input1.getName());
+				MatrixObject dout = ec.getMatrixInputForGPUInstruction(_in2.getName());
+				if(filter.getMatrixBlock().isInSparseFormat() || dout.getMatrixBlock().isInSparseFormat())
+					throw new DMLRuntimeException("Sparse convolution_backward_data not implemented");
+				if(filter.getNumRows() != K || filter.getNumColumns() != C*R*S) 
+					throw new DMLRuntimeException("Incorrect dimensions for filter in convolution_backward_data");
+				if(dout.getNumRows() != N || dout.getNumColumns() != K*P*Q) 
+					throw new DMLRuntimeException("Incorrect dimensions for dout in conv2d_backward_data: " + 
+							dout.getNumRows() + " != " +  N + " || " + dout.getNumColumns() + " != " + K*P*Q);
+				
+				if(GPUContext.getCurrentContext() != null) {
+					out = ec.getMatrixOutputForGPUInstruction(output.getName(), N, C * H * W);
+					GPUContext.getCurrentContext().conv2d_backward_data(filter, dout, out, N, C, H, W,
 							K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
 					// TODO: For now always copy the device data to host
 					// ec.gpuCtx.copyDeviceToHost(outputBlock);

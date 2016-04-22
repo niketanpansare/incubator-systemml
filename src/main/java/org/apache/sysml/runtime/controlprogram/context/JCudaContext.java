@@ -39,6 +39,7 @@ import jcuda.jcudnn.cudnnTensorDescriptor;
 import jcuda.runtime.JCuda;
 import jcuda.jcudnn.cudnnHandle;
 import static jcuda.jcudnn.JCudnn.cudnnConvolutionBackwardFilter;
+import static jcuda.jcudnn.JCudnn.cudnnConvolutionBackwardData;
 import static jcuda.jcudnn.JCudnn.cudnnConvolutionForward;
 import static jcuda.jcudnn.JCudnn.cudnnCreate;
 import static jcuda.jcublas.JCublas2.cublasCreate;
@@ -51,6 +52,7 @@ import static jcuda.jcudnn.JCudnn.cudnnDestroyConvolutionDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnDestroyFilterDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnDestroyTensorDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnGetConvolutionBackwardFilterWorkspaceSize;
+import static jcuda.jcudnn.JCudnn.cudnnGetConvolutionBackwardDataWorkspaceSize;
 import static jcuda.jcudnn.JCudnn.cudnnGetConvolutionForwardWorkspaceSize;
 import static jcuda.jcudnn.JCudnn.cudnnSetConvolutionNdDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnSetFilterNdDescriptor;
@@ -498,6 +500,73 @@ public class JCudaContext extends GPUContext {
 				cudaFree(alpha);
 			if(beta != null)
 				cudaFree(beta);
+		}
+	}
+
+
+	@Override
+	public void conv2d_backward_data(MatrixObject filter, MatrixObject dout,
+			MatrixObject output, int N, int C, int H, int W, int K, int R,
+			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
+			int Q) throws DMLRuntimeException {
+		JCudaContext gpuCtx = this;
+		Pointer alpha = null;
+		Pointer beta = null;
+		cudnnTensorDescriptor dyDesc = null;
+		cudnnTensorDescriptor dxDesc = null;
+		cudnnFilterDescriptor wDesc = null;
+		cudnnConvolutionDescriptor convDesc = null;
+		
+		Pointer workSpace = null;
+		long sizeInBytes = 0;
+		try {
+			// Allocate descriptors
+			wDesc = gpuCtx.allocateFilterDescriptor(K, C, R, S);
+			dyDesc = gpuCtx.allocateTensorDescriptor(N, K, P, Q);
+			dxDesc = gpuCtx.allocateTensorDescriptor(N, C, H, W);
+			
+			// Allocate data
+			Pointer w = ((JCudaPointer)filter.gpuPointer).jcudaPointer; 
+			Pointer dy = ((JCudaPointer)dout.gpuPointer).jcudaPointer; 
+			Pointer dx = ((JCudaPointer)output.gpuPointer).jcudaPointer; 
+			
+			alpha = gpuCtx.pointerTo(1.0); // TODO
+			beta = gpuCtx.pointerTo(0.0f);
+			
+			int padding [] = { pad_h, pad_w }; 
+			int strides [] = { stride_h, stride_w };
+			convDesc = allocateConvolutionDescriptor(padding, strides);
+			long sizeInBytesArray[] = { 0 };
+			
+			// TODO: Select the best algorithm depending on the data and supported CUDA
+			int algo = jcuda.jcudnn.cudnnConvolutionBwdDataAlgo.CUDNN_CONVOLUTION_BWD_DATA_ALGO_0;
+			workSpace = new Pointer();
+			cudnnGetConvolutionBackwardDataWorkspaceSize(gpuCtx.cudnnHandle,
+					wDesc, dyDesc, convDesc, dxDesc, algo, sizeInBytesArray);
+			
+			int status = cudnnConvolutionBackwardData(gpuCtx.cudnnHandle, alpha, wDesc, w, 
+					dyDesc, dy, convDesc, algo, workSpace, sizeInBytes, beta, dxDesc, dx);
+			if(status != jcuda.jcudnn.cudnnStatus.CUDNN_STATUS_SUCCESS) {
+				throw new DMLRuntimeException("Could not executed cudnnConvolutionBackwardData: " + jcuda.jcudnn.cudnnStatus.stringFor(status));
+			}
+		}
+		finally {
+			if(alpha != null)
+				cudaFree(alpha);
+			if(beta != null)
+				cudaFree(beta);
+			if(dyDesc != null)
+				cudnnDestroyTensorDescriptor(dyDesc);
+			if(dxDesc != null)
+				cudnnDestroyTensorDescriptor(dxDesc);
+			if(wDesc != null)
+				cudnnDestroyFilterDescriptor(wDesc);
+			
+			if(convDesc != null)
+				cudnnDestroyConvolutionDescriptor(convDesc);
+			
+			if(workSpace != null && sizeInBytes != 0)
+				cudaFree(workSpace);
 		}
 	}
 	

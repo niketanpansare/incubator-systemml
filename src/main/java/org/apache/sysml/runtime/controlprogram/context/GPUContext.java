@@ -80,6 +80,8 @@ public abstract class GPUContext {
 			int K, int R, int S, int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q) throws DMLRuntimeException;
 	public abstract void conv2d_backward_filter(MatrixObject image, MatrixObject dout, MatrixObject output, int N, int C, int H, int W,
 			int K, int R, int S, int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q) throws DMLRuntimeException;
+	public abstract void conv2d_backward_data(MatrixObject filter, MatrixObject dout, MatrixObject output, int N, int C, int H, int W,
+			int K, int R, int S, int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q) throws DMLRuntimeException;
 	public abstract void matmult(MatrixObject left, MatrixObject right, MatrixObject output, boolean isLeftTransposed, boolean isRightTransposed) throws DMLRuntimeException;
 	
 	public static boolean isInSparseFormat(MatrixObject mo) {

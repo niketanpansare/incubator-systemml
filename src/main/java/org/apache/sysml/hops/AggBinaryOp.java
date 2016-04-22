@@ -19,8 +19,6 @@
 
 package org.apache.sysml.hops;
 
-import java.util.ArrayList;
-
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -139,31 +137,6 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		return _method;
 	}
 	
-	Lop constructConvolutionLops() throws HopsException, LopsException {
-		Lop ret = null;
-		if(DMLScript.USE_GPU) {
-			Hop left = getInput().get(0);
-			Hop right = getInput().get(1);
-			Hop x_col = right.getInput().size() > 0 ? right.getInput().get(0) : null;
-			if(left instanceof ConvolutionOp && ((ConvolutionOp) left).getOp() == Hop.ConvOp.ROTATE180
-					&& right instanceof ReorgOp && ((ReorgOp)right).getOp() == ReOrgOp.TRANSPOSE
-					&& x_col != null && x_col instanceof ConvolutionOp
-					&& ((ConvolutionOp) x_col).getOp() == Hop.ConvOp.IM2COL) {
-				Hop image = x_col.getInput().get(0);
-				Hop dout = left.getInput().get(0);
-				ArrayList<Hop> inputs = new ArrayList<Hop>();
-				inputs.add(image);
-				inputs.add(dout);
-				for(int i = 1; i < x_col.getInput().size(); i++) {
-					inputs.add(x_col.getInput().get(i));
-				}
-				((ConvolutionOp) x_col).setOp(ConvOp.DIRECT_CONV2D_BACKWARD_FILTER); 
-				return ((ConvolutionOp) x_col).constructConvolutionLops(ExecType.GPU, inputs);
-			}
-		}
-		
-		return ret;
-	}
 	
 	/**
 	 * NOTE: overestimated mem in case of transpose-identity matmult, but 3/2 at worst
@@ -178,11 +151,6 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		if( getLops() != null )
 			return getLops();
 		
-		Lop ret = constructConvolutionLops();
-		if(ret != null) {
-			return ret;
-		}
-	
 		//construct matrix mult lops (currently only supported aggbinary)
 		if ( isMatrixMultiply() ) 
 		{

@@ -29,43 +29,43 @@ public class Conv2DBackwardTest extends AutomatedTestBase
 	HashMap<CellIndex, Double> bHM = new HashMap<CellIndex, Double>();
 	
 	@Test
-	public void testConv2DDense1() 
+	public void testConv2DBackwardFilterDense1() 
 	{
 		int numImg = 3; int imgSize = 3; int numChannels = 3; int numFilters = 1; int filterSize = 2; int stride = 1; int pad = 0;
 		fillTest1HM();
-		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad);
+		runConv2DBackwardFilterTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad);
 	}
 	
 	@Test
-	public void testConv2DDense2() 
+	public void testConv2DBackwardFilterDense2() 
 	{
 		int numImg = 3; int imgSize = 3; int numChannels = 3; int numFilters = 4; int filterSize = 2; int stride = 1; int pad = 0;
 		fillTest2HM();
-		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad);
+		runConv2DBackwardFilterTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad);
 	}
 	
 	@Test
-	public void testConv2DDense3() 
+	public void testConv2DBackwardFilterDense3() 
 	{
 		int numImg = 3; int imgSize = 10; int numChannels = 4; int numFilters = 3; int filterSize = 2; int stride = 2; int pad = 1;
 		fillTest3HM();
-		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad);
+		runConv2DBackwardFilterTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad);
 	}
 	
 	@Test
-	public void testConv2DDense4() 
+	public void testConv2DBackwardFilterDense4() 
 	{
 		int numImg = 3; int imgSize = 10; int numChannels = 4; int numFilters = 3; int filterSize = 3; int stride = 1; int pad = 1;
 		fillTest4HM();
-		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad);
+		runConv2DBackwardFilterTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad);
 	}
 	
 	@Test
-	public void testConv2DDense5() 
+	public void testConv2DBackwardFilterDense5() 
 	{
 		int numImg = 3; int imgSize = 10; int numChannels = 2; int numFilters = 3; int filterSize = 3; int stride = 3; int pad = 1;
 		fillTest5HM();
-		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad);
+		runConv2DBackwardFilterTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad);
 	}
 	
 	/**
@@ -73,7 +73,7 @@ public class Conv2DBackwardTest extends AutomatedTestBase
 	 * @param et
 	 * @param sparse
 	 */
-	public void runConv2DTest( ExecType et, int imgSize, int numImg, int numChannels, int numFilters, 
+	public void runConv2DBackwardFilterTest( ExecType et, int imgSize, int numImg, int numChannels, int numFilters, 
 			int filterSize, int stride, int pad) 
 	{
 		RUNTIME_PLATFORM oldRTP = rtplatform;

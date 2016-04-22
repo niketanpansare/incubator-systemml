@@ -21,7 +21,6 @@ package org.apache.sysml.hops;
 
 import java.util.ArrayList;
 
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.ConvolutionTransform;
@@ -93,33 +92,17 @@ public class ConvolutionOp extends Hop
 		if( getLops() != null )
 			return getLops();
 
-		
-		ExecType et = ExecType.INVALID;
-		ArrayList<Hop> inputs = getInput();
-		
-		if(DMLScript.USE_GPU) {
-			Hop parent = getInput().get(0);
-			if(op == ConvOp.RESHAPE_COL && 
-					parent instanceof AggBinaryOp 
-					&& parent.getInput().get(1) instanceof ConvolutionOp
-					&& ((ConvolutionOp) parent.getInput().get(1)).getOp() == ConvOp.IM2COL) {
-				// Can be fused as GPU DIRECT_CONV2D
-				et = ExecType.GPU;
-				this.op = ConvOp.DIRECT_CONV2D;
-				inputs = new ArrayList<Hop>();
-				Hop image = parent.getInput().get(1).getInput().get(0);
-				Hop filter = parent.getInput().get(0);
-				inputs.add(image);
-				inputs.add(filter);
-				for(int i = 1; i < getInput().size(); i++){
-					inputs.add(getInput().get(i));
-				}
-			}
+		Lop ret = ConvolutionUtils.constructConvolutionLops(this);
+		if(ret != null) {
+			return ret;
+		}
+		ret = ConvolutionUtils.constructConvolutionBackwardDataLops(this);
+		if(ret != null) {
+			return ret;
 		}
 		
-		if(et == ExecType.INVALID)
-			et = optFindExecType();
-		
+		ExecType et = optFindExecType();
+		ArrayList<Hop> inputs = getInput();
 		switch( op )
 		{
 			case IM2COL:
@@ -129,6 +112,8 @@ public class ConvolutionOp extends Hop
 			case MAX_POOLING:
 			case MAX_POOLING_BACKWARD:
 			case DIRECT_CONV2D:
+			case DIRECT_CONV2D_BACKWARD_DATA:
+			case DIRECT_CONV2D_BACKWARD_FILTER:
 			{	
 				if( et == ExecType.CP || et == ExecType.GPU)
 				{
@@ -156,7 +141,10 @@ public class ConvolutionOp extends Hop
 	
 	public Lop constructConvolutionLops(ExecType et, ArrayList<Hop> inputs) throws HopsException, LopsException {
 		int expectedNumInputs = 13;
-		if(op == ConvOp.MAX_POOLING_BACKWARD || op == ConvOp.DIRECT_CONV2D || op == ConvOp.DIRECT_CONV2D_BACKWARD_FILTER) {
+		if(op == ConvOp.MAX_POOLING_BACKWARD 
+				|| op == ConvOp.DIRECT_CONV2D 
+				|| op == ConvOp.DIRECT_CONV2D_BACKWARD_FILTER
+				|| op == ConvOp.DIRECT_CONV2D_BACKWARD_DATA) {
 			expectedNumInputs = 14;
 		}
 		
@@ -394,6 +382,30 @@ public class ConvolutionOp extends Hop
 				// Set _dim1, _dim2 and if possible _nnz (use input1.getNnz())
 				_dim1 = N;
 				_dim2 = getExtractedVal(C, H, W);
+				_nnz = _dim1*_dim2;
+				break;
+			}
+			case DIRECT_CONV2D:
+			{
+				parseInput();
+				_dim1 = N;
+				_dim2 = getExtractedVal(K, P, Q);
+				_nnz = _dim1*_dim2;
+				break;
+			}
+			case DIRECT_CONV2D_BACKWARD_DATA:
+			{
+				parseInput();
+				_dim1 = N;
+				_dim2 = getExtractedVal(C, H, W);
+				_nnz = _dim1*_dim2;
+				break;
+			}
+			case DIRECT_CONV2D_BACKWARD_FILTER:
+			{
+				parseInput();
+				_dim1 = K;
+				_dim2 = getExtractedVal(C, R, S);
 				_nnz = _dim1*_dim2;
 				break;
 			}
