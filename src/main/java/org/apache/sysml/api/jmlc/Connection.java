@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -75,7 +76,7 @@ import org.apache.wink.json4j.JSONObject;
  * a {@link Connection} object. The JMLC API is patterned
  * after JDBC. A DML script is precompiled by calling
  * the {@link #prepareScript(String, String[], String[], boolean)}
- * method or the {@link #prepareScript(String, HashMap, String[], String[], boolean)}
+ * method or the {@link #prepareScript(String, Map, String[], String[], boolean)}
  * method on the {@link Connection} object, which returns a
  * {@link PreparedScript} object. Note that this is similar to calling
  * a {@code prepareStatement} method on a JDBC {@code Connection} object.
@@ -164,7 +165,7 @@ public class Connection
 	 * @return PreparedScript object representing the precompiled script
 	 * @throws DMLException
 	 */
-	public PreparedScript prepareScript( String script, HashMap<String, String> args, String[] inputs, String[] outputs, boolean parsePyDML) 
+	public PreparedScript prepareScript( String script, Map<String, String> args, String[] inputs, String[] outputs, boolean parsePyDML) 
 		throws DMLException 
 	{
 		//prepare arguments
@@ -406,6 +407,24 @@ public class Connection
 		return ret;
 	}
 	
+	
+	////////////////////////////////////////////
+	// Read transform meta data
+	////////////////////////////////////////////
+	
+	/**
+	 * Reads transform meta data from an HDFS file path and converts it into an in-memory
+	 * FrameBlock object. The column names in the meta data file 'column.names' is processed
+	 * with default separator ','.
+	 * 
+	 * @param metapath  hdfs file path to meta data directory
+	 * @return FrameBlock object representing transform metadata
+	 * @throws IOException
+	 */
+	public FrameBlock readTransformMetaDataFromFile(String metapath) throws IOException {
+		return readTransformMetaDataFromFile(null, metapath, TfUtils.TXMTD_SEP);
+	}
+	
 	/**
 	 * Reads transform meta data from an HDFS file path and converts it into an in-memory
 	 * FrameBlock object. The column names in the meta data file 'column.names' is processed
@@ -433,6 +452,8 @@ public class Connection
 	public FrameBlock readTransformMetaDataFromFile(String spec, String metapath, String colDelim) 
 		throws IOException 
 	{
+		//NOTE: this implementation assumes column alignment of colnames and coltypes
+		
 		//read column types (for sanity check column names)
 		String coltypesStr = MapReduceTool.readStringFromHDFSFile(metapath+File.separator+TfUtils.TXMTD_COLTYPES);
 		List<String> coltypes = Arrays.asList(IOUtilFunctions.split(coltypesStr.trim(), TfUtils.TXMTD_SEP));
@@ -446,7 +467,7 @@ public class Connection
 		}
 		
 		//read meta data (currently only recode supported, without parsing spec)
-		HashMap<String,String> meta = new HashMap<String,String>();
+		Map<String,String> meta = new HashMap<String,String>();
 		int rows = 0;
 		for( int j=0; j<colnames.size(); j++ ) {
 			String colName = colnames.get(j);
@@ -460,9 +481,25 @@ public class Connection
 				LOG.warn("Recode map for column '"+colName+"' does not exist.");
 			}
 		}
+
+		//get list of recode ids
+		List<Integer> recodeIDs = parseRecodeColIDs(spec, coltypes);
 		
 		//create frame block from in-memory strings
-		return convertToTransformMetaDataFrame(spec, rows, colnames, meta);
+		return convertToTransformMetaDataFrame(rows, recodeIDs, colnames, meta);
+	}
+	
+	/**
+	 * Reads transform meta data from the class path and converts it into an in-memory
+	 * FrameBlock object. The column names in the meta data file 'column.names' is processed
+	 * with default separator ','.
+	 * 
+	 * @param metapath  resource path to meta data directory
+	 * @return FrameBlock object representing transform metadata
+	 * @throws IOException
+	 */
+	public FrameBlock readTransformMetaDataFromPath(String metapath) throws IOException {
+		return readTransformMetaDataFromPath(null, metapath, TfUtils.TXMTD_SEP);
 	}
 	
 	/**
@@ -492,6 +529,8 @@ public class Connection
 	public FrameBlock readTransformMetaDataFromPath(String spec, String metapath, String colDelim) 
 		throws IOException 
 	{
+		//NOTE: this implementation assumes column alignment of colnames and coltypes
+		
 		//read column types (for sanity check column names)
 		String coltypesStr = IOUtilFunctions.toString(Connection.class.getResourceAsStream(metapath+"/"+TfUtils.TXMTD_COLTYPES));
 		List<String> coltypes = Arrays.asList(IOUtilFunctions.split(coltypesStr.trim(), TfUtils.TXMTD_SEP));
@@ -505,7 +544,7 @@ public class Connection
 		}
 		
 		//read meta data (currently only recode supported, without parsing spec)
-		HashMap<String,String> meta = new HashMap<String,String>();
+		Map<String,String> meta = new HashMap<String,String>();
 		int rows = 0;
 		for( int j=0; j<colnames.size(); j++ ) {
 			String colName = colnames.get(j);
@@ -521,21 +560,24 @@ public class Connection
 			}
 		}
 		
+		//get list of recode ids
+		List<Integer> recodeIDs = parseRecodeColIDs(spec, coltypes);
+		
 		//create frame block from in-memory strings
-		return convertToTransformMetaDataFrame(spec, rows, colnames, meta);
+		return convertToTransformMetaDataFrame(rows, recodeIDs, colnames, meta);
 	}
 	
 	/**
 	 * Converts transform meta data into an in-memory FrameBlock object.
 	 * 
-	 * @param spec      transform specification as json string
-	 * @param rows      maximum number of distinct items (number of rows in frame block)
-	 * @param colnames  column names, ordered by position
-	 * @param meta      map of (column name, recode map)-pairs, with recode maps in their original csv representation
-	 * @return FrameBlock object representing transform metadata
+	 * @param rows
+	 * @param recodeIDs
+	 * @param colnames
+	 * @param meta
+	 * @return
 	 * @throws IOException
 	 */
-	public FrameBlock convertToTransformMetaDataFrame(String spec, int rows, List<String> colnames, HashMap<String,String> meta) 
+	private FrameBlock convertToTransformMetaDataFrame(int rows, List<Integer> recodeIDs, List<String> colnames, Map<String,String> meta) 
 		throws IOException 
 	{
 		//create frame block w/ pure string schema
@@ -543,46 +585,68 @@ public class Connection
 		FrameBlock ret = new FrameBlock(schema, colnames);
 		ret.ensureAllocatedColumns(rows);
 		
-		try
-		{
-			ArrayList<Integer> specRecodeIDs = new ArrayList<Integer>();
+		//encode recode maps into frame
+		for( Integer colID : recodeIDs ) {
+			String name = colnames.get(colID-1);
+			String map = meta.get(name);
+			if( map == null )
+				throw new IOException("Recode map for column '"+name+"' (id="+colID+") not existing.");
 			
-			//parse json transform specification
-			JSONObject jSpec = new JSONObject(spec);
-			if ( jSpec.containsKey(TfUtils.TXMETHOD_RECODE))  {
-				JSONArray attrs = null; //TODO simplify once json spec consolidated
-				if( jSpec.get(TfUtils.TXMETHOD_RECODE) instanceof JSONObject ) {
-					JSONObject obj = (JSONObject) jSpec.get(TfUtils.TXMETHOD_RECODE);
-					attrs = (JSONArray) obj.get(TfUtils.JSON_ATTRS);
+			InputStream is = new ByteArrayInputStream(map.getBytes("UTF-8"));
+			BufferedReader br = new BufferedReader(new InputStreamReader(is));
+			Pair<String,String> pair = new Pair<String,String>();
+			String line; int rpos = 0;
+			while( (line = br.readLine()) != null ) {
+				DecoderRecode.parseRecodeMapEntry(line, pair);
+				String tmp = pair.getKey() + Lop.DATATYPE_PREFIX + pair.getValue();
+				ret.set(rpos++, colID-1, tmp);
+			}
+		}
+		
+		return ret;
+	}
+	
+	/**
+	 * Parses the given json specification and extracts a list of column ids
+	 * that are subject to recoding.
+	 * 
+	 * @param spec
+	 * @param coltypes
+	 * @return
+	 * @throws IOException
+	 */
+	private ArrayList<Integer> parseRecodeColIDs(String spec, List<String> coltypes) 
+		throws IOException 
+	{	
+		ArrayList<Integer> specRecodeIDs = new ArrayList<Integer>();
+		
+		try {
+			if( spec != null ) {
+				//parse json transform specification for recode col ids
+				JSONObject jSpec = new JSONObject(spec);
+				if ( jSpec.containsKey(TfUtils.TXMETHOD_RECODE))  {
+					JSONArray attrs = null; //TODO simplify once json spec consolidated
+					if( jSpec.get(TfUtils.TXMETHOD_RECODE) instanceof JSONObject ) {
+						JSONObject obj = (JSONObject) jSpec.get(TfUtils.TXMETHOD_RECODE);
+						attrs = (JSONArray) obj.get(TfUtils.JSON_ATTRS);
+					}
+					else
+						attrs = (JSONArray)jSpec.get(TfUtils.TXMETHOD_RECODE);				
+					for(int j=0; j<attrs.length(); j++) 
+						specRecodeIDs.add(UtilFunctions.toInt(attrs.get(j)));
 				}
-				else
-					attrs = (JSONArray)jSpec.get(TfUtils.TXMETHOD_RECODE);				
-				for(int j=0; j<attrs.length(); j++) 
-					specRecodeIDs.add(UtilFunctions.toInt(attrs.get(j)));
-			}	
-			
-			//encode recode maps into frame
-			for( Integer colID : specRecodeIDs ) {
-				String name = colnames.get(colID-1);
-				String map = meta.get(name);
-				if( map == null )
-					throw new IOException("Recode map for column '"+name+"' (id="+colID+") not existing.");
-				
-				InputStream is = new ByteArrayInputStream(map.getBytes("UTF-8"));
-				BufferedReader br = new BufferedReader(new InputStreamReader(is));
-				Pair<String,String> pair = new Pair<String,String>();
-				String line; int rpos = 0;
-				while( (line = br.readLine()) != null ) {
-					DecoderRecode.parseRecodeMapEntry(line, pair);
-					String tmp = pair.getKey() + Lop.DATATYPE_PREFIX + pair.getValue();
-					ret.set(rpos++, colID-1, tmp);
-				}
+			}
+			else {
+				//obtain recode col ids from coltypes 
+				for( int j=0; j<coltypes.size(); j++ )
+					if( coltypes.get(j).equals("2") )
+						specRecodeIDs.add(j+1);
 			}
 		}
 		catch(Exception ex) {
 			throw new IOException(ex);
 		}
 		
-		return ret;
+		return specRecodeIDs;
 	}
 }
