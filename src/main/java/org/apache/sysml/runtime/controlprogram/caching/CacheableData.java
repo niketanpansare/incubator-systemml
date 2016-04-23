@@ -688,6 +688,9 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			freeEvictedBlob();	
 		
 		// clear the in-memory data
+		if(_data == null) {
+			getCache();
+		}
 		if(_data != null && _data instanceof MatrixBlock) {
 			double[] arr = ((MatrixBlock)_data).getDenseBlock();
 			if(arr != null && arr.length >= MatrixBlock.NON_ZEROED_DOUBLE_ARR_THRESHOLD) {

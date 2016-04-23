@@ -197,17 +197,6 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				checkHeightWidth(ec);
 				checkInputDimensionForIm2col(matBlock);
 				this.input = matBlock;
-				// I tried to generalized this approach (by caching allocated double[] which we removed by rmvar instruction) 
-				// but could not see any performance benefits probably due to cost of lookup is much higher.
-				// Since im2col is always an intermediate array whose output is consumed immediately,
-				// subsequent calls to the same im2col instruction (especially if recompile is turned off)
-				// can reuse the previously allocated outputs. Also a good rule of thumb is that cost of lookup
-				// for im2col is usually much less than the allocated output.
-				// For MNIST-sized dataset with batch-size of 64
-				// For 2000 calls, 
-				// allocateReusableDenseOutputBlock = 0.025 seconds and allocateDenseOutputBlock = 4.7 seconds
-				// For 20000 calls,
-				// allocateReusableDenseOutputBlock = 0.155 seconds and allocateDenseOutputBlock = 62.006 seconds
 				outputBlock = getDenseOutputBlock(ec, C * R * S, N * P * Q, true);
 				im2col(matBlock, outputBlock);
 			}
@@ -257,16 +246,19 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			throw new DMLRuntimeException("Unsupported op code " + instOpcode);
 		}
 
+		outputArray = null;
+		inputArray = null;
+		
 		// release inputs/outputs
 		ec.releaseMatrixInput(input1.getName());
 		ec.setMatrixOutput(getOutputVariableName(), outputBlock);
 	}
 	
 	boolean reuseNonZeroedOutput = false;
-	private MatrixBlock getDenseOutputBlock(ExecutionContext ec, int numRows, int numCols, boolean reuseNonZeroedOutput) throws DMLRuntimeException {
+	private MatrixBlock getDenseOutputBlock(ExecutionContext ec, int numRows, int numCols, boolean reuseNonZeroedOutput1) throws DMLRuntimeException {
 		MatrixBlock outputBlock = new MatrixBlock(numRows, numCols, numRows * numCols);
 		reuseNonZeroedOutput = false;
-		if(reuseNonZeroedOutput) {
+		if(reuseNonZeroedOutput1) {
 			reuseNonZeroedOutput = true;
 			outputBlock.allocateDenseBlock(true, !reuseNonZeroedOutput);  
 		}
@@ -669,10 +661,139 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		
 	}
 	
+//	private void doIm2colOverInputPath_NCHW(int n, int c) {
+//		if(inputArray == null) {
+//			sparse_doIm2colOverInputPath_NCHW(n, c);
+//			return;
+//		}
+//		
+//		final int inputOffset = n*C*H*W + c*H*W;
+//		final int outputOffset = (c*R*S*N + n)*P*Q;
+//		
+//		// ------------------------------------------------------------------------------
+//		// First take care of padding
+//		if(reuseNonZeroedOutput) {
+//			// Take care of left height padding
+//			for (int r = 0; r < pad_h; r++) { // Get an input patch of size R X S
+//				for (int s = 0; s < S; s++) {
+//					int localIndex = outputOffset + ((r*S*N + s*N)*P*Q);
+//					for (int p = P; p > 0; p--) {
+//						for(int i = localIndex; i < localIndex + Q; i++) {
+//							outputArray[localIndex] = 0;
+//						}
+//						localIndex += Q;
+//					}
+//				}
+//			}
+//		
+//			// Take care of left width padding
+//			for (int r = pad_h; r < R; r++) { // Get an input patch of size R X S
+//				for (int s = 0; s < pad_w; s++) {
+//					int localIndex = outputOffset + ((r*S*N + s*N)*P*Q);
+//					int input_row = r - pad_h;
+//					// And copy it to outputArray[i] (taking care of padding & striding)
+//					for (int p = P; p > 0; p--) {
+//						if (input_row >= 0 && input_row < H) {
+//							for (int q = Q; q > 0; q--, localIndex++) {
+//								outputArray[localIndex] = 0;
+//							}
+//						} else {
+//							for(int i = localIndex; i < localIndex + Q; i++) {
+//								outputArray[localIndex] = 0;
+//							}
+//							localIndex += Q;
+//						}
+//						input_row += stride_h;
+//					}
+//				}
+//			}
+//			
+//		}
+//		
+//		
+//		
+//		// ------------------------------------------------------------------------------
+//		
+//		// No left padding
+//		if(stride_w == 1) {
+//			 // Common case:
+//			for (int r = pad_h; r < R; r++) { // Get an input patch of size R X S
+//				for (int s = pad_w; s < S; s++) {
+//					int localIndex = outputOffset + ((r*S*N + s*N)*P*Q);
+//					int input_row = r - pad_h;
+//					for (int p = P; p > 0; p--) {
+//						if (input_row < H) {
+//							int input_col = s - pad_w;
+//							
+//							// Take care of right width padding 
+//							int qIndexForPadding = W - S + pad_w;
+//							int numPaddedZeroInThisStride = Q - qIndexForPadding + 1;
+//							if(reuseNonZeroedOutput) {
+//								for (int iter = localIndex; iter < localIndex + numPaddedZeroInThisStride; iter++) {
+//									outputArray[iter] = 0;
+//								}
+//							}
+//							localIndex += numPaddedZeroInThisStride;
+//							input_col += numPaddedZeroInThisStride;
+//							
+//							// number of elements on which we do arraycopy ~ [20, 120]
+//							System.arraycopy(inputArray, inputOffset + input_row*W + input_col, outputArray, localIndex, qIndexForPadding-1);
+//							
+//							localIndex += qIndexForPadding-1;
+//							input_col += qIndexForPadding-1;
+//						} else {
+//							if(reuseNonZeroedOutput) {
+//								for(int i = localIndex; i < localIndex + Q; i++) {
+//									outputArray[localIndex] = 0;
+//								}
+//							}
+//							localIndex += Q;
+//						}
+//						input_row += stride_h;
+//					}
+//				}
+//			}
+//		}
+//		else {
+//			for (int r = pad_h; r < R; r++) { // Get an input patch of size R X S
+//				for (int s = pad_w; s < S; s++) {
+//					int localIndex = outputOffset + ((r*S*N + s*N)*P*Q);
+//					int input_row = r - pad_h;
+//					for (int p = P; p > 0; p--) {
+//						if (input_row < H) {
+//							int input_col = s - pad_w;
+//							for (int q = Q; q > 0; q--, localIndex++) {
+//								if (input_col < W) {
+//									// Copy from [channel c, height input_row, width input_col]
+//									outputArray[localIndex] = inputArray[inputOffset + input_row*W + input_col];
+//								}
+//								else if(reuseNonZeroedOutput) {
+//									outputArray[localIndex] = 0;
+//								}
+//								input_col += stride_w;
+//							}
+//						} else {
+//							if(reuseNonZeroedOutput) {
+//								for(int i = localIndex; i < localIndex + Q; i++) {
+//									outputArray[localIndex] = 0;
+//								}
+//							}
+//							localIndex += Q;
+//						}
+//						input_row += stride_h;
+//					}
+//				}
+//			}
+//		}
+//	}
+	
 	private void doIm2colOverInputPath_NCHW(int n, int c) {
+		final int inputOffset = n*C*H*W + c*H*W;
+		final int outputOffset = (c*R*S*N + n)*P*Q;
+		
 		for (int r = 0; r < R; r++) { // Get an input patch of size R X S
 			for (int s = 0; s < S; s++) {
-				int localIndex = ((c*R*S*N + r*S*N + s*N + n)*P*Q);
+				int localIndex = outputOffset + ((r*S*N + s*N)*P*Q);
 				
 				int input_row = r - pad_h;
 				// And copy it to outputArray[i] (taking care of padding & striding)
@@ -682,8 +803,8 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 						for (int q = Q; q > 0; q--, localIndex++) {
 							if (input_col >= 0 && input_col < W) {
 								// Copy from [channel c, height input_row, width input_col]
-								if (inputArray != null)
-									outputArray[localIndex] = inputArray[n*C*H*W + c*H*W + input_row*W + input_col];
+								if(inputArray != null)
+									outputArray[localIndex] = inputArray[inputOffset + input_row*W + input_col];
 								else
 									outputArray[localIndex] = input.quickGetValue(n, c*H*W + input_row*W + input_col);
 							}
