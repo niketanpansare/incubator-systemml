@@ -188,6 +188,8 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		return gpuPointer;
 	}
 	public MatrixBlock getMatrixBlock() {
+		if(_data == null)
+			getCache();
 		if(_data != null && _data instanceof MatrixBlock)
 			return (MatrixBlock) _data;
 		else
@@ -694,7 +696,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		if(_data != null && _data instanceof MatrixBlock) {
 			double[] arr = ((MatrixBlock)_data).getDenseBlock();
 			if(arr != null && arr.length >= MatrixBlock.NON_ZEROED_DOUBLE_ARR_THRESHOLD) {
-				MatrixBlock.NON_ZEROED_DOUBLE_ARR.put(arr.length, new SoftReference<double[]>(arr));
+				MatrixBlock.NON_ZEROED_DOUBLE_ARR.put(new Integer(arr.length), new SoftReference<double[]>(arr));
 			}
 		}
 		_data = null;	

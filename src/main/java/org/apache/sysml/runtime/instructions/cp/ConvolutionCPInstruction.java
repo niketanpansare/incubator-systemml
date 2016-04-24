@@ -34,6 +34,7 @@ import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
+import org.apache.sysml.utils.Statistics;
 
 public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	
@@ -197,7 +198,9 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				checkHeightWidth(ec);
 				checkInputDimensionForIm2col(matBlock);
 				this.input = matBlock;
+				long start = System.nanoTime();
 				outputBlock = getDenseOutputBlock(ec, C * R * S, N * P * Q, true);
+				Statistics.im2colAllocTime += System.nanoTime() - start; 
 				im2col(matBlock, outputBlock);
 			}
 			else if (instOpcode.equalsIgnoreCase("reshape_col")) {

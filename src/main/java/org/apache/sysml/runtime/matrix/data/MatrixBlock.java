@@ -424,7 +424,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			if(!zeroOut && REUSE_NONZEROED_OUTPUT 
 					&& (denseBlock == null || denseBlock.length < limit) 
 					&& limit >= NON_ZEROED_DOUBLE_ARR_THRESHOLD) {
-				SoftReference<double[]> arr = NON_ZEROED_DOUBLE_ARR.remove(limit);
+				SoftReference<double[]> arr = NON_ZEROED_DOUBLE_ARR.remove(new Integer((int) limit));
 				if(arr != null) {
 					denseBlock = arr.get();
 				}

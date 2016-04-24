@@ -487,12 +487,6 @@ public class ExecutionContext
 		varlist.addAll(_variables.keySet());	
 		return varlist;
 	}
-
-	public void cleanupGPUData(MatrixObject mo) throws DMLRuntimeException {
-		if(GPUContext.getCurrentContext() != null) {
-			GPUContext.getCurrentContext().remove(mo);
-		}
-	}
 	
 	/**
 	 * 
