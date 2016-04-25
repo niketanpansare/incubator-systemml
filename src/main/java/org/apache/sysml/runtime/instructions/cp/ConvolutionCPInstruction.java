@@ -238,7 +238,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				this.input = matBlock;
 				// Is eligible for REUSE_NONZEROED_OUTPUT but cannot guarantee that previous output has been rmvar-ed
 				// without somewhat expensive HashMap checks
-				outputBlock = getDenseOutputBlock(ec, N, C*H*W, true); 
+				outputBlock = getDenseOutputBlock(ec, N, C*H*W, false); 
 				maxpooling_backward(matBlock, dout, outputBlock);
 				ec.releaseMatrixInput(_in2.getName());
 			}
@@ -261,7 +261,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	private MatrixBlock getDenseOutputBlock(ExecutionContext ec, int numRows, int numCols, boolean reuseNonZeroedOutput1) throws DMLRuntimeException {
 		MatrixBlock outputBlock = new MatrixBlock(numRows, numCols, numRows * numCols);
 		reuseNonZeroedOutput = false;
-		if(reuseNonZeroedOutput1) {
+		if(reuseNonZeroedOutput1 && MatrixBlock.REUSE_NONZEROED_OUTPUT) {
 			reuseNonZeroedOutput = true;
 			outputBlock.allocateDenseBlock(true, !reuseNonZeroedOutput);  
 		}
@@ -367,9 +367,9 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				else
 					inVal = dout.quickGetValue(n, c*P*Q +  p * Q + q);
 
-				synchronized(this) {
+				// synchronized(this) {
 					outputArray[maxIndex] += inVal;
-				}
+				// }
 			}
 		}
 	}

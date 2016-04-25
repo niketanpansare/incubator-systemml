@@ -98,7 +98,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	//basic header (int rlen, int clen, byte type)
 	public static final int HEADER_SIZE = 9;
 	
-	public static final boolean REUSE_NONZEROED_OUTPUT = true;
+	public static final boolean REUSE_NONZEROED_OUTPUT = false;
 	// Using hashmap to avoid any performance impacts of multimap
 	public static final HashMap<Integer, SoftReference<double[]>> NON_ZEROED_DOUBLE_ARR = new HashMap<Integer, SoftReference<double[]>>();
 	public static final int NON_ZEROED_DOUBLE_ARR_THRESHOLD = 100;
