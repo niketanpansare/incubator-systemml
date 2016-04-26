@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
+
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -98,7 +99,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	//basic header (int rlen, int clen, byte type)
 	public static final int HEADER_SIZE = 9;
 	
-	public static final boolean REUSE_NONZEROED_OUTPUT = false;
+	public static final boolean REUSE_NONZEROED_OUTPUT = true;
 	// Using hashmap to avoid any performance impacts of multimap
 	public static final HashMap<Integer, SoftReference<double[]>> NON_ZEROED_DOUBLE_ARR = new HashMap<Integer, SoftReference<double[]>>();
 	public static final int NON_ZEROED_DOUBLE_ARR_THRESHOLD = 100;
@@ -423,7 +424,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			//allocate block if non-existing or too small (guaranteed to be 0-initialized),
 			if(!zeroOut && REUSE_NONZEROED_OUTPUT 
 					&& (denseBlock == null || denseBlock.length < limit) 
-					&& limit >= NON_ZEROED_DOUBLE_ARR_THRESHOLD) {
+					&& limit >= NON_ZEROED_DOUBLE_ARR_THRESHOLD && 
+					// Not a column vector
+					rlen != 1 && clen != 1) {
 				SoftReference<double[]> arr = NON_ZEROED_DOUBLE_ARR.remove(new Integer((int) limit));
 				if(arr != null) {
 					denseBlock = arr.get();
@@ -450,7 +453,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public void allocateDenseBlock(boolean clearNNZ) 
 		throws RuntimeException 
 	{
-		allocateDenseBlock(clearNNZ, false);
+		allocateDenseBlock(clearNNZ, true);
 	}
 	
 	public void setDenseBlock(double [] zeroedOutDenseArray) throws DMLRuntimeException {

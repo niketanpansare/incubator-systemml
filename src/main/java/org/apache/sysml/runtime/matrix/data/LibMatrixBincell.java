@@ -404,7 +404,8 @@ public class LibMatrixBincell
 			}
 			else if( !ret.sparse && !m1.sparse && !m2.sparse && m1.denseBlock!=null && m2.denseBlock!=null )
 			{
-				ret.allocateDenseBlock();
+				ret.allocateDenseBlock(true, false); // Reuse previously allocated arrays
+				// ret.allocateDenseBlock();
 				final int m = ret.rlen;
 				final int n = ret.clen;
 				double[] c = ret.denseBlock;

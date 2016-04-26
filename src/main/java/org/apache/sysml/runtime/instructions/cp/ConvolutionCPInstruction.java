@@ -198,9 +198,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				checkHeightWidth(ec);
 				checkInputDimensionForIm2col(matBlock);
 				this.input = matBlock;
-				long start = System.nanoTime();
 				outputBlock = getDenseOutputBlock(ec, C * R * S, N * P * Q, true);
-				Statistics.im2colAllocTime += System.nanoTime() - start; 
 				im2col(matBlock, outputBlock);
 			}
 			else if (instOpcode.equalsIgnoreCase("reshape_col")) {
@@ -260,6 +258,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	boolean reuseNonZeroedOutput = false;
 	private MatrixBlock getDenseOutputBlock(ExecutionContext ec, int numRows, int numCols, boolean reuseNonZeroedOutput1) throws DMLRuntimeException {
 		MatrixBlock outputBlock = new MatrixBlock(numRows, numCols, numRows * numCols);
+		long start = System.nanoTime();
 		reuseNonZeroedOutput = false;
 		if(reuseNonZeroedOutput1 && MatrixBlock.REUSE_NONZEROED_OUTPUT) {
 			reuseNonZeroedOutput = true;
@@ -270,7 +269,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		}
 		outputBlock.setNonZeros(numRows * numCols);
 		outputArray = outputBlock.getDenseBlock();
-		
+		Statistics.convAllocTime += System.nanoTime() - start; 
 		return outputBlock;
 	}
 	
@@ -407,6 +406,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				start_index_w = Math.max(start_index_w, 0);
 				int out_index = n*C*P*Q + c*P*Q +  p * Q + q;
 				//System.out.println("[" + start_index_h + " " + end_index_h + "]" + "[" + start_index_w + " " + end_index_w + "]");
+				outputArray[out_index] = 0;
 				for (int h = start_index_h; h < end_index_h; h++) {
 					for (int w = start_index_w; w < end_index_w; w++) {
 						double inVal = -1;
@@ -473,13 +473,11 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(-1);
 		if(!ALLOW_MULTI_THREADED_OPS || constrainedNumThreads <= 1) {
 			for (int n = 0; n < N; n++) { 
-				for (int k = 0; k < K; k++) { 
-					doReshapeCol(n, k);
-				}
+				doReshapeCol(n);
 			}
 		}
 		else {
-			runParallelConvTask(constrainedNumThreads, K, TaskType.ReshapeCol);
+			runParallelConvTask(constrainedNumThreads, 1, TaskType.ReshapeCol);
 		}
 		
 	}
@@ -526,9 +524,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			switch(type) {
 				case ReshapeCol:
 					for (int n = n1; n < n2; n++) {
-						for (int z = z1; z < z2; z++) {
-							curr.doReshapeCol(n, z);
-						}
+						curr.doReshapeCol(n);
 					}
 					break;
 				case Rotate180:
@@ -571,14 +567,18 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		}
 	}
 		
-	private void doReshapeCol(int n, int k) {
+	private void doReshapeCol(int n) {
 		if(inputArray != null) {
-			System.arraycopy(inputArray, k*N*P*Q + n*P*Q, outputArray, n*K*P*Q + k*P*Q, P*Q);
+			for (int k = 0; k < K; k++)  {
+				System.arraycopy(inputArray, k*N*P*Q + n*P*Q, outputArray, n*K*P*Q + k*P*Q, P*Q);
+			}
 		}
 		else {
-			for (int p = 0; p < P; p++) { 
-				for (int q = 0; q < Q; q++) {
-					outputArray[n*K*P*Q + k*P*Q + p*Q + q] = input.quickGetValue(k, n*P*Q + p*Q + q);
+			for (int k = 0; k < K; k++) {
+				for (int p = 0; p < P; p++) { 
+					for (int q = 0; q < Q; q++) {
+						outputArray[n*K*P*Q + k*P*Q + p*Q + q] = input.quickGetValue(k, n*P*Q + p*Q + q);
+					}
 				}
 			}
 		}

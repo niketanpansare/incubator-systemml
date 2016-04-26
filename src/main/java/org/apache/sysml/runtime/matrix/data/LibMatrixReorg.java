@@ -743,7 +743,8 @@ public class LibMatrixReorg
 		}
 		
 		//allocate output arrays (if required)
-		out.allocateDenseBlock(false);
+		out.allocateDenseBlock(false, false); /// Reuse previously allocated arrays
+		// out.allocateDenseBlock(false);
 		
 		double[] a = in.getDenseBlock();
 		double[] c = out.getDenseBlock();

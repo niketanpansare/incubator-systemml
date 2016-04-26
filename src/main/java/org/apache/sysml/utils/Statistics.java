@@ -84,7 +84,7 @@ public class Statistics
 	private static AtomicLong sparkBroadcast = new AtomicLong(0L);
 	private static AtomicLong sparkBroadcastCount = new AtomicLong(0L);
 	
-	public static long im2colAllocTime = 0;
+	public static long convAllocTime = 0;
 	
 	//PARFOR optimization stats 
 	private static long parforOptTime = 0; //in milli sec
@@ -619,7 +619,7 @@ public class Statistics
 			sb.append("Total JIT compile time:\t\t" + ((double)getJITCompileTime())/1000 + " sec.\n");
 			sb.append("Total JVM GC count:\t\t" + getJVMgcCount() + ".\n");
 			sb.append("Total JVM GC time:\t\t" + ((double)getJVMgcTime())/1000 + " sec.\n");
-			sb.append("Deep Learning stats: \t\t" + String.format("%.3f", ((double)im2colAllocTime)*1e-9) + " sec.\n");
+			sb.append("Deep Learning stats: \t\t" + String.format("%.3f", ((double)convAllocTime)*1e-9) + " sec.\n");
 			sb.append("Heavy hitter instructions (name, time, count):\n" + getHeavyHitters(10));
 		}
 		
