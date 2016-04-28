@@ -2037,6 +2037,13 @@ public class DMLTranslator
 									paramHops);
 			break;	
 			
+
+		case TRANSFORMMETA:
+			currBuiltinOp = new ParameterizedBuiltinOp(
+									target.getName(), target.getDataType(), 
+									target.getValueType(), ParamBuiltinOp.TRANSFORMMETA, 
+									paramHops);
+			break;		
 			
 		default:
 			
