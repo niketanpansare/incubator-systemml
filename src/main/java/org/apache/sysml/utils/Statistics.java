@@ -619,7 +619,8 @@ public class Statistics
 			sb.append("Total JIT compile time:\t\t" + ((double)getJITCompileTime())/1000 + " sec.\n");
 			sb.append("Total JVM GC count:\t\t" + getJVMgcCount() + ".\n");
 			sb.append("Total JVM GC time:\t\t" + ((double)getJVMgcTime())/1000 + " sec.\n");
-			sb.append("Deep Learning stats: \t\t" + String.format("%.3f", ((double)convAllocTime)*1e-9) + " sec.\n");
+			if(convAllocTime > 0)
+				sb.append("Allocation stats: \t\t" + String.format("%.3f", ((double)convAllocTime)*1e-9) + " sec.\n");
 			sb.append("Heavy hitter instructions (name, time, count):\n" + getHeavyHitters(10));
 		}
 		
