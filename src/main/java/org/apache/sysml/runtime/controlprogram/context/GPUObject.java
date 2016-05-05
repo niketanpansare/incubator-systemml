@@ -21,14 +21,14 @@ package org.apache.sysml.runtime.controlprogram.context;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 
-public abstract class GPUPointer {
+public abstract class GPUObject {
 
 	public boolean isDeviceCopyModified = false;
 	volatile boolean isLocked = false;
 	public int numReferences = 1;
 	
 	MatrixObject mat = null;
-	protected GPUPointer(MatrixObject mat2)  {
+	protected GPUObject(MatrixObject mat2)  {
 		this.mat = mat2;
 	}
 	
@@ -39,9 +39,9 @@ public abstract class GPUPointer {
 	abstract void copyFromHostToDevice() throws DMLRuntimeException;
 	abstract void copyFromDeviceToHost() throws DMLRuntimeException; // Called by export()
 	
-	static GPUPointer createGPUPointer(MatrixObject mat2, GPUContext gpuCtx) throws DMLRuntimeException {
+	static GPUObject createGPUObject(MatrixObject mat2, GPUContext gpuCtx) throws DMLRuntimeException {
 		if(gpuCtx instanceof JCudaContext) {
-			return new JCudaPointer(mat2);
+			return new JCudaObject(mat2);
 		}
 		throw new DMLRuntimeException("Unsupported GPUContext");
 	}

@@ -29,11 +29,11 @@ import jcuda.Sizeof;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 
-public class JCudaPointer extends GPUPointer {
+public class JCudaObject extends GPUObject {
 	
 	public Pointer jcudaPointer = null;
 
-	JCudaPointer(MatrixObject mat2) {
+	JCudaObject(MatrixObject mat2) {
 		super(mat2);
 	}
 

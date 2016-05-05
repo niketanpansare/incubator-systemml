@@ -14,8 +14,6 @@ import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.LopProperties.ExecType;
 
-import com.sun.mail.handlers.image_gif;
-
 public class ConvolutionUtils {
 	
 	

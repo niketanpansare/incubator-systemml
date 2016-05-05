@@ -181,7 +181,7 @@ public class JCudaContext extends GPUContext {
 	
 	private void prepare(MatrixObject mat, boolean isInput) throws DMLRuntimeException {
 		if(mat.gpuPointer == null) {
-			mat.gpuPointer = GPUPointer.createGPUPointer(mat, this);
+			mat.gpuPointer = GPUObject.createGPUObject(mat, this);
 			long GPUSize = mat.gpuPointer.getSizeOnDevice();
 			
 			// Ensure enough memory while allocating the matrix
@@ -223,10 +223,10 @@ public class JCudaContext extends GPUContext {
 		}
 		
 		synchronized(evictionLock) {
-			Collections.sort(allocatedPointers, new Comparator<GPUPointer>() {
+			Collections.sort(allocatedPointers, new Comparator<GPUObject>() {
 	
 				@Override
-				public int compare(GPUPointer p1, GPUPointer p2) {
+				public int compare(GPUObject p1, GPUObject p2) {
 					if(p1.isLocked && p2.isLocked) {
 						return 0;
 					}
@@ -258,7 +258,7 @@ public class JCudaContext extends GPUContext {
 			
 			
 			while(GPUSize > getAvailableMemory() && allocatedPointers.size() > 0) {
-				GPUPointer toBeRemoved = allocatedPointers.get(allocatedPointers.size() - 1);
+				GPUObject toBeRemoved = allocatedPointers.get(allocatedPointers.size() - 1);
 				if(toBeRemoved.isLocked) {
 					throw new DMLRuntimeException("There is not enough memory on device for this matrix!");
 				}
@@ -312,9 +312,9 @@ public class JCudaContext extends GPUContext {
 			// (Pointer) gpuCtx.prepare(image, true, true);
 			// (Pointer) gpuCtx.prepare(filter, true, true);
 			
-			Pointer imagePointer = ((JCudaPointer)image.gpuPointer).jcudaPointer; 
-			Pointer filterPointer = ((JCudaPointer)filter.gpuPointer).jcudaPointer; 
-			Pointer dstPointer = ((JCudaPointer)outputBlock.gpuPointer).jcudaPointer; 
+			Pointer imagePointer = ((JCudaObject)image.gpuPointer).jcudaPointer; 
+			Pointer filterPointer = ((JCudaObject)filter.gpuPointer).jcudaPointer; 
+			Pointer dstPointer = ((JCudaObject)outputBlock.gpuPointer).jcudaPointer; 
 			
 			int padding [] = { pad_h, pad_w }; 
 			int strides [] = { stride_h, stride_w };
@@ -393,9 +393,9 @@ public class JCudaContext extends GPUContext {
 			dwDesc = gpuCtx.allocateFilterDescriptor(K, C, R, S);
 			
 			// Allocate data
-			Pointer imagePointer = ((JCudaPointer)image.gpuPointer).jcudaPointer; 
-			Pointer doutPointer = ((JCudaPointer)dout.gpuPointer).jcudaPointer; 
-			Pointer dwPointer = ((JCudaPointer)outputBlock.gpuPointer).jcudaPointer; 
+			Pointer imagePointer = ((JCudaObject)image.gpuPointer).jcudaPointer; 
+			Pointer doutPointer = ((JCudaObject)dout.gpuPointer).jcudaPointer; 
+			Pointer dwPointer = ((JCudaObject)outputBlock.gpuPointer).jcudaPointer; 
 			
 			alpha = gpuCtx.pointerTo(1.0); // TODO
 			beta = gpuCtx.pointerTo(0.0f);
@@ -479,9 +479,9 @@ public class JCudaContext extends GPUContext {
 		int ldb = isRightTransposed ? n : k;
 		int ldc = m;
 		
-		Pointer A = ((JCudaPointer)left.gpuPointer).jcudaPointer;
-		Pointer B = ((JCudaPointer)right.gpuPointer).jcudaPointer;
-		Pointer C = ((JCudaPointer)output.gpuPointer).jcudaPointer;
+		Pointer A = ((JCudaObject)left.gpuPointer).jcudaPointer;
+		Pointer B = ((JCudaObject)right.gpuPointer).jcudaPointer;
+		Pointer C = ((JCudaObject)output.gpuPointer).jcudaPointer;
 		
 		JCublas.cublasDgemm(transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc);
 	}
@@ -526,9 +526,9 @@ public class JCudaContext extends GPUContext {
 			dxDesc = gpuCtx.allocateTensorDescriptor(N, C, H, W);
 			
 			// Allocate data
-			Pointer w = ((JCudaPointer)filter.gpuPointer).jcudaPointer; 
-			Pointer dy = ((JCudaPointer)dout.gpuPointer).jcudaPointer; 
-			Pointer dx = ((JCudaPointer)output.gpuPointer).jcudaPointer; 
+			Pointer w = ((JCudaObject)filter.gpuPointer).jcudaPointer; 
+			Pointer dy = ((JCudaObject)dout.gpuPointer).jcudaPointer; 
+			Pointer dx = ((JCudaObject)output.gpuPointer).jcudaPointer; 
 			
 			alpha = gpuCtx.pointerTo(1.0); // TODO
 			beta = gpuCtx.pointerTo(0.0f);

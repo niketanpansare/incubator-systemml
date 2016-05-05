@@ -28,7 +28,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 public abstract class GPUContext {
 
-	protected ArrayList<GPUPointer> allocatedPointers = new ArrayList<GPUPointer>(); 
+	protected ArrayList<GPUObject> allocatedPointers = new ArrayList<GPUObject>(); 
 	protected static GPUContext currContext;
 	protected GPUContext() { }
 	
@@ -53,14 +53,14 @@ public abstract class GPUContext {
 	public abstract void remove(MatrixObject mat) throws DMLRuntimeException;
 	
 	// Copying from device -> host occurs here
-	public void exportData(CacheableData<?> mo) throws CacheException {
-		boolean isDeviceCopyModified = mo.getGPUPointer() != null && mo.getGPUPointer().isDeviceCopyModified;
+	public void exportData(MatrixObject mo) throws CacheException {
+		boolean isDeviceCopyModified = mo.getGPUObject() != null && mo.getGPUObject().isDeviceCopyModified;
 		boolean isHostCopyUnavailable = mo.getMatrixBlock() == null || 
 				(mo.getMatrixBlock().getDenseBlock() == null && mo.getMatrixBlock().getSparseBlock() == null);
 		
-		if(mo.getGPUPointer() != null && (isDeviceCopyModified || isHostCopyUnavailable)) {
+		if(mo.getGPUObject() != null && (isDeviceCopyModified || isHostCopyUnavailable)) {
 			try {
-				mo.getGPUPointer().copyFromDeviceToHost();
+				mo.getGPUObject().copyFromDeviceToHost();
 			} catch (DMLRuntimeException e) {
 				throw new CacheException(e);
 			}

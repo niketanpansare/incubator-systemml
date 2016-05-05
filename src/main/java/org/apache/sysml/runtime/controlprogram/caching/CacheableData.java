@@ -34,7 +34,7 @@ import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.LazyWriteBuffer.RPolicy;
 import org.apache.sysml.runtime.controlprogram.context.GPUContext;
-import org.apache.sysml.runtime.controlprogram.context.GPUPointer;
+import org.apache.sysml.runtime.controlprogram.context.GPUObject;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.spark.data.BroadcastObject;
@@ -182,9 +182,9 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	private RDDObject _rddHandle = null; //RDD handle
 	private BroadcastObject _bcHandle = null; //Broadcast handle
 	
-	public GPUPointer gpuPointer = null;
+	public GPUObject gpuPointer = null;
 	
-	public GPUPointer getGPUPointer() {
+	public GPUObject getGPUObject() {
 		return gpuPointer;
 	}
 	public MatrixBlock getMatrixBlock() {
@@ -830,8 +830,8 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 				getCache();
 			acquire( false, _data==null ); //incl. read matrix if evicted	
 			
-			if(GPUContext.getCurrentContext() != null)
-				GPUContext.getCurrentContext().exportData(this);
+			if(GPUContext.getCurrentContext() != null && this instanceof MatrixObject)
+				GPUContext.getCurrentContext().exportData((MatrixObject)this);
 			
 			// b) write the matrix 
 			try

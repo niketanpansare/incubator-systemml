@@ -342,8 +342,8 @@ public class ExecutionContext
 		throws DMLRuntimeException 
 	{
 		MatrixObject mo = (MatrixObject) getVariable(varName);
-		if(mo.getGPUPointer() != null) {
-			if(mo.getGPUPointer().isDeviceCopyModified) {
+		if(mo.getGPUObject() != null) {
+			if(mo.getGPUObject().isDeviceCopyModified) {
 				// Hint: If GPU Instruction, use setMatrixOutputForGPUInstruction
 				throw new DMLRuntimeException("Inconsistent GPU/CPU data");
 			}
