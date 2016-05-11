@@ -18,6 +18,7 @@
  */
 package org.apache.sysml.api.dl.layer;
 
+import org.apache.sysml.api.dl.Barista;
 import org.apache.sysml.api.dl.utils.DLUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
 
@@ -63,7 +64,7 @@ public class SoftmaxWithLossLayer extends Layer {
 	private String getLabelVar() throws DMLRuntimeException {
 		Layer labelLayer = getBottomLabelLayer();
 		if(labelLayer instanceof DataLayer && ((DataLayer)labelLayer).labelVar != null) 
-			return ((DataLayer)labelLayer).labelVar;
+			return "oneHotEncoded_" + ((DataLayer)labelLayer).labelVar + Barista.trainingVarsuffix;
 		else 
 			throw new DMLRuntimeException("Expected labelVar to be set in DataLayer");
 	}

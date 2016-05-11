@@ -3,7 +3,9 @@ package org.apache.sysml.api.dl.solver;
 import java.util.ArrayList;
 
 import org.apache.sysml.api.dl.Barista;
+import org.apache.sysml.api.dl.layer.DataLayer;
 import org.apache.sysml.api.dl.layer.Layer;
+import org.apache.sysml.api.dl.layer.SoftmaxWithLossLayer;
 import org.apache.sysml.api.dl.utils.MathUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
 
@@ -14,8 +16,12 @@ public class ForwardBackwardSolver {
 	public String getForwardBackwardDML(ArrayList<Layer> dmlNet, SolverParameter solver) throws DMLRuntimeException {
 		StringBuilder dmlScript = new StringBuilder();
 		
+		if(solver.hasType() && !solver.getType().equalsIgnoreCase("SGD")) {
+			throw new DMLRuntimeException("Only SGD solver is implemented in this version.");
+		}
+		
 		// TODO: Adding defaults for MNIST: Remove it later
-		dmlScript.append(Barista.numClasses + " = ifdef($" + Barista.numClasses + ", 1);\n");
+		dmlScript.append(Barista.numChannelsOfInputData + " = ifdef($" + Barista.numChannelsOfInputData + ", 1);\n");
 		dmlScript.append(Barista.inputHeight + " = ifdef($" + Barista.inputHeight + ", 28);\n");
 		dmlScript.append(Barista.inputWidth + " = ifdef($" + Barista.inputWidth + ", 28);\n");
 		dmlScript.append(Barista.numClasses + " = ifdef($" + Barista.numClasses + ", 10);\n");
@@ -116,6 +122,17 @@ public class ForwardBackwardSolver {
 		}
 		dmlScript.append("\n\t############################## END UPDATE WEIGHTS AND BIAS #########################\n");
 		
+		if(solver.hasDisplay()) {
+			dmlScript.append("\n\tif(iter %% " + solver.getDisplay() + " == 0) {\n");
+			dmlScript.append("\n\t\t############################## BEGIN VALIDATION #########################\n");
+			appendTestValidationSet(dmlScript, dmlNet, solver, "X" + Barista.validationVarsuffix, 
+					"y" + Barista.validationVarsuffix, Barista.numValidation, 2);
+			dmlScript.append("\t\tprint(\"EPOCH=\" + (iter/num_iters_per_epoch) + \" ITER=\" + "
+					+ "iter + \" Validation set accuracy (%): \" + acc);\n");
+			dmlScript.append("\n\t\t############################## END VALIDATION #########################\n");
+			dmlScript.append("\n\t}\n");
+		}
+		
 		dmlScript.append("\n\t" + "iter = iter + 1;\n");
 		dmlScript.append("}\n");
 		for(Layer layer : dmlNet) {
@@ -124,7 +141,70 @@ public class ForwardBackwardSolver {
 				dmlScript.append(finalizeDML + "\n");
 			}
 		}
+		
+		dmlScript.append("\n############################## BEGIN TEST #########################\n");
+		// TODO:
+		dmlScript.append("Xt = read(\"mnist_test.X\")");
+		dmlScript.append("yt = read(\"mnist_test.y\")");
+		dmlScript.append(Barista.numTest + " = nrow(yt)");
+		appendTestValidationSet(dmlScript, dmlNet, solver, "X" + Barista.testVarsuffix, 
+				"y" + Barista.testVarsuffix, Barista.numTest, 0);
+		dmlScript.append("print(\"Final accuracy on test set (%): \" + acc);\n");
+		dmlScript.append("\n############################## END TEST #########################\n");
+		
 		return dmlScript.toString();
+	}
+	
+	private void appendTestValidationSet(StringBuilder dmlScript, 
+			ArrayList<Layer> dmlNet, SolverParameter solver,
+			String X, String y, String numValues, int numTabs) throws DMLRuntimeException {
+		String allTabs = "";
+		for(int i = 0; i < numTabs; i++)
+			allTabs += "\t";
+		
+		Layer firstLayer = dmlNet.get(0);
+		String oldOutputVar = firstLayer.outputVar;
+		String oldNumPoints = firstLayer.output_shape.get(0);
+		
+		if(!(firstLayer instanceof DataLayer)) {
+			throw new DMLRuntimeException("Expected the first layer to be data layer for current validation implementation.");
+		}
+		else {
+			firstLayer.outputVar = X;
+			firstLayer.output_shape.set(0, numValues);
+		}
+		
+		Layer lastLayer = dmlNet.get(dmlNet.size()-1);
+		if(!(lastLayer instanceof SoftmaxWithLossLayer)) {
+			throw new DMLRuntimeException("Expected the last layer to be SoftmaxWithLossLayer layer for current validation implementation.");
+		}
+		
+		String lastOutputLayerVar = null;
+		for(Layer layer : dmlNet) {
+			if(layer != firstLayer && layer != lastLayer) {
+				layer.updateOutputShape();
+				String forwardDML = layer.getForwardDML(); 
+				if(forwardDML != null && !forwardDML.trim().equals("")) {
+					dmlScript.append("\n" + allTabs + "# Perform forward pass for validation on the " + layer.param.getType() + " layer " + layer.param.getName() + " \n");
+					String [] lines = forwardDML.split("\n");
+					dmlScript.append(allTabs + lines[0] + "\n");
+					for(int i = 1; i < lines.length; i++) {
+						dmlScript.append(allTabs + lines[i].trim() + "\n");
+					}
+					lastOutputLayerVar = layer.outputVar;
+				}
+			}
+		}
+		dmlScript.append("\n" + allTabs + "# Output accuracy on validation set\n");
+		dmlScript.append(allTabs + "pred = rowIndexMax(" + lastOutputLayerVar + ");\n");
+		// TODO: Make yv more generic 
+		dmlScript.append(allTabs + "acc = sum((pred == (" + y + " + 1)))*100/" + numValues + ";\n");
+		
+		firstLayer.outputVar = oldOutputVar;
+		firstLayer.output_shape.set(0, oldNumPoints);
+		for(Layer layer : dmlNet) {
+			layer.updateOutputShape();
+		}
 	}
 	
 	private void setLocalLearningRate(StringBuilder dmlScript, SolverParameter solver) throws DMLRuntimeException {

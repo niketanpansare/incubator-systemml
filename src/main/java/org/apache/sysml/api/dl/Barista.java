@@ -52,7 +52,11 @@ public class Barista {
 	public static String inputWidth = "img_width";
 	public static String numClasses = "numClasses";
 	public static String numValidation = "numValidation";
+	public static String numTest = "numTest";
 	public static String step_size = "step_size";
+	public static String trainingVarsuffix = "b";
+	public static String validationVarsuffix = "v";
+	public static String testVarsuffix = "t";
 	
 	private static void printUsage() throws DMLRuntimeException {
 		throw new DMLRuntimeException("Usage is " + Barista.class.getCanonicalName() + " train -solver solver.proto");
@@ -65,9 +69,7 @@ public class Barista {
 		
 		if(args[0].equals("train") && args[1].equals("-solver")) {
 			String script = getTrainingDMLScript(args[2]);
-			System.out.println("\n-----------------------------------\n");
 			System.out.println(script);
-			System.out.println("\n-----------------------------------\n");
 		}
 		else {
 			printUsage();

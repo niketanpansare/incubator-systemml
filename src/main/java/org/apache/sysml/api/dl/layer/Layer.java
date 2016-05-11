@@ -47,7 +47,10 @@ public abstract class Layer {
 	public Layer(LayerParameter param, String outputVarPrefix) {
 		this.param = param;
 		this.layerID = (Layer.id++);
-		this.outputVar = outputVarPrefix + layerID;
+		if(this instanceof DataLayer)
+			this.outputVar = outputVarPrefix;
+		else
+			this.outputVar = outputVarPrefix + layerID;
 		this.deltaVar = "delta_" + layerID;
 	}
 	

@@ -19,6 +19,7 @@
 package org.apache.sysml.api.dl.layer;
 
 import org.apache.sysml.api.dl.Barista;
+import org.apache.sysml.api.dl.utils.MathUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
 
 import caffe.Caffe.LayerParameter;
@@ -28,7 +29,8 @@ public class DataLayer extends Layer {
 	public String labelVar;
 	
 	public DataLayer(LayerParameter param) {
-		super(param, "Xb");
+		super(param, "X" + Barista.trainingVarsuffix);
+		labelVar = "y";
 	}
 
 	@Override
@@ -36,7 +38,7 @@ public class DataLayer extends Layer {
 		Barista.batchSize = param.getDataParam().getBatchSize();
 		
 		String zScoring = "# z-scoring features\n" +
-				"applyZScore = ifdef($applyZScore, true);\n" +
+				"applyZScore = ifdef($applyZScore, TRUE);\n" +
 				"if(applyZScore) {\n" +
 				"\t#means = colSums(X)/num_images\n" +
 				"\t#stds = sqrt((colSums(X^2)/num_images - means^2)*num_images/(num_images-1)) + 1e-17\n" +
@@ -46,34 +48,34 @@ public class DataLayer extends Layer {
 				"}\n";
 		
 		
-		String setup = "# Assumption: (X, y) split into two files\n" +
+		String setup = "# Assumption: (X, " + labelVar + ") split into two files\n" +
 				"X = read(\"" + param.getDataParam().getSource() + ".X\");\n" +
-				"y = read(\"" + param.getDataParam().getSource() + ".y\");\n" +
+				labelVar + " = read(\"" + param.getDataParam().getSource() + "." + labelVar + "\");\n" +
 				"classes = " + Barista.numClasses + ";\n" +
 				"BATCH_SIZE = " + Barista.batchSize + ";\n" +
 				"num_images = nrow(y);\n" +
 				zScoring +
-				"Xv = X[1:" + Barista.numValidation + ",];\n" +
-				"yv = y[1:" + Barista.numValidation + ",];\n" +
-				"num_images_validation = 5000;\n" +
-				"X = X[" + (Barista.numValidation+1) + ":num_images,];\n" +
-				"y = y[" + (Barista.numValidation+1) + ":num_images,];\n" +
-				"Y = table(seq(1,num_images,1), y+1, num_images, classes);\n" ;
+				"# Split training data into training and validation set\n" +
+				"X" + Barista.validationVarsuffix + " = X[1:" + Barista.numValidation + ",];\n" +
+				labelVar + Barista.validationVarsuffix + " = " + labelVar + "[1:" + Barista.numValidation + ",];\n" +
+				"X = X[" + MathUtils.scalarAddition(Barista.numValidation, "1") + ":num_images,];\n" +
+				 labelVar + " = "+ labelVar +"[" + MathUtils.scalarAddition(Barista.numValidation, "1") + ":num_images,];\n"+ 
+				 "oneHotEncoded_" + labelVar + " = table(seq(1,num_images,1), " + labelVar + "+1, num_images, classes);\n";
 		return setup;
 	}
 
 	@Override
 	public String getForwardDML() {
-		labelVar = "Yb";
+		
 		String batch = "end = beg + BATCH_SIZE - 1;\n"
 				+ "\t" + "if(end > num_images) end = num_images;\n\n"
 				+ "\t" + "# Pulling out the batch\n"
-				+ "\t" + "Xb = X[beg:end,]\n"
-				+ "\t" + "n = nrow(Xb);\n"
-				+ "\t" +  labelVar + " = Y[beg:end,];\n\n"
+				+ "\t" + outputVar + " = X[beg:end,];\n"
+				+ "\t" + "n = nrow(" + outputVar + ");\n"
+				+ "\t" + "oneHotEncoded_" + labelVar + Barista.trainingVarsuffix  + " = " + "oneHotEncoded_" + labelVar + "[beg:end,];\n\n"
 				+ "\t" + "beg = beg + BATCH_SIZE;\n" 
-				+ "\t" + "if(beg > num_images) beg = 1;\n"
-				+ "\t" + "if(iter %% num_iters_per_epoch == 0) step_size = step_size * decay";
+				+ "\t" + "if(beg > num_images) beg = 1;\n";
+				// + "\t" + "#if(iter %% num_iters_per_epoch == 0) step_size = step_size * decay";
 		return batch;
 	}
 

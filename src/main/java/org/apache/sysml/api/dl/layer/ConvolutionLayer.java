@@ -109,7 +109,7 @@ public class ConvolutionLayer extends Layer {
 			bias_shape.add("" + numFilter);
 			bias_shape.add("1");
 			nColOneVar = MathUtils.toInt(
-					MathUtils.scalarMultiply(getBottomLayerOutputShape(2), getBottomLayerOutputShape(3))
+					MathUtils.scalarMultiply("P_" + layerID, "Q_" + layerID)
 					); 
 			weights += FillerUtils.getFiller(biasVar, bias_shape, convParam.getBiasFiller(), 0)
 					+ oneVar + " = matrix(1, rows=1, cols=" + nColOneVar + ");\n";
