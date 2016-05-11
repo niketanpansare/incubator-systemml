@@ -1,11 +1,18 @@
 package org.apache.sysml.api.dl.utils;
 
+import java.text.NumberFormat;
+
 public class MathUtils {
+	
+	static NumberFormat nf = NumberFormat.getInstance();
+	static {
+		nf.setMaximumFractionDigits(9);
+	}
 	
 	public static String sqrt(String var1) {
 		try {
 			double var11 = Double.parseDouble(var1);
-			return "" + Math.sqrt(var11);
+			return "" + toDouble(Math.sqrt(var11));
 		} catch(Exception e) {}
 		return "sqrt(" + var1 + ")";
 	}
@@ -20,7 +27,7 @@ public class MathUtils {
 			var21 = Double.parseDouble(var2);
 		} catch(Exception e) {}
 		if(var11 != Double.MAX_VALUE && var21 != Double.MAX_VALUE)
-			return "" + (var11+var21);
+			return "" + toDouble(var11+var21);
 		else if(var11 == 0)
 			return var2;
 		else if(var21 == 0)
@@ -34,7 +41,7 @@ public class MathUtils {
 		try {
 			double var11 = Double.parseDouble(var1);
 			double var21 = Double.parseDouble(var2);
-			return "" + (var11-var21);
+			return "" + toDouble(var11-var21);
 		} catch(Exception e) {}
 		return "(" + var1 + "-" + var2 + ")";
 	}
@@ -50,7 +57,7 @@ public class MathUtils {
 			var21 = Double.parseDouble(var2);
 		} catch(Exception e) {}
 		if(var11 != Double.MAX_VALUE && var21 != Double.MAX_VALUE)
-			return "" + (var11/var21);
+			return "" + toDouble(var11/var21);
 		else if(var21 == 1)
 			return var1;
 		return "(" + var1 + "/" + var2 +  ")";
@@ -67,7 +74,7 @@ public class MathUtils {
 			var21 = Double.parseDouble(var2);
 		} catch(Exception e) {}
 		if(var11 != Double.MAX_VALUE && var21 != Double.MAX_VALUE)
-			return "" + (var11*var21);
+			return "" + toDouble(var11*var21);
 		else if(var11 == 0 || var21 == 0)
 			return "0";
 		return "(" + var1 + "*" + var2 +  ")";
@@ -88,7 +95,7 @@ public class MathUtils {
 			var31 = Double.parseDouble(var3);
 		} catch(Exception e) {}
 		if(var11 != Double.MAX_VALUE && var21 != Double.MAX_VALUE && var31 != Double.MAX_VALUE)
-			return "" + (var11*var21*var31);
+			return "" + toDouble(var11*var21*var31);
 		else if(var11 == 0 || var21 == 0 || var31 == 0)
 			return "0";
 		else if(var11 != Double.MAX_VALUE && var21 != Double.MAX_VALUE)
@@ -100,10 +107,35 @@ public class MathUtils {
 		return "(" + var1 + "*" + var2 + "*" + var3+  ")";
 	}
 	
+	public static String toDouble(double val) {
+		if(val < 0) {
+			return "(" + nf.format(val) + ")";
+		}
+		else {
+			return nf.format(val);
+		}
+		
+	}
+	
+	public static String toDouble(float val) {
+		if(val < 0) {
+			return "(" + nf.format(val) + ")";
+		}
+		else {
+			return nf.format(val);
+			// return String.format("%.06f", val);
+		}
+		
+	}
+	
 	public static String toInt(String var1) {
 		try {
 			double var11 = Double.parseDouble(var1);
-			return "" + ((int)var11);
+			if(var11 < 0) {
+				return "(" + ((int)var11) + ")";
+			}
+			else
+				return "" + ((int)var11);
 		} catch(Exception e) {}
 		return var1;
 	}

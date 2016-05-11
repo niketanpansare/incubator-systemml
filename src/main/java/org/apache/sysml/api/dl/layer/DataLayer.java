@@ -37,7 +37,7 @@ public class DataLayer extends Layer {
 		
 		String zScoring = "# z-scoring features\n" +
 				"applyZScore = ifdef($applyZScore, true);\n" +
-				"if(applyZScore) {" +
+				"if(applyZScore) {\n" +
 				"\t#means = colSums(X)/num_images\n" +
 				"\t#stds = sqrt((colSums(X^2)/num_images - means^2)*num_images/(num_images-1)) + 1e-17\n" +
 				"\tmeans = 255/2;\n" +
@@ -56,11 +56,9 @@ public class DataLayer extends Layer {
 				"Xv = X[1:" + Barista.numValidation + ",];\n" +
 				"yv = y[1:" + Barista.numValidation + ",];\n" +
 				"num_images_validation = 5000;\n" +
-				"X = X[" + (Barista.numValidation+1) + ":num_images];\n" +
-				"y = y[" + (Barista.numValidation+1) + ":num_images];\n" +
-				"Y = table(seq(1,num_images,1), y+1, num_images, classes);\n" +
-				"beg = 1;\n" +
-				"num_iters_per_epoch = ceil(num_images/BATCH_SIZE); \n";
+				"X = X[" + (Barista.numValidation+1) + ":num_images,];\n" +
+				"y = y[" + (Barista.numValidation+1) + ":num_images,];\n" +
+				"Y = table(seq(1,num_images,1), y+1, num_images, classes);\n" ;
 		return setup;
 	}
 
@@ -68,7 +66,7 @@ public class DataLayer extends Layer {
 	public String getForwardDML() {
 		labelVar = "Yb";
 		String batch = "end = beg + BATCH_SIZE - 1;\n"
-				+ "\t" + "if(end > n) end = n;\n\n"
+				+ "\t" + "if(end > num_images) end = num_images;\n\n"
 				+ "\t" + "# Pulling out the batch\n"
 				+ "\t" + "Xb = X[beg:end,]\n"
 				+ "\t" + "n = nrow(Xb);\n"

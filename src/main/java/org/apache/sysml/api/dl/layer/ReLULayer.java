@@ -25,7 +25,7 @@ import caffe.Caffe.LayerParameter;
 public class ReLULayer extends Layer {
 
 	public ReLULayer(LayerParameter param) {
-		super(param, "reluOut_");
+		super(param, "H_");
 		// TODO Auto-generated constructor stub
 	}
 

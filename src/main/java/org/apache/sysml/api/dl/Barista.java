@@ -44,12 +44,15 @@ import caffe.Caffe.SolverParameter;
 public class Barista {
 	public static int batchSize;
 	
+	public static boolean useMomentum = false;
+	
 	// Constants variable names
 	public static String numChannelsOfInputData = "numChannels";
 	public static String inputHeight = "img_height";
 	public static String inputWidth = "img_width";
 	public static String numClasses = "numClasses";
 	public static String numValidation = "numValidation";
+	public static String step_size = "step_size";
 	
 	private static void printUsage() throws DMLRuntimeException {
 		throw new DMLRuntimeException("Usage is " + Barista.class.getCanonicalName() + " train -solver solver.proto");

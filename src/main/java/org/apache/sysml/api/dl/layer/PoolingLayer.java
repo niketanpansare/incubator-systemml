@@ -31,7 +31,7 @@ public class PoolingLayer extends Layer {
 	PoolingParameter poolingParam;
 	
 	public PoolingLayer(LayerParameter param) throws DMLRuntimeException {
-		super(param, "poolOut_");
+		super(param, "H_");
 		poolingParam = param.getPoolingParam();
 		
 		if(poolingParam.hasPadH())
@@ -66,8 +66,8 @@ public class PoolingLayer extends Layer {
 	@Override
 	public String getSetupDML() throws DMLRuntimeException {
 		checkInput();
-		String P = "P_" + layerID + " = " + DLUtils.getP_DML(getBottomLayerOutputShape(2), pad_h, kernel_h, stride_h) + ";\n";
-		String Q = "Q_" + layerID + " = " + DLUtils.getP_DML(getBottomLayerOutputShape(3), pad_w, kernel_w, stride_w) + ";\n";
+		String P = "P_" + layerID + " = " + DLUtils.getP_DML(getBottomLayerOutputShape(2), pad_h, kernel_h, stride_h) + "; # Output feature height\n";
+		String Q = "Q_" + layerID + " = " + DLUtils.getP_DML(getBottomLayerOutputShape(3), pad_w, kernel_w, stride_w) + "; # Output feature width\n";
 		return P + Q;
 	}
 

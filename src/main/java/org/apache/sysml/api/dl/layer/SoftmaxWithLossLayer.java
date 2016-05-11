@@ -25,7 +25,7 @@ import caffe.Caffe.LayerParameter;
 
 public class SoftmaxWithLossLayer extends Layer {
 	public SoftmaxWithLossLayer(LayerParameter param) {
-		super(param, "softMaxProbs_");
+		super(param, "H_");
 	}
 
 	@Override

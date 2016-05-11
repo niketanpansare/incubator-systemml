@@ -28,7 +28,7 @@ public class DropoutLayer extends Layer {
 	DropoutParameter dropParam;
 	String maskVar;
 	public DropoutLayer(LayerParameter param) {
-		super(param, "dropOut_");
+		super(param, "H_");
 		maskVar = "mask_" + layerID;
 		dropParam = param.getDropoutParam();
 	}

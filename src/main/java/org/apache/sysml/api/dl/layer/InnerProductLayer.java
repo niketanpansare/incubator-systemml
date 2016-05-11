@@ -20,6 +20,7 @@ package org.apache.sysml.api.dl.layer;
 
 import java.util.ArrayList;
 
+import org.apache.sysml.api.dl.Barista;
 import org.apache.sysml.api.dl.utils.FillerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
 
@@ -29,19 +30,13 @@ import caffe.Caffe.LayerParameter;
 public class InnerProductLayer extends Layer {
 
 	InnerProductParameter innerParam;
-	String fcVar;
-	String biasVar;
-	String gradFCVar;
-	String gradBiasVar;
 	
 	public InnerProductLayer(LayerParameter param) {
-		super(param, "fcOut_");
-		fcVar = "w_" + layerID;
-		gradFCVar = "gradW_" + layerID;
+		super(param, "H_");
+		weightVar = "w_" + layerID;
 		innerParam = param.getInnerProductParam();
 		if(innerParam.hasBiasFiller()) {
 			biasVar = "bias_" + layerID;
-			gradBiasVar = "gradBias_" + layerID;
 		}
 	}
 
@@ -54,23 +49,33 @@ public class InnerProductLayer extends Layer {
 		shape.add(getBottomLayerOutputShape(1));
 		shape.add(getBottomLayerOutputShape(2));
 		shape.add(getBottomLayerOutputShape(3));
-		String weights = FillerUtils.getFiller(fcVar, shape, innerParam.getWeightFiller(), 0);
-		
+		String weights = FillerUtils.getFiller(weightVar, shape, innerParam.getWeightFiller(), 0);
 		if(innerParam.hasBiasFiller()) {
 			ArrayList<String> bias_shape = new ArrayList<String>();
 			bias_shape.add("" + innerParam.getNumOutput());
 			bias_shape.add("1");
 			// Transposing to produce Prithvi's script
-			return weights + FillerUtils.getFiller(biasVar, bias_shape, innerParam.getBiasFiller(), 0)
-					+ fcVar + " = t(" + fcVar + ");\n"
+			weights += FillerUtils.getFiller(biasVar, bias_shape, innerParam.getBiasFiller(), 0)
+					+ weightVar + " = t(" + weightVar + ");\n"
 					+ biasVar + " = t(" + biasVar + ");\n";
+			
 		}
-		return weights + fcVar + " = t(" + fcVar + ");\n";
+		else {
+			weights += weightVar + " = t(" + weightVar + ");\n";
+		}
+		
+		if(Barista.useMomentum) {
+			return weights + updatePrefix + weightVar + " = matrix(0, rows=nrow(" + weightVar + "), cols=ncol(" + weightVar + "));\n" 
+					+ updatePrefix + biasVar + " = matrix(0, rows=nrow(" + biasVar + "), cols=ncol(" + biasVar + "));\n";
+		}
+		else {
+			return weights;
+		}
 	}
 
 	@Override
 	public String getForwardDML() throws DMLRuntimeException {
-		String ret = outputVar + " = " + bottom.get(0).outputVar + " %*% " + fcVar;
+		String ret = outputVar + " = " + bottom.get(0).outputVar + " %*% " + weightVar;
 		if(innerParam.hasBiasFiller()) {
 			ret += " + " + biasVar;
 		}
@@ -79,10 +84,10 @@ public class InnerProductLayer extends Layer {
 
 	@Override
 	public String getBackwardDML() throws DMLRuntimeException {
-		String ret = gradFCVar + " = t(" + bottom.get(0).outputVar + ") %*% " + deltaVar + ";\n";
+		String ret = gradientPrefix + weightVar + " = t(" + bottom.get(0).outputVar + ") %*% " + deltaVar + ";\n";
 		if(innerParam.hasBiasFiller())
-			ret += "\t" + gradBiasVar + " = colSums(" + deltaVar + ");\n";
-		return ret + "\t" + bottom.get(0).deltaVar + " = " + deltaVar + " %*% t(" + fcVar + ");";
+			ret += "\t" + gradientPrefix + biasVar  + " = colSums(" + deltaVar + ");\n";
+		return ret + "\t" + bottom.get(0).deltaVar + " = " + deltaVar + " %*% t(" + weightVar + ");";
 	}
 
 	@Override

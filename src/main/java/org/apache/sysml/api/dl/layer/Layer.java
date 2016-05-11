@@ -28,9 +28,15 @@ public abstract class Layer {
 	private static int id = 1;
 	public LayerParameter param;
 	
+	public String gradientPrefix = "grad_";
+	public String updatePrefix = "upd_";
+	
 	// Used by next layer for forward propogation
 	public String outputVar; // to top layer
 	public String deltaVar; // from top layer
+	public String weightVar;
+	public String biasVar;
+	
 	public int layerID;
 	public ArrayList<String> output_shape = new ArrayList<String>();
 	public ArrayList<Layer> bottom = new ArrayList<Layer>();
@@ -88,4 +94,5 @@ public abstract class Layer {
 		} catch(Exception e) {}
 		return ret;
 	}
+	
 }
