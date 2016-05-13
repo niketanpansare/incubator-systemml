@@ -10,10 +10,10 @@ public class MathUtils {
 	}
 	
 	public static String sqrt(String var1) {
-		try {
-			double var11 = Double.parseDouble(var1);
-			return "" + toDouble(Math.sqrt(var11));
-		} catch(Exception e) {}
+//		try {
+//			double var11 = Double.parseDouble(var1);
+//			return "" + toDouble(Math.sqrt(var11));
+//		} catch(Exception e) {}
 		return "sqrt(" + var1 + ")";
 	}
 	

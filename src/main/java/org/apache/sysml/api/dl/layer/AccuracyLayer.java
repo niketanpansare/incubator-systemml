@@ -18,6 +18,7 @@
  */
 package org.apache.sysml.api.dl.layer;
 
+import org.apache.sysml.api.dl.utils.TabbedStringBuilder;
 import org.apache.sysml.runtime.DMLRuntimeException;
 
 import caffe.Caffe.LayerParameter;
@@ -29,24 +30,22 @@ public class AccuracyLayer extends Layer {
 	}
 
 	@Override
-	public String getSetupDML() throws DMLRuntimeException {
+	public void generateSetupDML(StringBuilder dmlScript) throws DMLRuntimeException {
 		checkInput();
-		return null;
 	}
 
 	@Override
-	public String getForwardDML() throws DMLRuntimeException {
-		return outputVar + " = ... # Accuracy layer not implemented";
+	public void generateForwardDML(TabbedStringBuilder dmlScript) throws DMLRuntimeException {
+		throw new DMLRuntimeException("Accuracy layer is not implemented");
 	}
 
 	@Override
-	public String getBackwardDML() throws DMLRuntimeException {
-		// TODO Auto-generated method stub
-		return null;
+	public void generateBackwardDML(TabbedStringBuilder dmlScript) throws DMLRuntimeException {
+		throw new DMLRuntimeException("Accuracy layer is not implemented");
 	}
 
 	@Override
-	public String getFinalizeDML() throws DMLRuntimeException {
+	public String generateFinalizeDML() throws DMLRuntimeException {
 		// TODO Auto-generated method stub
 		return null;
 	}

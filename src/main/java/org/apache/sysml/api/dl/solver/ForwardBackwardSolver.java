@@ -7,6 +7,7 @@ import org.apache.sysml.api.dl.layer.DataLayer;
 import org.apache.sysml.api.dl.layer.Layer;
 import org.apache.sysml.api.dl.layer.SoftmaxWithLossLayer;
 import org.apache.sysml.api.dl.utils.MathUtils;
+import org.apache.sysml.api.dl.utils.TabbedStringBuilder;
 import org.apache.sysml.runtime.DMLRuntimeException;
 
 import caffe.Caffe.SolverParameter;
@@ -28,14 +29,14 @@ public class ForwardBackwardSolver {
 		dmlScript.append(Barista.numValidation + " = ifdef($" + Barista.numValidation + ", 5000);\n");
 		
 		if(solver.hasMomentum() && solver.getMomentum() != 0) {
-			Barista.useMomentum = true;
+			Barista.USE_MOMENTUM = true;
 		}
 		
 		if(solver.hasWeightDecay()) {
 			dmlScript.append("# Regularization constant\n");
 			dmlScript.append("lambda = " +  MathUtils.toDouble(solver.getWeightDecay()) + ";\n");
 		}
-		if(Barista.useMomentum) {
+		if(Barista.USE_MOMENTUM) {
 			dmlScript.append("# Momentum\n");
 			dmlScript.append("mu = " +  MathUtils.toDouble(solver.getMomentum()) + ";\n");
 		}
@@ -45,11 +46,7 @@ public class ForwardBackwardSolver {
 			throw new DMLRuntimeException("Expected gamma parameter in the solver");
 		
 		for(Layer layer : dmlNet) {
-			String setupDML = layer.getSetupDML(); 
-			if(setupDML != null && !setupDML.trim().equals("")) {
-				dmlScript.append("\n# Setup the " + layer.param.getType() + " layer " + layer.param.getName() + " \n");
-				dmlScript.append(layer.getSetupDML());
-			}
+			layer.generateSetupDML(dmlScript); 
 			layer.updateOutputShape();
 		}
 		dmlScript.append("\n");
@@ -61,24 +58,18 @@ public class ForwardBackwardSolver {
 		 
 		dmlScript.append("while(iter < maxiter) { \n");
 		dmlScript.append("\t############################### BEGIN FEED FORWARD #############################\n" );
+		TabbedStringBuilder tDmlScript = new TabbedStringBuilder(dmlScript, 1);
 		for(Layer layer : dmlNet) {
-			String forwardDML = layer.getForwardDML(); 
-			if(forwardDML != null && !forwardDML.trim().equals("")) {
-				dmlScript.append("\n\t# Perform forward pass on the " + layer.param.getType() + " layer " + layer.param.getName() + " \n");
-				dmlScript.append("\t" + forwardDML + "\n");
-			}
+			layer.generateForwardDML(tDmlScript); 
 		}
 		
 		dmlScript.append("\n\t############################## END FEED FORWARD ###############################\n");
+		
 		dmlScript.append("\n\t############################## BEGIN BACK PROPAGATION #########################\n");
 		
 		for(int i = dmlNet.size()-1; i >= 0; i--) {
 			Layer layer = dmlNet.get(i);
-			String backwardDML = layer.getBackwardDML(); 
-			if(backwardDML != null && !backwardDML.trim().equals("")) {
-				dmlScript.append("\n\t# Perform backward pass on the " + layer.param.getType() + " layer " + layer.param.getName() + " \n");
-				dmlScript.append("\t" + backwardDML + "\n");
-			}
+			layer.generateBackwardDML(tDmlScript); 
 		}
 		
 		dmlScript.append("\n\t############################## END BACK PROPAGATION ###########################\n");
@@ -88,7 +79,7 @@ public class ForwardBackwardSolver {
 		
 		for(Layer layer : dmlNet) {
 			if(layer.weightVar != null) {
-				dmlScript.append("\n\t# Update weights for the " + layer.param.getType() + " layer " + layer.param.getName() + "\n");
+				tDmlScript.append("# Update weights for the " + layer.param.getType() + " layer " + layer.param.getName() + "\n");
 				
 				String gradExpression = layer.gradientPrefix + layer.weightVar;
 				
@@ -103,21 +94,24 @@ public class ForwardBackwardSolver {
 					throw new DMLRuntimeException("Only L2 regularization is supported");
 				}
 				String updateExpression = "local_" + Barista.step_size + "*" + gradExpression;
-				if(Barista.useMomentum) {
-					updateExpression = "(mu * " + layer.updatePrefix + layer.weightVar + ") + " 
-							+ "(1 - mu)*" + updateExpression;
+				if(Barista.USE_MOMENTUM) {
+					updateExpression = "(mu * " + layer.updatePrefix + layer.weightVar + ") + "
+							+ updateExpression;
+							// + "(1 - mu)*" + updateExpression;
 				}
-				dmlScript.append("\t" + layer.updatePrefix + layer.weightVar + " = " + updateExpression + ";\n");
-				dmlScript.append("\t" + layer.weightVar + " = " + layer.weightVar + " + " +layer.updatePrefix + layer.weightVar + ";\n");
+				tDmlScript.append(""+ layer.updatePrefix + layer.weightVar + " = " + updateExpression + ";\n");
+				tDmlScript.append(""+ layer.weightVar + " = " + layer.weightVar + " + " +layer.updatePrefix + layer.weightVar + ";\n");
 				
-				dmlScript.append("\n\t# Update bias for the " + layer.param.getType() + " layer " + layer.param.getName() + "\n");
+				tDmlScript.append("\n");
+				tDmlScript.append("# Update bias for the " + layer.param.getType() + " layer " + layer.param.getName() + "\n");
 				updateExpression = "(local_" + Barista.step_size + "*" + layer.gradientPrefix + layer.biasVar + ")";
-				if(Barista.useMomentum) {
+				if(Barista.USE_MOMENTUM) {
 					updateExpression = "(mu * " + layer.updatePrefix + layer.biasVar + ") + " 
-							+ "(1 - mu)*" + updateExpression;
+							+ updateExpression;
+							// + "(1 - mu)*" + updateExpression;
 				}
-				dmlScript.append("\t" + layer.updatePrefix + layer.biasVar + " = " + updateExpression + ";\n");
-				dmlScript.append("\t" + layer.biasVar + " = " + layer.biasVar + " + " +layer.updatePrefix + layer.biasVar + ";\n");
+				tDmlScript.append(layer.updatePrefix + layer.biasVar + " = " + updateExpression + ";\n");
+				tDmlScript.append(layer.biasVar + " = " + layer.biasVar + " + " +layer.updatePrefix + layer.biasVar + ";\n");
 			}
 		}
 		dmlScript.append("\n\t############################## END UPDATE WEIGHTS AND BIAS #########################\n");
@@ -127,7 +121,7 @@ public class ForwardBackwardSolver {
 			dmlScript.append("\n\t\t############################## BEGIN VALIDATION #########################\n");
 			appendTestValidationSet(dmlScript, dmlNet, solver, "X" + Barista.validationVarsuffix, 
 					"y" + Barista.validationVarsuffix, Barista.numValidation, 2);
-			dmlScript.append("\t\tprint(\"EPOCH=\" + (iter/num_iters_per_epoch) + \" ITER=\" + "
+			dmlScript.append("\t\tprint(\"ITER=\" + "
 					+ "iter + \" Validation set accuracy (%): \" + acc);\n");
 			dmlScript.append("\n\t\t############################## END VALIDATION #########################\n");
 			dmlScript.append("\n\t}\n");
@@ -136,7 +130,7 @@ public class ForwardBackwardSolver {
 		dmlScript.append("\n\t" + "iter = iter + 1;\n");
 		dmlScript.append("}\n");
 		for(Layer layer : dmlNet) {
-			String finalizeDML = layer.getFinalizeDML(); 
+			String finalizeDML = layer.generateFinalizeDML(); 
 			if(finalizeDML != null && !finalizeDML.trim().equals("")) {
 				dmlScript.append(finalizeDML + "\n");
 			}
@@ -180,19 +174,12 @@ public class ForwardBackwardSolver {
 		}
 		
 		String lastOutputLayerVar = null;
+		TabbedStringBuilder tDmlScript = new TabbedStringBuilder(dmlScript, numTabs);
 		for(Layer layer : dmlNet) {
 			if(layer != firstLayer && layer != lastLayer) {
 				layer.updateOutputShape();
-				String forwardDML = layer.getForwardDML(); 
-				if(forwardDML != null && !forwardDML.trim().equals("")) {
-					dmlScript.append("\n" + allTabs + "# Perform forward pass for validation on the " + layer.param.getType() + " layer " + layer.param.getName() + " \n");
-					String [] lines = forwardDML.split("\n");
-					dmlScript.append(allTabs + lines[0] + "\n");
-					for(int i = 1; i < lines.length; i++) {
-						dmlScript.append(allTabs + lines[i].trim() + "\n");
-					}
-					lastOutputLayerVar = layer.outputVar;
-				}
+				layer.generateForwardDML(tDmlScript);
+				lastOutputLayerVar = layer.outputVar;
 			}
 		}
 		dmlScript.append("\n" + allTabs + "# Output accuracy on validation set\n");

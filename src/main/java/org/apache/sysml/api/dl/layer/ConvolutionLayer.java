@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import org.apache.sysml.api.dl.Barista;
 import org.apache.sysml.api.dl.utils.DLUtils;
 import org.apache.sysml.api.dl.utils.FillerUtils;
-import org.apache.sysml.api.dl.utils.MathUtils;
+import org.apache.sysml.api.dl.utils.TabbedStringBuilder;
 import org.apache.sysml.runtime.DMLRuntimeException;
 
 import caffe.Caffe.ConvolutionParameter;
@@ -90,10 +90,11 @@ public class ConvolutionLayer extends Layer {
 	String convParamStr = "";
 
 	@Override
-	public String getSetupDML() throws DMLRuntimeException {
+	public void generateSetupDML(StringBuilder dmlScript) throws DMLRuntimeException {
 		checkInput();
-		String P = "P_" + layerID + " = " + DLUtils.getP_DML(getBottomLayerOutputShape(2), pad_h, kernel_h, stride_h) + "; # Output feature height\n";
-		String Q = "Q_" + layerID + " = " + DLUtils.getP_DML(getBottomLayerOutputShape(3), pad_w, kernel_w, stride_w) + "; # Output feature width\n";
+		printSetupHeader(dmlScript);
+		dmlScript.append(assign(layerVar("P"), DLUtils.getP_DML(getBottomLayerOutputShape(2), pad_h, kernel_h, stride_h), "Output feature height"));
+		dmlScript.append(assign(layerVar("Q"), DLUtils.getP_DML(getBottomLayerOutputShape(3), pad_w, kernel_w, stride_w), "Output feature width"));
 		
 		String numChannels = getBottomLayerOutputShape(1);
 		ArrayList<String> shape = new ArrayList<String>();
@@ -101,62 +102,56 @@ public class ConvolutionLayer extends Layer {
 		shape.add("" + numChannels);
 		shape.add("" + kernel_h);
 		shape.add("" + kernel_w);
-		filterShape = "filter_shape=[" + numFilter + "," + numChannels + "," + kernel_h + "," + kernel_w +  "]";
-		String weights = P + Q + FillerUtils.getFiller(weightVar, shape, convParam.getWeightFiller(), 0);
+		filterShape = "filter_shape=" + getShape(numFilter, numChannels, kernel_h, kernel_w);
+		dmlScript.append(FillerUtils.getFiller(weightVar, shape, convParam.getWeightFiller(), 0));
 		
 		if(convParam.hasBiasFiller()) {
 			ArrayList<String> bias_shape = new ArrayList<String>();
 			bias_shape.add("" + numFilter);
 			bias_shape.add("1");
-			nColOneVar = MathUtils.toInt(
-					MathUtils.scalarMultiply("P_" + layerID, "Q_" + layerID)
-					); 
-			weights += FillerUtils.getFiller(biasVar, bias_shape, convParam.getBiasFiller(), 0)
-					+ oneVar + " = matrix(1, rows=1, cols=" + nColOneVar + ");\n";
+			nColOneVar = toInt(smult(layerVar("P"), layerVar("Q"))); 
+			dmlScript.append(FillerUtils.getFiller(biasVar, bias_shape, convParam.getBiasFiller(), 0));
+			dmlScript.append(assign(oneVar, matrix(1, 1, nColOneVar)));
 		}
 		
-		if(Barista.useMomentum) {
-			return weights + updatePrefix + weightVar + " = matrix(0, rows=nrow(" + weightVar + "), cols=ncol(" + weightVar + "));\n" 
-					+ updatePrefix + biasVar + " = matrix(0, rows=nrow(" + biasVar + "), cols=ncol(" + biasVar + "));\n";
-		}
-		else {
-			return weights;
+		if(Barista.USE_MOMENTUM) {
+			dmlScript.append(assign(updatePrefix+weightVar, matrix(0, nrow(weightVar), ncol(weightVar))));
+			dmlScript.append(assign(updatePrefix+biasVar, matrix(0, nrow(biasVar), ncol(biasVar))));
 		}
 	}
 
-	public String getForwardDML() {
+	public void generateForwardDML(TabbedStringBuilder dmlScript) {
 		convParamStr = getInputShape() + ", " + filterShape 
 				+ ", padding=[" + pad_h + "," + pad_w + "], "
 				+ "stride=[" + stride_h + "," + stride_w + "]";
-		String ret = outputVar + " = conv2d(" + bottom.get(0).outputVar + ", " + weightVar + ", " + convParamStr + ");";
-		if(useBias) {
-			String tmpCols = MathUtils.toInt(MathUtils.scalarMultiply("" + numFilter, nColOneVar));
-			ret += "\n\t" + outputVar + " = " + outputVar + " + "
-					+ "matrix(" + biasVar + " %*% "+ oneVar + ", rows=1, cols=" + tmpCols + ");";
-		}
+		 
+		printForwardHeader(dmlScript);
+		dmlScript.append(assign(outputVar, "conv2d(" + bottom.get(0).outputVar + ", " + weightVar + ", " + convParamStr + ")"));
 		
-		return ret;
+		if(useBias) {
+			String biasMatrix = matrix(matmult(biasVar, oneVar), "1", toInt(smult("" + numFilter, nColOneVar)));
+			dmlScript.append(assign(outputVar, add(outputVar, biasMatrix)));
+		}
 	}
 
 	@Override
-	public String getBackwardDML() throws DMLRuntimeException {
+	public void generateBackwardDML(TabbedStringBuilder dmlScript) throws DMLRuntimeException {
+		printBackwardHeader(dmlScript);
 		if(bottom.size() != 1) {
 			throw new DMLRuntimeException("Multiple bottom layers not implemented");
 		}
-		String ret = "";
 		if(useBias) {
-			ret = gradientPrefix + biasVar + " = rowSums(matrix(colSums(" + deltaVar + "), rows=" + numFilter + ", "
-					+ "cols=" + "P_" + layerID + "*" + "Q_" + layerID + "));\n\t";
+			dmlScript.append(assign(gradientPrefix + biasVar, 
+					rowSums(matrix(colSums(deltaVar), ""+numFilter, mult(layerVar("P"), layerVar("Q"))))));
 		}
-		ret += gradientPrefix + weightVar + " = conv2d_backward_filter(" + bottom.get(0).outputVar + ", "
-				+ deltaVar +  ", " + convParamStr + ");\n" +
-				"\t" + bottom.get(0).deltaVar + " = conv2d_backward_data(" + weightVar + ", " 
-				+ deltaVar +  ", " + convParamStr + ");";
-		return ret; 
+		dmlScript.append(assign(gradientPrefix + weightVar,
+				"conv2d_backward_filter("+ getBottomLayerOutputVar() + ", " + deltaVar +  ", " + convParamStr +")"));
+		dmlScript.append(assign(bottom.get(0).deltaVar,
+				"conv2d_backward_data("+ weightVar + ", " + deltaVar +  ", " + convParamStr +")"));
 	}
 
 	@Override
-	public String getFinalizeDML() {
+	public String generateFinalizeDML() {
 		// TODO Auto-generated method stub
 		return null;
 	}

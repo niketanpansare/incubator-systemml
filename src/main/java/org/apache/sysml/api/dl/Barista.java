@@ -42,9 +42,10 @@ import caffe.Caffe.SolverParameter;
  * org.apache.sysml.api.dl.Barista train -solver LenetSolver.proto
  */
 public class Barista {
-	public static int batchSize;
+	public static int BATCH_SIZE;
 	
-	public static boolean useMomentum = false;
+	public static boolean USE_MOMENTUM = false;
+	public static boolean IS_VALIDATE_OR_TEST = false;
 	
 	// Constants variable names
 	public static String numChannelsOfInputData = "numChannels";

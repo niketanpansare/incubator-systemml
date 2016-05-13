@@ -22,6 +22,7 @@ import java.util.ArrayList;
 
 import org.apache.sysml.api.dl.Barista;
 import org.apache.sysml.api.dl.utils.FillerUtils;
+import org.apache.sysml.api.dl.utils.TabbedStringBuilder;
 import org.apache.sysml.runtime.DMLRuntimeException;
 
 import caffe.Caffe.InnerProductParameter;
@@ -41,57 +42,56 @@ public class InnerProductLayer extends Layer {
 	}
 
 	@Override
-	public String getSetupDML() throws DMLRuntimeException {
+	public void generateSetupDML(StringBuilder dmlScript) throws DMLRuntimeException {
 		checkInput();
+		
+		printSetupHeader(dmlScript);
 		
 		ArrayList<String> shape = new ArrayList<String>();
 		shape.add("" + innerParam.getNumOutput());
 		shape.add(getBottomLayerOutputShape(1));
 		shape.add(getBottomLayerOutputShape(2));
 		shape.add(getBottomLayerOutputShape(3));
-		String weights = FillerUtils.getFiller(weightVar, shape, innerParam.getWeightFiller(), 0);
+		
+		dmlScript.append(FillerUtils.getFiller(weightVar, shape, innerParam.getWeightFiller(), 0));
+		
 		if(innerParam.hasBiasFiller()) {
 			ArrayList<String> bias_shape = new ArrayList<String>();
 			bias_shape.add("" + innerParam.getNumOutput());
 			bias_shape.add("1");
 			// Transposing to produce Prithvi's script
-			weights += FillerUtils.getFiller(biasVar, bias_shape, innerParam.getBiasFiller(), 0)
-					+ weightVar + " = t(" + weightVar + ");\n"
-					+ biasVar + " = t(" + biasVar + ");\n";
-			
+			dmlScript.append(FillerUtils.getFiller(biasVar, bias_shape, innerParam.getBiasFiller(), 0));
+			dmlScript.append(assign(weightVar, t(weightVar)));
+			dmlScript.append(assign(biasVar, t(biasVar)));
 		}
 		else {
-			weights += weightVar + " = t(" + weightVar + ");\n";
+			dmlScript.append(assign(weightVar, t(weightVar)));
 		}
 		
-		if(Barista.useMomentum) {
-			return weights + updatePrefix + weightVar + " = matrix(0, rows=nrow(" + weightVar + "), cols=ncol(" + weightVar + "));\n" 
-					+ updatePrefix + biasVar + " = matrix(0, rows=nrow(" + biasVar + "), cols=ncol(" + biasVar + "));\n";
-		}
-		else {
-			return weights;
+		if(Barista.USE_MOMENTUM) {
+			dmlScript.append(assign(updatePrefix + weightVar, matrix(0, nrow(weightVar), ncol(weightVar))));
+			dmlScript.append(assign(updatePrefix + biasVar, matrix(0, nrow(biasVar), ncol(biasVar))));
 		}
 	}
 
 	@Override
-	public String getForwardDML() throws DMLRuntimeException {
-		String ret = outputVar + " = " + bottom.get(0).outputVar + " %*% " + weightVar;
+	public void generateForwardDML(TabbedStringBuilder dmlScript) {
+		printForwardHeader(dmlScript);
+		dmlScript.append(assign(outputVar, add(matmult(getBottomLayerOutputVar(), weightVar), biasVar)));
+	}
+
+	@Override
+	public void generateBackwardDML(TabbedStringBuilder dmlScript) throws DMLRuntimeException {
+		printBackwardHeader(dmlScript);
+		dmlScript.append(assign(gradientPrefix + weightVar, matmult(t(getBottomLayerOutputVar()), deltaVar)));
 		if(innerParam.hasBiasFiller()) {
-			ret += " + " + biasVar;
+			dmlScript.append(assign(gradientPrefix + biasVar, colSums(deltaVar)));
 		}
-		return ret;
+		dmlScript.append(assign(bottom.get(0).deltaVar, matmult(deltaVar, t(weightVar))));
 	}
 
 	@Override
-	public String getBackwardDML() throws DMLRuntimeException {
-		String ret = gradientPrefix + weightVar + " = t(" + bottom.get(0).outputVar + ") %*% " + deltaVar + ";\n";
-		if(innerParam.hasBiasFiller())
-			ret += "\t" + gradientPrefix + biasVar  + " = colSums(" + deltaVar + ");\n";
-		return ret + "\t" + bottom.get(0).deltaVar + " = " + deltaVar + " %*% t(" + weightVar + ");";
-	}
-
-	@Override
-	public String getFinalizeDML() throws DMLRuntimeException {
+	public String generateFinalizeDML() throws DMLRuntimeException {
 		// TODO Auto-generated method stub
 		return null;
 	}

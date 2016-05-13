@@ -19,6 +19,7 @@
 package org.apache.sysml.api.dl.layer;
 
 import org.apache.sysml.api.dl.utils.DLUtils;
+import org.apache.sysml.api.dl.utils.TabbedStringBuilder;
 import org.apache.sysml.runtime.DMLRuntimeException;
 
 import caffe.Caffe.LayerParameter;
@@ -64,39 +65,42 @@ public class PoolingLayer extends Layer {
 	}
 
 	@Override
-	public String getSetupDML() throws DMLRuntimeException {
+	public void generateSetupDML(StringBuilder dmlScript) throws DMLRuntimeException {
 		checkInput();
-		String P = "P_" + layerID + " = " + DLUtils.getP_DML(getBottomLayerOutputShape(2), pad_h, kernel_h, stride_h) + "; # Output feature height\n";
-		String Q = "Q_" + layerID + " = " + DLUtils.getP_DML(getBottomLayerOutputShape(3), pad_w, kernel_w, stride_w) + "; # Output feature width\n";
-		return P + Q;
+		printSetupHeader(dmlScript);
+		dmlScript.append(assign(layerVar("P"), DLUtils.getP_DML(getBottomLayerOutputShape(2), pad_h, kernel_h, stride_h), "Output feature height"));
+		dmlScript.append(assign(layerVar("Q"), DLUtils.getP_DML(getBottomLayerOutputShape(3), pad_w, kernel_w, stride_w), "Output feature width"));
 	}
 
 	String poolParamStr = "";
 	
 	@Override
-	public String getForwardDML() throws DMLRuntimeException {
+	public void generateForwardDML(TabbedStringBuilder dmlScript) throws DMLRuntimeException {
+		printForwardHeader(dmlScript);
+		
 		poolParamStr = getInputShape() + ", " + "padding=[" + pad_h + "," + pad_w + "], "
 				+ "stride=[" + stride_h + "," + stride_w + "], "
 				+ "pool_size=[" + kernel_h + "," + kernel_w + "]";
 		
 		if(poolingParam.getPool() == PoolingParameter.PoolMethod.MAX) {
-			return outputVar + " = max_pool(" + bottom.get(0).outputVar + ", " 
-				+poolParamStr + ")";
+			dmlScript.append(assign(outputVar, "max_pool(" + getBottomLayerOutputVar() + ", " + poolParamStr + ")"));
 		}
-		throw new DMLRuntimeException("Unsupported pooling method:" + poolingParam.getPool().name());
+		else
+			throw new DMLRuntimeException("Unsupported pooling method:" + poolingParam.getPool().name());
 	}
 
 	@Override
-	public String getBackwardDML() throws DMLRuntimeException {
+	public void generateBackwardDML(TabbedStringBuilder dmlScript) throws DMLRuntimeException {
+		printBackwardHeader(dmlScript);
 		if(bottom.size() != 1) {
 			throw new DMLRuntimeException("Multiple bottom layers not implemented");
 		}
-		return bottom.get(0).deltaVar + " = max_pool_backward(" + bottom.get(0).outputVar + ", " +
-				deltaVar + "," + poolParamStr + ");";
+		dmlScript.append(assign(bottom.get(0).deltaVar,
+				"max_pool_backward(" + bottom.get(0).outputVar + ", " + deltaVar + "," + poolParamStr + ")"));
 	}
 
 	@Override
-	public String getFinalizeDML() {
+	public String generateFinalizeDML() {
 		// TODO Auto-generated method stub
 		return null;
 	}

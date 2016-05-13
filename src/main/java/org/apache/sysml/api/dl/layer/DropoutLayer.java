@@ -18,6 +18,8 @@
  */
 package org.apache.sysml.api.dl.layer;
 
+import org.apache.sysml.api.dl.Barista;
+import org.apache.sysml.api.dl.utils.TabbedStringBuilder;
 import org.apache.sysml.runtime.DMLRuntimeException;
 
 import caffe.Caffe.DropoutParameter;
@@ -34,27 +36,41 @@ public class DropoutLayer extends Layer {
 	}
 
 	@Override
-	public String getSetupDML() throws DMLRuntimeException {
-		return null;
+	public void generateSetupDML(StringBuilder dmlScript) throws DMLRuntimeException {
+		checkInput();
+	}
+	
+//	@Override
+//	public String getBottomLayerOutputVar() {
+//		if(Barista.IS_VALIDATE_OR_TEST) {
+//			Layer b = bottom.get(0);
+//			while(b instanceof DropoutLayer)
+//				b = b.bottom.get(0);
+//			return b.outputVar;
+//		}
+//		return bottom.get(0).outputVar;
+//	}
+
+	@Override
+	public void generateForwardDML(TabbedStringBuilder dmlScript) {
+		printForwardHeader(dmlScript);
+		String ratio = "" + dropParam.getDropoutRatio();
+		String randCall = rand("1", ncol(bottom.get(0).outputVar), "0", "1", "uniform", ratio);
+		dmlScript.append(assign(maskVar, divide(gt(randCall, "0", true), ssubtract("1", ratio))));
+		dmlScript.append(assign(outputVar, mult(bottom.get(0).outputVar, maskVar)));
 	}
 
 	@Override
-	public String getForwardDML() throws DMLRuntimeException {
-		return maskVar + " = (rand(rows=1, cols=ncol(" + bottom.get(0).outputVar + "), min=0, max=1, pdf=\"uniform\", "
-				+ "sparsity=" + dropParam.getDropoutRatio() + ") > 0) / 0.5;\n"
-				+ "\t" + outputVar + " = " + bottom.get(0).outputVar + " * " + maskVar + ";";
-	}
-
-	@Override
-	public String getBackwardDML() throws DMLRuntimeException {
+	public void generateBackwardDML(TabbedStringBuilder dmlScript) throws DMLRuntimeException {
+		printBackwardHeader(dmlScript);
 		if(bottom.size() != 1) {
 			throw new DMLRuntimeException("Multiple bottom layers not implemented");
 		}
-		return bottom.get(0).deltaVar + " = (" + bottom.get(0).outputVar + " > 0) * " + maskVar  + " * " + deltaVar + ";";
+		dmlScript.append(assign(bottom.get(0).deltaVar, mult(mult(gt(getBottomLayerOutputVar(), "0", true), maskVar), deltaVar)));
 	}
 
 	@Override
-	public String getFinalizeDML() throws DMLRuntimeException {
+	public String generateFinalizeDML() throws DMLRuntimeException {
 		// TODO Auto-generated method stub
 		return null;
 	}

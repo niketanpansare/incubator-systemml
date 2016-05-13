@@ -20,6 +20,7 @@ package org.apache.sysml.api.dl.layer;
 
 import org.apache.sysml.api.dl.Barista;
 import org.apache.sysml.api.dl.utils.DLUtils;
+import org.apache.sysml.api.dl.utils.TabbedStringBuilder;
 import org.apache.sysml.runtime.DMLRuntimeException;
 
 import caffe.Caffe.LayerParameter;
@@ -30,28 +31,32 @@ public class SoftmaxWithLossLayer extends Layer {
 	}
 
 	@Override
-	public String getSetupDML() throws DMLRuntimeException {
+	public void generateSetupDML(StringBuilder dmlScript) throws DMLRuntimeException {
 		// checkInput(); -> Allow multiple inputs
-		return null;
 	}
 
 	@Override
-	public String getForwardDML() throws DMLRuntimeException {
+	public void generateForwardDML(TabbedStringBuilder dmlScript) throws DMLRuntimeException {
+		printForwardHeader(dmlScript);
 		String tmp = "unNormalizedProbs_" + layerID;
-		return tmp + " = exp(" + getBottomOutputVarForSoftMax() + ");\n"
-				+ "\t" + outputVar + " = " + tmp + " / rowSums(" + tmp + ")";
+		dmlScript.append(assign(tmp, exp(getBottomOutputVarForSoftMax())));
+		dmlScript.append(assign(outputVar, divide(tmp, rowSums(tmp))));
 	}
 
 	@Override
-	public String getBackwardDML() throws DMLRuntimeException {
+	public void generateBackwardDML(TabbedStringBuilder dmlScript) throws DMLRuntimeException {
+		dmlScript.append("#" + print(inQuotes("ITER=") + " + iter + " + inQuotes(" OBJ=") + " + " 
+				+ sum(mult(getLabelVar(), log(outputVar))))); 
+				
+		printBackwardHeader(dmlScript);
 		if(bottom.size() != 2) {
 			throw new DMLRuntimeException("Expected 2 bottom layers for SoftmaxWithLoss layer");
 		}
-		return bottom.get(0).deltaVar + " = " + getLabelVar() + " - " + outputVar + ";";
+		dmlScript.append(assign(bottom.get(0).deltaVar, subtract(getLabelVar(), outputVar)));
 	}
 
 	@Override
-	public String getFinalizeDML() throws DMLRuntimeException {
+	public String generateFinalizeDML() throws DMLRuntimeException {
 		return null;
 	}
 

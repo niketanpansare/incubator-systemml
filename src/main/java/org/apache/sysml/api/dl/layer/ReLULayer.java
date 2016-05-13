@@ -18,6 +18,7 @@
  */
 package org.apache.sysml.api.dl.layer;
 
+import org.apache.sysml.api.dl.utils.TabbedStringBuilder;
 import org.apache.sysml.runtime.DMLRuntimeException;
 
 import caffe.Caffe.LayerParameter;
@@ -30,26 +31,28 @@ public class ReLULayer extends Layer {
 	}
 
 	@Override
-	public String getSetupDML() throws DMLRuntimeException {
+	public void generateSetupDML(StringBuilder dmlScript) throws DMLRuntimeException {
 		checkInput();
-		return null;
+		printSetupHeader(dmlScript);	
 	}
 
 	@Override
-	public String getForwardDML() throws DMLRuntimeException {
-		return outputVar + " = max(0, " + bottom.get(0).outputVar + ")";
+	public void generateForwardDML(TabbedStringBuilder dmlScript) throws DMLRuntimeException {
+		printForwardHeader(dmlScript);
+		dmlScript.append(assign(outputVar, max("0", getBottomLayerOutputVar())));
 	}
 
 	@Override
-	public String getBackwardDML() throws DMLRuntimeException {
+	public void generateBackwardDML(TabbedStringBuilder dmlScript) throws DMLRuntimeException {
+		printBackwardHeader(dmlScript);
 		if(bottom.size() != 1) {
 			throw new DMLRuntimeException("Multiple bottom layers not implemented");
 		}
-		return bottom.get(0).deltaVar + " = (" + bottom.get(0).outputVar + " > 0) * " + deltaVar;
+		dmlScript.append(assign(bottom.get(0).deltaVar, mult(gt(bottom.get(0).outputVar, "0", true), deltaVar)));
 	}
 
 	@Override
-	public String getFinalizeDML() throws DMLRuntimeException {
+	public String generateFinalizeDML() throws DMLRuntimeException {
 		// TODO Auto-generated method stub
 		return null;
 	}
