@@ -107,6 +107,8 @@ public class DMLScript
 	public static boolean USE_ACCELERATOR = false;
 	public static boolean FORCE_ACCELERATOR = false;
 	
+	public static boolean USE_NATIVE = false; 
+	
 	// flag that indicates whether or not to suppress any prints to stdout
 	public static boolean _suppressPrint2Stdout = false;
 	
@@ -127,6 +129,7 @@ public class DMLScript
 			+ "   -debug: (optional) run in debug mode\n"
 			+ "   -gpu: <flags> (optional) use acceleration whenever possible. Current version only supports CUDA.\n"
 			+ "			Supported <flags> for this mode is force=(true|false)\n"
+			+ "   -native: (optional) use native SystemML library (This requires the caller to ensure that SystemML native library is accesible)\n"
 			// Later add optional flags to indicate optimizations turned on or off. Currently they are turned off.
 			//+ "   -debug: <flags> (optional) run in debug mode\n"
 			//+ "			Optional <flags> that is supported for this mode is optimize=(on|off)\n"
@@ -307,6 +310,9 @@ public class DMLScript
 					fnameOptConfig = args[++i];
 				else if( args[i].equalsIgnoreCase("-debug") ) {					
 					ENABLE_DEBUG_MODE = true;
+				}
+				else if( args[i].equalsIgnoreCase("-native") ) {
+					USE_NATIVE = true;
 				}
 				else if( args[i].equalsIgnoreCase("-gpu") ) {	
 					USE_ACCELERATOR = true;

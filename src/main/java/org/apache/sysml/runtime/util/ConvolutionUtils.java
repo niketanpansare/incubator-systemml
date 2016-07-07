@@ -75,7 +75,7 @@ public class ConvolutionUtils {
 	
 	// Simple heuristic that prefers im2col for non-test/non-validation cases.
 	private static boolean preferIm2Col(ExecType et, long N, long K, long C, long R, long S, long P, long Q) throws HopsException {
-		if(et == ExecType.CP && ConvolutionOp.FORCE_NON_IM2COL) {
+		if(et == ExecType.CP && (ConvolutionOp.FORCE_NON_IM2COL  || DMLScript.USE_NATIVE)) {
 			return false;
 		}
 		else if(et == ExecType.CP && N < 256 ) {

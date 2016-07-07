@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
@@ -167,6 +168,11 @@ public class LibMatrixDNN {
 		}
 		if(params.stride_h <= 0 || params.stride_w <= 0) {
 			throw new DMLRuntimeException("Only positive strides supported");
+		}
+		
+		if(DMLScript.USE_NATIVE && !input.isInSparseFormat() && !dout.isInSparseFormat()) {
+			LibMatrixNative.conv2d_backward_filter(input, dout, outputBlock, params);
+			return;
 		}
 		
 		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
@@ -364,6 +370,11 @@ public class LibMatrixDNN {
 		if(input.getNumRows() != params.N || input.getNumColumns() != params.C*params.H*params.W || 
 				filter.getNumRows() != params.K || filter.getNumColumns() != params.C*params.R*params.S) {
 			throw new DMLRuntimeException("Incorrect input to conv2d");
+		}
+		
+		if(DMLScript.USE_NATIVE && !input.isInSparseFormat() && !filter.isInSparseFormat()) {
+			LibMatrixNative.conv2d(input, filter, outputBlock, params);
+			return;
 		}
 		
 		params.tmpData = new TemporaryConvolutionData();
