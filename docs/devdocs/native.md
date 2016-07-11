@@ -20,7 +20,21 @@ limitations under the License.
 # Initial testing of native 
 
 ## Compile on linux
-JAVA_INCLUDE=/usr/lib/jvm/java-1.8.0-openjdk/
-g++ -I/usr/local/include/eigen3/ -I$JAVA_INCLUDE/include/ -I$JAVA_INCLUDE/include/linux/ -shared -Wl,--no-undefined -fPIC -fopenmp -msse2 -O2  -o libSystemML.so  SystemML.cpp
+Uses CMake.
 
-Use following compilers GCC 4.2 and newer, or MSVC 2008 and newer
+Set JAVA\_HOME to your java installation. For instance, on Ubuntu, with Oracle Java 8, JAVA\_HOME=/usr/lib/jvm/java-8-oracle
+Set EIGEN3\_INCLUDE\_DIR to where the Eigen3 header files can be found. For instance, on my machine, EIGEN3\_HOME\_DIR=/home/njindal/git/eigen
+
+Run cmake to generate the Makefile, run the makefile
+```
+cmake .
+make
+```
+
+On Mac, GCC supports OpenMP. Install it with homebrew (or any other method). 
+/usr/bin/gcc invokes the clang/LLVM
+```
+CC=gcc-6 cmake .
+make
+```
+
