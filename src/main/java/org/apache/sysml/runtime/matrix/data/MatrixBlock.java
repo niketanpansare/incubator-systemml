@@ -5236,6 +5236,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			ret.reset(rl, cl, sp.sparse, sp.estimatedNonZeros);
 		
 		//compute matrix multiplication (only supported binary aggregate operation)
+//		if(DMLScript.USE_NATIVE && rl*cl*m1.clen > 1000)
+//			LibMatrixNative.matrixMult(m1, m2, ret, op.getNumThreads());
+//		else 
 		if( op.getNumThreads() > 1 )
 			LibMatrixMult.matrixMult(m1, m2, ret, op.getNumThreads());
 		else
