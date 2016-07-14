@@ -23,8 +23,9 @@ limitations under the License.
 Uses CMake.
 
 Set JAVA\_HOME to your java installation. For instance, on Ubuntu, with Oracle Java 8, JAVA\_HOME=/usr/lib/jvm/java-8-oracle
-Set EIGEN3\_INCLUDE\_DIR to where the Eigen3 header files can be found. For instance, on my machine, EIGEN3\_HOME\_DIR=/home/njindal/git/eigen
-
+<br/>
+Set EIGEN3\_INCLUDE\_DIR to where the Eigen3 header files can be found. For instance, on my machine, EIGEN3\_HOME\_DIR=/usr/local/include/eigen3/
+<br/>
 Run cmake to generate the Makefile, run the makefile
 ```
 cmake .
