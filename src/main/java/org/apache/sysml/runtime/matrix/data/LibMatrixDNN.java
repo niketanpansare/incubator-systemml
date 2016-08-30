@@ -292,6 +292,11 @@ public class LibMatrixDNN {
 			throw new DMLRuntimeException("Only positive strides supported");
 		}
 		
+		if(DMLScript.USE_NATIVE && !input.isInSparseFormat() && !dout.isInSparseFormat()) {
+			LibMatrixNative.conv2d_backward_filter(input, dout, outputBlock, params);
+			return;
+		}
+		
 		if(DMLScript.STATISTICS) {
 			if(input.isInSparseFormat() || dout.isInSparseFormat()) {
 				conv2dBwdFilterSparseCount.addAndGet(1);
@@ -435,6 +440,11 @@ public class LibMatrixDNN {
 		// Convert filter (which is relatively small matrix) to dense
 		if(params.input2.isInSparseFormat()) {
 			params.input2.sparseToDense();
+		}
+		
+		if(DMLScript.USE_NATIVE && !input.isInSparseFormat() && !filter.isInSparseFormat()) {
+			LibMatrixNative.conv2d(input, filter, outputBlock, params);
+			return;
 		}
 		
 		if(DMLScript.STATISTICS) {

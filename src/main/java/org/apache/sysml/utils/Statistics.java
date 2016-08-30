@@ -117,6 +117,7 @@ public class Statistics
 	public static AtomicLong cudaToDevCount = new AtomicLong(0);
 	public static AtomicLong cudaFromDevCount = new AtomicLong(0);
 	public static AtomicLong cudaEvictionCount = new AtomicLong(0);
+	public static AtomicLong numNativeCalls = new AtomicLong(0);
 	
 	public static void incrementAllocationTime(long allocationTime, boolean isSparse) {
 		if(isSparse)
@@ -393,6 +394,7 @@ public class Statistics
 		cudaToDevCount.set(0);
 		cudaFromDevCount.set(0);
 		cudaEvictionCount.set(0);
+		numNativeCalls.set(0);
 	}
 	
 	/**
@@ -660,6 +662,9 @@ public class Statistics
 		//show extended caching/compilation statistics
 		if( DMLScript.STATISTICS ) 
 		{
+			if( DMLScript.USE_NATIVE ) 
+				sb.append("Number of native library calls:\t" + numNativeCalls.get() + ".\n");
+			
 			sb.append("Cache hits (Mem, WB, FS, HDFS):\t" + CacheStatistics.displayHits() + ".\n");
 			sb.append("Cache writes (WB, FS, HDFS):\t" + CacheStatistics.displayWrites() + ".\n");
 			sb.append("Cache times (ACQr/m, RLS, EXP):\t" + CacheStatistics.displayTime() + " sec.\n");
