@@ -25,6 +25,8 @@
 #include <ctime>
 #include <vector>
 
+#include "omp.h"
+
 // Currently no benefits observed
 // #define AVOID_ZEROIN_IM2COL
 
@@ -34,6 +36,10 @@
 // Use following compilers
 // GCC 4.2 and newer,
 // MSVC 2008 and newer
+
+#define EIGEN_DONT_PARALLELIZE
+#define EIGEN_VECTORIZE
+#include <Eigen/Core>
 #include <Eigen/Dense>
 using namespace Eigen;
 void matmult(double* m1Ptr, double* m2Ptr, double* retPtr, int m1rlen, int m1clen, int m2clen) {
@@ -118,9 +124,15 @@ JNIEXPORT void JNICALL Java_org_apache_sysml_runtime_matrix_data_LibMatrixNative
 	env->ReleaseDoubleArrayElements(ret,retPtr, 0);
 }
 
+double im2colStats = 0;
+double matmulStats = 0;
+double reshapeColStats = 0;
+
 JNIEXPORT void JNICALL Java_org_apache_sysml_runtime_matrix_data_LibMatrixNative_conv2dDense
   (JNIEnv * env, jclass, jdoubleArray input, jdoubleArray filter, jdoubleArray ret, jint N, jint C, jint H, jint W, jint K, jint R, jint S, 
 	jint stride_h, jint stride_w, jint pad_h, jint pad_w, jint P, jint Q) {
+	
+	// Eigen::setNbThreads(0);
 	
 	// Im2col
 	double* inputPtr  = env->GetDoubleArrayElements(input,NULL);
@@ -128,7 +140,45 @@ JNIEXPORT void JNICALL Java_org_apache_sysml_runtime_matrix_data_LibMatrixNative
 	MatrixXd eigenM2 = Map<MatrixXd>( filterPtr , (int)C*(int)R*(int)S, (int)K);
 	double* retPtr  = env->GetDoubleArrayElements(ret,NULL);
 	
+	/*
+	Eigen::setNbThreads(24);
+	int numIm2ColElem = (int) C * (int) R * (int) S * (int) N * (int) P * (int) Q;
+	double* loweredMat = new double[numIm2ColElem];
+	// Step 1: Perform im2col
+	clock_t t1 = clock();
+	im2col(inputPtr, loweredMat, (int) N, (int) C, (int) H, (int) W, (int) K, (int) R, (int) S, (int) stride_h, (int) stride_w, (int) pad_h, (int) pad_w, (int) P, (int) Q);
+	clock_t t2 = clock();
+	im2colStats += double(t2 - t1) / CLOCKS_PER_SEC;
+	// std::cout << "im2col time:" << im2colStats << "\n";
+	
+	
+	// Step 2: Matrix multiplication
+	MatrixXd eigenM1 = Map<MatrixXd>( loweredMat, (int) N * (int) P * (int) Q, (int)C * (int)R * (int)S);
+	MatrixXd eigenRet = eigenM1 * eigenM2;
+	
+	clock_t t3 = clock();
+	matmulStats += double(t3 - t2) / CLOCKS_PER_SEC;
+	// std::cout << "matmult time:" << matmulStats << "\n";
+	
+	// Step 3: reshape col
+	reshape_col(eigenRet.data(), retPtr, (int) N, (int)K, (int)P, (int)Q);
+	clock_t t4 = clock();
+	reshapeColStats += double(t4 - t3) / CLOCKS_PER_SEC;
+	// std::cout << "reshape time:" << reshapeColStats << "\n";
+	
+	
+	delete [] loweredMat;
+	*/
+	
+	
+	Eigen::setNbThreads(1);
 	int numIm2ColElem = (int) C * (int) R * (int) S * (int) P * (int) Q;
+	
+	double localIm2colStats = 0;
+	double localMatmulStats = 0;
+	double localReshapeColStats = 0;
+	
+	clock_t start = clock();
 	#pragma omp parallel for
 	for(int i = 0; i < N; i++) {
 		// Step 1: Perform im2col
@@ -136,16 +186,35 @@ JNIEXPORT void JNICALL Java_org_apache_sysml_runtime_matrix_data_LibMatrixNative
 		#ifndef AVOID_ZEROIN_IM2COL
 			memset(loweredMat, 0, numIm2ColElem*sizeof(double));
 		#endif
+		clock_t t1 = clock();
 		im2col(inputPtr + i*C*H*W, loweredMat, 1, (int) C, (int) H, (int) W, (int) K, (int) R, (int) S, (int) stride_h, (int) stride_w, (int) pad_h, (int) pad_w, (int) P, (int) Q);
+		clock_t t2 = clock();
 		
 		// Step 2: Matrix multiplication
 		MatrixXd eigenM1 = Map<MatrixXd>( loweredMat, 1 * (int) P * (int) Q, (int)C*(int)R*(int)S);
 		MatrixXd eigenRet = eigenM1 * eigenM2;
+		clock_t t3 = clock();
 		
 		// Step 3: reshape col
 		reshape_col(eigenRet.data(), retPtr + i*K*P*Q, 1, (int)K, (int)P, (int)Q);
+		clock_t t4 = clock();
 		delete [] loweredMat;
+		
+		localIm2colStats += double(t2 - t1) / CLOCKS_PER_SEC;
+		localMatmulStats += double(t3 - t2) / CLOCKS_PER_SEC;
+		localReshapeColStats += double(t4 - t3) / CLOCKS_PER_SEC;
 	}
+	clock_t end = clock();
+	double totalTime = double(end - start) / CLOCKS_PER_SEC;
+	
+	double factor = (localIm2colStats + localMatmulStats + localReshapeColStats) / totalTime;
+	// std::cout << "im2col time:" << localIm2colStats / factor << "\n";
+	// std::cout << "matmult time:" << localMatmulStats / factor << "\n";
+	// std::cout << "reshape time:" << localReshapeColStats / factor << "\n";
+	// std::cout << "total time:" << totalTime << "\n";
+	
+	
+	
 	env->ReleaseDoubleArrayElements(input, inputPtr, 0);
 	env->ReleaseDoubleArrayElements(filter, filterPtr, 0);
 	env->ReleaseDoubleArrayElements(ret, retPtr, 0);
