@@ -24,7 +24,7 @@ from setuptools import setup, find_packages
 import os
 import time
 
-VERSION = '0.11.0.dev1'
+VERSION = '0.11.0.dev2'
 RELEASED_DATE = str(time.strftime("%m/%d/%Y"))
 numpy_version = '1.8.2'
 scipy_version = '0.15.1'
@@ -34,12 +34,12 @@ REQUIRED_PACKAGES = [
 ]
 
 PACKAGE_DATA = []
-for path, subdirs, files in os.walk('SystemML/SystemML-java'):
+for path, subdirs, files in os.walk('systemml/systemml-java'):
     for name in files:
         PACKAGE_DATA = PACKAGE_DATA + [ os.path.join(path, name).replace('./', '') ]
         
 setup(
-    name='SystemML',
+    name='systemml',
     version=VERSION,
     description='Apache SystemML is a distributed and declarative machine learning platform.',
     long_description='''
@@ -53,7 +53,7 @@ setup(
     flexible specification of ML algorithms and automatic generation of hybrid runtime 
     plans ranging from single-node, in-memory computations, to distributed computations on Apache Hadoop and Apache Spark.
     
-    Note: This is not a released version and was built with SNAPSHOT available on the date''' + RELEASED_DATE,
+    Note: This is not a released version and was built with SNAPSHOT available on the date ''' + RELEASED_DATE,
     url='http://systemml.apache.org/',
     author='Apache SystemML',
     author_email='dev@systemml.incubator.apache.org',
@@ -61,7 +61,7 @@ setup(
     install_requires=REQUIRED_PACKAGES,
     include_package_data=True,
     package_data={
-        'SystemML-java': PACKAGE_DATA
+        'systemml-java': PACKAGE_DATA
     },
     classifiers=[
         'Intended Audience :: Developers',

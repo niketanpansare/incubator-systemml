@@ -108,7 +108,7 @@ def solve(A, b):
     --------
     >>> import numpy as np
     >>> from sklearn import datasets
-    >>> import SystemML as sml
+    >>> import systemml as sml
     >>> from pyspark.sql import SQLContext
     >>> diabetes = datasets.load_diabetes()
     >>> diabetes_X = diabetes.data[:, np.newaxis, 2]
@@ -166,7 +166,7 @@ class matrix(object):
     
     Examples
     --------
-    >>> import SystemML as sml
+    >>> import systemml as sml
     >>> import numpy as np
     >>> sml.setSparkContext(sc)
     
@@ -185,18 +185,18 @@ class matrix(object):
     mVar5 = 1.0 - mVar4
     save(mVar5, " ")
     
-    <SystemML.defmatrix.matrix object>
+    <systemml.defmatrix.matrix object>
     >>> m2.eval()
     >>> m2
     # This matrix (mVar4) is backed by NumPy array. To fetch the NumPy array, invoke toNumPyArray() method.
-    <SystemML.defmatrix.matrix object>
+    <systemml.defmatrix.matrix object>
     >>> m4
     # This matrix (mVar5) is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPyArray() or toDataFrame() or toPandas() methods.
     mVar4 = load(" ", format="csv")
     mVar5 = 1.0 - mVar4
     save(mVar5, " ")
     
-    <SystemML.defmatrix.matrix object>
+    <systemml.defmatrix.matrix object>
     >>> m4.sum(axis=1).toNumPyArray()
     array([[-60.],
            [-60.],
@@ -321,7 +321,7 @@ class matrix(object):
             print('# This matrix (' + self.ID + ') is backed by PySpark DataFrame. To fetch the DataFrame, invoke toDataFrame() method.')
         else:
             print('# This matrix (' + self.ID + ') is backed by NumPy array. To fetch the NumPy array, invoke toNumPyArray() method.')
-        return '<SystemML.defmatrix.matrix object>'
+        return '<systemml.defmatrix.matrix object>'
         
     def __add__(self, other):
         return binaryOp(self, other, ' + ')
