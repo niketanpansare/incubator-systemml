@@ -108,6 +108,13 @@
 			</excludes>
 			<targetPath>scripts</targetPath>
 		</resource>
+		<resource>
+			<directory>src/main/cpp/kernels</directory>
+			<excludes>
+				<exclude>*.cu</exclude>
+			</excludes>
+			<targetPath>kernels</targetPath>
+		</resource>
 	</resources>
 
 		<plugins>

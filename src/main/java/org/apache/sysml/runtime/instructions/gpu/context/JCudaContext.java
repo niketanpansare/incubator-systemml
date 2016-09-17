@@ -98,7 +98,7 @@ public class JCudaContext extends GPUContext {
 	}
 	
 	
-	public JCudaContext() {
+	public JCudaContext() throws DMLRuntimeException {
 		if(isGPUContextCreated) {
 			// Wait until it is deleted. This case happens during multi-threaded testing.
 			// This also allows for multi-threaded execute calls
@@ -139,6 +139,8 @@ public class JCudaContext extends GPUContext {
         }
         LOG.info("Total GPU memory: " + (totalNumBytes*(1e-6)) + " MB");
         LOG.info("Available GPU memory: " + (availableNumBytesWithoutUtilFactor.get()*(1e-6)) + " MB");
+        
+        LibMatrixCUDA.kernels = new JCudaKernels();
 	}
 
 	@Override

@@ -337,6 +337,7 @@ public class JCudaObject extends GPUObject {
 				copyFromHostToDevice();
 			}
 			else {
+				mat.setDirty(true);
 				// Don't copy just allocate
 				if (isSparse){
 					long sparseSize = CSRPointer.estimateSize(mat.getNnz(), mat.getNumRows());
@@ -709,16 +710,56 @@ public class JCudaObject extends GPUObject {
 	}
 	
 	/**
+	 * Converts the JCudaObject from dense to sparse format.
+	 * 
+	 * @throws DMLRuntimeException
+	 */
+	public void denseToSparse() throws DMLRuntimeException {
+		cusparseHandle cusparseHandle = LibMatrixCUDA.cusparseHandle;
+		if(cusparseHandle == null)
+			throw new DMLRuntimeException("Expected cusparse to be initialized");
+		int rows = (int) mat.getNumRows();
+		int cols = (int) mat.getNumColumns();
+		
+		if(jcudaDenseMatrixPtr == null || !isAllocated())
+			throw new DMLRuntimeException("Expected allocated dense matrix before denseToSparse() call");
+		
+		setSparseMatrixCudaPointer(denseToSparseUtil(cusparseHandle, rows, cols, jcudaDenseMatrixPtr));
+		cudaFree(jcudaDenseMatrixPtr);
+		jcudaDenseMatrixPtr = null;
+		// TODO: What if mat.getNnz() is -1 ?
+		numBytes = CSRPointer.estimateSize(mat.getNnz(), rows);
+	}
+	
+	public void sparseToDense() throws DMLRuntimeException {
+		cusparseHandle cusparseHandle = LibMatrixCUDA.cusparseHandle;
+		if(cusparseHandle == null)
+			throw new DMLRuntimeException("Expected cusparse to be initialized");
+		int rows = (int) mat.getNumRows();
+		int cols = (int) mat.getNumColumns();
+		
+		if(jcudaSparseMatrixPtr == null || !isAllocated())
+			throw new DMLRuntimeException("Expected allocated sparse matrix before sparseToDense() call");
+		
+		setDenseMatrixCudaPointer(jcudaSparseMatrixPtr.toDenseMatrix(cusparseHandle, null, rows, cols));
+		jcudaSparseMatrixPtr.deallocate();
+		jcudaSparseMatrixPtr = null;
+		numBytes = mat.getNumRows()*mat.getNumColumns()*Sizeof.DOUBLE;
+	}
+	
+	/**
 	 * Convenience method to convert a CSR matrix to a dense matrix on the GPU
 	 * Since the allocated matrix is temporary, bookkeeping is not updated.
 	 * Caller is responsible for deallocating memory on GPU.
+	 * Consider using denseToSparse() method if you are unsure.
+	 * 
 	 * @param rows
 	 * @param cols
 	 * @param densePtr	[in] dense matrix pointer on the GPU in row major
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static CSRPointer denseToSparse(cusparseHandle cusparseHandle, int rows, int cols, Pointer densePtr) throws DMLRuntimeException {		
+	public static CSRPointer denseToSparseUtil(cusparseHandle cusparseHandle, int rows, int cols, Pointer densePtr) throws DMLRuntimeException {		
 		cusparseMatDescr matDescr = CSRPointer.getDefaultCuSparseMatrixDescriptor();
 		Pointer nnzPerRowPtr = new Pointer();
 		Pointer nnzTotalDevHostPtr = new Pointer();

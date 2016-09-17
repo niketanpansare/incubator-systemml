@@ -39,8 +39,9 @@ public abstract class GPUContext {
 	/**
 	 * Creation / Destruction of GPUContext and related handles
 	 * @return
+	 * @throws DMLRuntimeException 
 	 */
-	public static GPUContext createGPUContext() {
+	public static GPUContext createGPUContext() throws DMLRuntimeException {
 		if(currContext == null && DMLScript.USE_ACCELERATOR) {
 			synchronized(isGPUContextCreated) {
 				currContext = new JCudaContext();

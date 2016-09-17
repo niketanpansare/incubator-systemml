@@ -49,7 +49,6 @@ import static jcuda.jcusparse.cusparseOperation.CUSPARSE_OPERATION_NON_TRANSPOSE
 import static jcuda.jcusparse.cusparseOperation.CUSPARSE_OPERATION_TRANSPOSE;
 import static jcuda.runtime.JCuda.cudaFree;
 import static jcuda.runtime.JCuda.cudaMalloc;
-
 import static jcuda.runtime.JCuda.cudaMemcpy;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
 
@@ -59,6 +58,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.runtime.instructions.gpu.context.ExecutionConfig;
+import org.apache.sysml.runtime.instructions.gpu.context.JCudaKernels;
 import org.apache.sysml.runtime.instructions.gpu.context.JCudaObject;
 import org.apache.sysml.runtime.instructions.gpu.context.JCudaObject.CSRPointer;
 import org.apache.sysml.utils.Statistics;
@@ -76,6 +77,8 @@ import jcuda.jcudnn.cudnnHandle;
 import jcuda.jcudnn.cudnnPoolingDescriptor;
 import jcuda.jcudnn.cudnnTensorDescriptor;
 import jcuda.jcusparse.cusparseHandle;
+import static jcuda.jcublas.cublasOperation.CUBLAS_OP_N;
+import static jcuda.jcublas.cublasOperation.CUBLAS_OP_T;
 
 //FIXME move could to respective instructions, this is not a block library
 public class LibMatrixCUDA {
@@ -83,10 +86,17 @@ public class LibMatrixCUDA {
 	public static cudnnHandle cudnnHandle;
 	public static cublasHandle cublasHandle;
 	public static cusparseHandle cusparseHandle;
+	public static JCudaKernels kernels; // Used to launch custom kernels
 
     private static final Log LOG = LogFactory.getLog(LibMatrixCUDA.class.getName());
 
 	private static int CONVOLUTION_PREFERENCE = cudnnConvolutionFwdPreference.CUDNN_CONVOLUTION_FWD_NO_WORKSPACE;
+	
+	public static enum GPUEnabledElementwiseOp {
+		MULTIPLY,
+		DIVIDE,
+		PLUS
+	};
 	
 	public static void conv2d(MatrixObject image, MatrixObject filter, MatrixObject outputBlock, int N, int C, int H, int W,
 			int K, int R, int S, int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q)
@@ -287,18 +297,24 @@ public class LibMatrixCUDA {
 	}
 
 	/**
-	 * Performs tsmm, A %*% A' or A' %*% A, on GPU by exploiting cublasDsyrk(...)
+	 * Performs tsmm, A %*% A' or A' %*% A, on GPU by exploiting cublasDsyrk(...) 
 	 * @param left	input matrix, as in a tsmm expression like A %*% A' or A' %*% A, we just need to check whether the left one is transposed or not, I named it 'left'
 	 * @param output
 	 * @param isLeftTransposed
 	 * @throws DMLRuntimeException
 	 */
-	public static void matmultTSMM(MatrixObject left, MatrixObject output,
+	public static void matmultTSMM(ExecutionContext ec, MatrixObject left, String outputName,
             boolean isLeftTransposed) throws DMLRuntimeException {
 	    if(isInSparseFormat(left)) {
-	            throw new DMLRuntimeException("Sparse GPU TSMM is not implemented");
+	    	// For sparse TSMM, invoke matmult (TODO: possible performance improvement)
+	    	matmult(ec, left, left, outputName, isLeftTransposed, !isLeftTransposed);
+	    	return;
 	    }
 	
+	    // For dense TSMM, exploit cublasDsyrk(...) and call custom kernel to flip the matrix
+	    MatrixObject output = ec.getMatrixObject(outputName);
+	    ec.getDenseMatrixOutputForGPUInstruction(outputName);	// Allocated the dense output matrix
+	    
 	    // Since CuBLAS expects inputs in column-major format,
 	    // reverse the order of matrix-multiplication and take care of dimension mismatch.      
 	    int transa = isLeftTransposed ? cublasOperation.CUBLAS_OP_N : cublasOperation.CUBLAS_OP_T;
@@ -323,10 +339,29 @@ public class LibMatrixCUDA {
 	    Pointer A = ((JCudaObject)left.getGPUObject()).jcudaDenseMatrixPtr;
 	    Pointer C = ((JCudaObject)output.getGPUObject()).jcudaDenseMatrixPtr;
 	    
-	    //TODO: Fix it if there is a cuBLAS API to do flipping
-	    
-	    JCublas2.cublasDsyrk(cublasHandle, cublasFillMode.CUBLAS_FILL_MODE_UPPER,transa, m, k, Pointer.to(alpha), A, lda, Pointer.to(beta), C, ldc);
 	    JCublas2.cublasDsyrk(cublasHandle, cublasFillMode.CUBLAS_FILL_MODE_LOWER,transa, m, k, Pointer.to(alpha), A, lda, Pointer.to(beta), C, ldc);
+	    copyUpperToLowerTriangle(output);
+	}
+	
+	/**
+	 * Used for all version of TSMM where the result is known to be symmetric.
+	 * Hence, we compute only the upper triangular matrix and copy this partial
+	 * result down to lower triangular matrix once.
+	 * 
+	 * @param ret
+	 * @throws DMLRuntimeException
+	 */
+	private static void copyUpperToLowerTriangle(MatrixObject ret) throws DMLRuntimeException {
+		if(isInSparseFormat(ret)) {
+            throw new DMLRuntimeException("Sparse GPU copyUpperToLowerTriangle is not implemented");
+		}
+		if(ret.getNumRows() != ret.getNumColumns()) {
+			throw new DMLRuntimeException("Only square matrix kernel is implemented for copyUpperToLowerTriangle");
+		}
+		int dim = (int) ret.getNumRows();
+		kernels.launchKernel("copyUpperToLowerTriangleDense",
+				ExecutionConfig.getConfigForSimpleMatrixOperations(dim, dim), 
+				((JCudaObject)ret.getGPUObject()).jcudaDenseMatrixPtr, dim, dim*dim);
 	}
 	
 	/**
@@ -434,7 +469,7 @@ public class LibMatrixCUDA {
 			LOG.debug(" GPU Dense-Sparse Matrix Multiplication (Converted to Sparse-Sparse)");
 			// Convert left to CSR and do cuSparse matmul
 			long t0 = System.nanoTime();
-			CSRPointer A = JCudaObject.denseToSparse(cusparseHandle, (int)left.getNumRows(), (int)right.getNumColumns(), ADense);
+			CSRPointer A = JCudaObject.denseToSparseUtil(cusparseHandle, (int)left.getNumRows(), (int)right.getNumColumns(), ADense);
 			Statistics.cudaConversionTime.addAndGet(System.nanoTime() - t0);
 			Statistics.cudaConversionCount.addAndGet(1);
 			sparseSparseMatmult(output, transA, transB, m, n, k, A, B);
@@ -489,7 +524,7 @@ public class LibMatrixCUDA {
 				LOG.debug(" GPU Sparse-Dense Matrix Multiplication (Converted to Sparse-Sparse)");
 				// Convert right to CSR and do cuSparse matmul
 				long t0 = System.nanoTime();
-				CSRPointer B = JCudaObject.denseToSparse(cusparseHandle, (int)right.getNumRows(), (int)right.getNumColumns(), BDense);
+				CSRPointer B = JCudaObject.denseToSparseUtil(cusparseHandle, (int)right.getNumRows(), (int)right.getNumColumns(), BDense);
 				Statistics.cudaConversionTime.addAndGet(System.nanoTime() - t0);
 				Statistics.cudaConversionCount.addAndGet(1);
 				sparseSparseMatmult(output, transA, transB, m, n, k, A, B);
@@ -947,5 +982,174 @@ public class LibMatrixCUDA {
 		if(mo.getGPUObject() != null && mo.getGPUObject().isAllocated())
 			return mo.getGPUObject().isInSparseFormat();
 		return MatrixBlock.evalSparseFormatInMemory(mo.getNumRows(), mo.getNumColumns(), mo.getNnz());
+	}
+	
+	/**
+	 * Performs elementwise multiplication of input vector in and constant using cublasDaxpy
+	 * 
+	 * @param ec
+	 * @param in
+	 * @param constant
+	 * @param outputName
+	 * @param op
+	 * @throws DMLRuntimeException
+	 */
+	public static void vectorScalarMult(ExecutionContext ec, MatrixObject in, double constant, String outputName, GPUEnabledElementwiseOp op) throws DMLRuntimeException {
+		if(isInSparseFormat(in)) {
+			// TODO: Implement sparse vector scalar multiply kernel
+			// throw new DMLRuntimeException("Sparse vector scalar multiply is not supported");
+			((JCudaObject)in.getGPUObject()).sparseToDense();
+		}
+		
+		MatrixObject out = ec.getMatrixObject(outputName);
+	    ec.getDenseMatrixOutputForGPUInstruction(outputName);	// Allocated the dense output matrix
+	    
+		Pointer alpha = pointerTo(constant);
+		if(op == GPUEnabledElementwiseOp.DIVIDE)
+			alpha = pointerTo(1/constant);
+		
+		int incx = 1, incy = 0;
+		int n = (int) in.getNumRows() == 1 ? (int) in.getNumColumns() : (int) in.getNumRows();
+		
+		Pointer A = ((JCudaObject)in.getGPUObject()).jcudaDenseMatrixPtr;
+	    Pointer C = ((JCudaObject)out.getGPUObject()).jcudaDenseMatrixPtr;
+	    
+		JCublas2.cublasDaxpy(cublasHandle, n, alpha, A, incx, C, incy);
+	}
+	
+	/**
+	 * Performs elementwise multiplication or division of input matrix in and constant using cublasDgeam
+	 * 
+	 * @param ec
+	 * @param in
+	 * @param constant
+	 * @param outputName
+	 * @param op
+	 * @param isTransposed
+	 * @throws DMLRuntimeException
+	 */
+	public static void matScalarElementwiseMultDiv(ExecutionContext ec, MatrixObject in, 
+			double constant, String outputName, GPUEnabledElementwiseOp op, boolean isTransposed) throws DMLRuntimeException {
+		if(isInSparseFormat(in)) {
+			// TODO: Implement sparse matrix scalar elementwise  multiply/div kernel
+			// throw new DMLRuntimeException("Sparse matrix scalar elementwise multiply/div is not supported");
+			((JCudaObject)in.getGPUObject()).sparseToDense();
+		}
+		
+		MatrixObject out = ec.getMatrixObject(outputName);
+	    ec.getDenseMatrixOutputForGPUInstruction(outputName);	// Allocated the dense output matrix
+	    
+		Pointer alpha = pointerTo(constant);
+		if(op == GPUEnabledElementwiseOp.DIVIDE)
+			alpha = pointerTo(1/constant);
+		Pointer beta = pointerTo(0.0);
+		
+		int transa = isTransposed ? CUBLAS_OP_T : CUBLAS_OP_N;
+		
+		int m = (int) in.getNumRows();
+		int n = (int) in.getNumColumns();
+		int lda = isTransposed ? n : m; //m;
+		int ldc = m;
+		
+		Pointer A = ((JCudaObject)in.getGPUObject()).jcudaDenseMatrixPtr;
+	    Pointer C = ((JCudaObject)out.getGPUObject()).jcudaDenseMatrixPtr;
+	    
+	    JCublas2.cublasDgeam(cublasHandle, transa, transa, m, n, alpha, A, lda, beta, A, lda, C, ldc);
+	}
+	
+	/**
+	 * Performs elementwise addition or subtraction of two input matrices in1 and in2 using cublasDgeam
+	 * 
+	 * @param ec
+	 * @param in1
+	 * @param in2
+	 * @param outputName
+	 * @param isLeftTransposed
+	 * @param isRightTransposed
+	 * @param isAdd
+	 * @throws DMLRuntimeException
+	 */
+	public static void cellwiseMatMatAddSub(ExecutionContext ec, MatrixObject in1, MatrixObject in2, 
+			String outputName, boolean isLeftTransposed, boolean isRightTransposed, boolean isAdd) throws DMLRuntimeException {
+		
+		if(isInSparseFormat(in1)) {
+			// TODO: Implement sparse matrix matrix elementwise add/sub kernel
+			// throw new DMLRuntimeException("Sparse matrix matrix elementwise add/sub is not supported");
+			((JCudaObject)in1.getGPUObject()).sparseToDense();
+		}
+		if(isInSparseFormat(in2)) {
+			// TODO: Implement sparse matrix matrix elementwise add/sub kernel
+			// throw new DMLRuntimeException("Sparse matrix matrix elementwise add/sub is not supported");
+			((JCudaObject)in2.getGPUObject()).sparseToDense();
+		}
+		
+		MatrixObject out = ec.getMatrixObject(outputName);
+	    ec.getDenseMatrixOutputForGPUInstruction(outputName);	// Allocated the dense output matrix
+	    
+		Pointer alpha = pointerTo(1.0);
+		Pointer beta = pointerTo(1.0);
+		if(!isAdd) // C = A - B
+			beta = pointerTo(-1.0);
+		
+		int transa = isLeftTransposed ? CUBLAS_OP_T : CUBLAS_OP_N;
+		int transb = isRightTransposed ? CUBLAS_OP_T : CUBLAS_OP_N;
+		
+		if(isLeftTransposed ^ isRightTransposed) { // C = A' + B, C = A + B'
+			if(in1.getNumRows() != in2.getNumColumns() || in1.getNumColumns() != in2.getNumRows())
+				throw new DMLRuntimeException("Incorrect dimensions");
+		}
+		else { // C = A + B, C = A' + B'
+			if(in1.getNumRows() != in2.getNumRows() || in1.getNumColumns() != in2.getNumColumns())
+				throw new DMLRuntimeException("Incorrect dimensions:" +
+						in1.getNumRows() +  " != " + in2.getNumRows() + " || " + in1.getNumColumns() + " != " + in2.getNumColumns());
+		}
+		
+		int m = (int) in1.getNumRows();
+		int n = (int) in1.getNumColumns();
+		if(!isLeftTransposed && isRightTransposed) {
+			m = (int) in1.getNumColumns();
+			n = (int) in1.getNumRows();
+		}
+		int lda = isLeftTransposed ? n : m;
+		int ldb = isRightTransposed ? n : m;
+		int ldc = m;
+		
+		Pointer A = ((JCudaObject)in1.getGPUObject()).jcudaDenseMatrixPtr;
+		Pointer B = ((JCudaObject)in2.getGPUObject()).jcudaDenseMatrixPtr;
+	    Pointer C = ((JCudaObject)out.getGPUObject()).jcudaDenseMatrixPtr;
+	    
+	    JCublas2.cublasDgeam(cublasHandle, transa, transb, m, n, alpha, A, lda, beta, B, ldb, C, ldc);
+	}
+	
+	/**
+	 * Transposes the input matrix using cublasDgeam
+	 * 
+	 * @param ec
+	 * @param in
+	 * @param outputName
+	 * @throws DMLRuntimeException
+	 */
+	public static void transpose(ExecutionContext ec, MatrixObject in, String outputName) throws DMLRuntimeException {
+		if(isInSparseFormat(in)) {
+			// TODO: Implement sparse transpose kernel
+			// throw new DMLRuntimeException("Sparse matrix scalar elementwise multiply/div is not supported");
+			((JCudaObject)in.getGPUObject()).sparseToDense();
+		}
+		
+		MatrixObject out = ec.getMatrixObject(outputName);
+	    ec.getDenseMatrixOutputForGPUInstruction(outputName);	// Allocated the dense output matrix
+	    
+		Pointer alpha = pointerTo(1.0);
+		Pointer beta = pointerTo(0.0);
+
+		int m = (int) in.getNumRows();
+		int n = (int) in.getNumColumns();
+		int lda = n;
+	    int ldc = m;
+
+	    Pointer A = ((JCudaObject)in.getGPUObject()).jcudaDenseMatrixPtr;
+	    Pointer C = ((JCudaObject)out.getGPUObject()).jcudaDenseMatrixPtr;
+	    
+	    JCublas2.cublasDgeam(cublasHandle, CUBLAS_OP_T, CUBLAS_OP_T, m, n, alpha, A, lda, beta, A, lda, C, ldc);
 	}
 }
