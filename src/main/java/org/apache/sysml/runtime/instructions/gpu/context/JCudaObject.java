@@ -743,8 +743,8 @@ public class JCudaObject extends GPUObject {
 		if(jcudaDenseMatrixPtr == null || jcudaSparseMatrixPtr != null) {
 			throw new DMLRuntimeException("Incorrect conversion");
 		}
-		int m = (int) mat.getNumRows();
-		int n = (int) mat.getNumColumns();
+		int m = (int) mat.getNumColumns();
+		int n = (int) mat.getNumRows();
 		int lda = n;
 	    int ldc = m;
 	    

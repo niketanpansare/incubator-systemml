@@ -1133,7 +1133,8 @@ public class LibMatrixCUDA {
 		if(isInSparseFormat(in)) {
 			// TODO: Implement sparse transpose kernel
 			// throw new DMLRuntimeException("Sparse matrix scalar elementwise multiply/div is not supported");
-			((JCudaObject)in.getGPUObject()).sparseToDense();
+			((JCudaObject)in.getGPUObject()).sparseToColumnMajorDense();
+			return;
 		}
 		
 		MatrixObject out = ec.getMatrixObject(outputName);
