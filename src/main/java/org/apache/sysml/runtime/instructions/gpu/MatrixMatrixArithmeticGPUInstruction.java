@@ -58,7 +58,7 @@ public class MatrixMatrixArithmeticGPUInstruction extends ArithmeticBinaryGPUIns
 		
 		BinaryOperator bop = (BinaryOperator) _optr;
 		boolean isAdd = bop.fn instanceof Plus;
-		LibMatrixCUDA.cellwiseMatMatAddSub(ec, in1, in2, _output.getName(), isLeftTransposed, isRightTransposed, isAdd);
+		LibMatrixCUDA.cellwiseMatMatAddSubtract(ec, in1, in2, _output.getName(), isLeftTransposed, isRightTransposed, isAdd);
 		
 		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
 		ec.releaseMatrixInputForGPUInstruction(_input2.getName());

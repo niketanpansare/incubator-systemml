@@ -196,7 +196,7 @@ public class LibMatrixCUDA {
 		return convDesc;
 	}
 	
-	private static  Pointer pointerTo(double value) {
+	public static  Pointer pointerTo(double value) {
         return Pointer.to(new double[] { value });
     }
 	
@@ -479,7 +479,7 @@ public class LibMatrixCUDA {
 			// Convert right to dense and do a cuBlas matmul
 			// BDenseTransposed is a column major matrix
 			// Note the arguments to denseDenseMatmult to accommodate for this.
-			Pointer BDenseTransposed = B.toDenseMatrix(cusparseHandle, cublasHandle, (int)right.getNumRows(), (int)right.getNumColumns());
+			Pointer BDenseTransposed = B.toColumnMajorDenseMatrix(cusparseHandle, cublasHandle, (int)right.getNumRows(), (int)right.getNumColumns());
 			output.getGPUObject().acquireDeviceModifyDense();	// To allocate the dense matrix
 			Pointer C = ((JCudaObject)output.getGPUObject()).jcudaDenseMatrixPtr;		
 			denseDenseMatmult(C, 
@@ -534,7 +534,7 @@ public class LibMatrixCUDA {
 				// Convert left to dense and do a cuBlas matmul
 				// ADenseTransposed is a column major matrix
 				// Note the arguments to denseDenseMatmult to accommodate for this.
-				Pointer ADenseTransposed = A.toDenseMatrix(cusparseHandle, cublasHandle, (int)left.getNumRows(), (int)left.getNumColumns());
+				Pointer ADenseTransposed = A.toColumnMajorDenseMatrix(cusparseHandle, cublasHandle, (int)left.getNumRows(), (int)left.getNumColumns());
 				output.getGPUObject().acquireDeviceModifyDense();	// To allocate the dense matrix
 				Pointer C = ((JCudaObject)output.getGPUObject()).jcudaDenseMatrixPtr;		
 				denseDenseMatmult(C, 
@@ -626,7 +626,7 @@ public class LibMatrixCUDA {
 	protected static void sparseMatrixVectorMult(MatrixObject output, int transA, int m, int n, int k,
 			CSRPointer A, CSRPointer B) throws DMLRuntimeException {
 		LOG.debug(" GPU Sparse Matrix Sparse Vector Multiply (Converted to Sparse Matrix Dense Vector Multiply)");
-		Pointer BDenseVector = B.toDenseMatrix(cusparseHandle, cublasHandle, k, 1);
+		Pointer BDenseVector = B.toColumnMajorDenseMatrix(cusparseHandle, cublasHandle, k, 1);
 		sparseMatrixDenseVectorMult(output, A, BDenseVector, transA, m, k);
 	}
 
@@ -994,7 +994,7 @@ public class LibMatrixCUDA {
 	 * @param op
 	 * @throws DMLRuntimeException
 	 */
-	public static void vectorScalarMult(ExecutionContext ec, MatrixObject in, double constant, String outputName, GPUEnabledElementwiseOp op) throws DMLRuntimeException {
+	public static void vectorScalarMultiply(ExecutionContext ec, MatrixObject in, double constant, String outputName, GPUEnabledElementwiseOp op) throws DMLRuntimeException {
 		if(isInSparseFormat(in)) {
 			// TODO: Implement sparse vector scalar multiply kernel
 			// throw new DMLRuntimeException("Sparse vector scalar multiply is not supported");
@@ -1028,7 +1028,7 @@ public class LibMatrixCUDA {
 	 * @param isTransposed
 	 * @throws DMLRuntimeException
 	 */
-	public static void matScalarElementwiseMultDiv(ExecutionContext ec, MatrixObject in, 
+	public static void matScalarElementwiseMultiplyDivide(ExecutionContext ec, MatrixObject in, 
 			double constant, String outputName, GPUEnabledElementwiseOp op, boolean isTransposed) throws DMLRuntimeException {
 		if(isInSparseFormat(in)) {
 			// TODO: Implement sparse matrix scalar elementwise  multiply/div kernel
@@ -1069,7 +1069,7 @@ public class LibMatrixCUDA {
 	 * @param isAdd
 	 * @throws DMLRuntimeException
 	 */
-	public static void cellwiseMatMatAddSub(ExecutionContext ec, MatrixObject in1, MatrixObject in2, 
+	public static void cellwiseMatMatAddSubtract(ExecutionContext ec, MatrixObject in1, MatrixObject in2, 
 			String outputName, boolean isLeftTransposed, boolean isRightTransposed, boolean isAdd) throws DMLRuntimeException {
 		
 		if(isInSparseFormat(in1)) {

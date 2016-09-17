@@ -18,6 +18,7 @@
  */
 package org.apache.sysml.runtime.instructions.gpu.context;
 
+import static jcuda.jcublas.cublasOperation.CUBLAS_OP_T;
 import static jcuda.jcusparse.JCusparse.cusparseCreateMatDescr;
 import static jcuda.jcusparse.JCusparse.cusparseDcsr2dense;
 import static jcuda.jcusparse.JCusparse.cusparseDdense2csr;
@@ -47,6 +48,7 @@ import org.apache.sysml.utils.Statistics;
 
 import jcuda.Pointer;
 import jcuda.Sizeof;
+import jcuda.jcublas.JCublas2;
 import jcuda.jcublas.cublasHandle;
 import jcuda.jcusparse.JCusparse;
 import jcuda.jcusparse.cusparseDirection;
@@ -259,7 +261,7 @@ public class JCudaObject extends GPUObject {
 		}
 		
 		/**
-		 * Copies this CSR matrix on the GPU to a dense row-major matrix
+		 * Copies this CSR matrix on the GPU to a dense column-major matrix
 		 * on the GPU. This is a temporary matrix for operations such as 
 		 * cusparseDcsrmv.
 		 * Since the allocated matrix is temporary, bookkeeping is not updated.
@@ -271,7 +273,7 @@ public class JCudaObject extends GPUObject {
 		 * @return			A {@link Pointer} to the allocated dense matrix (in column-major format)
 		 * @throws DMLRuntimeException
 		 */
-		public Pointer toDenseMatrix(cusparseHandle cusparseHandle, cublasHandle cublasHandle, int rows, int cols) throws DMLRuntimeException {
+		public Pointer toColumnMajorDenseMatrix(cusparseHandle cusparseHandle, cublasHandle cublasHandle, int rows, int cols) throws DMLRuntimeException {
 			long size = rows * cols * Sizeof.DOUBLE;
 			Pointer A = JCudaObject.allocate(size);
 			cusparseDcsr2dense(cusparseHandle, rows, cols, descr, val, rowPtr, colInd, A, rows);
@@ -731,7 +733,39 @@ public class JCudaObject extends GPUObject {
 		numBytes = CSRPointer.estimateSize(mat.getNnz(), rows);
 	}
 	
+	/**
+	 * Convert sparse to dense (Performs transpose, use sparseToColumnMajorDense if the kernel can deal with column major format)
+	 * 
+	 * @throws DMLRuntimeException
+	 */
 	public void sparseToDense() throws DMLRuntimeException {
+		sparseToColumnMajorDense();
+		if(jcudaDenseMatrixPtr == null || jcudaSparseMatrixPtr != null) {
+			throw new DMLRuntimeException("Incorrect conversion");
+		}
+		int m = (int) mat.getNumRows();
+		int n = (int) mat.getNumColumns();
+		int lda = n;
+	    int ldc = m;
+	    
+		Pointer alpha = LibMatrixCUDA.pointerTo(1.0);
+		Pointer beta = LibMatrixCUDA.pointerTo(0.0);
+		Pointer A = jcudaDenseMatrixPtr;
+		Pointer C = JCudaObject.allocate(m*n*Sizeof.DOUBLE);
+		
+		// Transpose the matrix to get a dense matrix
+		JCublas2.cublasDgeam(LibMatrixCUDA.cublasHandle, CUBLAS_OP_T, CUBLAS_OP_T, m, n, alpha, A, lda, beta, A, lda, C, ldc);
+		cudaFree(A);
+		jcudaDenseMatrixPtr = C;
+	}
+
+	
+	/**
+	 * More efficient method to convert sparse to dense but returns dense in column major format
+	 * 
+	 * @throws DMLRuntimeException
+	 */
+	public void sparseToColumnMajorDense() throws DMLRuntimeException {
 		cusparseHandle cusparseHandle = LibMatrixCUDA.cusparseHandle;
 		if(cusparseHandle == null)
 			throw new DMLRuntimeException("Expected cusparse to be initialized");
@@ -741,7 +775,7 @@ public class JCudaObject extends GPUObject {
 		if(jcudaSparseMatrixPtr == null || !isAllocated())
 			throw new DMLRuntimeException("Expected allocated sparse matrix before sparseToDense() call");
 		
-		setDenseMatrixCudaPointer(jcudaSparseMatrixPtr.toDenseMatrix(cusparseHandle, null, rows, cols));
+		setDenseMatrixCudaPointer(jcudaSparseMatrixPtr.toColumnMajorDenseMatrix(cusparseHandle, null, rows, cols));
 		jcudaSparseMatrixPtr.deallocate();
 		jcudaSparseMatrixPtr = null;
 		numBytes = mat.getNumRows()*mat.getNumColumns()*Sizeof.DOUBLE;
