@@ -204,7 +204,7 @@ public class JCudaKernels {
                 return Pointer.to(out.toByteArray());
             }
             else {
-                throw new DMLRuntimeException( "The input file " + ptxFileName + " not found.");
+                throw new DMLRuntimeException( "The input file " + ptxFileName + " not found. (Hint: Please compile SystemML using -DenableGPU=true flag. Example: mvn package -DenableGPU=true).");
             }
         } catch (IOException e) {
         	throw new DMLRuntimeException("Could not initialize the kernels", e);
