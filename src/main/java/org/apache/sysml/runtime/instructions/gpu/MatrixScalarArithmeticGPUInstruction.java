@@ -76,12 +76,12 @@ public class MatrixScalarArithmeticGPUInstruction extends ArithmeticBinaryGPUIns
 		else {
 			throw new DMLRuntimeException("The operator is not supported");
 		}
-		if(op == GPUEnabledElementwiseOp.MULTIPLY && (rlen == 1 || clen == 1) && !isTransposed) {
-			LibMatrixCUDA.vectorScalarMultiply(ec, in1, constant.getDoubleValue(), _output.getName(), op);
-		}
-		else {
+//		if(op == GPUEnabledElementwiseOp.MULTIPLY && (rlen == 1 || clen == 1) && !isTransposed) {
+//			LibMatrixCUDA.vectorScalarMultiply(ec, in1, constant.getDoubleValue(), _output.getName(), op);
+//		}
+//		else {
 			LibMatrixCUDA.matScalarElementwiseMultiplyDivide(ec, in1, constant.getDoubleValue(), _output.getName(), op, isTransposed);
-		}
+//		}
 		
 		ec.releaseMatrixInputForGPUInstruction(mat.getName());
         ec.releaseMatrixOutputForGPUInstruction(_output.getName());
