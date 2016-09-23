@@ -52,19 +52,15 @@ public abstract class ArithmeticBinaryGPUInstruction extends GPUInstruction {
 		DataType dt2 = in2.getDataType();
 		DataType dt3 = out.getDataType();
 	 
-		Operator operator = InstructionUtils.parseBinaryOperator(opcode);
+		Operator operator = (dt1 != dt2) ?
+				InstructionUtils.parseScalarBinaryOperator(opcode, (dt1 == DataType.SCALAR)) : 
+				InstructionUtils.parseBinaryOperator(opcode);
 		
 		if(dt1 == DataType.MATRIX && dt2 == DataType.MATRIX && dt3 == DataType.MATRIX) {
-			if((opcode.equalsIgnoreCase("+") || opcode.equalsIgnoreCase("-")))
-				return new MatrixMatrixArithmeticGPUInstruction(operator, in1, in2, out, opcode, str);
-			else
-				throw new DMLRuntimeException("Unsupported GPU ArithmeticInstruction. :: " + out.getDataType() + " = " + in1.getDataType() + " " + operator + " " + in1.getDataType() );	
+			return new MatrixMatrixArithmeticGPUInstruction(operator, in1, in2, out, opcode, str);	
 		}
 		else if( dt3 == DataType.MATRIX && ((dt1 == DataType.SCALAR && dt2 == DataType.MATRIX) || (dt1 == DataType.MATRIX && dt2 == DataType.SCALAR)) ) {
-			if( opcode.equalsIgnoreCase("*") || opcode.equalsIgnoreCase("*2") || opcode.equalsIgnoreCase("/") )
-				return new MatrixScalarArithmeticGPUInstruction(operator, in1, in2, out, opcode, str);
-			else
-				throw new DMLRuntimeException("Unsupported GPU ArithmeticInstruction. :: " + out.getDataType() + " = " + in1.getDataType() + " " + operator + " " + in1.getDataType() );
+			return new ScalarMatrixArithmeticGPUInstruction(operator, in1, in2, out, opcode, str);
 		}
 		else
 			throw new DMLRuntimeException("Unsupported GPU ArithmeticInstruction.");

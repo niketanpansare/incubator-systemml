@@ -42,11 +42,21 @@ public class GPUInstructionParser  extends InstructionParser
 		String2GPUInstructionType.put( "ba+*",                   GPUINSTRUCTION_TYPE.AggregateBinary);
 		String2GPUInstructionType.put( "tsmm",                   GPUINSTRUCTION_TYPE.MMTSJ);
 		String2GPUInstructionType.put( "r'",                   	 GPUINSTRUCTION_TYPE.Reorg);
-		String2GPUInstructionType.put( "+",                   	 GPUINSTRUCTION_TYPE.ArithmeticBinary);
-		String2GPUInstructionType.put( "-",                   	 GPUINSTRUCTION_TYPE.ArithmeticBinary);
-		String2GPUInstructionType.put( "*",                   	 GPUINSTRUCTION_TYPE.ArithmeticBinary);
-		String2GPUInstructionType.put( "*2",                   	 GPUINSTRUCTION_TYPE.ArithmeticBinary);
-		String2GPUInstructionType.put( "/",                   	 GPUINSTRUCTION_TYPE.ArithmeticBinary);
+	
+		// 
+		String2GPUInstructionType.put( "+"    , GPUINSTRUCTION_TYPE.ArithmeticBinary);
+		String2GPUInstructionType.put( "-"    , GPUINSTRUCTION_TYPE.ArithmeticBinary);
+		String2GPUInstructionType.put( "*"    , GPUINSTRUCTION_TYPE.ArithmeticBinary);
+		String2GPUInstructionType.put( "/"    , GPUINSTRUCTION_TYPE.ArithmeticBinary);
+		String2GPUInstructionType.put( "%%"   , GPUINSTRUCTION_TYPE.ArithmeticBinary);
+		String2GPUInstructionType.put( "%/%"  , GPUINSTRUCTION_TYPE.ArithmeticBinary);
+		String2GPUInstructionType.put( "^"    , GPUINSTRUCTION_TYPE.ArithmeticBinary);
+		String2GPUInstructionType.put( "1-*"  , GPUINSTRUCTION_TYPE.ArithmeticBinary); //special * case
+		String2GPUInstructionType.put( "^2"   , GPUINSTRUCTION_TYPE.ArithmeticBinary); //special ^ case
+		String2GPUInstructionType.put( "*2"   , GPUINSTRUCTION_TYPE.ArithmeticBinary); //special * case
+		String2GPUInstructionType.put( "-nz"  , GPUINSTRUCTION_TYPE.ArithmeticBinary); //special - case
+		String2GPUInstructionType.put( "+*"  , GPUINSTRUCTION_TYPE.ArithmeticBinary); 
+		String2GPUInstructionType.put( "-*"  , GPUINSTRUCTION_TYPE.ArithmeticBinary); 
 	}
 	
 	public static GPUInstruction parseSingleInstruction (String str ) 

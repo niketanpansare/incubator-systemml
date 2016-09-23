@@ -27,6 +27,7 @@ import static jcuda.jcusparse.JCusparse.cusparseSetMatIndexBase;
 import static jcuda.jcusparse.JCusparse.cusparseSetMatType;
 import static jcuda.jcusparse.JCusparse.cusparseSetPointerMode;
 import static jcuda.jcusparse.JCusparse.cusparseXcsrgemmNnz;
+import static jcuda.jcusparse.JCusparse.cusparseXcsrgeamNnz;
 import static jcuda.jcusparse.cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO;
 import static jcuda.jcusparse.cusparseMatrixType.CUSPARSE_MATRIX_TYPE_GENERAL;
 import static jcuda.runtime.JCuda.cudaFree;
@@ -151,13 +152,15 @@ public class JCudaObject extends GPUObject {
 		public static CSRPointer allocateEmpty(long nnz2, long rows) throws DMLRuntimeException {
 			CSRPointer r = new CSRPointer();
 			r.nnz = nnz2;
-			ensureFreeSpace(Sizeof.DOUBLE * nnz2 + Sizeof.INT * (rows + 1) + Sizeof.INT * nnz2);
-			long t0 = System.nanoTime();
-			cudaMalloc(r.val, Sizeof.DOUBLE * nnz2);
-			cudaMalloc(r.rowPtr, Sizeof.INT * (rows + 1));
-			cudaMalloc(r.colInd, Sizeof.INT * nnz2);
-			Statistics.cudaAllocTime.addAndGet(System.nanoTime()-t0);
-			Statistics.cudaAllocCount.addAndGet(3);
+			if(nnz2 != 0) {
+				ensureFreeSpace(Sizeof.DOUBLE * nnz2 + Sizeof.INT * (rows + 1) + Sizeof.INT * nnz2);
+				long t0 = System.nanoTime();
+				cudaMalloc(r.val, Sizeof.DOUBLE * nnz2);
+				cudaMalloc(r.rowPtr, Sizeof.INT * (rows + 1));
+				cudaMalloc(r.colInd, Sizeof.INT * nnz2);
+				Statistics.cudaAllocTime.addAndGet(System.nanoTime()-t0);
+				Statistics.cudaAllocCount.addAndGet(3);
+			}
 			return r;
 		}
 		
@@ -201,6 +204,122 @@ public class JCudaObject extends GPUObject {
 			Statistics.cudaFromDevCount.addAndGet(3);
 		}
 		
+		// ==============================================================================================
+		/*
+		 * From CuSparse Manual,
+		 * Since A and B have different sparsity patterns, cuSPARSE adopts a two-step approach
+		 * to complete sparse matrix C. In the first step, the user allocates csrRowPtrC of m+1
+		 * elements and uses function cusparseXcsrgeamNnz() to determine csrRowPtrC
+		 * and the total number of nonzero elements. In the second step, the user gathers nnzC 
+		 * (number of nonzero elements of matrix C) from either (nnzC=*nnzTotalDevHostPtr)
+		 * or (nnzC=csrRowPtrC(m)-csrRowPtrC(0)) and allocates csrValC, csrColIndC of
+		 * nnzC elements respectively, then finally calls function cusparse[S|D|C|Z]csrgeam()
+		 * to complete matrix C. 
+		 * 
+		 */
+		
+		
+		/**
+		 * Allocate row pointers of m+1 elements
+		 * 
+		 * @param handle
+		 * @param C
+		 * @param m
+		 * @throws DMLRuntimeException
+		 */
+		private static void step1AllocateRowPointers(cusparseHandle handle, CSRPointer C, int m) throws DMLRuntimeException {
+			cusparseSetPointerMode(handle, cusparsePointerMode.CUSPARSE_POINTER_MODE_HOST);
+			
+			JCudaObject.ensureFreeSpace(Sizeof.INT * (m+1));
+			long t0 = System.nanoTime();
+			cudaMalloc(C.rowPtr, Sizeof.INT * (m+1));
+			Statistics.cudaAllocTime.addAndGet(System.nanoTime()-t0);
+			Statistics.cudaAllocCount.addAndGet(1);
+		}
+		
+		/**
+		 * Determine total number of nonzero element for dgeam  from 
+		 * either (nnzC=*nnzTotalDevHostPtr) or (nnzC=csrRowPtrC(m)-csrRowPtrC(0))
+		 * 
+		 * @param handle
+		 * @param A
+		 * @param B
+		 * @param C
+		 * @param m
+		 * @param n
+		 * @throws DMLRuntimeException
+		 */
+		private static void step2GatherNNZGeam(cusparseHandle handle, CSRPointer A, CSRPointer B, CSRPointer C, int m, int n) throws DMLRuntimeException {
+			int[] CnnzArray = { -1 };
+			cusparseXcsrgeamNnz(handle, m, n,  
+					A.descr, (int)A.nnz, A.rowPtr, A.colInd, 
+					B.descr, (int)B.nnz, B.rowPtr, B.colInd, 
+					C.descr, C.rowPtr, Pointer.to(CnnzArray));
+			if (CnnzArray[0] != -1){
+				C.nnz = CnnzArray[0];
+			}
+			else {
+		        int baseArray[] = { 0 };
+		        cudaMemcpy(Pointer.to(CnnzArray), C.rowPtr.withByteOffset(m * Sizeof.INT), 1 * Sizeof.INT, cudaMemcpyDeviceToHost);
+	            cudaMemcpy(Pointer.to(baseArray), C.rowPtr,								   1 * Sizeof.INT, cudaMemcpyDeviceToHost);
+	            C.nnz = CnnzArray[0] - baseArray[0];
+			}
+		}
+		
+		private static void step2GatherNNZGemm(cusparseHandle handle, CSRPointer A, int transA, CSRPointer B, int transB, CSRPointer C, int m, int n, int k) throws DMLRuntimeException {
+			int[] CnnzArray = { -1 };
+			if (A.nnz >= Integer.MAX_VALUE || B.nnz >= Integer.MAX_VALUE) { 
+				throw new DMLRuntimeException("Number of non zeroes is larger than supported by cuSparse"); 
+			}
+			cusparseXcsrgemmNnz(handle, transA, transB, m, n, k, 
+					A.descr, (int)A.nnz, A.rowPtr, A.colInd, 
+					B.descr, (int)B.nnz, B.rowPtr, B.colInd, 
+					C.descr, C.rowPtr, Pointer.to(CnnzArray));
+			if (CnnzArray[0] != -1){
+				C.nnz = CnnzArray[0];
+			}
+			else {
+		        int baseArray[] = { 0 };
+		        cudaMemcpy(Pointer.to(CnnzArray), C.rowPtr.withByteOffset(m * Sizeof.INT), 1 * Sizeof.INT, cudaMemcpyDeviceToHost);
+	            cudaMemcpy(Pointer.to(baseArray), C.rowPtr,								   1 * Sizeof.INT, cudaMemcpyDeviceToHost);
+	            C.nnz = CnnzArray[0] - baseArray[0];
+			}
+		}
+		
+		/**
+		 * Allocate val and index pointers.
+		 * 
+		 * @param handle
+		 * @param C
+		 * @throws DMLRuntimeException
+		 */
+		private static void step3AllocateValNInd(cusparseHandle handle, CSRPointer C) throws DMLRuntimeException {
+			JCudaObject.ensureFreeSpace(Sizeof.DOUBLE * C.nnz);
+			long t1 = System.nanoTime();
+			cudaMalloc(C.val, Sizeof.DOUBLE * C.nnz);
+			Statistics.cudaAllocTime.addAndGet(System.nanoTime()-t1);
+			Statistics.cudaAllocCount.addAndGet(1);
+			
+			JCudaObject.ensureFreeSpace(Sizeof.INT * C.nnz);
+			long t2 = System.nanoTime();
+			cudaMalloc(C.colInd, Sizeof.INT * C.nnz);
+			Statistics.cudaAllocTime.addAndGet(System.nanoTime()-t2);
+			Statistics.cudaAllocCount.addAndGet(1);
+		}
+		// ==============================================================================================
+		
+		public static CSRPointer allocateForDgeam(cusparseHandle handle, CSRPointer A, CSRPointer B, int m, int n) 
+				throws DMLRuntimeException{
+			if (A.nnz >= Integer.MAX_VALUE || B.nnz >= Integer.MAX_VALUE) { 
+				throw new DMLRuntimeException("Number of non zeroes is larger than supported by cuSparse"); 
+			}
+			CSRPointer C = new CSRPointer();
+			step1AllocateRowPointers(handle, C, m);
+			step2GatherNNZGeam(handle, A, B, C, m, n);
+			step3AllocateValNInd(handle, C);
+			return C;
+		}
+		
 		/**
 		 * Estimates the number of non-zero elements from the result of a sparse matrix multiplication C = A * B
 		 * and returns the {@link CSRPointer} to C with the appropriate GPU memory.
@@ -219,44 +338,10 @@ public class JCudaObject extends GPUObject {
 				throws DMLRuntimeException{
 			// Following the code example at http://docs.nvidia.com/cuda/cusparse/#cusparse-lt-t-gt-csrgemm and at
 			// https://github.com/jcuda/jcuda-matrix-utils/blob/master/JCudaMatrixUtils/src/test/java/org/jcuda/matrix/samples/JCusparseSampleDgemm.java
-			
 			CSRPointer C = new CSRPointer();
-			cusparseSetPointerMode(handle, cusparsePointerMode.CUSPARSE_POINTER_MODE_HOST);
-			
-			JCudaObject.ensureFreeSpace(Sizeof.INT * (m+1));
-			long t0 = System.nanoTime();
-			cudaMalloc(C.rowPtr, Sizeof.INT * (m+1));
-			Statistics.cudaAllocTime.addAndGet(System.nanoTime()-t0);
-			Statistics.cudaAllocCount.addAndGet(1);
-			int[] CnnzArray = { -1 };
-			if (A.nnz >= Integer.MAX_VALUE || B.nnz >= Integer.MAX_VALUE) { 
-				throw new DMLRuntimeException("Number of non zeroes is larger than supported by cuSparse"); 
-			}
-			cusparseXcsrgemmNnz(handle, transA, transB, m, n, k, 
-					A.descr, (int)A.nnz, A.rowPtr, A.colInd, 
-					B.descr, (int)B.nnz, B.rowPtr, B.colInd, 
-					C.descr, C.rowPtr, Pointer.to(CnnzArray));
-			if (CnnzArray[0] != -1){
-				C.nnz = CnnzArray[0];
-			}
-			else {
-		        int baseArray[] = { 0 };
-		        cudaMemcpy(Pointer.to(CnnzArray), C.rowPtr.withByteOffset(m * Sizeof.INT), 1 * Sizeof.INT, cudaMemcpyDeviceToHost);
-	            cudaMemcpy(Pointer.to(baseArray), C.rowPtr,								   1 * Sizeof.INT, cudaMemcpyDeviceToHost);
-	            C.nnz = CnnzArray[0] - baseArray[0];
-			}
-			JCudaObject.ensureFreeSpace(Sizeof.DOUBLE * C.nnz);
-			long t1 = System.nanoTime();
-			cudaMalloc(C.val, Sizeof.DOUBLE * C.nnz);
-			Statistics.cudaAllocTime.addAndGet(System.nanoTime()-t1);
-			Statistics.cudaAllocCount.addAndGet(1);
-			
-			JCudaObject.ensureFreeSpace(Sizeof.INT * C.nnz);
-			long t2 = System.nanoTime();
-			cudaMalloc(C.colInd, Sizeof.INT * C.nnz);
-			Statistics.cudaAllocTime.addAndGet(System.nanoTime()-t2);
-			Statistics.cudaAllocCount.addAndGet(1);
-			
+			step1AllocateRowPointers(handle, C, m);
+			step2GatherNNZGemm(handle, A, transA, B, transB, C, m, n, k);
+			step3AllocateValNInd(handle, C);
 			return C;
 		}
 		
@@ -276,6 +361,7 @@ public class JCudaObject extends GPUObject {
 		public Pointer toColumnMajorDenseMatrix(cusparseHandle cusparseHandle, cublasHandle cublasHandle, int rows, int cols) throws DMLRuntimeException {
 			long size = rows * cols * Sizeof.DOUBLE;
 			Pointer A = JCudaObject.allocate(size);
+			// Note: cusparseDcsr2dense method cannot handle empty blocks
 			cusparseDcsr2dense(cusparseHandle, rows, cols, descr, val, rowPtr, colInd, A, rows);
 			// int[] alpha = { 1 };
 			// int[] beta = { 1 };
@@ -543,12 +629,14 @@ public class JCudaObject extends GPUObject {
 			double[] values = null;
 					
 			SparseBlock block = tmp.getSparseBlock();
+			boolean copyToDevice = true;
 			if(block == null && tmp.getNonZeros() == 0) {
-				// Allocate empty block
-				// To reproduce this, see org.apache.sysml.test.integration.applications.dml.ID3DMLTest
-				rowPtr = new int[0];
-				colInd = new int[0];
-				values = new double[0];
+//				// Allocate empty block --> not necessary
+//				// To reproduce this, see org.apache.sysml.test.integration.applications.dml.ID3DMLTest
+//				rowPtr = new int[0];
+//				colInd = new int[0];
+//				values = new double[0];
+				copyToDevice = false;
 			}
 			else if(block == null && tmp.getNonZeros() != 0) {
 				throw new DMLRuntimeException("Expected CP sparse block to be not null.");
@@ -584,8 +672,9 @@ public class JCudaObject extends GPUObject {
 			synchronized(evictionLock) {
 				GPUContext.allocatedPointers.add(this);
 			}
-			CSRPointer.copyToDevice(jcudaSparseMatrixPtr, tmp.getNumRows(), tmp.getNonZeros(), rowPtr, colInd, values);
-			
+			if(copyToDevice) {
+				CSRPointer.copyToDevice(jcudaSparseMatrixPtr, tmp.getNumRows(), tmp.getNonZeros(), rowPtr, colInd, values);
+			}
 			// throw new DMLRuntimeException("Sparse matrix is not implemented");
 			// tmp.sparseToDense();
 		}
@@ -738,6 +827,9 @@ public class JCudaObject extends GPUObject {
 		if(jcudaDenseMatrixPtr == null || !isAllocated())
 			throw new DMLRuntimeException("Expected allocated dense matrix before denseToSparse() call");
 		
+		// FIXME: denseToSparseUtil accepts column-major not row-major matrix, 
+		// hence convertDensePtrFromColMajorToRowMajor required.
+		convertDensePtrFromColMajorToRowMajor();
 		setSparseMatrixCudaPointer(denseToSparseUtil(cusparseHandle, rows, cols, jcudaDenseMatrixPtr));
 		cudaFree(jcudaDenseMatrixPtr);
 		jcudaDenseMatrixPtr = null;
@@ -745,18 +837,12 @@ public class JCudaObject extends GPUObject {
 		numBytes = CSRPointer.estimateSize(mat.getNnz(), rows);
 	}
 	
-	/**
-	 * Convert sparse to dense (Performs transpose, use sparseToColumnMajorDense if the kernel can deal with column major format)
-	 * 
-	 * @throws DMLRuntimeException
-	 */
-	public void sparseToDense() throws DMLRuntimeException {
-		sparseToColumnMajorDense();
-		if(jcudaDenseMatrixPtr == null || jcudaSparseMatrixPtr != null) {
+	private void convertDensePtrFromColMajorToRowMajor() throws DMLRuntimeException {
+		if(jcudaDenseMatrixPtr == null || jcudaSparseMatrixPtr != null || !isAllocated) {
 			throw new DMLRuntimeException("Incorrect conversion");
 		}
-		int m = (int) mat.getNumColumns();
-		int n = (int) mat.getNumRows();
+		int m = (int) mat.getNumRows();
+		int n = (int) mat.getNumColumns();
 		int lda = n;
 	    int ldc = m;
 	    
@@ -766,9 +852,22 @@ public class JCudaObject extends GPUObject {
 		Pointer C = JCudaObject.allocate(m*n*Sizeof.DOUBLE);
 		
 		// Transpose the matrix to get a dense matrix
-		JCublas2.cublasDgeam(LibMatrixCUDA.cublasHandle, CUBLAS_OP_T, CUBLAS_OP_T, m, n, alpha, A, lda, beta, A, lda, C, ldc);
+		JCublas2.cublasDgeam(LibMatrixCUDA.cublasHandle, CUBLAS_OP_T, CUBLAS_OP_T, m, n, alpha, A, lda, beta, new Pointer(), lda, C, ldc);
 		cudaFree(A);
 		jcudaDenseMatrixPtr = C;
+	}
+	
+	/**
+	 * Convert sparse to dense (Performs transpose, use sparseToColumnMajorDense if the kernel can deal with column major format)
+	 * 
+	 * @throws DMLRuntimeException
+	 */
+	public void sparseToDense() throws DMLRuntimeException {
+		if(jcudaSparseMatrixPtr == null || !isAllocated())
+			throw new DMLRuntimeException("Expected allocated sparse matrix before sparseToDense() call");
+		
+		sparseToColumnMajorDense();
+		convertDensePtrFromColMajorToRowMajor();
 	}
 
 	
@@ -778,19 +877,18 @@ public class JCudaObject extends GPUObject {
 	 * @throws DMLRuntimeException
 	 */
 	public void sparseToColumnMajorDense() throws DMLRuntimeException {
+		if(jcudaSparseMatrixPtr == null || !isAllocated())
+			throw new DMLRuntimeException("Expected allocated sparse matrix before sparseToDense() call");
+		
 		cusparseHandle cusparseHandle = LibMatrixCUDA.cusparseHandle;
 		if(cusparseHandle == null)
 			throw new DMLRuntimeException("Expected cusparse to be initialized");
 		int rows = (int) mat.getNumRows();
 		int cols = (int) mat.getNumColumns();
-		
-		if(jcudaSparseMatrixPtr == null || !isAllocated())
-			throw new DMLRuntimeException("Expected allocated sparse matrix before sparseToDense() call");
-		
 		setDenseMatrixCudaPointer(jcudaSparseMatrixPtr.toColumnMajorDenseMatrix(cusparseHandle, null, rows, cols));
 		jcudaSparseMatrixPtr.deallocate();
 		jcudaSparseMatrixPtr = null;
-		numBytes = mat.getNumRows()*mat.getNumColumns()*Sizeof.DOUBLE;
+		numBytes = rows*cols*Sizeof.DOUBLE;
 	}
 	
 	/**

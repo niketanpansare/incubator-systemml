@@ -23,19 +23,19 @@ import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysml.runtime.matrix.operators.LeftScalarOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
+import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
-import org.apache.sysml.runtime.functionobjects.Divide;
 import org.apache.sysml.runtime.functionobjects.Multiply;
 import org.apache.sysml.runtime.functionobjects.Multiply2;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
-import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA.GPUEnabledElementwiseOp;
 import org.apache.sysml.utils.Statistics;
 
-public class MatrixScalarArithmeticGPUInstruction extends ArithmeticBinaryGPUInstruction {
-	public MatrixScalarArithmeticGPUInstruction(Operator op, 
+public class ScalarMatrixArithmeticGPUInstruction extends ArithmeticBinaryGPUInstruction {
+	public ScalarMatrixArithmeticGPUInstruction(Operator op, 
 			   									CPOperand in1, 
 			   									CPOperand in2, 
 			   									CPOperand out, 
@@ -61,27 +61,10 @@ public class MatrixScalarArithmeticGPUInstruction extends ArithmeticBinaryGPUIns
 		
 		ec.setMetaData(_output.getName(), rlen, clen);
 		
-		GPUEnabledElementwiseOp op;
-		if(_optr instanceof BinaryOperator) {
-			if(((BinaryOperator)_optr).fn instanceof Multiply || ((BinaryOperator)_optr).fn instanceof Multiply2) {
-				op = GPUEnabledElementwiseOp.MULTIPLY;
-			}
-			else if(((BinaryOperator)_optr).fn instanceof Divide) {
-				op = GPUEnabledElementwiseOp.DIVIDE;
-			}
-			else {
-				throw new DMLRuntimeException("The operator is not supported");
-			}
-		}
-		else {
-			throw new DMLRuntimeException("The operator is not supported");
-		}
-//		if(op == GPUEnabledElementwiseOp.MULTIPLY && (rlen == 1 || clen == 1) && !isTransposed) {
-//			LibMatrixCUDA.vectorScalarMultiply(ec, in1, constant.getDoubleValue(), _output.getName(), op);
-//		}
-//		else {
-			LibMatrixCUDA.matScalarElementwiseMultiplyDivide(ec, in1, constant.getDoubleValue(), _output.getName(), op, isTransposed);
-//		}
+		ScalarOperator sc_op = (ScalarOperator) _optr;
+		sc_op.setConstant(constant.getDoubleValue());
+		
+		LibMatrixCUDA.bincellOp(ec, in1, _output.getName(), isTransposed, sc_op);
 		
 		ec.releaseMatrixInputForGPUInstruction(mat.getName());
         ec.releaseMatrixOutputForGPUInstruction(_output.getName());

@@ -588,7 +588,7 @@ public class BinaryOp extends Hop
 				ot = HopsOpOp2LopsU.get(op);
 			
 			if(DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < OptimizerUtils.GPU_MEMORY_BUDGET) 
-					&& (op == OpOp2.MULT || op == OpOp2.DIV) ) {
+					&& (op == OpOp2.MULT || op == OpOp2.PLUS || op == OpOp2.MINUS || op == OpOp2.DIV || op == OpOp2.POW) ) {
 				et = ExecType.GPU;
 			}
 			Unary unary1 = new Unary(getInput().get(0).constructLops(),
@@ -605,10 +605,8 @@ public class BinaryOp extends Hop
 			ExecType et = optFindExecType();
 			if ( et == ExecType.CP ) 
 			{
-				boolean isMatrixVector = (getInput().get(0).getDim1() != getInput().get(1).getDim1()) ||
-						(getInput().get(0).getDim2() != getInput().get(1).getDim2());
 				if(DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < OptimizerUtils.GPU_MEMORY_BUDGET) 
-						&& (op == OpOp2.PLUS || op == OpOp2.MINUS) && !isMatrixVector) {
+						&& (op == OpOp2.MULT || op == OpOp2.PLUS || op == OpOp2.MINUS || op == OpOp2.DIV || op == OpOp2.POW)) {
 					et = ExecType.GPU;
 				}
 				

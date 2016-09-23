@@ -22,7 +22,6 @@ package org.apache.sysml.runtime.instructions.gpu;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.functionobjects.Plus;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
@@ -57,8 +56,7 @@ public class MatrixMatrixArithmeticGPUInstruction extends ArithmeticBinaryGPUIns
 		ec.setMetaData(_output.getName(), rlen, clen);
 		
 		BinaryOperator bop = (BinaryOperator) _optr;
-		boolean isAdd = bop.fn instanceof Plus;
-		LibMatrixCUDA.cellwiseMatMatAddSubtract(ec, in1, in2, _output.getName(), isLeftTransposed, isRightTransposed, isAdd);
+		LibMatrixCUDA.bincellOp(ec, in1, in2, _output.getName(), isLeftTransposed, isRightTransposed, bop);
 		
 		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
 		ec.releaseMatrixInputForGPUInstruction(_input2.getName());
