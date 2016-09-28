@@ -56,6 +56,7 @@ import jcuda.jcusparse.cusparseDirection;
 import jcuda.jcusparse.cusparseHandle;
 import jcuda.jcusparse.cusparseMatDescr;
 import jcuda.jcusparse.cusparsePointerMode;
+import jcuda.runtime.JCuda;
 
 public class JCudaObject extends GPUObject {
 	
@@ -150,17 +151,21 @@ public class JCudaObject extends GPUObject {
 		 * @throws DMLRuntimeException 
 		 */
 		public static CSRPointer allocateEmpty(long nnz2, long rows) throws DMLRuntimeException {
+			assert nnz2 > -1 : "Incorrect usage of internal API, number of non zeroes is less than 0 when trying to allocate sparse data on GPU";
 			CSRPointer r = new CSRPointer();
 			r.nnz = nnz2;
-			if(nnz2 != 0) {
-				ensureFreeSpace(Sizeof.DOUBLE * nnz2 + Sizeof.INT * (rows + 1) + Sizeof.INT * nnz2);
-				long t0 = System.nanoTime();
-				cudaMalloc(r.val, Sizeof.DOUBLE * nnz2);
-				cudaMalloc(r.rowPtr, Sizeof.INT * (rows + 1));
-				cudaMalloc(r.colInd, Sizeof.INT * nnz2);
-				Statistics.cudaAllocTime.addAndGet(System.nanoTime()-t0);
-				Statistics.cudaAllocCount.addAndGet(3);
+			if(nnz2 == 0) {
+				// The convention for an empty sparse matrix is to just have an instance of the CSRPointer object
+				// with no memory allocated on the GPU.
+				return r;
 			}
+			ensureFreeSpace(Sizeof.DOUBLE * nnz2 + Sizeof.INT * (rows + 1) + Sizeof.INT * nnz2);
+			long t0 = System.nanoTime();
+			cudaMalloc(r.val, Sizeof.DOUBLE * nnz2);
+			cudaMalloc(r.rowPtr, Sizeof.INT * (rows + 1));
+			cudaMalloc(r.colInd, Sizeof.INT * nnz2);
+			Statistics.cudaAllocTime.addAndGet(System.nanoTime()-t0);
+			Statistics.cudaAllocCount.addAndGet(3);
 			return r;
 		}
 		
@@ -363,6 +368,7 @@ public class JCudaObject extends GPUObject {
 			Pointer A = JCudaObject.allocate(size);
 			// Note: cusparseDcsr2dense method cannot handle empty blocks
 			cusparseDcsr2dense(cusparseHandle, rows, cols, descr, val, rowPtr, colInd, A, rows);
+			JCuda.cudaDeviceSynchronize();
 			// int[] alpha = { 1 };
 			// int[] beta = { 1 };
 			// Pointer C = JCudaObject.allocate(size);
@@ -627,7 +633,11 @@ public class JCudaObject extends GPUObject {
 			int rowPtr[] = null;
 			int colInd[] = null;
 			double[] values = null;
-					
+			
+			tmp.recomputeNonZeros();
+			long nnz = tmp.getNonZeros();
+			mat.getMatrixCharacteristics().setNonZeros(nnz);
+			
 			SparseBlock block = tmp.getSparseBlock();
 			boolean copyToDevice = true;
 			if(block == null && tmp.getNonZeros() == 0) {

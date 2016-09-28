@@ -19,6 +19,8 @@
 
 package org.apache.sysml.runtime.matrix.data;
 
+import static jcuda.jcublas.cublasOperation.CUBLAS_OP_N;
+import static jcuda.jcublas.cublasOperation.CUBLAS_OP_T;
 import static jcuda.jcudnn.JCudnn.cudnnConvolutionBackwardData;
 import static jcuda.jcudnn.JCudnn.cudnnConvolutionBackwardFilter;
 import static jcuda.jcudnn.JCudnn.cudnnConvolutionForward;
@@ -47,6 +49,7 @@ import static jcuda.jcusparse.JCusparse.cusparseDcsrgemm;
 import static jcuda.jcusparse.JCusparse.cusparseDcsrmv;
 import static jcuda.jcusparse.cusparseOperation.CUSPARSE_OPERATION_NON_TRANSPOSE;
 import static jcuda.jcusparse.cusparseOperation.CUSPARSE_OPERATION_TRANSPOSE;
+import static jcuda.runtime.JCuda.cudaDeviceSynchronize;
 import static jcuda.runtime.JCuda.cudaFree;
 import static jcuda.runtime.JCuda.cudaMalloc;
 import static jcuda.runtime.JCuda.cudaMemcpy;
@@ -64,12 +67,12 @@ import org.apache.sysml.runtime.functionobjects.GreaterThan;
 import org.apache.sysml.runtime.functionobjects.GreaterThanEquals;
 import org.apache.sysml.runtime.functionobjects.LessThan;
 import org.apache.sysml.runtime.functionobjects.LessThanEquals;
+import org.apache.sysml.runtime.functionobjects.Minus;
+import org.apache.sysml.runtime.functionobjects.Multiply;
 import org.apache.sysml.runtime.functionobjects.Multiply2;
 import org.apache.sysml.runtime.functionobjects.NotEquals;
 import org.apache.sysml.runtime.functionobjects.Or;
 import org.apache.sysml.runtime.functionobjects.Plus;
-import org.apache.sysml.runtime.functionobjects.Minus;
-import org.apache.sysml.runtime.functionobjects.Multiply;
 import org.apache.sysml.runtime.functionobjects.Power;
 import org.apache.sysml.runtime.functionobjects.Power2;
 import org.apache.sysml.runtime.functionobjects.ValueFunction;
@@ -97,9 +100,6 @@ import jcuda.jcudnn.cudnnPoolingDescriptor;
 import jcuda.jcudnn.cudnnTensorDescriptor;
 import jcuda.jcusparse.JCusparse;
 import jcuda.jcusparse.cusparseHandle;
-import jcuda.runtime.JCuda;
-import static jcuda.jcublas.cublasOperation.CUBLAS_OP_N;
-import static jcuda.jcublas.cublasOperation.CUBLAS_OP_T;
 
 //FIXME move could to respective instructions, this is not a block library
 public class LibMatrixCUDA {
@@ -583,7 +583,7 @@ public class LibMatrixCUDA {
 		double[] alpha = { 1 };
 		double[] beta = { 0 };
 		cusparseDcsrmv(cusparseHandle, transA, m, k, (int)A.nnz, Pointer.to(alpha), A.descr, A.val, A.rowPtr, A.colInd, B_dense, Pointer.to(beta), C_dense);
-		
+		cudaDeviceSynchronize(); 	// Since cusparseDcsrmv is asynchronously executed
 		((JCudaObject)(output.getGPUObject())).setDenseMatrixCudaPointer(C_dense);
 		output.getGPUObject().setDeviceModify(size);
 	}
