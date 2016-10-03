@@ -18,9 +18,6 @@
  */
 package org.apache.sysml.api.dl
 import scala.collection.JavaConversions._
-import java.util.ArrayList
-import java.util.HashSet
-import scala.collection.mutable.Stack
 import caffe.Caffe.LayerParameter;
 import caffe.Caffe.NetParameter;
 import org.apache.sysml.parser.LanguageException;
@@ -36,44 +33,12 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 
 object Utils {
-  def shouldVisit(layer:LayerParameter, visited:HashSet[String]):Boolean = {
-	  val bottom = layer.getBottomList
-	  if(layer.getBottomCount == 0 ||
-	      (layer.getBottomCount == 1 && bottom(0).compareTo(layer.getName) == 0)) {
-	    return true
-	  }
-	  else {
-	    for(b <- bottom) {
-	      if(!visited.contains(b.compareTo(layer.getName))) {
-	        return false
-	      }
-	    }
-	    return true
-	  }
-	}
-	def getTopologicalSortedLayers(net:NetParameter, layers:Map[String, (LayerParameter, Int)]): ArrayList[String] = {
-	  val visited:HashSet[String] = new HashSet[String]()
-	  val ret:ArrayList[String] = new ArrayList[String]()
-	  while(visited.size != layers.size) {
-	    var atleastOneVisited = false
-	    for(l <- net.getLayerList) {
-	      if(shouldVisit(l, visited)) {
-	        visited.add(l.getName)
-	        ret.add(l.getName)
-	        atleastOneVisited = true
-	      }
-	    }
-	    if(!atleastOneVisited && visited.size < layers.size) {
-	      throw new LanguageException("Possible cycle")
-	    }
-	  }
-	  ret
-	}
+  
 	
 	// --------------------------------------------------------------
 	// Caffe utility functions
-	def readCaffeNet(solver:SolverParameter):NetParameter = {
-		val reader:InputStreamReader = getInputStreamReader(solver.getNet()); // TODO:
+	def readCaffeNet(netFilePath:String):NetParameter = {
+		val reader:InputStreamReader = getInputStreamReader(netFilePath); 
   	val builder:NetParameter.Builder =  NetParameter.newBuilder();
   	TextFormat.merge(reader, builder);
   	return builder.build();

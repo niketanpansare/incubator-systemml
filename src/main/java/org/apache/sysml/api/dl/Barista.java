@@ -42,7 +42,7 @@ import caffe.Caffe.SolverParameter;
  * 
  * org.apache.sysml.api.dl.Barista train -solver LenetSolver.proto
  */
-public class OldBarista {
+public class Barista {
 	
 	public static enum DMLPhase { TRAIN, TEST, VALIDATE };
 	public static DMLPhase currentPhase = DMLPhase.TRAIN;
@@ -68,7 +68,7 @@ public class OldBarista {
 	public static String testVarsuffix = "t";
 	
 	private static void printUsage() throws DMLRuntimeException {
-		throw new DMLRuntimeException("Usage is " + OldBarista.class.getCanonicalName() + " train -solver solver.proto");
+		throw new DMLRuntimeException("Usage is " + Barista.class.getCanonicalName() + " train -solver solver.proto");
 	}
 	
 	// TODO: remove this main method and only allow calls to Barista through DMLScript
