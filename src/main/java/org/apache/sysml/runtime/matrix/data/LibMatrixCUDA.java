@@ -1115,7 +1115,14 @@ public class LibMatrixCUDA {
 		boolean isEmpty1 = isSparseAndEmpty(in1);
 		boolean isSparse2 = isInSparseFormat(in2);
 		boolean isEmpty2 = isSparseAndEmpty(in2);
-		if(isEmpty1) {
+
+		if (isEmpty1 && isEmpty2){
+			// When both inputs are empty, the output is empty too
+			MatrixObject out = ec.getMatrixObject(outputName);
+			ec.allocateGPUMatrixObject(outputName);
+			((JCudaObject)out.getGPUObject()).allocateSparseAndEmpty();
+		}
+		else if(isEmpty1) {
 			// C = empty_in1 op in2 ==> becomes ==> C = 0.0 op in2
 			bincellOp(ec, in2, outputName, isRightTransposed, new LeftScalarOperator(op.fn, 0.0));
 		}
