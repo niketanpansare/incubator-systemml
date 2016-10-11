@@ -1117,16 +1117,22 @@ public class LibMatrixCUDA {
 		boolean isEmpty2 = isSparseAndEmpty(in2);
 
 		if (isEmpty1 && isEmpty2){
-			// When both inputs are empty, the output is empty too
 			MatrixObject out = ec.getMatrixObject(outputName);
 			ec.allocateGPUMatrixObject(outputName);
-			((JCudaObject)out.getGPUObject()).allocateSparseAndEmpty();
+			// When both inputs are empty, the output is empty too (except in the case of division)
+			if (op.fn instanceof Divide) {
+				((JCudaObject) out.getGPUObject()).allocateAndFillDense(Double.NaN);
+			} else {
+				((JCudaObject) out.getGPUObject()).allocateSparseAndEmpty();
+			}
 		}
-		else if(isEmpty1) {
+		// Check for M1 * M2 when M1 is empty; if M2 is a vector then fallback to general case
+		else if(isEmpty1 && in2.getNumColumns() != 1 && in2.getNumRows() != 1) {
 			// C = empty_in1 op in2 ==> becomes ==> C = 0.0 op in2
 			bincellOp(ec, in2, outputName, isRightTransposed, new LeftScalarOperator(op.fn, 0.0));
 		}
-		else if(isEmpty2) {
+		// Check for M1 * M2 when M2 is empty; if M1 is a vector then fallback to general case
+		else if(isEmpty2 && in1.getNumColumns() != 1 && in1.getNumRows() != 1) {
 			// C = in1 op empty_in2 ==> becomes ==> C = in1 op 0.0
 			bincellOp(ec, in1, outputName, isLeftTransposed, new RightScalarOperator(op.fn, 0.0));
 		}
