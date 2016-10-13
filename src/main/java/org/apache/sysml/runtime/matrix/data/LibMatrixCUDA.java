@@ -55,6 +55,7 @@ import static jcuda.runtime.JCuda.cudaMalloc;
 import static jcuda.runtime.JCuda.cudaMemcpy;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
 
+import jcuda.runtime.JCuda;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -484,11 +485,15 @@ public class LibMatrixCUDA {
 			LOG.debug(" GPU Dense-Sparse Matrix Multiplication (Converted to Sparse-Sparse)");
 			// Convert left to CSR and do cuSparse matmul
 			long t0 = System.nanoTime();
-			CSRPointer A = JCudaObject.denseToSparseUtil(cusparseHandle, (int)left.getNumRows(), (int)right.getNumColumns(), ADense);
+			int rowsA = (int)left.getNumRows();
+			int colsA = (int)left.getNumColumns();
+			Pointer AT = JCudaObject.transpose(ADense, rowsA, colsA, colsA, rowsA);
+			CSRPointer A = JCudaObject.columnMajorDenseToRowMajorSparse(cusparseHandle, rowsA, colsA, AT);
 			Statistics.cudaConversionTime.addAndGet(System.nanoTime() - t0);
 			Statistics.cudaConversionCount.addAndGet(1);
 			sparseSparseMatmult(output, transA, transB, m, n, k, A, B);
 			A.deallocate();
+			cudaFree(AT);
 		} else {
 			LOG.debug(" GPU Dense-Sparse Matrix Multiplication (Converted to Dense-Dense)");
 			// Convert right to dense and do a cuBlas matmul
@@ -539,11 +544,15 @@ public class LibMatrixCUDA {
 				LOG.debug(" GPU Sparse-Dense Matrix Multiplication (Converted to Sparse-Sparse)");
 				// Convert right to CSR and do cuSparse matmul
 				long t0 = System.nanoTime();
-				CSRPointer B = JCudaObject.denseToSparseUtil(cusparseHandle, (int)right.getNumRows(), (int)right.getNumColumns(), BDense);
+				int rowsB = (int)right.getNumRows();
+				int colsB = (int)right.getNumColumns();
+				Pointer BT = JCudaObject.transpose(BDense, rowsB, colsB, colsB, rowsB);
+				CSRPointer B = JCudaObject.columnMajorDenseToRowMajorSparse(cusparseHandle, rowsB, colsB, BT);
 				Statistics.cudaConversionTime.addAndGet(System.nanoTime() - t0);
 				Statistics.cudaConversionCount.addAndGet(1);
 				sparseSparseMatmult(output, transA, transB, m, n, k, A, B);
 				B.deallocate();
+				cudaFree(BT);
 			} else {					
 				LOG.debug(" GPU Sparse-Dense Matrix Multiplication (Converted to Dense-Dense)");
 				// Convert left to dense and do a cuBlas matmul
@@ -1160,9 +1169,14 @@ public class LibMatrixCUDA {
 		    int maxClen = Math.max(clenA, clenB);
 		    int vecStatusA = getVectorStatus(in1);
 		    int vecStatusB = getVectorStatus(in2);
+
 			kernels.launchKernel("binCellOp",
 					ExecutionConfig.getConfigForSimpleMatrixOperations(maxRlen, maxClen), 
 					A, B, C, maxRlen, maxClen, vecStatusA, vecStatusB, getBinaryOp(op.fn));
+
+			System.out.println(JCudaObject.debugString(A, rlenA, clenA));
+			System.out.println(JCudaObject.debugString(B, rlenB, clenB));
+
 		}
 	}
 	

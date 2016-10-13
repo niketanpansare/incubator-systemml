@@ -53,7 +53,7 @@ public class MatrixMatrixArithmeticGPUInstruction extends ArithmeticBinaryGPUIns
 		int rlen = isLeftTransposed ? (int) in1.getNumColumns() : (int) in1.getNumRows();
 		int clen = isLeftTransposed ? (int) in1.getNumRows() : (int) in1.getNumColumns();
 		
-		ec.setMetaData(_output.getName(), rlen, clen);
+		//ec.setMetaData(_output.getName(), rlen, clen);
 		
 		BinaryOperator bop = (BinaryOperator) _optr;
 		LibMatrixCUDA.bincellOp(ec, in1, in2, _output.getName(), isLeftTransposed, isRightTransposed, bop);

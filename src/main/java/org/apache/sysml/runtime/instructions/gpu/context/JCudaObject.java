@@ -36,7 +36,6 @@ import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysml.api.mlcontext.Matrix;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -59,13 +58,16 @@ import jcuda.jcusparse.cusparseMatDescr;
 import jcuda.jcusparse.cusparsePointerMode;
 import jcuda.runtime.JCuda;
 
+/**
+ * Handle to a matrix block on the GPU
+ */
 public class JCudaObject extends GPUObject {
 
 	private static final Log LOG = LogFactory.getLog(JCudaObject.class.getName());
 
 	/**
 	 * Compressed Sparse Row (CSR) format for CUDA
-	 * Generalized matrix multiply is implemented for CSR format in the cuSparse library
+	 * Generalized matrix multiply is implemented for CSR format in the cuSparse library among other operations
 	 */
 	public static class CSRPointer {
 		
@@ -407,10 +409,14 @@ public class JCudaObject extends GPUObject {
 	public Pointer jcudaDenseMatrixPtr = null;		/** Pointer to dense matrix */
 	public CSRPointer jcudaSparseMatrixPtr = null;	/** Pointer to sparse matrix */
 
-	public long numBytes;
+	public long numBytes;							/** Number of bytes occupied by this block on GPU */
 
-	JCudaObject(MatrixObject mat2) {
-		super(mat2);
+	/**
+	 * Initializes this JCudaObject with a {@link MatrixObject} instance which will contain metadata about the enclosing matrix block
+	 * @param m
+	 */
+	JCudaObject(MatrixObject m) {
+		super(m);
 	}
 	
 	/**
@@ -855,12 +861,11 @@ public class JCudaObject extends GPUObject {
 		if(JCudaContext.DEBUG) {
 			StackTraceElement[] st = Thread.currentThread().getStackTrace();
 			String ret = getClassAndMethod(st[1]);
-			for(int i = 2; i < st.length && i < 7; i++) {
+			for (int i = 2; i < st.length && i < 7; i++) {
 				ret += "->" + getClassAndMethod(st[i]);
 			}
 			System.out.println("CALL_STACK:" + ret);
 		}
-			
 	}
 	
 	/**
@@ -872,15 +877,21 @@ public class JCudaObject extends GPUObject {
 	
 	/**
 	 * Convenience method to directly set the sparse matrix on GPU
+	 * Make sure to call {@link #setDeviceModify(long)} after this to set appropriate state, if you are not sure what you are doing.
 	 * Needed for operations like {@link JCusparse#cusparseDcsrgemm(cusparseHandle, int, int, int, int, int, cusparseMatDescr, int, Pointer, Pointer, Pointer, cusparseMatDescr, int, Pointer, Pointer, Pointer, cusparseMatDescr, Pointer, Pointer, Pointer)}
-	 * @param jcudaSparseMatrixPtr
+	 * @param sparseMatrixPtr
 	 */
-	public void setSparseMatrixCudaPointer(CSRPointer jcudaSparseMatrixPtr) {
-		this.jcudaSparseMatrixPtr = jcudaSparseMatrixPtr;
+	public void setSparseMatrixCudaPointer(CSRPointer sparseMatrixPtr) {
+		this.jcudaSparseMatrixPtr = sparseMatrixPtr;
 		this.isAllocated = true;
 		this.isInSparseFormat = true;
 	}
-	
+
+	/**
+	 * Convenience method to directly set the dense matrix pointer on GPU
+	 * Make sure to call {@link #setDeviceModify(long)} after this to set appropriate state, if you are not sure what you are doing.
+	 * @param densePtr
+	 */
 	public void setDenseMatrixCudaPointer(Pointer densePtr){
 		this.jcudaDenseMatrixPtr = densePtr;
 		this.isAllocated = true;
@@ -888,7 +899,7 @@ public class JCudaObject extends GPUObject {
 	}
 	
 	/**
-	 * Converts the JCudaObject from dense to sparse format.
+	 * Converts this JCudaObject from dense to sparse format.
 	 * 
 	 * @throws DMLRuntimeException
 	 */
@@ -901,41 +912,52 @@ public class JCudaObject extends GPUObject {
 		
 		if(jcudaDenseMatrixPtr == null || !isAllocated())
 			throw new DMLRuntimeException("Expected allocated dense matrix before denseToSparse() call");
-		
-		// FIXME: denseToSparseUtil accepts column-major not row-major matrix, 
-		// hence convertDensePtrFromColMajorToRowMajor required.
+
 		convertDensePtrFromRowMajorToColumnMajor();
-		setSparseMatrixCudaPointer(denseToSparseUtil(cusparseHandle, rows, cols, jcudaDenseMatrixPtr));
+		setSparseMatrixCudaPointer(columnMajorDenseToRowMajorSparse(cusparseHandle, rows, cols, jcudaDenseMatrixPtr));
 		cudaFree(jcudaDenseMatrixPtr);
 		jcudaDenseMatrixPtr = null;
 		// TODO: What if mat.getNnz() is -1 ?
 		numBytes = CSRPointer.estimateSize(mat.getNnz(), rows);
 	}
 
-
-	private void transposeHelper(int m, int n, int lda, int ldc) throws DMLRuntimeException {
-		if(jcudaDenseMatrixPtr == null || jcudaSparseMatrixPtr != null || !isAllocated) {
-			throw new DMLRuntimeException("Internal Error in converting row major to column major or vice versa : either data is not allocated or internal state is corrupted");
-		}
-
+	/**
+	 * Transposes a dense matrix on the GPU by calling the cublasDgeam operation
+	 * @param densePtr	Pointer to dense matrix on the GPU
+	 * @param m			rows in ouput matrix
+	 * @param n			columns in output matrix
+	 * @param lda		rows in input matrix
+	 * @param ldc		columns in output matrix
+	 * @return			transposed matrix
+	 * @throws DMLRuntimeException
+	 */
+	public static Pointer transpose(Pointer densePtr, int m, int n, int lda, int ldc) throws DMLRuntimeException {
 		Pointer alpha = LibMatrixCUDA.pointerTo(1.0);
 		Pointer beta = LibMatrixCUDA.pointerTo(0.0);
-		Pointer A = jcudaDenseMatrixPtr;
+		Pointer A = densePtr;
 		Pointer C = JCudaObject.allocate(m*n* Sizeof.DOUBLE);
 
 		// Transpose the matrix to get a dense matrix
 		JCublas2.cublasDgeam(LibMatrixCUDA.cublasHandle, CUBLAS_OP_T, CUBLAS_OP_T, m, n, alpha, A, lda, beta, new Pointer(), lda, C, ldc);
-		jcudaDenseMatrixPtr = C;
-		cudaFree(A);
+		return C;
 	}
 
+	/**
+	 * Convenience method. Converts Row Major Dense Matrix --> Column Major Dense Matrix
+	 * @throws DMLRuntimeException
+	 */
 	private void convertDensePtrFromRowMajorToColumnMajor() throws DMLRuntimeException {
 		int m = (int) mat.getNumRows();
 		int n = (int) mat.getNumColumns();
 		int lda = n;
 		int ldc = m;
+		if(jcudaDenseMatrixPtr == null || jcudaDenseMatrixPtr != null || !isAllocated) {
+			throw new DMLRuntimeException("Internal Error in converting row major to column major : either data is not allocated or internal state is corrupted");
+		}
 
-		transposeHelper(m, n, lda, ldc);
+		Pointer tmp = transpose(jcudaDenseMatrixPtr, m, n, lda, ldc);
+		cudaFree(jcudaDenseMatrixPtr);
+		jcudaDenseMatrixPtr = tmp;
 	}
 
 	private void convertDensePtrFromColMajorToRowMajor() throws DMLRuntimeException {
@@ -943,8 +965,13 @@ public class JCudaObject extends GPUObject {
 		int m = (int) mat.getNumColumns();
 		int lda = n;
 	    int ldc = m;
+		if(jcudaDenseMatrixPtr == null || jcudaDenseMatrixPtr != null || !isAllocated) {
+			throw new DMLRuntimeException("Internal Error in converting column major to row major : either data is not allocated or internal state is corrupted");
+		}
 
-		transposeHelper(m, n, lda, ldc);
+		Pointer tmp = transpose(jcudaDenseMatrixPtr, m, n, lda, ldc);
+		cudaFree(jcudaDenseMatrixPtr);
+		jcudaDenseMatrixPtr = tmp;
 	}
 	
 	/**
@@ -984,6 +1011,7 @@ public class JCudaObject extends GPUObject {
 	/**
 	 * Convenience method to convert a CSR matrix to a dense matrix on the GPU
 	 * Since the allocated matrix is temporary, bookkeeping is not updated.
+	 * Also note that the input dense matrix is expected to be in COLUMN MAJOR FORMAT
 	 * Caller is responsible for deallocating memory on GPU.
 	 * Consider using denseToSparse() method if you are unsure.
 	 * 
@@ -993,7 +1021,7 @@ public class JCudaObject extends GPUObject {
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static CSRPointer denseToSparseUtil(cusparseHandle cusparseHandle, int rows, int cols, Pointer densePtr) throws DMLRuntimeException {		
+	public static CSRPointer columnMajorDenseToRowMajorSparse(cusparseHandle cusparseHandle, int rows, int cols, Pointer densePtr) throws DMLRuntimeException {
 		cusparseMatDescr matDescr = CSRPointer.getDefaultCuSparseMatrixDescriptor();
 		Pointer nnzPerRowPtr = new Pointer();
 		Pointer nnzTotalDevHostPtr = new Pointer();
@@ -1036,7 +1064,7 @@ public class JCudaObject extends GPUObject {
 	 * @param rows rows in matrix A
      * @param cols columns in matrix A
 	 A*/
-	private String debugString(Pointer A, long rows, long cols) {
+	public static String debugString(Pointer A, long rows, long cols) {
 		StringBuffer sb = new StringBuffer();
         int len = (int) (rows * cols);
 		double[] tmp = new double[len];
