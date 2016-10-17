@@ -680,6 +680,7 @@ public class LibMatrixCUDA {
 				A.descr, (int)A.nnz, A.val, A.rowPtr, A.colInd,
 				B.descr, (int)B.nnz, B.val, B.rowPtr, B.colInd,
 				C.descr, C.val, C.rowPtr, C.colInd);
+        cudaDeviceSynchronize();
 	}
 
 	/**
@@ -1405,6 +1406,7 @@ public class LibMatrixCUDA {
 			JCusparse.cusparseDcsrgeam(cusparseHandle, m, n, alphaPtr, A.descr, (int)A.nnz, A.val, A.rowPtr, A.colInd, betaPtr, 
 					B.descr, (int)B.nnz, B.val, B.rowPtr, B.colInd, 
 					C.descr, C.val, C.rowPtr, C.colInd);
+            cudaDeviceSynchronize();
 		}
 		else {
 			// Dense-Dense dgeam

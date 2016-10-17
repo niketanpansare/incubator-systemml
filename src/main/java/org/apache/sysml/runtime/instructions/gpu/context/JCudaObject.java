@@ -240,6 +240,7 @@ public class JCudaObject extends GPUObject {
 		 */
 		private static void step1AllocateRowPointers(cusparseHandle handle, CSRPointer C, int rowsC) throws DMLRuntimeException {
 			cusparseSetPointerMode(handle, cusparsePointerMode.CUSPARSE_POINTER_MODE_HOST);
+            cudaDeviceSynchronize();
 			C.rowPtr = allocate(Sizeof.INT * (rowsC+1));
 		}
 		
@@ -261,6 +262,7 @@ public class JCudaObject extends GPUObject {
 					A.descr, (int)A.nnz, A.rowPtr, A.colInd, 
 					B.descr, (int)B.nnz, B.rowPtr, B.colInd, 
 					C.descr, C.rowPtr, Pointer.to(CnnzArray));
+            cudaDeviceSynchronize();
 			if (CnnzArray[0] != -1){
 				C.nnz = CnnzArray[0];
 			}
@@ -295,6 +297,7 @@ public class JCudaObject extends GPUObject {
 					A.descr, (int)A.nnz, A.rowPtr, A.colInd, 
 					B.descr, (int)B.nnz, B.rowPtr, B.colInd, 
 					C.descr, C.rowPtr, Pointer.to(CnnzArray));
+            cudaDeviceSynchronize();
 			if (CnnzArray[0] != -1){
 				C.nnz = CnnzArray[0];
 			}
@@ -389,10 +392,10 @@ public class JCudaObject extends GPUObject {
 			if (val != null && rowPtr != null && colInd != null && nnz > 0) {
 				// Note: cusparseDcsr2dense method cannot handle empty blocks
 				cusparseDcsr2dense(cusparseHandle, rows, cols, descr, val, rowPtr, colInd, A, rows);
+                cudaDeviceSynchronize();
 			} else {
 				LOG.warn("in CSRPointer, the values array, row pointers array or column indices array was null");
 			}
-			JCuda.cudaDeviceSynchronize();
 			return A;
 		}
 		
@@ -951,7 +954,7 @@ public class JCudaObject extends GPUObject {
 		int n = (int) mat.getNumColumns();
 		int lda = n;
 		int ldc = m;
-		if(jcudaDenseMatrixPtr == null || jcudaDenseMatrixPtr != null || !isAllocated) {
+		if(jcudaDenseMatrixPtr == null || jcudaSparseMatrixPtr != null || !isAllocated) {
 			throw new DMLRuntimeException("Internal Error in converting row major to column major : either data is not allocated or internal state is corrupted");
 		}
 
@@ -965,7 +968,7 @@ public class JCudaObject extends GPUObject {
 		int m = (int) mat.getNumColumns();
 		int lda = n;
 	    int ldc = m;
-		if(jcudaDenseMatrixPtr == null || jcudaDenseMatrixPtr != null || !isAllocated) {
+		if(jcudaDenseMatrixPtr == null || jcudaSparseMatrixPtr != null || !isAllocated) {
 			throw new DMLRuntimeException("Internal Error in converting column major to row major : either data is not allocated or internal state is corrupted");
 		}
 
