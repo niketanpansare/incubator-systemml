@@ -80,8 +80,8 @@ class SGD(lambda:Double=5e-04, momentum:Double=0.9) extends CaffeSolver {
     }
   }
   def source(dmlScript:StringBuilder):Unit = 
-    if(momentum == 0) CaffeClassifier.source(dmlScript, "sgd", CaffeClassifier.optimDir) 
-    else CaffeClassifier.source(dmlScript, "sgd_momentum", CaffeClassifier.optimDir)
+    if(momentum == 0) Barista.source(dmlScript, "sgd", Barista.optimDir) 
+    else Barista.source(dmlScript, "sgd_momentum", Barista.optimDir)
 }
 
 /**
@@ -102,7 +102,7 @@ class AdaGrad(lambda:Double=5e-04, epsilon:Double=1e-6) extends CaffeSolver {
     if(layer.weight != null) dmlScript.append(layer.weight+"_cache = adagrad::init(" + layer.weight + ")\n")
     if(layer.bias != null) dmlScript.append(layer.bias+"_cache = adagrad::init(" + layer.bias + ")\n")
   }
-  def source(dmlScript:StringBuilder):Unit = CaffeClassifier.source(dmlScript, "adagrad", CaffeClassifier.optimDir)
+  def source(dmlScript:StringBuilder):Unit = Barista.source(dmlScript, "adagrad", Barista.optimDir)
 }
 
 /**
@@ -121,5 +121,5 @@ class Nesterov(lambda:Double=5e-04, momentum:Double=0.9) extends CaffeSolver {
     if(layer.weight != null) dmlScript.append(layer.weight+"_v = sgd_nesterov::init(" + layer.weight + ")\n")
     if(layer.bias != null) dmlScript.append(layer.bias+"_v = sgd_nesterov::init(" + layer.bias + ")\n")
   }
-  def source(dmlScript:StringBuilder):Unit = CaffeClassifier.source(dmlScript, "sgd_nesterov", CaffeClassifier.optimDir)
+  def source(dmlScript:StringBuilder):Unit = Barista.source(dmlScript, "sgd_nesterov", Barista.optimDir)
 }

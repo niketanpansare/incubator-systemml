@@ -41,7 +41,7 @@ trait CaffeLayer {
   def computeLoss(dmlScript:StringBuilder, prefix:String):Unit = {}
   // -------------------------------------------------
   def source(dmlScript:StringBuilder):Unit = {
-    CaffeClassifier.source(dmlScript, sourceFileName, CaffeClassifier.layerDir)
+    Barista.source(dmlScript, sourceFileName, Barista.layerDir)
   }
   def bottomLayer:CaffeLayer = {
     val bottomLayerNames = net.getBottomLayers(param.getName)
@@ -65,7 +65,7 @@ trait CaffeLayer {
 	  }
 	}
   def int_mult(v1:String, v2:String, v3:String):String = try { (v1.toDouble * v2.toDouble * v3.toDouble).toInt.toString } catch { case _:Throwable => "("+v1+"*"+v2+"*"+v3+")"}
-  def addTab(dmlScript:StringBuilder):StringBuilder = { (0 until CaffeClassifier.numTabs).map(dmlScript.append("\t")); dmlScript }
+  def addTab(dmlScript:StringBuilder):StringBuilder = { (0 until Barista.numTabs).map(dmlScript.append("\t")); dmlScript }
   def param:LayerParameter
   def id:Int
   def net:CaffeNetwork
@@ -99,10 +99,10 @@ class SoftmaxWithLoss(val param:LayerParameter, val id:Int, val net:CaffeNetwork
   // -------------------------------------------------
   override def sourceFileName = "softmax"
   override def source(dmlScript:StringBuilder):Unit = {
-    if(!CaffeClassifier.alreadyImported.contains("softmax")) CaffeClassifier.source(dmlScript, "softmax", CaffeClassifier.layerDir)
-    if(!CaffeClassifier.alreadyImported.contains("cross_entropy_loss")) CaffeClassifier.source(dmlScript, "cross_entropy_loss", CaffeClassifier.layerDir)
-    CaffeClassifier.alreadyImported.add("softmax")
-    CaffeClassifier.alreadyImported.add("cross_entropy_loss")
+    if(!Barista.alreadyImported.contains("softmax")) Barista.source(dmlScript, "softmax", Barista.layerDir)
+    if(!Barista.alreadyImported.contains("cross_entropy_loss")) Barista.source(dmlScript, "cross_entropy_loss", Barista.layerDir)
+    Barista.alreadyImported.add("softmax")
+    Barista.alreadyImported.add("cross_entropy_loss")
   }
   override def init(dmlScript:StringBuilder) = {}
   override def forward(dmlScript:StringBuilder, prefix:String) = dmlScript.append(prefix).append(

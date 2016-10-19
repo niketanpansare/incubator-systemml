@@ -48,24 +48,24 @@ import org.apache.sysml.api.mlcontext.ScriptFactory._
 import org.apache.sysml.api.ml._
 import java.util.Random
 
-object CaffeClassifier  {
+object Barista  {
   // For Testing:
   // org.apache.sysml.api.dl.CaffeModel 
   def main(args: Array[String]): Unit = {
     if(args.length == 1) {
-      CaffeClassifier.load(args(0), 1, 28, 28, Caffe.Phase.TRAIN).train(10)
+      Barista.load(args(0), 1, 28, 28, Caffe.Phase.TRAIN).train(10)
     }
     else
       throw new LanguageException("Expected input solver file")
   }
   
-  def load(solverFilePath:String, numChannels:Int, inputHeight:Int, inputWidth:Int, currentPhase:Phase):CaffeClassifier = {
+  def load(solverFilePath:String, numChannels:Int, inputHeight:Int, inputWidth:Int, currentPhase:Phase):Barista = {
     val solver = Utils.readCaffeSolver(solverFilePath)
-    new CaffeClassifier(solver, numChannels, inputHeight, inputWidth, currentPhase)
+    new Barista(solver, numChannels, inputHeight, inputWidth, currentPhase)
   }
-  def load(solverFilePath:String, networkPath:String, numChannels:Int, inputHeight:Int, inputWidth:Int, currentPhase:Phase):CaffeClassifier = {
+  def load(solverFilePath:String, networkPath:String, numChannels:Int, inputHeight:Int, inputWidth:Int, currentPhase:Phase):Barista = {
     val solver = Utils.readCaffeSolver(solverFilePath)
-    new CaffeClassifier(solver, networkPath, numChannels, inputHeight, inputWidth, currentPhase)
+    new Barista(solver, networkPath, numChannels, inputHeight, inputWidth, currentPhase)
   }
   
   // TODO:
@@ -87,7 +87,7 @@ object CaffeClassifier  {
   }
 }
 
-class CaffeClassifier(solver:CaffeSolver, net:CaffeNetwork, lrPolicy:LearningRatePolicy) extends Estimator[CaffeClassifierModel] with HasMaxOuterIter {
+class Barista(solver:CaffeSolver, net:CaffeNetwork, lrPolicy:LearningRatePolicy) extends Estimator[CaffeClassifierModel] with HasMaxOuterIter {
   def this(solver1:Caffe.SolverParameter, networkPath:String, numChannels:Int, inputHeight:Int, inputWidth:Int, currentPhase:Phase) {
     this(Utils.parseSolver(solver1), 
         new CaffeNetwork(networkPath, currentPhase, numChannels, inputHeight, inputWidth),
@@ -100,7 +100,7 @@ class CaffeClassifier(solver:CaffeSolver, net:CaffeNetwork, lrPolicy:LearningRat
   val uid:String = "caffe_classifier_" + rand.nextLong + "_" + rand.nextLong 
   
   override def copy(extra: org.apache.spark.ml.param.ParamMap): Estimator[CaffeClassifierModel] = {
-    val that = new CaffeClassifier(solver, net, lrPolicy)
+    val that = new Barista(solver, net, lrPolicy)
     copyValues(that, extra)
   }
   
@@ -132,9 +132,9 @@ class CaffeClassifier(solver:CaffeSolver, net:CaffeNetwork, lrPolicy:LearningRat
 	  val dmlScript = new StringBuilder
 	  dmlScript.append(Utils.license)
 	  // Append source statements for each layer
-	  CaffeClassifier.alreadyImported.clear()
+	  Barista.alreadyImported.clear()
 	  net.getLayers.map(layer =>  net.getCaffeLayer(layer).source(dmlScript))
-	  CaffeClassifier.source(dmlScript, "l2_reg")
+	  Barista.source(dmlScript, "l2_reg")
 	  solver.source(dmlScript)
 	  dmlScript.append("X_full = read(\" \", format=\"csv\")\n")
 	  dmlScript.append("y_full = read(\" \", format=\"csv\")\n")
