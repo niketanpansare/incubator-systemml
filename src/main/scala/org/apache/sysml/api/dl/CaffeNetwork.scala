@@ -18,6 +18,7 @@
  */
 package org.apache.sysml.api.dl
 
+import org.apache.sysml.runtime.DMLRuntimeException
 import scala.collection.JavaConversions._
 import caffe.Caffe.NetParameter
 import caffe.Caffe.LayerParameter
@@ -31,12 +32,7 @@ import caffe.Caffe.PoolingParameter
 
 // Wrapper on top of Caffe Network to simplify usage
 // 
-class CaffeNetwork(val currentPhase:Phase, val numChannels:Int, val inputHeight:Int, val inputWidth:Int) {
-  def this(netFilePath:String, currentPhase:Phase, numChannels:Int, inputHeight:Int, inputWidth:Int) {
-    this(currentPhase, numChannels, inputHeight, inputWidth)
-    populateLayerNameList(Utils.readCaffeNet(netFilePath))
-  }
-  
+class CaffeNetwork(netFilePath:String, val currentPhase:Phase, val numChannels:Int, val inputHeight:Int, val inputWidth:Int) {
   // Returns names of layers in sorted order
   def getLayers(): List[String] = layerNameList
   def getCaffeLayer(layerName:String):CaffeLayer = {
@@ -71,29 +67,41 @@ class CaffeNetwork(val currentPhase:Phase, val numChannels:Int, val inputHeight:
   private var layerNameTopMap:HashMap[String, HashSet[String]] = new HashMap[String, HashSet[String]]
   private var layerNameIDMap:HashMap[String, Int] = new HashMap[String, Int]
   private var layerNameList:List[String] = null
+  
+  populateLayerNameList(Utils.readCaffeNet(netFilePath))
+  
+  private def getTopLayers(l:LayerParameter, currentLayers:List[LayerParameter]) = 
+    (l.getTopList ++ currentLayers.filter(_.getBottomList.toSet.contains(l.getName)).map(_.getName)).filter(!_.equals(l.getName))
+  
+    private def getBottomLayers(l:LayerParameter, currentLayers:List[LayerParameter]) = 
+    (l.getBottomList ++ currentLayers.filter(_.getTopList.toSet.contains(l.getName)).map(_.getName)).filter(!_.equals(l.getName))
+  
   private def populateLayerNameList(net:NetParameter):Unit = {
     // TODO: getTopologicalSortedLayers
-    val tmp = getLayersFromCurrentPhase(net)
+    val currentLayers = getLayersFromCurrentPhase(net)
+    val currentLayerNames = currentLayers.map(_.getName).distinct.toSet
+    
+    // Append top/bottom layers
+    currentLayers.map(l => {
+      getBottomLayers(l, currentLayers.toList).filter(currentLayerNames.contains(_)).map(b => appendToHM(layerNameBottomMap, l.getName, b))
+      getTopLayers(l, currentLayers.toList).filter(currentLayerNames.contains(_)).map(t => appendToHM(layerNameTopMap, l.getName, t))
+    })
+    
     var id = 1
-    // First append all layerNameMap
-    tmp.map(l => { 
+    // Then append all layerNameMap
+    currentLayers.map(l => { 
       layerNameMap.put(l.getName, getCaffeLayer(l, id))
       layerNameIDMap.put(l.getName, id)
       id = id + 1
      })
     
-    // Then append top/bottom layers that are available in layerNameMap
-    tmp.map(l => {
-      l.getBottomList.map(b => appendToHM(layerNameBottomMap, l.getName, b))
-      l.getTopList.map(t => appendToHM(layerNameTopMap, l.getName, t))
-    })
-    layerNameList = tmp.map(_.getName).toList
+    layerNameList = currentLayers.map(_.getName).toList
   }
   private def appendToHM(hm:HashMap[String, HashSet[String]], key:String, value:String) = {
+    if(key == null) throw new DMLRuntimeException("Cannot append null key")
+    if(value == null) throw new DMLRuntimeException("Cannot append null key")
     if(!hm.containsKey(key)) hm.put(key, new HashSet[String]())
-    // To include only top/bottom layers from current phase
-    if(layerNameMap.containsKey(value))
-      hm.get(key).add(value)
+    hm.get(key).add(value)
   }
   private def shouldVisit(layerName:String, visited:HashSet[String]):Boolean = {
     val iter = getBottomLayers(layerName).iterator()
@@ -113,7 +121,6 @@ class CaffeNetwork(val currentPhase:Phase, val numChannels:Int, val inputHeight:
 	    for(l <- netLayersList) {
 	      val isAlreadyVisited = visited.contains(l.param.getName)
 	      if(!isAlreadyVisited && shouldVisit(l.param.getName, visited)) {
-	        // System.out.print(">>" + l.getName)
 	        visited.add(l.param.getName)
 	        ret.add(l)
 	        atleastOneVisited = true
