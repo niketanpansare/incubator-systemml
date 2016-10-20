@@ -51,11 +51,11 @@ import java.util.Random
 object Barista  {
   def load(numClasses:Int, sc: SparkContext,  solverFilePath:String, numChannels:Int, inputHeight:Int, inputWidth:Int):Barista = {
     val solver = Utils.readCaffeSolver(solverFilePath)
-    new Barista(numClasses, sc, solver, numChannels, inputHeight, inputWidth, caffe.Caffe.Phase.TRAIN)
+    new Barista(numClasses, sc, solver, numChannels, inputHeight, inputWidth)
   }
   def load(numClasses:Int, sc: SparkContext, solverFilePath:String, networkPath:String, numChannels:Int, inputHeight:Int, inputWidth:Int):Barista = {
     val solver = Utils.readCaffeSolver(solverFilePath)
-    new Barista(numClasses, sc, solver, networkPath, numChannels, inputHeight, inputWidth, caffe.Caffe.Phase.TRAIN)
+    new Barista(numClasses, sc, solver, networkPath, numChannels, inputHeight, inputWidth)
   }
   
   def fileSep():String = { if(File.separator.equals("\\")) "\\\\" else File.separator }
@@ -79,13 +79,13 @@ object Barista  {
 class Barista(numClasses:Int, sc: SparkContext, solver:CaffeSolver, net:CaffeNetwork, lrPolicy:LearningRatePolicy) extends Estimator[BaristaModel] 
   with BaseSystemMLClassifier {
   
-  def this(numClasses:Int, sc: SparkContext, solver1:Caffe.SolverParameter, networkPath:String, numChannels:Int, inputHeight:Int, inputWidth:Int, currentPhase:Phase) {
+  def this(numClasses:Int, sc: SparkContext, solver1:Caffe.SolverParameter, networkPath:String, numChannels:Int, inputHeight:Int, inputWidth:Int) {
     this(numClasses, sc, Utils.parseSolver(solver1), 
-        new CaffeNetwork(networkPath, currentPhase, numChannels, inputHeight, inputWidth),
+        new CaffeNetwork(networkPath, caffe.Caffe.Phase.TRAIN, numChannels, inputHeight, inputWidth),
         new LearningRatePolicy(solver1))
   }
-  def this(numClasses:Int, sc: SparkContext, solver1:Caffe.SolverParameter, numChannels:Int, inputHeight:Int, inputWidth:Int, currentPhase:Phase) {
-    this(numClasses, sc, solver1, solver1.getNet, numChannels, inputHeight, inputWidth, currentPhase)
+  def this(numClasses:Int, sc: SparkContext, solver1:Caffe.SolverParameter, numChannels:Int, inputHeight:Int, inputWidth:Int) {
+    this(numClasses, sc, solver1, solver1.getNet, numChannels, inputHeight, inputWidth)
   }
   val rand = new Random
   val uid:String = "caffe_classifier_" + rand.nextLong + "_" + rand.nextLong 

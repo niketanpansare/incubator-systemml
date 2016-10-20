@@ -26,6 +26,7 @@ from pyspark.ml import Estimator
 from pyspark.ml.feature import VectorAssembler
 from pyspark.sql import DataFrame
 import sklearn as sk
+from sklearn.metrics import accuracy_score, r2_score
 
 from ..converters import *
 
@@ -162,7 +163,7 @@ class BaseSystemMLClassifier(BaseSystemMLEstimator):
         X: NumPy ndarray, Pandas DataFrame, scipy sparse matrix
         y: NumPy ndarray, Pandas DataFrame, scipy sparse matrix
         """
-        return sk.metrics.accuracy_score(y, self.predict(X))
+        return accuracy_score(y, self.predict(X))
 
 
 class BaseSystemMLRegressor(BaseSystemMLEstimator):
@@ -176,7 +177,7 @@ class BaseSystemMLRegressor(BaseSystemMLEstimator):
         X: NumPy ndarray, Pandas DataFrame, scipy sparse matrix
         y: NumPy ndarray, Pandas DataFrame, scipy sparse matrix
         """
-        return sk.metrics.r2_score(y, self.predict(X), multioutput='variance_weighted')
+        return r2_score(y, self.predict(X), multioutput='variance_weighted')
 
 
 class LogisticRegression(BaseSystemMLClassifier):
@@ -457,10 +458,11 @@ class Barista(BaseSystemMLClassifier):
         self.sqlCtx = sqlCtx
         self.sc = sqlCtx._sc
         self.uid = "barista"
-        self.estimator = self.sc._jvm.org.apache.sysml.api.dl.Barista.load(num_classes, self.sc._jsc.sc(), solver_file_path, network_path, image_shape[0], image_shape[1], image_shape[2])
-        self.estimator.setMaxIter(max_iter)
-        self.estimator.setValidationPercentage(validation_percentage)
-        self.estimator.setDisplay(display)
-        self.estimator.setNormalizeInput(normalize_input)
+        solver = self.sc._jvm.org.apache.sysml.api.dl Utils.readCaffeSolver(solver_file_path)
+        self.estimator = self.sc._jvm.org.apache.sysml.api.dl.Barista(num_classes, self.sc._jsc.sc(), solver, network_path, image_shape[0], image_shape[1], image_shape[2])
+        # self.estimator.setMaxIter(max_iter)
+        # self.estimator.setValidationPercentage(validation_percentage)
+        # self.estimator.setDisplay(display)
+        # self.estimator.setNormalizeInput(normalize_input)
         self.transferUsingDF = transferUsingDF
         self.setOutputRawPredictionsToFalse = False
