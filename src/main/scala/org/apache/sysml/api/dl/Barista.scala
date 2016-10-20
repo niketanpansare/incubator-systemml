@@ -100,12 +100,12 @@ class Barista(numClasses:Int, sc: SparkContext, solver:CaffeSolver, net:CaffeNet
 	// --------------------------------------------------------------
 	// Note: will update the y_mb as this will be called by Python mllearn
   def fit(X_mb: MatrixBlock, y_mb: MatrixBlock): BaristaModel = {
-    val ret = fit(X_mb, y_mb, sc)
+    val ret = baseFit(X_mb, y_mb, sc)
     new BaristaModel(ret._1, sc, ret._2)
   }
   
   def fit(df: ScriptsUtils.SparkDataType): BaristaModel = {
-    val ret = fit(df, sc)
+    val ret = baseFit(df, sc)
     new BaristaModel(ret._1, sc, ret._2)
   }
 	// --------------------------------------------------------------
@@ -252,6 +252,6 @@ class BaristaModel(val mloutput: MLResults, val sc: SparkContext, val labelMappi
   }
   
   // Prediction
-  def transform(X: MatrixBlock): MatrixBlock = transform(X, mloutput, labelMapping, sc, "scores")
-  def transform(df: ScriptsUtils.SparkDataType): DataFrame = transform(df, mloutput, labelMapping, sc, "scores")
+  def transform(X: MatrixBlock): MatrixBlock = baseTransform(X, mloutput, labelMapping, sc, "scores")
+  def transform(df: ScriptsUtils.SparkDataType): DataFrame = baseTransform(df, mloutput, labelMapping, sc, "scores")
 }

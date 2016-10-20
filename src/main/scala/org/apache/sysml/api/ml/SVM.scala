@@ -67,12 +67,12 @@ class SVM (override val uid: String, val sc: SparkContext, val isMultiClass:Bool
   
   // Note: will update the y_mb as this will be called by Python mllearn
   def fit(X_mb: MatrixBlock, y_mb: MatrixBlock): SVMModel = {
-    val ret = fit(X_mb, y_mb, sc)
+    val ret = baseFit(X_mb, y_mb, sc)
     new SVMModel("svm")(ret._1, sc, isMultiClass, ret._2)
   }
   
   def fit(df: ScriptsUtils.SparkDataType): SVMModel = {
-    val ret = fit(df, sc)
+    val ret = baseFit(df, sc)
     new SVMModel("svm")(ret._1, sc, isMultiClass, ret._2)
   }
   
@@ -108,6 +108,6 @@ class SVMModel (override val uid: String)(val mloutput: MLResults, val sc: Spark
     (ret, "X")
   }
   
-  def transform(X: MatrixBlock): MatrixBlock = transform(X, mloutput, labelMapping, sc, "scores")
-  def transform(df: ScriptsUtils.SparkDataType): DataFrame = transform(df, mloutput, labelMapping, sc, "scores")
+  def transform(X: MatrixBlock): MatrixBlock = baseTransform(X, mloutput, labelMapping, sc, "scores")
+  def transform(df: ScriptsUtils.SparkDataType): DataFrame = baseTransform(df, mloutput, labelMapping, sc, "scores")
 }

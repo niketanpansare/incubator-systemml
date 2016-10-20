@@ -96,7 +96,7 @@ trait BaseSystemMLEstimatorModel {
 
 trait BaseSystemMLClassifier extends BaseSystemMLEstimator {
   
-  def fit(X_mb: MatrixBlock, y_mb: MatrixBlock, sc: SparkContext): (MLResults, java.util.HashMap[Int, String]) = {
+  def baseFit(X_mb: MatrixBlock, y_mb: MatrixBlock, sc: SparkContext): (MLResults, java.util.HashMap[Int, String]) = {
     val isSingleNode = true
     val ml = new MLContext(sc)
     val revLabelMapping = new java.util.HashMap[Int, String]
@@ -107,7 +107,7 @@ trait BaseSystemMLClassifier extends BaseSystemMLEstimator {
     (ml.execute(script), revLabelMapping)
   }
   
-  def fit(df: ScriptsUtils.SparkDataType, sc: SparkContext): (MLResults, java.util.HashMap[Int, String]) = {
+  def baseFit(df: ScriptsUtils.SparkDataType, sc: SparkContext): (MLResults, java.util.HashMap[Int, String]) = {
     val isSingleNode = false
     val ml = new MLContext(df.rdd.sparkContext)
     val mcXin = new MatrixCharacteristics()
@@ -123,7 +123,7 @@ trait BaseSystemMLClassifier extends BaseSystemMLEstimator {
 
 trait BaseSystemMLClassifierModel extends BaseSystemMLEstimatorModel {
   
-  def transform(X: MatrixBlock, mloutput: MLResults, labelMapping: java.util.HashMap[Int, String], sc: SparkContext, probVar:String): MatrixBlock = {
+  def baseTransform(X: MatrixBlock, mloutput: MLResults, labelMapping: java.util.HashMap[Int, String], sc: SparkContext, probVar:String): MatrixBlock = {
     val isSingleNode = true
     val ml = new MLContext(sc)
     val script = getPredictionScript(mloutput, isSingleNode)
@@ -138,7 +138,7 @@ trait BaseSystemMLClassifierModel extends BaseSystemMLEstimatorModel {
     return ret
   }
   
-  def transform(df: ScriptsUtils.SparkDataType, mloutput: MLResults, labelMapping: java.util.HashMap[Int, String], sc: SparkContext, 
+  def baseTransform(df: ScriptsUtils.SparkDataType, mloutput: MLResults, labelMapping: java.util.HashMap[Int, String], sc: SparkContext, 
       probVar:String, outputProb:Boolean=true): DataFrame = {
     val isSingleNode = false
     val ml = new MLContext(sc)
