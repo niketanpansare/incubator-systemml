@@ -445,7 +445,7 @@ class Barista(BaseSystemMLClassifier):
     
     def __init__(self, sqlCtx, num_classes, solver_file_path, network_path, max_iter=10000, image_shape=(1, 28, 28), validation_percentage=0.2, display=100, normalize_input=False, transferUsingDF=False):
         """
-        Performs training/prediction for a given caffe network.
+        Performs training/prediction for a given caffe network. 
 
         Parameters
         ----------
