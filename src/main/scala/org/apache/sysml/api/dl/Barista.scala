@@ -49,27 +49,16 @@ import org.apache.sysml.api.ml._
 import java.util.Random
 
 object Barista  {
-  // For Testing:
-  // org.apache.sysml.api.dl.Barista 
-  def main(args: Array[String]): Unit = {
-    if(args.length == 1) {
-      Barista.load(args(0), 1, 28, 28, Caffe.Phase.TRAIN).train(10)
-    }
-    else
-      throw new LanguageException("Expected input solver file")
+  def load(numClasses:Int, sc: SparkContext,  solverFilePath:String, numChannels:Int, inputHeight:Int, inputWidth:Int):Barista = {
+    val solver = Utils.readCaffeSolver(solverFilePath)
+    new Barista(numClasses, sc, solver, numChannels, inputHeight, inputWidth, caffe.Caffe.Phase.TRAIN)
+  }
+  def load(numClasses:Int, sc: SparkContext, solverFilePath:String, networkPath:String, numChannels:Int, inputHeight:Int, inputWidth:Int):Barista = {
+    val solver = Utils.readCaffeSolver(solverFilePath)
+    new Barista(numClasses, sc, solver, networkPath, numChannels, inputHeight, inputWidth, caffe.Caffe.Phase.TRAIN)
   }
   
-  def load(solverFilePath:String, numChannels:Int, inputHeight:Int, inputWidth:Int, currentPhase:Phase):Barista = {
-    val solver = Utils.readCaffeSolver(solverFilePath)
-    new Barista(solver, numChannels, inputHeight, inputWidth, currentPhase)
-  }
-  def load(solverFilePath:String, networkPath:String, numChannels:Int, inputHeight:Int, inputWidth:Int, currentPhase:Phase):Barista = {
-    val solver = Utils.readCaffeSolver(solverFilePath)
-    new Barista(solver, networkPath, numChannels, inputHeight, inputWidth, currentPhase)
-  }
-  
-  // TODO:
-  def fileSep():String = "/" // { if(File.separator.equals("\\")) "\\\\" else File.separator }
+  def fileSep():String = { if(File.separator.equals("\\")) "\\\\" else File.separator }
   
   def setNNLibraryPath(path:String):Unit = { prefix = path + fileSep + "nn"}  
   // ------------------------------------------------------------------------
@@ -87,47 +76,53 @@ object Barista  {
   }
 }
 
-class Barista(solver:CaffeSolver, net:CaffeNetwork, lrPolicy:LearningRatePolicy) extends Estimator[CaffeClassifierModel] with HasMaxOuterIter {
-  def this(solver1:Caffe.SolverParameter, networkPath:String, numChannels:Int, inputHeight:Int, inputWidth:Int, currentPhase:Phase) {
-    this(Utils.parseSolver(solver1), 
+class Barista(numClasses:Int, sc: SparkContext, solver:CaffeSolver, net:CaffeNetwork, lrPolicy:LearningRatePolicy) extends Estimator[BaristaModel] 
+  with HasMaxOuterIter  with BaseSystemMLClassifier {
+  
+  def this(numClasses:Int, sc: SparkContext, solver1:Caffe.SolverParameter, networkPath:String, numChannels:Int, inputHeight:Int, inputWidth:Int, currentPhase:Phase) {
+    this(numClasses, sc, Utils.parseSolver(solver1), 
         new CaffeNetwork(networkPath, currentPhase, numChannels, inputHeight, inputWidth),
         new LearningRatePolicy(solver1))
   }
-  def this(solver1:Caffe.SolverParameter, numChannels:Int, inputHeight:Int, inputWidth:Int, currentPhase:Phase) {
-    this(solver1, solver1.getNet, numChannels, inputHeight, inputWidth, currentPhase)
+  def this(numClasses:Int, sc: SparkContext, solver1:Caffe.SolverParameter, numChannels:Int, inputHeight:Int, inputWidth:Int, currentPhase:Phase) {
+    this(numClasses, sc, solver1, solver1.getNet, numChannels, inputHeight, inputWidth, currentPhase)
   }
   val rand = new Random
   val uid:String = "caffe_classifier_" + rand.nextLong + "_" + rand.nextLong 
   
-  override def copy(extra: org.apache.spark.ml.param.ParamMap): Estimator[CaffeClassifierModel] = {
-    val that = new Barista(solver, net, lrPolicy)
+  override def copy(extra: org.apache.spark.ml.param.ParamMap): Estimator[BaristaModel] = {
+    val that = new Barista(numClasses, sc, solver, net, lrPolicy)
     copyValues(that, extra)
   }
   
-  def transformSchema(schema: StructType): StructType = schema
+  // def transformSchema(schema: StructType): StructType = schema
 
 	// --------------------------------------------------------------
-	// External APIs
-  // Make sure you register 
-	def fit(df: ScriptsUtils.SparkDataType): CaffeClassifierModel = {
-	  return null
-	}
-	def fit(X_mb: MatrixBlock, y_mb: MatrixBlock): CaffeClassifierModel = {
-	  return null
-	}
-	def transform(X: MatrixBlock): MatrixBlock = {
-	  null
-	}
-	def transform(df: ScriptsUtils.SparkDataType): ScriptsUtils.SparkDataType = {
-	  null
-	}
+	// Note: will update the y_mb as this will be called by Python mllearn
+  def fit(X_mb: MatrixBlock, y_mb: MatrixBlock): BaristaModel = {
+    val ret = fit(X_mb, y_mb, sc)
+    new BaristaModel(ret._1, sc, ret._2)
+  }
+  
+  def fit(df: ScriptsUtils.SparkDataType): BaristaModel = {
+    val ret = fit(df, sc)
+    new BaristaModel(ret._1, sc, ret._2)
+  }
+	// --------------------------------------------------------------
+
+	var validationPercentage:Double=0.2
+	var display:Int=100
+	var normalizeInput:Boolean=true
 	
-	// --------------------------------------------------------------
-
+	def setValidationPercentage(value:Double) = { validationPercentage = value }
+	def setDisplay(value:Int) = { display = value }
+	def setNormalizeInput(value:Boolean) = { normalizeInput = value }
+	def setMaxIter(value: Int) = set(maxOuterIter, value)
+	
 	// Script generator
-	def train(numClasses:Int, maxIter:Int=10000, validationPercentage:Double=0.2, display:Int=100, normalizeInput:Boolean=true):String = {
+	def getTrainingScript(isSingleNode:Boolean):(Script, String, String)  = {
 	  if(validationPercentage > 1 || validationPercentage < 0) throw new DMLRuntimeException("Incorrect validation percentage. Should be between (0, 1).")
-	  if(display > maxIter || display < 0) throw new DMLRuntimeException("display needs to be between (0, " + maxIter + "). Suggested value: 100.")
+	  if(display > getMaxOuterIte || display < 0) throw new DMLRuntimeException("display needs to be between (0, " + getMaxOuterIte + "). Suggested value: 100.")
 	  
 	  val dmlScript = new StringBuilder
 	  dmlScript.append(Utils.license)
@@ -138,7 +133,7 @@ class Barista(solver:CaffeSolver, net:CaffeNetwork, lrPolicy:LearningRatePolicy)
 	  solver.source(dmlScript)
 	  dmlScript.append("X_full = read(\" \", format=\"csv\")\n")
 	  dmlScript.append("y_full = read(\" \", format=\"csv\")\n")
-	  dmlScript.append("max_iter = " + maxIter + "\n")
+	  dmlScript.append("max_iter = " + getMaxOuterIte + "\n")
 	  dmlScript.append("num_images = nrow(y_full)\n")
 	  
 	  dmlScript.append("# Convert to one-hot encoding (Assumption: 1-based labels) \n")
@@ -210,8 +205,9 @@ class Barista(solver:CaffeSolver, net:CaffeNetwork, lrPolicy:LearningRatePolicy)
 	  numTabs = 0
 	  // ----------------------------
 	  
-	  System.out.println(dmlScript.toString())
-	  null
+	  val script = dml(dmlScript.toString())
+	  net.getLayers.map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => script.out(l.weight))
+	  (script, "X_full", "y_full")
 	}
 	
 	def appendBatch(dmlScript:StringBuilder, prefix:String): Unit = {
@@ -240,17 +236,21 @@ class Barista(solver:CaffeSolver, net:CaffeNetwork, lrPolicy:LearningRatePolicy)
 
 }
 
-class CaffeClassifierModel extends Model[CaffeClassifierModel] with HasMaxOuterIter {
+class BaristaModel(val mloutput: MLResults, val sc: SparkContext, val labelMapping: java.util.HashMap[Int, String]) 
+  extends Model[BaristaModel] with HasMaxOuterIter with BaseSystemMLClassifierModel {
   val rand = new Random
   val uid:String = "caffe_model_" + rand.nextLong + "_" + rand.nextLong 
   
-  override def copy(extra: org.apache.spark.ml.param.ParamMap): CaffeClassifierModel = {
-    val that = new CaffeClassifierModel
+  override def copy(extra: org.apache.spark.ml.param.ParamMap): BaristaModel = {
+    val that = new BaristaModel(mloutput, sc, labelMapping)
     copyValues(that, extra)
   }
   
+  def getPredictionScript(mloutput: MLResults, isSingleNode:Boolean): (Script, String)  = {
+    (null, null)
+  }
+  
   // Prediction
-  def transform(dataset: org.apache.spark.sql.DataFrame): org.apache.spark.sql.DataFrame = ???
-
-  def transformSchema(schema: StructType): StructType = schema
+  def transform(X: MatrixBlock): MatrixBlock = transform(X, mloutput, labelMapping, sc, "scores")
+  def transform(df: ScriptsUtils.SparkDataType): DataFrame = transform(df, mloutput, labelMapping, sc, "scores")
 }

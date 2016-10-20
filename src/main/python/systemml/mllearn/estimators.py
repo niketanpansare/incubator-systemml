@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-__all__ = ['LinearRegression', 'LogisticRegression', 'SVM', 'NaiveBayes']
+__all__ = ['LinearRegression', 'LogisticRegression', 'SVM', 'NaiveBayes', 'Barista']
 
 import numpy as np
 from pyspark.ml import Estimator
@@ -433,5 +433,34 @@ class NaiveBayes(BaseSystemMLClassifier):
         self.uid = "nb"
         self.estimator = self.sc._jvm.org.apache.sysml.api.ml.NaiveBayes(self.uid, self.sc._jsc.sc())
         self.estimator.setLaplace(laplace)
+        self.transferUsingDF = transferUsingDF
+        self.setOutputRawPredictionsToFalse = False
+
+class Barista(BaseSystemMLClassifier):
+    """
+    Performs training/prediction for a given caffe network.
+    
+    """
+    
+    def __init__(self, sqlCtx, num_classes, solver_file_path, network_path, max_iter=10000, image_shape=(1, 28, 28), validation_percentage=0.2, display=100, normalize_input=False, transferUsingDF=False):
+        """
+        Performs training/prediction for a given caffe network.
+
+        Parameters
+        ----------
+        sqlCtx: PySpark SQLContext
+        numClasses: number of classes
+        solverFilePath: caffe solver file path
+        networkPath: caffe network file path
+        imageShape: 3-tuple (number of channels of input image, input image height, input image width)
+        """
+        self.sqlCtx = sqlCtx
+        self.sc = sqlCtx._sc
+        self.uid = "barista"
+        self.estimator = self.sc._jvm.org.apache.sysml.api.dl.Barista.load(num_classes, self.sc._jsc.sc(), solver_file_path, network_path, image_shape[0], image_shape[1], image_shape[2])
+        self.estimator.setMaxIter(max_iter)
+        self.estimator.setValidationPercentage(validation_percentage)
+        self.estimator.setDisplay(display)
+        self.estimator.setNormalizeInput(normalize_input)
         self.transferUsingDF = transferUsingDF
         self.setOutputRawPredictionsToFalse = False
