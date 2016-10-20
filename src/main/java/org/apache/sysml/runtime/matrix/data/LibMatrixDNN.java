@@ -718,6 +718,11 @@ public class LibMatrixDNN {
 			throw new DMLRuntimeException("Incorrect input dimensions in maxpooling:" + input.getNumRows() + " " + input.getNumColumns() + " " + params.N + " " + params.K*params.P*params.Q);
 		}
 		
+		if(params.output.isInSparseFormat()) {
+			// TODO: Handle sparse output
+			params.output.sparseToDense();
+		}
+		
 		params.outputNNZ.set(0);
 		
 		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);

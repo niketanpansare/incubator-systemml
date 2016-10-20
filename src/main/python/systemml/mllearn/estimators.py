@@ -27,6 +27,8 @@ from pyspark.ml.feature import VectorAssembler
 from pyspark.sql import DataFrame
 import sklearn as sk
 from sklearn.metrics import accuracy_score, r2_score
+from py4j.protocol import Py4JError
+import traceback
 
 from ..converters import *
 
@@ -69,7 +71,10 @@ class BaseSystemMLEstimator(Estimator):
         X: PySpark DataFrame that contain the columns featuresCol (default: 'features') and labelCol (default: 'label')
         """
         if hasattr(X, '_jdf') and self.featuresCol in X.columns and self.labelCol in X.columns:
-            self.model = self.estimator.fit(X._jdf)
+            try:
+                self.model = self.estimator.fit(X._jdf)
+            except Py4JError:
+                traceback.print_exc()
             return self
         else:
             raise Exception('Incorrect usage: Expected dataframe as input with features/label as columns')
@@ -101,7 +106,10 @@ class BaseSystemMLEstimator(Estimator):
                 numColsy = getNumCols(y)
                 if numColsy != 1:
                     raise Exception('Expected y to be a column vector')
-                self.model = self.estimator.fit(convertToMatrixBlock(self.sc, X), convertToMatrixBlock(self.sc, y))
+                try:
+                    self.model = self.estimator.fit(convertToMatrixBlock(self.sc, X), convertToMatrixBlock(self.sc, y))
+                except Py4JError:
+                    traceback.print_exc()
             if self.setOutputRawPredictionsToFalse:
                 self.model.setOutputRawPredictions(False)
             return self
@@ -440,6 +448,20 @@ class NaiveBayes(BaseSystemMLClassifier):
 class Barista(BaseSystemMLClassifier):
     """
     Performs training/prediction for a given caffe network.
+    
+    Examples
+    --------
+    
+    >>> from mlxtend.data import mnist_data
+    >>> X, y = mnist_data()
+    >>> from systemml.mllearn import Barista
+    >>> from pyspark.sql import SQLContext
+    >>> sqlCtx = SQLContext(sc)
+    >>> import urllib
+    >>> urllib.urlretrieve('https://raw.githubusercontent.com/niketanpansare/model_zoo/master/caffe/vision/lenet/mnist/lenet.proto', 'lenet.proto')
+    >>> urllib.urlretrieve('https://raw.githubusercontent.com/niketanpansare/model_zoo/master/caffe/vision/lenet/mnist/lenet_solver.proto', 'lenet_solver.proto')
+    >>> barista = Barista(sqlCtx, 10, 'lenet_solver.proto', 'lenet.proto', (1, 28, 28))
+    >>> barista.fit(X, y)
     
     """
     
