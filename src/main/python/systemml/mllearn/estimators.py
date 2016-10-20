@@ -458,7 +458,7 @@ class Barista(BaseSystemMLClassifier):
         self.sqlCtx = sqlCtx
         self.sc = sqlCtx._sc
         self.uid = "barista"
-        solver = self.sc._jvm.org.apache.sysml.api.dl Utils.readCaffeSolver(solver_file_path)
+        solver = self.sc._jvm.org.apache.sysml.api.dl.Utils.readCaffeSolver(solver_file_path)
         self.estimator = self.sc._jvm.org.apache.sysml.api.dl.Barista(num_classes, self.sc._jsc.sc(), solver, network_path, image_shape[0], image_shape[1], image_shape[2])
         # self.estimator.setMaxIter(max_iter)
         # self.estimator.setValidationPercentage(validation_percentage)
