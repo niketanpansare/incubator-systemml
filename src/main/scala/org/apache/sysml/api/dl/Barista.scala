@@ -77,7 +77,7 @@ object Barista  {
 }
 
 class Barista(numClasses:Int, sc: SparkContext, solver:CaffeSolver, net:CaffeNetwork, lrPolicy:LearningRatePolicy) extends Estimator[BaristaModel] 
-  with HasMaxOuterIter  with BaseSystemMLClassifier {
+  with BaseSystemMLClassifier {
   
   def this(numClasses:Int, sc: SparkContext, solver1:Caffe.SolverParameter, networkPath:String, numChannels:Int, inputHeight:Int, inputWidth:Int, currentPhase:Phase) {
     this(numClasses, sc, Utils.parseSolver(solver1), 
@@ -113,16 +113,17 @@ class Barista(numClasses:Int, sc: SparkContext, solver:CaffeSolver, net:CaffeNet
 	var validationPercentage:Double=0.2
 	var display:Int=100
 	var normalizeInput:Boolean=true
-	
+	var maxIter = 10000
+
 	def setValidationPercentage(value:Double) = { validationPercentage = value }
 	def setDisplay(value:Int) = { display = value }
 	def setNormalizeInput(value:Boolean) = { normalizeInput = value }
-	def setMaxIter(value: Int) = set(maxOuterIter, value)
+	def setMaxIter(value: Int) = { maxIter = value }
 	
 	// Script generator
 	def getTrainingScript(isSingleNode:Boolean):(Script, String, String)  = {
 	  if(validationPercentage > 1 || validationPercentage < 0) throw new DMLRuntimeException("Incorrect validation percentage. Should be between (0, 1).")
-	  if(display > getMaxOuterIte || display < 0) throw new DMLRuntimeException("display needs to be between (0, " + getMaxOuterIte + "). Suggested value: 100.")
+	  if(display > maxIter || display < 0) throw new DMLRuntimeException("display needs to be between (0, " + maxIter + "). Suggested value: 100.")
 	  
 	  val dmlScript = new StringBuilder
 	  dmlScript.append(Utils.license)
@@ -133,7 +134,7 @@ class Barista(numClasses:Int, sc: SparkContext, solver:CaffeSolver, net:CaffeNet
 	  solver.source(dmlScript)
 	  dmlScript.append("X_full = read(\" \", format=\"csv\")\n")
 	  dmlScript.append("y_full = read(\" \", format=\"csv\")\n")
-	  dmlScript.append("max_iter = " + getMaxOuterIte + "\n")
+	  dmlScript.append("max_iter = " + maxIter + "\n")
 	  dmlScript.append("num_images = nrow(y_full)\n")
 	  
 	  dmlScript.append("# Convert to one-hot encoding (Assumption: 1-based labels) \n")
