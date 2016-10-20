@@ -42,11 +42,11 @@ class LearningRatePolicy(lr_policy:String="exp", base_lr:Double=0.01) {
   def updateLearningRate(dmlScript:StringBuilder):Unit = {
     val new_lr = lr_policy.toLowerCase match {
       case "fixed" => base_lr.toString
-      case "step" => "(" + base_lr + " * " +  gamma + " ^ " + " floor(iter/" + step + "))"
-      case "exp" => "(" + base_lr + " * " + gamma + "^iter)"
-      case "inv" =>  "(" + base_lr + "* (1 + " + gamma + " * iter) ^ (-" + power + "))"
-      case "poly" => "(" + base_lr  + " * (1 - iter/ max_iter) ^ " + power + ")"
-      case "sigmoid" => "(" + base_lr + "( 1/(1 + exp(-" + gamma + "* (iter - " + step + "))))"
+      case "step" => "(" + base_lr + " * " +  gamma + " ^ " + " floor(epoch/" + step + "))"
+      case "exp" => "(" + base_lr + " * " + gamma + "^epoch)"
+      case "inv" =>  "(" + base_lr + "* (1 + " + gamma + " * epoch) ^ (-" + power + "))"
+      case "poly" => "(" + base_lr  + " * (1 - epoch/ max_epoch) ^ " + power + ")"
+      case "sigmoid" => "(" + base_lr + "( 1/(1 + exp(-" + gamma + "* (epoch - " + step + "))))"
       case _ => throw new DMLRuntimeException("The lr policy is not supported:" + lr_policy)
     }
     dmlScript.append("lr = " + new_lr + "\n")

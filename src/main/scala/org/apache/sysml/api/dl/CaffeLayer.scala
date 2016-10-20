@@ -113,6 +113,7 @@ class SoftmaxWithLoss(val param:LayerParameter, val id:Int, val net:CaffeNetwork
   override def computeLoss(dmlScript:StringBuilder, prefix:String) = {
     dmlScript.append(prefix).append("tmp_loss = cross_entropy_loss::forward(" + commaSep(outVar, "yb") + ")\n")
     dmlScript.append(prefix).append("loss = loss + tmp_loss\n")
+    dmlScript.append(prefix).append("accuracy = mean(rowIndexMax(" + outVar + ") == rowIndexMax(yb))*100\n")
   }
   // -------------------------------------------------
 }

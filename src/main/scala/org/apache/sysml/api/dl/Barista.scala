@@ -50,7 +50,7 @@ import java.util.Random
 
 object Barista  {
   // For Testing:
-  // org.apache.sysml.api.dl.CaffeModel 
+  // org.apache.sysml.api.dl.Barista 
   def main(args: Array[String]): Unit = {
     if(args.length == 1) {
       Barista.load(args(0), 1, 28, 28, Caffe.Phase.TRAIN).train(10)
@@ -158,19 +158,26 @@ class Barista(solver:CaffeSolver, net:CaffeNetwork, lrPolicy:LearningRatePolicy)
 	    dmlScript.append("num_validation = ceil(" + validationPercentage + " * num_images)\n")
 	    dmlScript.append("X = X_full[(num_validation+1):num_images,]; y = y_full[(num_validation+1):num_images,] \n")
 	    dmlScript.append("X_val = X_full[1:num_validation,]; y_val = y_full[1:num_validation,] \n")
+	    dmlScript.append("num_images = nrow(y)\n")
 	  }
 	  else {
 	    dmlScript.append("X = X_full; y = y_full;\n")
 	  }
 	  net.getLayers.map(layer => solver.init(dmlScript, net.getCaffeLayer(layer)))
 	  dmlScript.append("iter = 0; beg = 1;\n")
+	  dmlScript.append("num_iters_per_epoch = ceil(num_images/BATCH_SIZE);\n")
+	  dmlScript.append("epoch = 0;\n")
+	  dmlScript.append("max_epoch = ceil(max_iter/num_iters_per_epoch);\n")
 	  
 	  // ----------------------------
 	  dmlScript.append("while(iter < max_iter) {\n")
     // Append forward and backward functions for each layer
     numTabs = 1
-    dmlScript.append("\t# Learning rate\n")
-	  lrPolicy.updateLearningRate(dmlScript.append("\t"))
+    dmlScript.append("\tif(iter %% num_iters_per_epoch == 0) {\n")
+    dmlScript.append("\t\t# Learning rate\n")
+	  lrPolicy.updateLearningRate(dmlScript.append("\t\t"))
+	  dmlScript.append("\t\tepoch = epoch + 1\n")
+	  dmlScript.append("\t}\n")
 	  
     appendBatch(dmlScript, "\t")
     dmlScript.append("\t").append("# Perform forward pass\n")
@@ -187,13 +194,15 @@ class Barista(solver:CaffeSolver, net:CaffeNetwork, lrPolicy:LearningRatePolicy)
       dmlScript.append("\t\t").append("loss = 0\n")
       net.getLayers.map(layer => net.getCaffeLayer(layer).computeLoss(dmlScript, "\t\t"))
       dmlScript.append("\t\t").append("training_loss = loss; loss = 0\n")
+      dmlScript.append("\t\t").append("training_accuracy = accuracy\n")
       
       dmlScript.append("\t\t").append("# Compute validation loss & accuracy\n")
       dmlScript.append("\t\t").append("Xb = X_val; yb = y_val;\n")
       net.getLayers.map(layer => net.getCaffeLayer(layer).forward(dmlScript, "\t\t"))
       net.getLayers.map(layer => net.getCaffeLayer(layer).computeLoss(dmlScript, "\t\t"))
       dmlScript.append("\t\t").append("validation_loss = loss\n")
-      dmlScript.append("\t\t").append("print(\"Iter: \" + iter + \", training loss: \" + training_loss + \", validation loss:\" + validation_loss + \".\")\n")
+      dmlScript.append("\t\t").append("validation_accuracy = accuracy\n")
+      dmlScript.append("\t\t").append("print(\"Iter: \" + iter + \", training (loss / accuracy): (\" + training_loss + \" / \" + training_accuracy + \"%), validation (loss / accuracy): (\" + validation_loss + \" / \" + validation_accuracy + \"%).\")\n")
       dmlScript.append("\t").append("}\n")
       numTabs -= 1
     }
