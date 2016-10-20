@@ -454,13 +454,16 @@ class Barista(BaseSystemMLClassifier):
     
     >>> from mlxtend.data import mnist_data
     >>> X, y = mnist_data()
+    >>> y += 1
+    >>> numClasses = np.unique(y).shape[0]
+    >>> imgShape = (1, 28, 28)
     >>> from systemml.mllearn import Barista
     >>> from pyspark.sql import SQLContext
     >>> sqlCtx = SQLContext(sc)
     >>> import urllib
     >>> urllib.urlretrieve('https://raw.githubusercontent.com/niketanpansare/model_zoo/master/caffe/vision/lenet/mnist/lenet.proto', 'lenet.proto')
     >>> urllib.urlretrieve('https://raw.githubusercontent.com/niketanpansare/model_zoo/master/caffe/vision/lenet/mnist/lenet_solver.proto', 'lenet_solver.proto')
-    >>> barista = Barista(sqlCtx, 10, 'lenet_solver.proto', 'lenet.proto', (1, 28, 28))
+    >>> barista = Barista(sqlCtx, numClasses, 'lenet_solver.proto', 'lenet.proto', imgShape)
     >>> barista.fit(X, y)
     
     """
