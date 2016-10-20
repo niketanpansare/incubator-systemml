@@ -718,11 +718,6 @@ public class LibMatrixDNN {
 			throw new DMLRuntimeException("Incorrect input dimensions in maxpooling:" + input.getNumRows() + " " + input.getNumColumns() + " " + params.N + " " + params.K*params.P*params.Q);
 		}
 		
-		if(params.output.isInSparseFormat()) {
-			// TODO: Handle sparse output
-			params.output.sparseToDense();
-		}
-		
 		params.outputNNZ.set(0);
 		
 		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
@@ -740,13 +735,15 @@ public class LibMatrixDNN {
 		outputBlock.setNonZeros(params.outputNNZ.get());
 	}
 
-	private static void doPooling(int n, int c, ConvolutionParameters params) {
+	private static void doPooling(int n, int c, ConvolutionParameters params) throws DMLRuntimeException {
 		double [] inputArray = null;
 		if (!params.input1.isInSparseFormat())
 			inputArray = params.input1.getDenseBlock();
 		double [] outputArray = null;
 		if (!params.output.isInSparseFormat())
 			outputArray = params.output.getDenseBlock();
+		else
+			throw new DMLRuntimeException("Expected the output to be allocated in dense format");
 		
 		long tmpNNZ = 0;
 		for (int p = 0; p < params.P; p++) {
