@@ -279,10 +279,10 @@ class BaristaModel(val mloutput: MLResults, val labelMapping: java.util.HashMap[
 	  val script = dml(predictionScript)
 	  net.getLayers.map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => script.in(l.weight, mloutput.getBinaryBlockMatrix(l.weight)))
 	  net.getLayers.map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => script.in(l.bias, mloutput.getBinaryBlockMatrix(l.bias)))
-	  (script, "y")
+	  (script, "X_full")
   }
   
   // Prediction
-  def transform(X: MatrixBlock): MatrixBlock = baseTransform(X, mloutput, labelMapping, sc, "scores")
-  def transform(df: ScriptsUtils.SparkDataType): DataFrame = baseTransform(df, mloutput, labelMapping, sc, "scores")
+  def transform(X: MatrixBlock): MatrixBlock = baseTransform(X, mloutput, labelMapping, sc, "prob")
+  def transform(df: ScriptsUtils.SparkDataType): DataFrame = baseTransform(df, mloutput, labelMapping, sc, "prob")
 }
