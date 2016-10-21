@@ -261,7 +261,7 @@ class BaristaModel(val mloutput: MLResults, val labelMapping: java.util.HashMap[
 	  Barista.alreadyImported.clear()
 	  net.getLayers.map(layer =>  net.getCaffeLayer(layer).source(dmlScript))
 	  dmlScript.append("X_full = read(\" \", format=\"csv\")\n")
-	  dmlScript.append("num_images = nrow(y_full)\n")
+	  dmlScript.append("num_images = nrow(X_full)\n")
 	  
 	  if(normalizeInput) {
 	    // Please donot normalize as well as have scale parameter in the data layer
