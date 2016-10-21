@@ -210,7 +210,10 @@ class Barista(numClasses:Int, sc: SparkContext, solver:CaffeSolver, net:CaffeNet
 	  numTabs = 0
 	  // ----------------------------
 	  
-	  val script = dml(dmlScript.toString())
+	  
+	  val trainingScript = dmlScript.toString()
+    System.out.println(trainingScript)
+    val script = dml(trainingScript)
 	  net.getLayers.map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => script.out(l.weight))
 	  net.getLayers.map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => script.out(l.bias))
 	  (script, "X_full", "y_full")
