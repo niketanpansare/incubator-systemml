@@ -212,6 +212,7 @@ class Barista(numClasses:Int, sc: SparkContext, solver:CaffeSolver, net:CaffeNet
 	  
 	  val script = dml(dmlScript.toString())
 	  net.getLayers.map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => script.out(l.weight))
+	  net.getLayers.map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => script.out(l.bias))
 	  (script, "X_full", "y_full")
 	}
 	
@@ -277,6 +278,7 @@ class BaristaModel(val mloutput: MLResults, val labelMapping: java.util.HashMap[
     System.out.println(predictionScript)
 	  val script = dml(predictionScript)
 	  net.getLayers.map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => script.in(l.weight, mloutput.getBinaryBlockMatrix(l.weight)))
+	  net.getLayers.map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => script.in(l.bias, mloutput.getBinaryBlockMatrix(l.bias)))
 	  (script, "y")
   }
   
