@@ -273,7 +273,9 @@ class BaristaModel(val mloutput: MLResults, val labelMapping: java.util.HashMap[
     net.getLayers.map(layer => net.getCaffeLayer(layer).forward(dmlScript, ""))
     net.getLayers.map(layer => net.getCaffeLayer(layer).predict(dmlScript))
     
-	  val script = dml(dmlScript.toString())
+    val predictionScript = dmlScript.toString()
+    System.out.println(predictionScript)
+	  val script = dml(predictionScript)
 	  net.getLayers.map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => script.in(l.weight, mloutput.getBinaryBlockMatrix(l.weight)))
 	  (script, "y")
   }
