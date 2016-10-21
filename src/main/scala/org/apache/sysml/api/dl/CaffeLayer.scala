@@ -39,6 +39,7 @@ trait CaffeLayer {
   def dW():String = null;
   def dB():String = null;
   def computeLoss(dmlScript:StringBuilder, prefix:String):Unit = {}
+  def predict(dmlScript:StringBuilder):Unit = {}
   // -------------------------------------------------
   def source(dmlScript:StringBuilder):Unit = {
     Barista.source(dmlScript, sourceFileName, Barista.layerDir)
@@ -114,6 +115,9 @@ class SoftmaxWithLoss(val param:LayerParameter, val id:Int, val net:CaffeNetwork
     dmlScript.append(prefix).append("tmp_loss = cross_entropy_loss::forward(" + commaSep(outVar, "yb") + ")\n")
     dmlScript.append(prefix).append("loss = loss + tmp_loss\n")
     dmlScript.append(prefix).append("accuracy = mean(rowIndexMax(" + outVar + ") == rowIndexMax(yb))*100\n")
+  }
+  override def predict(dmlScript:StringBuilder):Unit = {
+    dmlScript.append("y = rowIndexMax(" + outVar + ")\n")
   }
   // -------------------------------------------------
 }

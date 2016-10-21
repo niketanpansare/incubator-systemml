@@ -470,7 +470,7 @@ class Barista(BaseSystemMLClassifier):
     
     """
     
-    def __init__(self, sqlCtx, num_classes, solver_file_path, network_path, max_iter=10000, image_shape=(1, 28, 28), validation_percentage=0.2, display=100, normalize_input=False, transferUsingDF=False):
+    def __init__(self, sqlCtx, num_classes, solver_file_path, network_path, image_shape=(1, 28, 28), max_iter=10000, validation_percentage=0.2, display=100, normalize_input=False, transferUsingDF=False):
         """
         Performs training/prediction for a given caffe network. 
 
@@ -487,9 +487,9 @@ class Barista(BaseSystemMLClassifier):
         self.uid = "barista"
         solver = self.sc._jvm.org.apache.sysml.api.dl.Utils.readCaffeSolver(solver_file_path)
         self.estimator = self.sc._jvm.org.apache.sysml.api.dl.Barista(num_classes, self.sc._jsc.sc(), solver, network_path, image_shape[0], image_shape[1], image_shape[2])
-        # self.estimator.setMaxIter(max_iter)
-        # self.estimator.setValidationPercentage(validation_percentage)
-        # self.estimator.setDisplay(display)
-        # self.estimator.setNormalizeInput(normalize_input)
+        self.estimator.setMaxIter(max_iter)
+        self.estimator.setValidationPercentage(validation_percentage)
+        self.estimator.setDisplay(display)
+        self.estimator.setNormalizeInput(normalize_input)
         self.transferUsingDF = transferUsingDF
         self.setOutputRawPredictionsToFalse = False

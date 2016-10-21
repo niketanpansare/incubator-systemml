@@ -49,6 +49,10 @@ import org.apache.sysml.api.ml._
 import java.util.Random
 
 object Barista  {
+  def main(args:Array[String]):Unit = {
+    load(10, null, args(0), args(1), 1, 28, 28)
+  }
+  
   def load(numClasses:Int, sc: SparkContext,  solverFilePath:String, numChannels:Int, inputHeight:Int, inputWidth:Int):Barista = {
     val solver = Utils.readCaffeSolver(solverFilePath)
     new Barista(numClasses, sc, solver, numChannels, inputHeight, inputWidth)
@@ -101,12 +105,12 @@ class Barista(numClasses:Int, sc: SparkContext, solver:CaffeSolver, net:CaffeNet
 	// Note: will update the y_mb as this will be called by Python mllearn
   def fit(X_mb: MatrixBlock, y_mb: MatrixBlock): BaristaModel = {
     val ret = baseFit(X_mb, y_mb, sc)
-    new BaristaModel(ret._1, sc, ret._2)
+    new BaristaModel(ret._1, ret._2, numClasses, sc, solver, net, lrPolicy, normalizeInput)
   }
   
   def fit(df: ScriptsUtils.SparkDataType): BaristaModel = {
     val ret = baseFit(df, sc)
-    new BaristaModel(ret._1, sc, ret._2)
+    new BaristaModel(ret._1, ret._2, numClasses, sc, solver, net, lrPolicy, normalizeInput)
   }
 	// --------------------------------------------------------------
 
@@ -237,18 +241,41 @@ class Barista(numClasses:Int, sc: SparkContext, solver:CaffeSolver, net:CaffeNet
 
 }
 
-class BaristaModel(val mloutput: MLResults, val sc: SparkContext, val labelMapping: java.util.HashMap[Int, String]) 
+class BaristaModel(val mloutput: MLResults, val labelMapping: java.util.HashMap[Int, String], 
+    val numClasses:Int, val sc: SparkContext, val solver:CaffeSolver, val net:CaffeNetwork, val lrPolicy:LearningRatePolicy,
+    val normalizeInput:Boolean) 
   extends Model[BaristaModel] with HasMaxOuterIter with BaseSystemMLClassifierModel {
   val rand = new Random
   val uid:String = "caffe_model_" + rand.nextLong + "_" + rand.nextLong 
   
   override def copy(extra: org.apache.spark.ml.param.ParamMap): BaristaModel = {
-    val that = new BaristaModel(mloutput, sc, labelMapping)
+    val that = new BaristaModel(mloutput, labelMapping, numClasses, sc, solver, net, lrPolicy, normalizeInput)
     copyValues(that, extra)
   }
   
   def getPredictionScript(mloutput: MLResults, isSingleNode:Boolean): (Script, String)  = {
-    (null, null)
+	  val dmlScript = new StringBuilder
+	  dmlScript.append(Utils.license)
+	  // Append source statements for each layer
+	  Barista.alreadyImported.clear()
+	  net.getLayers.map(layer =>  net.getCaffeLayer(layer).source(dmlScript))
+	  dmlScript.append("X_full = read(\" \", format=\"csv\")\n")
+	  dmlScript.append("num_images = nrow(y_full)\n")
+	  
+	  if(normalizeInput) {
+	    // Please donot normalize as well as have scale parameter in the data layer
+	    dmlScript.append("# Normalize the inputs\n")
+	    dmlScript.append("X_full = (X_full - rowMeans(X_full)) / rowSds(X_full)\n")
+	  }
+	  
+	  // Append init() function for each layer
+	  dmlScript.append("X = X_full;\n")
+    net.getLayers.map(layer => net.getCaffeLayer(layer).forward(dmlScript, ""))
+    net.getLayers.map(layer => net.getCaffeLayer(layer).predict(dmlScript))
+    
+	  val script = dml(dmlScript.toString())
+	  net.getLayers.map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => script.in(l.weight, mloutput.getBinaryBlockMatrix(l.weight)))
+	  (script, "y")
   }
   
   // Prediction
