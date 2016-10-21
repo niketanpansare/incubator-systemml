@@ -270,7 +270,7 @@ class BaristaModel(val mloutput: MLResults, val labelMapping: java.util.HashMap[
 	  }
 	  
 	  // Append init() function for each layer
-	  dmlScript.append("X = X_full;\n")
+	  dmlScript.append("Xb = X_full; \n")
     net.getLayers.map(layer => net.getCaffeLayer(layer).forward(dmlScript, ""))
     net.getLayers.map(layer => net.getCaffeLayer(layer).predict(dmlScript))
     
