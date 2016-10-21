@@ -1128,6 +1128,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setDataType(DataType.MATRIX);
 			output.setValueType(ValueType.DOUBLE);
 			output.setBlockDimensions(input.getOutput().getRowsInBlock(), input.getOutput().getColumnsInBlock());
+			output.setDimensions(-1, -1); // To make sure that output dimensions are not incorrect
 			  			
 			checkMatrixParam(input);
 			break;
