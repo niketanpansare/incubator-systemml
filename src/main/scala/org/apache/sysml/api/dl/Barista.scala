@@ -181,7 +181,7 @@ class Barista(numClasses:Int, sc: SparkContext, solver:CaffeSolver, net:CaffeNet
 	  
     appendBatch(dmlScript, "\t")
     dmlScript.append("\t").append("# Perform forward pass\n")
-    net.getLayers.map(layer => net.getCaffeLayer(layer).forward(dmlScript, "\t"))
+    net.getLayers.map(layer => net.getCaffeLayer(layer).forward(dmlScript, "\t", false))
     
     dmlScript.append("\t").append("\n\t# Perform backward pass\n")
     net.getLayers.reverse.map(layer => net.getCaffeLayer(layer).backward(dmlScript.append("\t")))
@@ -198,7 +198,7 @@ class Barista(numClasses:Int, sc: SparkContext, solver:CaffeSolver, net:CaffeNet
       
       dmlScript.append("\t\t").append("# Compute validation loss & accuracy\n")
       dmlScript.append("\t\t").append("Xb = X_val; yb = y_val;\n")
-      net.getLayers.map(layer => net.getCaffeLayer(layer).forward(dmlScript, "\t\t"))
+      net.getLayers.map(layer => net.getCaffeLayer(layer).forward(dmlScript, "\t\t", false))
       net.getLayers.map(layer => net.getCaffeLayer(layer).computeLoss(dmlScript, "\t\t"))
       dmlScript.append("\t\t").append("validation_loss = loss\n")
       dmlScript.append("\t\t").append("validation_accuracy = accuracy\n")
@@ -271,7 +271,7 @@ class BaristaModel(val mloutput: MLResults, val labelMapping: java.util.HashMap[
 	  
 	  // Append init() function for each layer
 	  dmlScript.append("Xb = X_full; \n")
-    net.getLayers.map(layer => net.getCaffeLayer(layer).forward(dmlScript, ""))
+    net.getLayers.map(layer => net.getCaffeLayer(layer).forward(dmlScript, "", true))
     net.getLayers.map(layer => net.getCaffeLayer(layer).predict(dmlScript))
     
     val predictionScript = dmlScript.toString()

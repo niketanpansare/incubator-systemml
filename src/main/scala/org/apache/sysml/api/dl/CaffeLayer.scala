@@ -31,7 +31,7 @@ trait CaffeLayer {
   // Any layer that wants to reuse SystemML-NN has to override following methods that help in generating the DML for the given layer:
   def sourceFileName:String;
   def init(dmlScript:StringBuilder):Unit;
-  def forward(dmlScript:StringBuilder, prefix:String):Unit;
+  def forward(dmlScript:StringBuilder, prefix:String, isPrediction:Boolean):Unit;
   def backward(dmlScript:StringBuilder):Unit;
   def outputShape:(String, String, String) = bottomLayer.outputShape
   def weight():String = null;
@@ -88,7 +88,7 @@ class Data(val param:LayerParameter, val id:Int, val net:CaffeNetwork, val numCh
     dmlScript.append("BATCH_SIZE = " + batchSize + "\n")
   }
   
-  override def forward(dmlScript:StringBuilder, prefix:String) = { }
+  override def forward(dmlScript:StringBuilder, prefix:String, isPrediction:Boolean) = { }
   override def outVar = "Xb"
   override def backward(dmlScript:StringBuilder) = { }
   override def outputShape = (numChannels.toString, inputHeight.toString, inputWidth.toString)
@@ -106,7 +106,7 @@ class SoftmaxWithLoss(val param:LayerParameter, val id:Int, val net:CaffeNetwork
     Barista.alreadyImported.add("cross_entropy_loss")
   }
   override def init(dmlScript:StringBuilder) = {}
-  override def forward(dmlScript:StringBuilder, prefix:String) = dmlScript.append(prefix).append(
+  override def forward(dmlScript:StringBuilder, prefix:String, isPrediction:Boolean) = dmlScript.append(prefix).append(
       outVar + " = " + namespace + "forward(" + bottomLayer.outVar + ")\n")
   override def backward(dmlScript:StringBuilder) = dmlScript.append(
       "dProbs = cross_entropy_loss::backward(" + commaSep(outVar, "yb") + ")\n\t" + 
@@ -126,7 +126,7 @@ class ReLU(val param:LayerParameter, val id:Int, val net:CaffeNetwork) extends C
   // -------------------------------------------------
   override def sourceFileName = "relu"
   override def init(dmlScript:StringBuilder) = { }
-  override def forward(dmlScript:StringBuilder, prefix:String) = dmlScript.append(prefix).append(
+  override def forward(dmlScript:StringBuilder, prefix:String, isPrediction:Boolean) = dmlScript.append(prefix).append(
       outVar + " = " + namespace + "forward(" + bottomLayer.outVar + ")\n") 
   override def backward(dmlScript:StringBuilder) = dmlScript.append(
       dOut + " = " + namespace + "backward(" + commaSep(topLayer.dOut, bottomLayer.outVar) + ")\n")
@@ -137,8 +137,12 @@ class Dropout(val param:LayerParameter, val id:Int, val net:CaffeNetwork) extend
   // -------------------------------------------------
   override def sourceFileName = "dropout"
   override def init(dmlScript:StringBuilder) = { }
-  override def forward(dmlScript:StringBuilder, prefix:String) = dmlScript.append(prefix).append(
-      "[" + commaSep(outVar, maskVar) + "] = " + namespace + "forward(" + commaSep(bottomLayer.outVar, p, seed) + ")\n") 
+  override def forward(dmlScript:StringBuilder, prefix:String, isPrediction:Boolean) =
+    if(!isPrediction)
+      dmlScript.append(prefix).append(
+        "[" + commaSep(outVar, maskVar) + "] = " + namespace + "forward(" + commaSep(bottomLayer.outVar, p, seed) + ")\n")
+    else
+      dmlScript.append(prefix).append(outVar + " = " + bottomLayer.outVar + "\n")
   override def backward(dmlScript:StringBuilder) = dmlScript.append(
       dOut + " = " + namespace + "backward(" + commaSep(topLayer.dOut, bottomLayer.outVar, p, maskVar) + ")\n")
   // -------------------------------------------------
@@ -155,7 +159,7 @@ class InnerProduct(val param:LayerParameter, val id:Int, val net:CaffeNetwork) e
       "[" + commaSep(weight, bias) + "] = " + namespace + "init(" + commaSep(
           int_mult(bottomLayer.outputShape._1, bottomLayer.outputShape._2, bottomLayer.outputShape._3), numNeurons) + ")\n")
   }
-  override def forward(dmlScript:StringBuilder, prefix:String) = dmlScript.append(prefix).append(
+  override def forward(dmlScript:StringBuilder, prefix:String, isPrediction:Boolean) = dmlScript.append(prefix).append(
       outVar + " = " + namespace + "forward(" + commaSep(bottomLayer.outVar, weight, bias) + ")\n") 
   override def backward(dmlScript:StringBuilder) = dmlScript.append(
       "[" + commaSep(dOut, dW, dB) + "] = " + namespace + 
@@ -175,7 +179,7 @@ class MaxPooling(val param:LayerParameter, val id:Int, val net:CaffeNetwork) ext
   // -------------------------------------------------
   override def sourceFileName = "max_pool_builtin"
   override def init(dmlScript:StringBuilder) = {}
-  override def forward(dmlScript:StringBuilder, prefix:String) = {
+  override def forward(dmlScript:StringBuilder, prefix:String, isPrediction:Boolean) = {
     val out2:String = if(isNumber(outputShape._2)) "ignore1_"+id else outputShape._2
     val out3:String = if(isNumber(outputShape._3)) "ignore2_"+id else outputShape._3
     dmlScript.append(prefix).append(
@@ -216,7 +220,7 @@ class Convolution(val param:LayerParameter, val id:Int, val net:CaffeNetwork) ex
       "init(" + commaSep(numKernels, C, kernel_h, kernel_w) + ")\n")
   }
   
-  override def forward(dmlScript:StringBuilder, prefix:String) = {
+  override def forward(dmlScript:StringBuilder, prefix:String, isPrediction:Boolean) = {
     
     val out2:String = if(isNumber(outputShape._2)) "ignore1_"+id else outputShape._2
     val out3:String = if(isNumber(outputShape._3)) "ignore2_"+id else outputShape._3
