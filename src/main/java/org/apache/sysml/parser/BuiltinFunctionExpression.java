@@ -1174,7 +1174,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 						output.setDimensions(input.getOutput().getDim1(), C*P*Q);
 				}
 				catch(Exception e) {
-					output.setDimensions(-1, -1); // To make sure that output dimensions are not incorrect
+					output.setDimensions(input.getOutput().getDim1(), -1); // To make sure that output dimensions are not incorrect
 				}
 			}
 			else

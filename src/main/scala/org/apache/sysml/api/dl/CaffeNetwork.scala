@@ -81,7 +81,6 @@ class CaffeNetwork(netFilePath:String, val currentPhase:Phase, val numChannels:I
     val currentLayers = getLayersFromCurrentPhase(net)
     val currentLayerNames = currentLayers.map(_.getName).distinct.toSet
     
-    System.out.println(">> Populating layers ... " + currentLayers.length)
     // Append top/bottom layers
     currentLayers.map(l => {
       getBottomLayers(l, currentLayers.toList).filter(currentLayerNames.contains(_)).map(b => appendToHM(layerNameBottomMap, l.getName, b))
