@@ -128,7 +128,8 @@ trait BaseSystemMLClassifierModel extends BaseSystemMLEstimatorModel {
     val isSingleNode = true
     val ml = new MLContext(sc)
     val script = getPredictionScript(mloutput, isSingleNode)
-    ml.setExplainLevel(ExplainLevel.RECOMPILE_RUNTIME)
+    // Uncomment for debugging
+    // ml.setExplainLevel(ExplainLevel.RECOMPILE_RUNTIME)
     val modelPredict = ml.execute(script._1.in(script._2, X, new MatrixMetadata(X.getNumRows, X.getNumColumns, X.getNonZeros)))
     val ret = PredictionUtils.computePredictedClassLabelsFromProbability(modelPredict, isSingleNode, sc, probVar)
               .getBinaryBlockMatrix("Prediction").getMatrixBlock
