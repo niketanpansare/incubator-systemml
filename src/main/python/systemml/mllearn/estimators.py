@@ -140,7 +140,10 @@ class BaseSystemMLEstimator(Estimator):
                 else:
                     return retPDF
             else:
-                retNumPy = convertToNumPyArr(self.sc, self.model.transform(convertToMatrixBlock(self.sc, X)))
+                try:
+                    retNumPy = convertToNumPyArr(self.sc, self.model.transform(convertToMatrixBlock(self.sc, X)))
+                except Py4JError:
+                    traceback.print_exc()
                 if isinstance(X, np.ndarray):
                     return retNumPy
                 else:
