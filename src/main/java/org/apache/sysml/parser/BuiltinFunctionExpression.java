@@ -1160,8 +1160,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 					long H = (long) getDoubleValue(_args[start++]);
 					long W = (long) getDoubleValue(_args[start++]);
 					long K = -1;
-					if(this.getOpCode() == BuiltinFunctionOp.CONV2D || this.getOpCode() == BuiltinFunctionOp.CONV2D_BACKWARD_DATA 
-							|| this.getOpCode() == BuiltinFunctionOp.CONV2D_BACKWARD_FILTER) {
+					if(this.getOpCode() == BuiltinFunctionOp.CONV2D) {
 						K = (long) getDoubleValue(_args[start]);
 					}
 					start++; start++;
