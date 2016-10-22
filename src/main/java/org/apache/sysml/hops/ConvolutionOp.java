@@ -408,36 +408,36 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		{
 			case MAX_POOLING:
 			{	
-				_dim1 = params.N;
+				_dim1 = getInput().get(0)._dim1;
 				_dim2 = getExtractedVal(params.C, params.P, params.Q);
 				_nnz = -1; // cannot infer stats
 				break;
 			}
 			case MAX_POOLING_BACKWARD:
 			{
-				_dim1 = params.N;
-				_dim2 = getExtractedVal(params.C, params.H, params.W);
+				_dim1 = getInput().get(0)._dim1;
+				_dim2 = getInput().get(0)._dim2;
 				_nnz = -1;
 				break;
 			}
 			case DIRECT_CONV2D:
 			{
-				_dim1 = params.N;
+				_dim1 = getInput().get(0)._dim1;
 				_dim2 = getExtractedVal(params.K, params.P, params.Q);
 				_nnz = -1; // cannot infer stats
 				break;
 			}
 			case DIRECT_CONV2D_BACKWARD_DATA:
 			{
-				_dim1 = params.N;
-				_dim2 = getExtractedVal(params.C, params.H, params.W);
+				_dim1 = getInput().get(0)._dim1;
+				_dim2 = getInput().get(0)._dim2;
 				_nnz = -1; // cannot infer stats
 				break;
 			}
 			case DIRECT_CONV2D_BACKWARD_FILTER:
 			{
-				_dim1 = params.K;
-				_dim2 = getExtractedVal(params.C, params.R, params.S);
+				_dim1 = getInput().get(1)._dim1;
+				_dim2 = getInput().get(1)._dim2;
 				_nnz = -1; // cannot infer stats
 				break;
 			}
