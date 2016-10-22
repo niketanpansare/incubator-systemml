@@ -310,6 +310,9 @@ class BaristaModel(val mloutput: MLResults, val labelMapping: java.util.HashMap[
   	  net.getLayers.map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => dmlScript.append(read(l.bias, outputDir + sep + l.param.getName + "_bias.mtx")))
 	  }
 	  
+	  // Uncomment for debugging
+	  net.getLayers.map(layer =>  System.out.println(net.getCaffeLayer(layer).param.getName + " " + net.getCaffeLayer(layer).outputShape))
+	  
 	  // Append source statements for each layer
 	  Barista.alreadyImported.clear()
 	  net.getLayers.map(layer =>  net.getCaffeLayer(layer).source(dmlScript))
