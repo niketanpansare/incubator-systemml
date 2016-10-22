@@ -241,7 +241,7 @@ class Barista(numClasses:Int, sc: SparkContext, solver:CaffeSolver, net:CaffeNet
 	    val entry = line.split(",", 2)
 	    labelMapping.put(entry(0).toInt, entry(1))
 	  }
-	  new BaristaModel(null, labelMapping, numClasses, sc, solver, net, lrPolicy, normalizeInput)
+	  new BaristaModel(labelMapping, numClasses, sc, solver, net, lrPolicy, normalizeInput, outputDir, format, sep)
 	}
 	
 
