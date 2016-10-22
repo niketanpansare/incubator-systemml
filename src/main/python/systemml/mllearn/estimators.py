@@ -485,6 +485,7 @@ class Barista(BaseSystemMLClassifier):
         self.sqlCtx = sqlCtx
         self.sc = sqlCtx._sc
         self.uid = "barista"
+        self.model = None
         solver = self.sc._jvm.org.apache.sysml.api.dl.Utils.readCaffeSolver(solver_file_path)
         self.estimator = self.sc._jvm.org.apache.sysml.api.dl.Barista(num_classes, self.sc._jsc.sc(), solver, network_path, image_shape[0], image_shape[1], image_shape[2])
         self.estimator.setMaxIter(max_iter)
@@ -493,3 +494,14 @@ class Barista(BaseSystemMLClassifier):
         self.estimator.setNormalizeInput(normalize_input)
         self.transferUsingDF = transferUsingDF
         self.setOutputRawPredictionsToFalse = False
+    
+    def save(self, outputDir, format='binary', sep='/'):
+        self.model = self.estimator.load(outputDir, format, sep)
+        return self
+    
+    def save(self, outputDir, format='binary', sep='/'):
+        if self.model != None:
+            self.model.save(outputDir, format, sep)
+        else:
+            raise Exception('Cannot save as you need to train the model first using fit')
+        return self

@@ -117,7 +117,7 @@ class SoftmaxWithLoss(val param:LayerParameter, val id:Int, val net:CaffeNetwork
     dmlScript.append(prefix).append("accuracy = mean(rowIndexMax(" + outVar + ") == rowIndexMax(yb))*100\n")
   }
   override def predict(dmlScript:StringBuilder):Unit = {
-    dmlScript.append("prob = " + outVar + "\n")
+    dmlScript.append("Prob = " + outVar + "\n")
   }
   // -------------------------------------------------
 }

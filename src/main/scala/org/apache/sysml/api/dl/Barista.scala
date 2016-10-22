@@ -118,7 +118,7 @@ class Barista(numClasses:Int, sc: SparkContext, solver:CaffeSolver, net:CaffeNet
 	var display:Int=100
 	var normalizeInput:Boolean=true
 	var maxIter = 10000
-
+	
 	def setValidationPercentage(value:Double) = { validationPercentage = value }
 	def setDisplay(value:Int) = { display = value }
 	def setNormalizeInput(value:Boolean) = { normalizeInput = value }
@@ -234,6 +234,15 @@ class Barista(numClasses:Int, sc: SparkContext, solver:CaffeSolver, net:CaffeNet
 	  prevLayerIDs.get(0)
 	}
 	
+	def load(outputDir:String, format:String="binary", sep:String="/"):BaristaModel = {
+	  val labelMapping = new java.util.HashMap[Int, String]
+	  for(line <- sc.textFile(outputDir + sep + "labelMapping.csv").collect) {
+	    val entry = line.split(",", 2)
+	    labelMapping.put(entry(0).toInt, entry(1))
+	  }
+	  new BaristaModel(null, labelMapping, numClasses, sc, solver, net, lrPolicy, normalizeInput)
+	}
+	
 
 	// --------------------------------------------------------------
 	// DML generation utility functions
@@ -249,6 +258,18 @@ class BaristaModel(val mloutput: MLResults, val labelMapping: java.util.HashMap[
     val numClasses:Int, val sc: SparkContext, val solver:CaffeSolver, val net:CaffeNetwork, val lrPolicy:LearningRatePolicy,
     val normalizeInput:Boolean) 
   extends Model[BaristaModel] with HasMaxOuterIter with BaseSystemMLClassifierModel {
+  
+  def this(labelMapping: java.util.HashMap[Int, String], numClasses:Int, sc: SparkContext, solver:CaffeSolver, net:CaffeNetwork, lrPolicy:LearningRatePolicy,
+    normalizeInput:Boolean, outputDir1:String, format1:String, sep1:String) {
+    this(null,labelMapping, numClasses, sc, solver, net, lrPolicy, normalizeInput)
+    outputDir = outputDir1
+    format = format1
+    sep = sep1
+  }
+  
+  var outputDir:String = null 
+  var format:String = null 
+  var sep:String = null
   val rand = new Random
   val uid:String = "caffe_model_" + rand.nextLong + "_" + rand.nextLong 
   
@@ -257,9 +278,36 @@ class BaristaModel(val mloutput: MLResults, val labelMapping: java.util.HashMap[
     copyValues(that, extra)
   }
   
+  def write(varName:String, fileName:String, format:String):String = "write(" + varName + ", \"" + fileName + "\", format=\"" + format + "\")\n"
+  
+  def save(outputDir:String, format:String="binary", sep:String="/"):Unit = {
+	  if(mloutput == null) throw new DMLRuntimeException("Cannot save as you need to train the model first using fit")
+	  
+	  val dmlScript = new StringBuilder
+	  dmlScript.append("print(\"Saving the model to " + outputDir + "...\")\n")
+	  net.getLayers.map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => dmlScript.append(write(l.weight, outputDir + sep + l.param.getName + "_weight.mtx", format)))
+	  net.getLayers.map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => dmlScript.append(write(l.bias, outputDir + sep + l.param.getName + "_bias.mtx", format)))
+	  
+	  val script = dml(dmlScript.toString)
+	  net.getLayers.map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => script.in(l.weight, mloutput.getBinaryBlockMatrix(l.weight)))
+	  net.getLayers.map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => script.in(l.bias, mloutput.getBinaryBlockMatrix(l.bias)))
+	  val ml = new MLContext(sc)
+	  ml.execute(script)
+	  
+	  val rdd = sc.parallelize(labelMapping.map(x => x._1.toString + "," + x._2.toString).toList)
+	  rdd.saveAsTextFile(outputDir + sep + "labelMapping.csv")
+	}
+  
+  def read(varName:String, fileName:String):String =  varName + " = read(\"" + fileName + "\")\n"
+  
   def getPredictionScript(mloutput: MLResults, isSingleNode:Boolean): (Script, String)  = {
 	  val dmlScript = new StringBuilder
 	  dmlScript.append(Utils.license)
+	  if(mloutput == null) {
+	    // fit was called
+  	  net.getLayers.map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => dmlScript.append(read(l.weight, outputDir + sep + l.param.getName + "_weight.mtx")))
+  	  net.getLayers.map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => dmlScript.append(read(l.bias, outputDir + sep + l.param.getName + "_bias.mtx")))
+	  }
 	  // Append source statements for each layer
 	  Barista.alreadyImported.clear()
 	  net.getLayers.map(layer =>  net.getCaffeLayer(layer).source(dmlScript))
@@ -280,12 +328,15 @@ class BaristaModel(val mloutput: MLResults, val labelMapping: java.util.HashMap[
     val predictionScript = dmlScript.toString()
     System.out.println(predictionScript)
 	  val script = dml(predictionScript)
-	  net.getLayers.map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => script.in(l.weight, mloutput.getBinaryBlockMatrix(l.weight)))
-	  net.getLayers.map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => script.in(l.bias, mloutput.getBinaryBlockMatrix(l.bias)))
+	  if(mloutput != null) {
+	    // fit was called
+  	  net.getLayers.map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => script.in(l.weight, mloutput.getBinaryBlockMatrix(l.weight)))
+  	  net.getLayers.map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => script.in(l.bias, mloutput.getBinaryBlockMatrix(l.bias)))
+	  }
 	  (script, "X_full")
   }
   
   // Prediction
-  def transform(X: MatrixBlock): MatrixBlock = baseTransform(X, mloutput, labelMapping, sc, "prob")
-  def transform(df: ScriptsUtils.SparkDataType): DataFrame = baseTransform(df, mloutput, labelMapping, sc, "prob")
+  def transform(X: MatrixBlock): MatrixBlock = baseTransform(X, mloutput, labelMapping, sc, "Prob")
+  def transform(df: ScriptsUtils.SparkDataType): DataFrame = baseTransform(df, mloutput, labelMapping, sc, "Prob")
 }
