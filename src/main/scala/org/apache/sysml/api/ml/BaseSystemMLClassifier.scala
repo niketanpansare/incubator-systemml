@@ -32,6 +32,7 @@ import org.apache.sysml.runtime.instructions.spark.utils.{ RDDConverterUtilsExt,
 import org.apache.sysml.api.mlcontext._
 import org.apache.sysml.api.mlcontext.ScriptFactory._
 import org.apache.spark.sql._
+import org.apache.sysml.api.mlcontext.MLContext.ExplainLevel
 
 trait HasLaplace extends Params {
   final val laplace: Param[Double] = new Param[Double](this, "laplace", "Laplace smoothing specified by the user to avoid creation of 0 probabilities.")
@@ -127,6 +128,7 @@ trait BaseSystemMLClassifierModel extends BaseSystemMLEstimatorModel {
     val isSingleNode = true
     val ml = new MLContext(sc)
     val script = getPredictionScript(mloutput, isSingleNode)
+    ml.setExplainLevel(ExplainLevel.RECOMPILE_RUNTIME)
     val modelPredict = ml.execute(script._1.in(script._2, X))
     val ret = PredictionUtils.computePredictedClassLabelsFromProbability(modelPredict, isSingleNode, sc, probVar)
               .getBinaryBlockMatrix("Prediction").getMatrixBlock

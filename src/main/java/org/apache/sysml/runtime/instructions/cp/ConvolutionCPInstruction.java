@@ -190,7 +190,6 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				params.setReuseNonZeroedOutput(_reuseNonZeroedOutput);
 				LibMatrixDNN.maxpooling(matBlock, outputBlock, params);
 			}
-			ec.setMetaData(getOutputVariableName(), N, C*P*Q);
 		}
 		else if (instOpcode.equalsIgnoreCase("maxpooling_backward")) {
 			MatrixBlock dout = ec.getMatrixInput(_in2.getName());
@@ -205,7 +204,6 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				LibMatrixDNN.maxpooling_backward(matBlock, dout, outputBlock, params);
 			}
 			ec.releaseMatrixInput(_in2.getName());
-			ec.setMetaData(getOutputVariableName(), N, C*H*W);
 		}
 		else if (instOpcode.equalsIgnoreCase("conv2d")) {
 			MatrixBlock filter = ec.getMatrixInput(_in2.getName());
@@ -218,7 +216,6 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				LibMatrixDNN.conv2d(matBlock, filter, outputBlock, params);
 			}
 			ec.releaseMatrixInput(_in2.getName());
-			ec.setMetaData(getOutputVariableName(), N, K*P*Q);
 		}
 		else if (instOpcode.equalsIgnoreCase("conv2d_backward_filter")) {
 			MatrixBlock dout = ec.getMatrixInput(_in2.getName());
@@ -231,7 +228,6 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				LibMatrixDNN.conv2d_backward_filter(matBlock, dout, outputBlock, params);
 			}
 			ec.releaseMatrixInput(_in2.getName());
-			ec.setMetaData(getOutputVariableName(), K, C*R*S);
 		}
 		else if (instOpcode.equalsIgnoreCase("conv2d_backward_data")) {
 			MatrixBlock dout = ec.getMatrixInput(_in2.getName());
@@ -244,7 +240,6 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				LibMatrixDNN.conv2d_backward_data(matBlock, dout, outputBlock, params);
 			}
 			ec.releaseMatrixInput(_in2.getName());
-			ec.setMetaData(getOutputVariableName(), N, C*H*W);
 		}
 		else {
 			throw new DMLRuntimeException("Unsupported op code " + instOpcode);
@@ -253,6 +248,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		// release inputs/outputs
 		ec.releaseMatrixInput(input1.getName());
 		ec.setMatrixOutput(getOutputVariableName(), outputBlock);
+		ec.getMatrixObject(getOutputVariableName()).refreshMetaData();
 	}
 	
 	@SuppressWarnings("unused")
