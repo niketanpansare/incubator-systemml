@@ -242,7 +242,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 			case MAX_POOLING:
 			{
 				ret = new long[3];
-				ret[0] = params.N;
+				ret[0] = getInput().get(0)._dim1;
 				ret[1] = getExtractedVal(params.C, params.P, params.Q);
 				ret[2] = -1;
 				break;
@@ -250,32 +250,32 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 			case MAX_POOLING_BACKWARD:
 			{
 				ret = new long[3];
-				ret[0] = params.N;
-				ret[1] = getExtractedVal(params.C, params.H, params.W);
+				ret[0] = getInput().get(0)._dim1;
+				ret[1] = getInput().get(0)._dim2;
 				ret[2] = -1;
 				break;
 			}
 			case DIRECT_CONV2D:
 			{
 				ret = new long[3];
-				ret[0] = params.N;
-				ret[1] = getExtractedVal(params.K, params.P, params.Q);
+				ret[0] = getInput().get(0)._dim1;
+				ret[1] = getExtractedVal(getInput().get(1)._dim1, params.P, params.Q);
 				ret[2] = -1;
 				break;
 			}
 			case DIRECT_CONV2D_BACKWARD_FILTER:
 			{
 				ret = new long[3];
-				ret[0] = params.K;
-				ret[1] = getExtractedVal(params.C, params.R, params.S);
+				ret[0] = getInput().get(1)._dim1;
+				ret[1] = getInput().get(1)._dim2;
 				ret[2] = -1;
 				break;
 			}
 			case DIRECT_CONV2D_BACKWARD_DATA:
 			{
 				ret = new long[3];
-				ret[0] = params.N;
-				ret[1] = getExtractedVal(params.C, params.H, params.W);
+				ret[0] = getInput().get(0)._dim1;
+				ret[1] = getInput().get(0)._dim2;
 				ret[2] = -1;
 				break;
 			}
@@ -423,7 +423,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 			case DIRECT_CONV2D:
 			{
 				_dim1 = getInput().get(0)._dim1;
-				_dim2 = getExtractedVal(params.K, params.P, params.Q);
+				_dim2 = getExtractedVal(getInput().get(1)._dim1, params.P, params.Q);
 				_nnz = -1; // cannot infer stats
 				break;
 			}
