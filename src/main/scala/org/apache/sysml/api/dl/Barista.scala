@@ -328,7 +328,7 @@ class BaristaModel(val mloutput: MLResults, val labelMapping: java.util.HashMap[
     
     val predictionScript = dmlScript.toString()
     // Uncomment for debugging
-    // System.out.println(predictionScript)
+    System.out.println(predictionScript)
 	  val script = dml(predictionScript).out("Prob")
 	  if(mloutput != null) {
 	    // fit was called
