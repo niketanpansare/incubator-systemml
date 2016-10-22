@@ -495,11 +495,29 @@ class Barista(BaseSystemMLClassifier):
         self.transferUsingDF = transferUsingDF
         self.setOutputRawPredictionsToFalse = False
     
-    def save(self, outputDir, format='binary', sep='/'):
+    def load(self, outputDir, format='binary', sep='/'):
+        """
+        Load a pretrained model.
+        
+        Parameters
+        ----------
+        outputDir: Directory to load the model from
+        format: optional format (default: 'binary')
+        sep: seperator to use (default: '/')
+        """
         self.model = self.estimator.load(outputDir, format, sep)
         return self
     
     def save(self, outputDir, format='binary', sep='/'):
+        """
+        Save a trained model.
+        
+        Parameters
+        ----------
+        outputDir: Directory to save the model to
+        format: optional format (default: 'binary')
+        sep: seperator to use (default: '/')
+        """
         if self.model != None:
             self.model.save(outputDir, format, sep)
         else:
