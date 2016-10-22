@@ -248,7 +248,6 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		// release inputs/outputs
 		ec.releaseMatrixInput(input1.getName());
 		ec.setMatrixOutput(getOutputVariableName(), outputBlock);
-		ec.getMatrixObject(getOutputVariableName()).refreshMetaData();
 	}
 	
 	@SuppressWarnings("unused")
