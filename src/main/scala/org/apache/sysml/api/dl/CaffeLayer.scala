@@ -254,7 +254,7 @@ class Convolution(val param:LayerParameter, val id:Int, val net:CaffeNetwork) ex
                    else throw new LanguageException("Incorrect kernel parameters")
   def stride_h = if(convParam.hasStrideH) convParam.getStrideH.toString 
                    else if(convParam.getStrideCount > 0)  convParam.getStride(0).toString 
-                   else throw new LanguageException("Incorrect stride parameters:" + convParam.getStrideH + " " + convParam.getStrideList)
+                   else throw new LanguageException("Incorrect stride parameters:" + convParam.getStrideH + " " + convParam.getStrideList + " " + param.getName)
   def stride_w = if(convParam.hasStrideW) convParam.getStrideW.toString 
                    else if(convParam.getStrideCount > 0)  convParam.getStride(0).toString 
                    else throw new LanguageException("Incorrect stride parameters")
