@@ -1174,10 +1174,6 @@ public class LibMatrixCUDA {
 			kernels.launchKernel("binCellOp",
 					ExecutionConfig.getConfigForSimpleMatrixOperations(maxRlen, maxClen), 
 					A, B, C, maxRlen, maxClen, vecStatusA, vecStatusB, getBinaryOp(op.fn));
-
-			System.out.println(JCudaObject.debugString(A, rlenA, clenA));
-			System.out.println(JCudaObject.debugString(B, rlenB, clenB));
-
 		}
 	}
 	
