@@ -84,10 +84,13 @@ def _java2py(sc, obj):
 
 def _py2java(sc, obj):
     """ Convert Python object to Java. """
-    if isinstance(obj, Matrix):
-        obj = obj._java_matrix
-    # TODO: Port this private PySpark function.
-    obj = pyspark.mllib.common._py2java(sc, obj)
+    if isinstance(obj, SUPPORTED_TYPES):
+        obj = convertToMatrixBlock(sc, obj)
+    else:
+        if isinstance(obj, Matrix):
+            obj = obj._java_matrix
+        # TODO: Port this private PySpark function.
+        obj = pyspark.mllib.common._py2java(sc, obj)
     return obj
 
 
