@@ -32,6 +32,7 @@ except ImportError:
     raise ImportError('Unable to import `pyspark`. Hint: Make sure you are running with PySpark.')
 
 from .converters import *
+from .classloader import *
 
 def dml(scriptString):
     """
@@ -238,8 +239,8 @@ class MLContext(object):
         if not isinstance(sc, SparkContext):
             raise ValueError("Expected sc to be a SparkContext, got " % sc)
         self._sc = sc
-        self._ml = sc._jvm.org.apache.sysml.api.mlcontext.MLContext(sc._jsc)
-
+        self._ml = createJavaObject(sc, 'mlcontext')
+        
     def __repr__(self):
         return "MLContext"
 
