@@ -28,6 +28,7 @@ from pyspark.sql import DataFrame
 import sklearn as sk
 
 from ..converters import *
+from ..classloader import *
 
 def assemble(sqlCtx, pdf, inputCols, outputCol):
     tmpDF = sqlCtx.createDataFrame(pdf, list(pdf.columns))

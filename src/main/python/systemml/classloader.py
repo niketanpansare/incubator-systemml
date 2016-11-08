@@ -21,15 +21,24 @@
 
 __all__ = ['createJavaObject']
 
-def _createJavaObject(sc, class):
-    if class == 'mlcontext':
+import os
+
+try:
+    import py4j.java_gateway
+    from py4j.java_gateway import JavaObject
+    from pyspark import SparkContext
+except ImportError:
+    raise ImportError('Unable to import `pyspark`. Hint: Make sure you are running with PySpark.')
+
+def _createJavaObject(sc, obj_type):
+    if obj_type == 'mlcontext':
         return sc._jvm.org.apache.sysml.api.mlcontext.MLContext(sc._jsc)
-    elif class == 'dummy':
+    elif obj_type == 'dummy':
         return sc._jvm.org.apache.sysml.utils.SystemMLLoaderUtils()
     else:
-        raise ValueError('Incorrect usage: supported values: mlcontext')
+        raise ValueError('Incorrect usage: supported values: mlcontext or dummy')
 
-def createJavaObject(sc, class):
+def createJavaObject(sc, obj_type):
     """
     Performs appropriate check if SystemML.jar is available and returns the handle to MLContext object on JVM
     
@@ -37,9 +46,10 @@ def createJavaObject(sc, class):
     ----------
     sc: SparkContext
         SparkContext
+    obj_type: Type of object to create ('mlcontext' or 'dummy')
     """
     try:
-        return _createJavaObject(sc, class)
+        return _createJavaObject(sc, obj_type)
     except (py4j.protocol.Py4JError, TypeError):
         import imp
         jar_file_name = os.path.join(imp.find_module("systemml")[1], "systemml-java", 'SystemML.jar')
@@ -58,6 +68,6 @@ def createJavaObject(sc, class):
         else:
             raise ImportError(err_msg + ' Hint: Download the jar from http://systemml.apache.org/download and ' + hint + 'SystemML.jar')
         try:
-            return _createJavaObject(sc, class)
+            return _createJavaObject(sc, obj_type)
         except (py4j.protocol.Py4JError, TypeError):
             raise ImportError(err_msg + ' Hint: ' + hint + jar_file_name)
