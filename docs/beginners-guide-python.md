@@ -152,7 +152,6 @@ X_test = diabetes_X[-20:]
 y_train = diabetes.target[:-20]
 y_test = diabetes.target[-20:]
 # Train Linear Regression model
-sml.setSparkContext(sc)
 X = sml.matrix(X_train)
 y = sml.matrix(y_train)
 A = X.transpose().dot(X)
@@ -222,7 +221,7 @@ from pyspark.sql import SQLContext
 sqlCtx = SQLContext(sc)
 digits = datasets.load_digits()
 X_digits = digits.data
-y_digits = digits.target + 1
+y_digits = digits.target 
 n_samples = len(X_digits)
 X_train = X_digits[:.9 * n_samples]
 y_train = y_digits[:.9 * n_samples]
@@ -246,18 +245,23 @@ To train the above algorithm on larger dataset, we can load the dataset into Dat
 from sklearn import datasets, neighbors
 from systemml.mllearn import LogisticRegression
 from pyspark.sql import SQLContext
+import pandas as pd
+from sklearn.metrics import accuracy_score
 import systemml as sml
 sqlCtx = SQLContext(sc)
 digits = datasets.load_digits()
 X_digits = digits.data
-y_digits = digits.target + 1
+y_digits = digits.target
 n_samples = len(X_digits)
 # Split the data into training/testing sets and convert to PySpark DataFrame
 df_train = sml.convertToLabeledDF(sqlContext, X_digits[:.9 * n_samples], y_digits[:.9 * n_samples])
-X_test = X_digits[.9 * n_samples:]
-y_test = y_digits[.9 * n_samples:]
+X_test = sqlCtx.createDataFrame(pd.DataFrame(X_digits[.9 * n_samples:]))
 logistic = LogisticRegression(sqlCtx)
-print('LogisticRegression score: %f' % logistic.fit(df_train).score(X_test, y_test))
+logistic.fit(df_train)
+y_predicted = logistic.predict(X_test)
+y_predicted = y_predicted.select('prediction').toPandas().as_matrix().flatten()
+y_test = y_digits[.9 * n_samples:]
+print('LogisticRegression score: %f' % accuracy_score(y_test, y_predicted))
 ```
 
 Output:
