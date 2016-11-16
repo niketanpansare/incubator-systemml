@@ -112,7 +112,7 @@ trait BaseSystemMLClassifier extends BaseSystemMLEstimator {
     val mcXin = new MatrixCharacteristics()
     val Xin = RDDConverterUtils.dataFrameToBinaryBlock(sc, df.asInstanceOf[DataFrame].select("features"), mcXin, false, true)
     val revLabelMapping = new java.util.HashMap[Int, String]
-    val yin = df.select("label").rdd.map(_.toString)
+    val yin = df.select("label")
     val ret = getTrainingScript(isSingleNode)
     val Xbin = new BinaryBlockMatrix(Xin, mcXin)
     val script = ret._1.in(ret._2, Xbin).in(ret._3, yin)
