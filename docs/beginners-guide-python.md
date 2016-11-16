@@ -72,54 +72,41 @@ brew install apache-spark16
 
 #### Step 1: Install SystemML Python package 
 
+We are working towards uploading the python package on pypi. Until then, please use following commands: 
+
 ```bash
-pip install systemml
+git checkout https://github.com/apache/incubator-systemml.git
+cd incubator-systemml
+mvn post-integration-test -P distribution -DskipTests
+pip install src/main/python/dist/systemml-incubating-0.11.0.dev1.tar.gz
 ```
 
-#### Step 2: Download SystemML Java binaries
-
-SystemML Python package downloads the corresponding Java binaries (along with algorithms) and places them 
-into the installed location. To find the location of the downloaded Java binaries, use the following command:
-
+The above commands will install Python package and place the corresponding Java binaries (along with algorithms) into the installed location.
+To find the location of the downloaded Java binaries, use the following command:
 ```bash
 python -c 'import imp; import os; print os.path.join(imp.find_module("systemml")[1], "systemml-java")'
 ```
 
-#### Step 3: (Optional but recommended) Set SYSTEMML_HOME environment variable
-<div class="codetabs">
-<div data-lang="OSX" markdown="1">
-```bash
-SYSTEMML_HOME=`python -c 'import imp; import os; print os.path.join(imp.find_module("systemml")[1], "systemml-java")'`
-# If you are using zsh or ksh or csh, append it to ~/.zshrc or ~/.profile or ~/.login respectively.
-echo '' >> ~/.bashrc
-echo 'export SYSTEMML_HOME='$SYSTEMML_HOME >> ~/.bashrc
-```
-</div>
-<div data-lang="Linux" markdown="1">
-```bash
-SYSTEMML_HOME=`python -c 'import imp; import os; print os.path.join(imp.find_module("systemml")[1], "systemml-java")'`
-# If you are using zsh or ksh or csh, append it to ~/.zshrc or ~/.profile or ~/.login respectively.
-echo '' >> ~/.bashrc
-echo 'export SYSTEMML_HOME='$SYSTEMML_HOME >> ~/.bashrc
-```
-</div>
-</div>
-
 Note: the user is free to either use the prepackaged Java binaries 
 or download them from [SystemML website](http://systemml.apache.org/download.html) 
 or build them from the [source](https://github.com/apache/incubator-systemml).
+
+To uninstall SystemML, please use following command:
+```bash
+pip uninstall systemml-incubating
+```
 
 ### Start Pyspark shell
 
 <div class="codetabs">
 <div data-lang="OSX" markdown="1">
 ```bash
-pyspark --master local[*] --driver-class-path $SYSTEMML_HOME"/SystemML.jar"
+pyspark --master local[*]
 ```
 </div>
 <div data-lang="Linux" markdown="1">
 ```bash
-pyspark --master local[*] --driver-class-path $SYSTEMML_HOME"/SystemML.jar"
+pyspark --master local[*]
 ```
 </div>
 </div>
@@ -131,7 +118,6 @@ To get started with SystemML, let's try few elementary matrix multiplication ope
 ```python
 import systemml as sml
 import numpy as np
-sml.setSparkContext(sc)
 m1 = sml.matrix(np.ones((3,3)) + 2)
 m2 = sml.matrix(np.ones((3,3)) + 3)
 m2 = m1 * (m2 + m1)
