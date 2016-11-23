@@ -60,9 +60,19 @@ public class CPPUtil {
 	
 	private native void execute(int [] encodedBlock, int lenEncodedBlock, int numVarID);
 	
+	// ----------------------------------------------------
+	// TODO:
 	public double[] getDenseBlock(int matrixID) {
 		return null;
 	}
+	public int getNumRows(int matrixID) {
+		return -1;
+	}
+	public int getNumCols(int matrixID) {
+		return -1;
+	}
+	// ----------------------------------------------------
+	
 	public boolean execute(ProgramBlock blk) throws DMLRuntimeException {
 		int [] arr = encode(blk);
 		if(arr == null) {
