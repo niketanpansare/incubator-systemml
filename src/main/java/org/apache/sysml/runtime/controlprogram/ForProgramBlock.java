@@ -114,10 +114,15 @@ public class ForProgramBlock extends ProgramBlock
 		_iterablePredicateVars = iterPredVars;
 	}
 	
+	
 	@Override	
 	public void execute(ExecutionContext ec) 
 		throws DMLRuntimeException
 	{
+		// TODO: Cache CPPUtil to avoid cost of encoding if this block is not recompiled
+		if(new CPPUtil(ec).execute(this)) {
+			return;
+		}
 		// add the iterable predicate variable to the variable set
 		String iterVarName = _iterablePredicateVars[0];
 
@@ -171,7 +176,7 @@ public class ForProgramBlock extends ProgramBlock
 		}
 	}
 
-	protected IntObject executePredicateInstructions( int pos, ArrayList<Instruction> instructions, ExecutionContext ec ) 
+	IntObject executePredicateInstructions( int pos, ArrayList<Instruction> instructions, ExecutionContext ec ) 
 		throws DMLRuntimeException
 	{
 		ScalarObject tmp = null;

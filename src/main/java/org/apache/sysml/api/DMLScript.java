@@ -108,6 +108,7 @@ public class DMLScript
 	
 	public static boolean USE_ACCELERATOR = false;
 	public static boolean FORCE_ACCELERATOR = false;
+	public static boolean ENABLE_CPP = false;
 	
 	// flag that indicates whether or not to suppress any prints to stdout
 	public static boolean _suppressPrint2Stdout = false;

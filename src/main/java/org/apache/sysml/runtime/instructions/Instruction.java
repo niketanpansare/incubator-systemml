@@ -19,9 +19,10 @@
 
 package org.apache.sysml.runtime.instructions;
 
+import java.util.ArrayList;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.sysml.api.monitoring.Location;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.DataIdentifier;
@@ -63,6 +64,8 @@ public abstract class Instruction
 	protected int endLine = -1;  
 	protected int beginCol = -1; 
 	protected int endCol = -1;
+	
+	public ArrayList<Integer> getEncodedCPPParameters() { return null; }
 	
 	public void setType (INSTRUCTION_TYPE tp ) {
 		type = tp;
