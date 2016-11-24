@@ -28,18 +28,18 @@ Though, SystemML will work with other open-source BLAS version, we recommend usi
 1. Download community version of [Intel MKL](https://software.intel.com/sites/campaigns/nest/)
 
 2. Compile systemml shared library
-You can either compile using CMake:
-```bash
-cmake .
-make
-```
-
-Or directly with C++ compiler (i.e. icc or g++):
-```bash
-export MKL_ROOT=/opt/intel/mkl
-export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.111-1.b15.el7_2.x86_64
-g++ -shared -fPIC -o libsystemml.so systemml.cpp -I. -I$MKLROOT/include -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -fopenmp -L$MKL_ROOT/lib/intel64/ -lmkl_rt -lm
-```
+	You can either compile using CMake:
+	```bash
+	cmake .
+	make
+	```
+	
+	Or directly with C++ compiler (i.e. icc or g++):
+	```bash
+	export MKL_ROOT=/opt/intel/mkl
+	export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.111-1.b15.el7_2.x86_64
+	g++ -shared -fPIC -o libsystemml.so systemml.cpp -I. -I$MKLROOT/include -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -fopenmp -L$MKL_ROOT/lib/intel64/ -lmkl_rt -lm
+	```
 
 3. Make sure that MKL and systemml shared library are available to Java. 
 When using in Cluster mode, you will have to ensure that the shared library and dependent libraries are available on every node. 
