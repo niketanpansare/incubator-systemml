@@ -34,6 +34,7 @@ import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.IntObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
+import org.apache.sysml.runtime.matrix.data.LibMatrixNative;
 import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.yarn.DMLAppMasterUtils;
 
@@ -119,8 +120,7 @@ public class ForProgramBlock extends ProgramBlock
 	public void execute(ExecutionContext ec) 
 		throws DMLRuntimeException
 	{
-		// TODO: Cache CPPUtil to avoid cost of encoding if this block is not recompiled
-		if(new CPPUtil(ec).execute(this)) {
+		if(LibMatrixNative.execute(ec, this)) {
 			return;
 		}
 		// add the iterable predicate variable to the variable set

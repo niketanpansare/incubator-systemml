@@ -17,16 +17,34 @@
  * under the License.
  */
  
- #include "SystemML.h"
+ #include "systemml.h"
  #include <vector>
  #include <cstdlib>
  #include <iostream>
  #include <cstdio>
  
+ #ifdef __cplusplus
+	extern "C"
+	{
+	#endif
+	   #include <cblas.h>
+	#ifdef __cplusplus
+	}
+ #endif
+ 
  enum SUPPORTED_BLOCKS { GENERIC, FOR }; 
  
- // gcc -shared -I"C:\\Program Files\\Java\\jdk1.7.0_79\\include" -I"C:\\Program Files\\Java\\jdk1.7.0_79\\include\\win32" -o SystemML.dll SystemML.cpp
- // g++ -shared -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -fPIC -o SystemML.so SystemML.cpp
+/********************************************************************
+1. Download community version of Intel MKL from https://software.intel.com/sites/campaigns/nest/
+
+2. Compile systemml shared library
+export MKL_ROOT=/opt/intel/mkl
+export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.111-1.b15.el7_2.x86_64
+g++ -shared -fPIC -o libsystemml.so systemml.cpp -I. -I$MKLROOT/include -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -fopenmp -L$MKL_ROOT/lib/intel64/ -lmkl_rt -lm
+
+3. Make sure that MKL and systemml shared library are available to Java
+export LD_LIBRARY_PATH=$MKL_ROOT/lib/intel64:.:$LD_LIBRARY_PATH
+ ********************************************************************/
  // -------------------------------------
  // Objects available to the instructions
  double** denseBlocks;
@@ -34,10 +52,7 @@
  int* numCols;
  // -------------------------------------
  
-void matmult(double* m1Ptr, double* m2Ptr, double* retPtr, int m1rlen, int m1clen, int m2clen) {
-	// TODO: With MKL
-}
- 
+
  class Instruction {
  	public:
  	void execute() {
@@ -70,6 +85,24 @@ void matmult(double* m1Ptr, double* m2Ptr, double* retPtr, int m1rlen, int m1cle
  	}
  };
  
+ void matmult(double* m1Ptr, double* m2Ptr, double* retPtr, int m1rlen, int m1clen, int m2clen) {
+	int m = m1rlen;
+	int n = m2clen;
+	int k = m1clen;
+	cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1.0, m1Ptr, k, m2Ptr, n, 0.0, retPtr, n);
+}
+
+JNIEXPORT void JNICALL Java_org_apache_sysml_runtime_controlprogram_CPPUtil_matrixMultDenseDense
+ (JNIEnv * env, jclass cls, jdoubleArray m1, jdoubleArray m2, jdoubleArray ret, jint m1rlen, jint m1clen, jint m2clen) {
+	double* m1Ptr  = env->GetDoubleArrayElements(m1,NULL);
+	double* m2Ptr  = env->GetDoubleArrayElements(m2,NULL);
+	double* retPtr  = env->GetDoubleArrayElements(ret,NULL);
+
+	matmult(m1Ptr, m2Ptr, retPtr, (int) m1rlen, (int) m1clen, (int) m2clen);
+	env->ReleaseDoubleArrayElements(m1,m1Ptr, 0);
+	env->ReleaseDoubleArrayElements(m2,m2Ptr, 0);
+	env->ReleaseDoubleArrayElements(ret,retPtr, 0);
+}
  
  // Setup the denseBlocks, parse encodedBlk and call execute()
  JNIEXPORT void JNICALL Java_org_apache_sysml_runtime_controlprogram_CPPUtil_execute(JNIEnv * env, jobject obj, 

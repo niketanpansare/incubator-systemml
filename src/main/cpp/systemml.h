@@ -26,13 +26,23 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 /*
  * Class:     org_apache_sysml_runtime_controlprogram_CPPUtil
  * Method:    execute
- * Signature: ([II)V
+ * Signature: ([III)V
  */
 JNIEXPORT void JNICALL Java_org_apache_sysml_runtime_controlprogram_CPPUtil_execute
   (JNIEnv *, jobject, jintArray, jint, jint);
+
+/*
+ * Class:     org_apache_sysml_runtime_controlprogram_CPPUtil
+ * Method:    matrixMultDenseDense
+ * Signature: ([D[D[DIII)V
+ */
+JNIEXPORT void JNICALL Java_org_apache_sysml_runtime_controlprogram_CPPUtil_matrixMultDenseDense
+  (JNIEnv *, jclass, jdoubleArray, jdoubleArray, jdoubleArray, jint, jint, jint);
+
 
 #ifdef __cplusplus
 }

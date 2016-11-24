@@ -100,6 +100,7 @@ public class Statistics
 	private static AtomicLong lTotalLix = new AtomicLong(0);
 	private static AtomicLong lTotalLixUIP = new AtomicLong(0);
 	
+	public static AtomicLong numNativeCalls = new AtomicLong(0);
 	
 	private static AtomicLong denseBlockAllocationTime = new AtomicLong(0);
 	private static AtomicLong sparseBlockAllocationTime = new AtomicLong(0);
@@ -621,6 +622,10 @@ public class Statistics
 			if( DMLScript.STATISTICS ) //moved into stats on Shiv's request
 				sb.append("Number of compiled MR Jobs:\t" + getNoOfCompiledMRJobs() + ".\n");
 			sb.append("Number of executed MR Jobs:\t" + getNoOfExecutedMRJobs() + ".\n");	
+		}
+		
+		if(DMLScript.ENABLE_NATIVE_BLAS && DMLScript.STATISTICS ) {
+			sb.append("Number of Native Calls:\t" + numNativeCalls.get() + "\n");
 		}
 		
 		if( DMLScript.USE_ACCELERATOR && DMLScript.STATISTICS ) {

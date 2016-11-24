@@ -54,11 +54,12 @@ public class CPPUtil {
 	static {
 		// Load native library at runtime
 		// SystemML.dll (Windows) or libSystemML.so (Unix)
-		if(DMLScript.ENABLE_CPP)
-			System.loadLibrary("SystemML");
+		if(DMLScript.ENABLE_NATIVE_BLAS || DMLScript.ENABLE_NATIVE_LOOP)
+			System.loadLibrary("systemml");
 	}
 	
 	private native void execute(int [] encodedBlock, int lenEncodedBlock, int numVarID);
+	public static native void matrixMultDenseDense(double [] m1, double [] m2, double [] ret, int m1rlen, int m1clen, int m2clen);
 	
 	// ----------------------------------------------------
 	// TODO:
@@ -112,7 +113,7 @@ public class CPPUtil {
 	}
 	
 	private ArrayList<Integer> encode_pgm_blk(ProgramBlock blk) throws DMLRuntimeException {
-		if(!DMLScript.ENABLE_CPP) return null;
+		if(!DMLScript.ENABLE_NATIVE_LOOP) return null;
 		
 		if(blk instanceof ParForProgramBlock) {
 			return null;

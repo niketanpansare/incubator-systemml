@@ -108,7 +108,10 @@ public class DMLScript
 	
 	public static boolean USE_ACCELERATOR = false;
 	public static boolean FORCE_ACCELERATOR = false;
-	public static boolean ENABLE_CPP = false;
+	
+	public static boolean ENABLE_NATIVE_BLAS = false;
+	public static boolean ENABLE_NATIVE_LOOP = false;
+	public static boolean DISABLE_SPARSE = false;
 	
 	// flag that indicates whether or not to suppress any prints to stdout
 	public static boolean _suppressPrint2Stdout = false;
@@ -134,6 +137,7 @@ public class DMLScript
 			//+ "   -debug: <flags> (optional) run in debug mode\n"
 			//+ "			Optional <flags> that is supported for this mode is optimize=(on|off)\n"
 			+ "   -exec: <mode> (optional) execution mode (hadoop, singlenode, [hybrid], hybrid_spark)\n"
+			+ "   -native: <mode> (optional) execution mode (blas, blas_loop, blas_loop_dense)\n"
 			+ "   -explain: <type> (optional) explain plan (hops, [runtime], recompile_hops, recompile_runtime)\n"
 			+ "   -stats: <count> (optional) monitor and report caching/recompilation statistics, default heavy hitter count is 10\n"
 			+ "   -clean: (optional) cleanup all SystemML working directories (FS, DFS).\n"
@@ -286,6 +290,29 @@ public class DMLScript
 					EXPLAIN = ExplainType.RUNTIME;
 					if( args.length > (i+1) && !args[i+1].startsWith("-") )
 						EXPLAIN = Explain.parseExplainType(args[++i]);
+				}
+				else if( args[i].equalsIgnoreCase("-native") ) { 
+					ENABLE_NATIVE_BLAS = true;
+					ENABLE_NATIVE_LOOP = false;
+					DISABLE_SPARSE = false;
+					if( args.length > (i+1) && !args[i+1].startsWith("-") ) {
+						String mode = args[++i];
+						if(mode.toLowerCase().equals("blas")) {
+							ENABLE_NATIVE_BLAS = true;
+							ENABLE_NATIVE_LOOP = false;
+							DISABLE_SPARSE = false;
+						}
+						else if(mode.toLowerCase().equals("blas_loop")) {
+							ENABLE_NATIVE_BLAS = true;
+							ENABLE_NATIVE_LOOP = true;
+							DISABLE_SPARSE = false;
+						}
+						else if(mode.toLowerCase().equals("blas_loop_dense")) {
+							ENABLE_NATIVE_BLAS = true;
+							ENABLE_NATIVE_LOOP = true;
+							DISABLE_SPARSE = true;
+						}
+					}
 				}
 				else if( args[i].equalsIgnoreCase("-stats") ) {
 					STATISTICS = true;
