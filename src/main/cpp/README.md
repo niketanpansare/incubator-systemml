@@ -25,7 +25,9 @@ This directory contains the custom kernels used for GPU backend and also C++ stu
 
 Though, SystemML will work with other open-source BLAS version, we recommend using Intel MKL.
 
-1. Download community version of [Intel MKL](https://software.intel.com/sites/campaigns/nest/)
+1. Download and install community version of [Intel MKL](https://software.intel.com/sites/campaigns/nest/). 
+Intel requires you to first register your email address and then sends the download link to your email address
+with license key. 
 
 2. Compile systemml shared library
 
@@ -51,6 +53,7 @@ Though, SystemML will work with other open-source BLAS version, we recommend usi
 
 ## Run SystemML in native mode
 
-```bash
--native: <mode> (optional) execution mode (blas, blas_dense, blas_loop, blas_loop_dense)
-```
+	Provide `-native` flag to SystemML when invoked via commandline.
+	```bash
+	-native: <mode> (optional) execution mode (blas, blas_dense, blas_loop, blas_loop_dense)
+	```
