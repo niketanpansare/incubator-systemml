@@ -137,7 +137,7 @@ public class DMLScript
 			//+ "   -debug: <flags> (optional) run in debug mode\n"
 			//+ "			Optional <flags> that is supported for this mode is optimize=(on|off)\n"
 			+ "   -exec: <mode> (optional) execution mode (hadoop, singlenode, [hybrid], hybrid_spark)\n"
-			+ "   -native: <mode> (optional) execution mode (blas, blas_loop, blas_loop_dense)\n"
+			+ "   -native: <mode> (optional) execution mode (blas, blas_dense, blas_loop, blas_loop_dense)\n"
 			+ "   -explain: <type> (optional) explain plan (hops, [runtime], recompile_hops, recompile_runtime)\n"
 			+ "   -stats: <count> (optional) monitor and report caching/recompilation statistics, default heavy hitter count is 10\n"
 			+ "   -clean: (optional) cleanup all SystemML working directories (FS, DFS).\n"
@@ -310,6 +310,11 @@ public class DMLScript
 						else if(mode.toLowerCase().equals("blas_loop_dense")) {
 							ENABLE_NATIVE_BLAS = true;
 							ENABLE_NATIVE_LOOP = true;
+							DISABLE_SPARSE = true;
+						}
+						else if(mode.toLowerCase().equals("blas_dense")) {
+							ENABLE_NATIVE_BLAS = true;
+							ENABLE_NATIVE_LOOP = false;
 							DISABLE_SPARSE = true;
 						}
 					}
