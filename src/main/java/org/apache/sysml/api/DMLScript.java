@@ -76,6 +76,7 @@ import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDHandler;
 import org.apache.sysml.runtime.matrix.CleanupMR;
+import org.apache.sysml.runtime.matrix.data.LibMatrixNative;
 import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 import org.apache.sysml.runtime.util.LocalFileUtils;
@@ -292,6 +293,7 @@ public class DMLScript
 						EXPLAIN = Explain.parseExplainType(args[++i]);
 				}
 				else if( args[i].equalsIgnoreCase("-native") ) { 
+					LibMatrixNative.loadNativeLibrary();
 					ENABLE_NATIVE_BLAS = true;
 					ENABLE_NATIVE_LOOP = false;
 					DISABLE_SPARSE = false;

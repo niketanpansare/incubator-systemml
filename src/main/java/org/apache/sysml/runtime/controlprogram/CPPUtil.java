@@ -27,6 +27,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.cp.IntObject;
+import org.apache.sysml.runtime.matrix.data.LibMatrixNative;
 
 import java.util.HashMap;
 
@@ -52,10 +53,11 @@ public class CPPUtil {
 	}
 	
 	static {
-		// Load native library at runtime
-		// SystemML.dll (Windows) or libSystemML.so (Unix)
-		if(DMLScript.ENABLE_NATIVE_BLAS || DMLScript.ENABLE_NATIVE_LOOP)
-			System.loadLibrary("systemml");
+		if(LibMatrixNative.loadingThread != null) {
+			try {
+				LibMatrixNative.loadingThread.join();
+			} catch (InterruptedException e) {}
+		}
 	}
 	
 	private native void execute(int [] encodedBlock, int lenEncodedBlock, int numVarID);

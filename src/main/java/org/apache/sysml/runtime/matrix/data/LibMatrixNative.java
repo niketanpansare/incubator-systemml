@@ -27,6 +27,25 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.utils.Statistics;
 
 public class LibMatrixNative {
+	
+	public static Thread loadingThread = null;
+	
+	/**
+	 * Asynchronous loading of SystemML native library
+	 */
+	public static synchronized void loadNativeLibrary() {
+		if(loadingThread != null) {
+			loadingThread = new Thread() {
+			    public void run() {
+			    	// Load native library at runtime
+					// SystemML.dll (Windows) or libSystemML.so (Unix)
+			    	System.loadLibrary("systemml");
+			    }
+			};
+			loadingThread.start();
+		}
+	}
+	
 	public static void matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret)  throws DMLRuntimeException {
 		//pre-processing: output allocation
 		double [] retBlk = ret.getDenseBlock();
@@ -47,6 +66,7 @@ public class LibMatrixNative {
 	}
 	
 	/**
+	 * Push down program block natively
 	 * 
 	 * @param ec
 	 * @param blk
