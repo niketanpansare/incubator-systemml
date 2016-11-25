@@ -37,7 +37,7 @@ with license key.
 		make
 		```
 		
-	* On Linux with g++ compiler and Intel MKL:
+	* Or on Linux with g++ compiler and Intel MKL:
 	
 		```bash
 		export MKLROOT=/opt/intel/mkl
@@ -45,7 +45,7 @@ with license key.
 		g++ -shared -fPIC -o libsystemml.so systemml.cpp -I. -I$MKLROOT/include -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -fopenmp -L$MKLROOT/lib/intel64/ -lmkl_rt -lm
 		```
 	
-	* On Windows (using 32-bit JVM) with cl.exe compiler and Intel MKL:
+	* Or on Windows (using 32-bit JVM) with cl.exe compiler and Intel MKL:
 	
 		* Change `cblas.h` to `mkl.h`.
 		
