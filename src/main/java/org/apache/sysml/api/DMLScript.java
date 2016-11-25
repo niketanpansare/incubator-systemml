@@ -109,7 +109,7 @@ public class DMLScript
 	public static boolean USE_ACCELERATOR = false;
 	public static boolean FORCE_ACCELERATOR = false;
 	
-	public static boolean ENABLE_NATIVE_BLAS = false;
+	public static boolean ENABLE_NATIVE_BLAS = true;
 	public static boolean ENABLE_NATIVE_LOOP = false;
 	public static boolean DISABLE_SPARSE = false;
 	

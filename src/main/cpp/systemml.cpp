@@ -27,6 +27,7 @@
 extern "C" {
 #endif
 #include <cblas.h>
+// #include <mkl.h>
 #ifdef __cplusplus
 }
 #endif
@@ -112,7 +113,8 @@ JNIEXPORT void JNICALL Java_org_apache_sysml_runtime_controlprogram_CPPUtil_exec
     numRows = new int[numVarID];
     numCols = new int[numVarID];
 
-    int* encodedBlk = reinterpret_cast<int*>(env->GetIntArrayElements(jencodedBlk, NULL));
+    jint* encodedBlk1 = env->GetIntArrayElements(jencodedBlk, NULL);
+    int* encodedBlk = reinterpret_cast<int*>(encodedBlk1);
 
 #pragma omp parallel for
     for (int i = 0; i < numVarID; i++) {
@@ -130,7 +132,7 @@ JNIEXPORT void JNICALL Java_org_apache_sysml_runtime_controlprogram_CPPUtil_exec
         numCols[i] = (int)env->CallIntMethod(obj, getNumColsMethodID, (jint)i);
     }
 
-    env->ReleaseIntArrayElements(jencodedBlk, encodedBlk, 0);
+    env->ReleaseIntArrayElements(jencodedBlk, encodedBlk1, 0);
 #pragma omp parallel for
     for (int i = 0; i < numVarID; i++) {
         // Release dense blocks

@@ -39,14 +39,36 @@ with license key.
 	
 	Or directly with C++ compiler (i.e. icc or g++):
 	```bash
-	export MKL_ROOT=/opt/intel/mkl
+	export MKLROOT=/opt/intel/mkl
 	export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.111-1.b15.el7_2.x86_64
-	g++ -shared -fPIC -o libsystemml.so systemml.cpp -I. -I$MKLROOT/include -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -fopenmp -L$MKL_ROOT/lib/intel64/ -lmkl_rt -lm
+	g++ -shared -fPIC -o libsystemml.so systemml.cpp -I. -I$MKLROOT/include -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -fopenmp -L$MKLROOT/lib/intel64/ -lmkl_rt -lm
 	```
+	
+	On Windows (using 32-bit JVM),
+	
+	Change `cblas.h` to `mkl.h`.
+	Ensure that standard include files are accessible:
+	
+	```bash
+	"C:\\Program Files (x86)\\Microsoft Visual Studio 12.0\\VC\\vcvarsall.bat"
+	"%MKLROOT%"\bin\mklvars.bat ia32
+	```
+	
+	Then compile systemml using cl.exe. This assumes that you have set MKLROOT (likely in `C:\Program Files (x86)\IntelSWTools\compilers_and_libraries_2017\windows\mkl`)
+	and JAVA_HOME environment variable.
+	
+	```bash
+	cl systemml.cpp -I. -I"%MKLROOT%"\include -I"%JAVA_HOME%"\include -I"%JAVA_HOME%"\include\win32 -Fesystemml.dll -MD -LD "%MKLROOT%"\lib\ia32_win\mkl_intel_c_dll.lib "%MKLROOT%"\lib\ia32_win\mkl_intel_thread_dll.lib "%MKLROOT%"\lib\ia32_win\mkl_core_dll.lib 
+	```
+	
+	You may have to copy the dll `C:\Program Files (x86)\Common Files\Intel\Shared Libraries\redist\ia32_win\compiler\libiomp5md.dll` to your path.
+	
+	
 
 3. Make sure that MKL and systemml shared library are available to Java.
  
 	When using in Cluster mode, you will have to ensure that the shared library and dependent libraries are available on every node. 
+	
 	```bash
 	export LD_LIBRARY_PATH=$MKL_ROOT/lib/intel64:.:$LD_LIBRARY_PATH
 	```
