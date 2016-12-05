@@ -110,6 +110,7 @@ public class ForProgramBlock extends ProgramBlock
 		_iterablePredicateVars = iterPredVars;
 	}
 	
+	
 	@Override	
 	public void execute(ExecutionContext ec) 
 		throws DMLRuntimeException
@@ -167,7 +168,7 @@ public class ForProgramBlock extends ProgramBlock
 		}
 	}
 
-	protected IntObject executePredicateInstructions( int pos, ArrayList<Instruction> instructions, ExecutionContext ec ) 
+	IntObject executePredicateInstructions( int pos, ArrayList<Instruction> instructions, ExecutionContext ec ) 
 		throws DMLRuntimeException
 	{
 		ScalarObject tmp = null;

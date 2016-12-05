@@ -77,6 +77,7 @@ import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDHandler;
 import org.apache.sysml.runtime.matrix.CleanupMR;
+import org.apache.sysml.runtime.matrix.data.LibMatrixNative;
 import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 import org.apache.sysml.runtime.util.LocalFileUtils;
@@ -129,6 +130,7 @@ public class DMLScript
 	public static boolean DISABLE_SPARSE = false;
 	public static boolean DISABLE_CACHING = false;
 	// ------------------------------------------------------------------------
+	public static boolean ENABLE_NATIVE_BLAS = false;
 	
 	// flag that indicates whether or not to suppress any prints to stdout
 	public static boolean _suppressPrint2Stdout = false;
@@ -154,6 +156,7 @@ public class DMLScript
 			//+ "   -debug: <flags> (optional) run in debug mode\n"
 			//+ "			Optional <flags> that is supported for this mode is optimize=(on|off)\n"
 			+ "   -exec: <mode> (optional) execution mode (hadoop, singlenode, [hybrid], hybrid_spark)\n"
+			+ "   -native: invoke SystemML's native library whenever possible \n"
 			+ "   -explain: <type> (optional) explain plan (hops, [runtime], recompile_hops, recompile_runtime)\n"
 			+ "   -stats: <count> (optional) monitor and report caching/recompilation statistics, default heavy hitter count is 10\n"
 			+ "   -clean: (optional) cleanup all SystemML working directories (FS, DFS).\n"
@@ -269,7 +272,8 @@ public class DMLScript
 		
 		//parse arguments and set execution properties
 		RUNTIME_PLATFORM oldrtplatform = rtplatform; //keep old rtplatform
-		ExplainType oldexplain = EXPLAIN; //keep old explain
+		ExplainType oldexplain = EXPLAIN; //keep old explain	
+		boolean oldEnableNativeBlas = ENABLE_NATIVE_BLAS;
 		
 		// Reset global flags to avoid errors in test suite
 		ENABLE_DEBUG_MODE = false;
@@ -287,6 +291,10 @@ public class DMLScript
 					EXPLAIN = ExplainType.RUNTIME;
 					if( args.length > (i+1) && !args[i+1].startsWith("-") )
 						EXPLAIN = Explain.parseExplainType(args[++i]);
+				}
+				else if( args[i].equalsIgnoreCase("-native") ) { 
+					ENABLE_NATIVE_BLAS = true;
+					LibMatrixNative.initialize();
 				}
 				else if( args[i].equalsIgnoreCase("-stats") ) {
 					STATISTICS = true;
@@ -378,6 +386,7 @@ public class DMLScript
 			//reset runtime platform and visualize flag
 			rtplatform = oldrtplatform;
 			EXPLAIN = oldexplain;
+			ENABLE_NATIVE_BLAS = oldEnableNativeBlas;
 		}
 		
 		return true;

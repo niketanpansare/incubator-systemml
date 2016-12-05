@@ -312,6 +312,11 @@ public class LibMatrixDNN {
 			filter.denseToSparse();
 		}
 		
+		if(DMLScript.ENABLE_NATIVE_BLAS && !input.isInSparseFormat() && !filter.isInSparseFormat()) {
+			LibMatrixNative.conv2d(input, filter, outputBlock, params);
+			return;
+		}
+		
 		runConvTask(TaskType.LoopedIm2ColConv2d, params);
 	}
 	

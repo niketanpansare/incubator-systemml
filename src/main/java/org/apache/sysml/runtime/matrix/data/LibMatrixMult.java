@@ -30,6 +30,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.apache.commons.math3.util.FastMath;
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.lops.MapMultChain.ChainType;
 import org.apache.sysml.lops.WeightedCrossEntropy.WCeMMType;
 import org.apache.sysml.lops.WeightedDivMM.WDivMMType;
@@ -133,6 +134,11 @@ public class LibMatrixMult
 			return;
 		}
 		
+		if(DMLScript.ENABLE_NATIVE_BLAS && !m1.isInSparseFormat() && !m2.isInSparseFormat()) {
+			LibMatrixNative.matrixMult(m1, m2, ret);
+			return;
+		}
+		
 		//Timing time = new Timing(true);
 		
 		//pre-processing: output allocation
@@ -186,6 +192,11 @@ public class LibMatrixMult
 		//check inputs / outputs
 		if( m1.isEmptyBlock(false) || m2.isEmptyBlock(false) ) {
 			ret.examSparsity(); //turn empty dense into sparse
+			return;
+		}
+		
+		if(DMLScript.ENABLE_NATIVE_BLAS && !m1.isInSparseFormat() && !m2.isInSparseFormat()) {
+			LibMatrixNative.matrixMult(m1, m2, ret);
 			return;
 		}
 		

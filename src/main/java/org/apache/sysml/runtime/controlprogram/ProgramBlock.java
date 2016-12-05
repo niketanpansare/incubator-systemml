@@ -151,6 +151,7 @@ public class ProgramBlock
 				
 				if( MLContextProxy.isActive() )
 					tmp = MLContextProxy.performCleanupAfterRecompilation(tmp);
+				
 			}
 			if( DMLScript.STATISTICS ){
 				long t1 = System.nanoTime();
