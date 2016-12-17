@@ -44,11 +44,13 @@ public class BuildNativeLibrary {
 			try {
 				System.loadLibrary("mkl_rt");
 				String mklRoot = System.getenv("MKLROOT");
-				System.out.println("To build native library, MKLROOT needs to be set. Enter MKLROOT path or press enter to skip:");
-				mklRoot = System.console().readLine().trim();
-				if(mklRoot.equals("")) {
-					System.out.println("Skipping the build of native systemml library.");
-					return;
+				if(mklRoot == null) {
+					System.out.println("To build native library, MKLROOT needs to be set. Enter MKLROOT path or press enter to skip:");
+					mklRoot = System.console().readLine().trim();
+					if(mklRoot.equals("")) {
+						System.out.println("Skipping the build of native systemml library.");
+						return;
+					}
 				}
 				boolean is64bit = System.getProperty("sun.arch.data.model").contains("64");
 				String OS = System.getProperty("os.name", "generic").toLowerCase();
