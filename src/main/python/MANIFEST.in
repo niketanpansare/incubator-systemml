@@ -26,3 +26,4 @@ recursive-include systemml/systemml-java *
 recursive-include systemml/systemml-java/scripts/algorithms *
 recursive-include systemml/systemml-java/scripts/datagen *
 recursive-include systemml/systemml-java/scripts/utils *
+recursive-include systemml/systemml-cpp *

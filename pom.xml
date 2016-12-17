@@ -431,6 +431,9 @@
 									<directory>src/main/python/systemml/systemml-java</directory>
 								</fileset>
 								<fileset>
+									<directory>src/main/python/systemml/systemml-cpp</directory>
+								</fileset>
+								<fileset>
 									<directory>src/main/python/systemml/__pycache__</directory>
 								</fileset>
 								<fileset>
