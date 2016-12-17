@@ -92,7 +92,7 @@ public class BuildNativeLibrary {
 			if(cmd != null) {
 				System.out.println("To build systemml native library, executing command:\n" + cmd + "\n");
 				
-				(new ProcessBuilder().command(cmd).inheritIO().start()).waitFor();
+				(new ProcessBuilder().command(cmd.split(" ")).inheritIO().start()).waitFor();
 			}
 			return;
 		}
