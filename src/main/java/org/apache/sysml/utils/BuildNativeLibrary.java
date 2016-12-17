@@ -19,21 +19,20 @@
 
 package org.apache.sysml.utils;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
-
 import org.apache.sysml.api.DMLScript;
 
 public class BuildNativeLibrary {
 	// Used to compile systemml.cpp via pip, run following command:
 	// cd `python -c 'import imp; import os; print imp.find_module("systemml")[1]'`
-	// java -classpath systemml-java/systemml*.jar org.apache.sysml.utils.BuildNativeLibrary
+	// java -classpath systemml-java/systemml*.jar org.apache.sysml.utils.BuildNativeLibrary [pip-directory]
 	// This is useful as it checks for ENABLE_NATIVE_BLAS as well
 	public static void main(String [] args) throws InterruptedException, IOException {
 		if(DMLScript.ENABLE_NATIVE_BLAS) {
-			String pipDirectory = System.getProperty("user.dir"); // getOutput("python -c 'import imp; import os; print imp.find_module(\"systemml\")[1]'");
+			String pipDirectory = System.getProperty("user.dir"); 
+			if(args.length >= 1)
+				pipDirectory = args[0];
 			String cppDirectory = pipDirectory + File.separator + "systemml-cpp";
 			String cppFile = pipDirectory + File.separator + "systemml-cpp" + File.separator + "systemml.cpp";
 			
@@ -100,15 +99,5 @@ public class BuildNativeLibrary {
 		else {
 			System.out.println("Native BLAS is disabled in current version. Skipping the build of native systemml library.");
 		}
-	}
-	
-	private static String getOutput(String cmd) throws IOException {
-		Process p = new ProcessBuilder().command(cmd).start();
-		BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-		String line = null; String ret = "";
-		while ( (line = reader.readLine()) != null) {
-		   ret += line + "\n";
-		}
-		return ret;
 	}
 }
