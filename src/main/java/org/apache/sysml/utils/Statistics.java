@@ -613,7 +613,7 @@ public class Statistics
 			sb.append("Number of executed MR Jobs:\t" + getNoOfExecutedMRJobs() + ".\n");	
 		}
 		
-		if(DMLScript.ENABLE_NATIVE_BLAS && DMLScript.STATISTICS ) {
+		if(DMLScript.isNativeEnabled() && DMLScript.STATISTICS ) {
 			sb.append("Number of Native Calls:\t" + numNativeCalls.get() + "\n");
 		}
 		

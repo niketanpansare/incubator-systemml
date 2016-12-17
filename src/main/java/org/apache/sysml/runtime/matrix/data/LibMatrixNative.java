@@ -19,18 +19,12 @@
 
 package org.apache.sysml.runtime.matrix.data;
 
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.CPPUtil;
 import org.apache.sysml.utils.Statistics;
 
 public class LibMatrixNative {
 	
-	public static void initialize() {
-		if(DMLScript.ENABLE_NATIVE_BLAS && !CPPUtil.libraryLoaded) {
-			CPPUtil.loadSystemMLLibrary();
-		}
-	}
 	
 	public static void matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret)  throws DMLRuntimeException {
 		//pre-processing: output allocation
@@ -52,7 +46,7 @@ public class LibMatrixNative {
 	}
 	
 	public static void conv2d(MatrixBlock input, MatrixBlock filter, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
-		if(DMLScript.ENABLE_NATIVE_BLAS && !input.isInSparseFormat() && !filter.isInSparseFormat()) {
+		if(!input.isInSparseFormat() && !filter.isInSparseFormat()) {
 			Statistics.numNativeCalls.addAndGet(1);
 			CPPUtil.conv2dDense(input.denseBlock, filter.denseBlock, outputBlock.denseBlock, 
 					params.N, params.C, params.H, params.W, params.K, params.R, params.S, params.stride_h, params.stride_w, params.pad_h, 

@@ -312,7 +312,7 @@ public class LibMatrixDNN {
 			filter.denseToSparse();
 		}
 		
-		if(DMLScript.ENABLE_NATIVE_BLAS && !input.isInSparseFormat() && !filter.isInSparseFormat()) {
+		if(DMLScript.isNativeEnabled() && !input.isInSparseFormat() && !filter.isInSparseFormat()) {
 			LibMatrixNative.conv2d(input, filter, outputBlock, params);
 			return;
 		}

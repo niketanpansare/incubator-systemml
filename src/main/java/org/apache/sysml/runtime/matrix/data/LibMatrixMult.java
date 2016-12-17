@@ -134,7 +134,7 @@ public class LibMatrixMult
 			return;
 		}
 		
-		if(DMLScript.ENABLE_NATIVE_BLAS && !m1.isInSparseFormat() && !m2.isInSparseFormat()) {
+		if(DMLScript.isNativeEnabled() && !m1.isInSparseFormat() && !m2.isInSparseFormat()) {
 			LibMatrixNative.matrixMult(m1, m2, ret);
 			return;
 		}
@@ -195,7 +195,7 @@ public class LibMatrixMult
 			return;
 		}
 		
-		if(DMLScript.ENABLE_NATIVE_BLAS && !m1.isInSparseFormat() && !m2.isInSparseFormat()) {
+		if(DMLScript.isNativeEnabled() && !m1.isInSparseFormat() && !m2.isInSparseFormat()) {
 			LibMatrixNative.matrixMult(m1, m2, ret);
 			return;
 		}

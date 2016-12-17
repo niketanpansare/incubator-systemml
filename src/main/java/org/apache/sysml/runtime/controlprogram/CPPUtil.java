@@ -34,23 +34,22 @@ import org.apache.sysml.api.DMLScript;
  */
 public class CPPUtil {
 	
-	public static boolean libraryLoaded = false;
+	private static boolean libraryLoaded = false;
 	static {
-		loadSystemMLLibrary();
-	}
-	
-	public static void loadSystemMLLibrary() {
 		// Load native library at runtime
 		// SystemML.dll (Windows) or libSystemML.so (Unix)
-		if(DMLScript.ENABLE_NATIVE_BLAS && !libraryLoaded) {
-			synchronized(CPPUtil.class) {
-				if(!libraryLoaded) {
-					System.loadLibrary("systemml");
-					libraryLoaded = true;
-				}
+		if(DMLScript.ENABLE_NATIVE_BLAS) {
+			try {
+				System.loadLibrary("systemml");
+				libraryLoaded = true;
 			}
+			catch(Exception e) {}
 		}
 	}
+	public static boolean isLibraryLoaded() {
+		return libraryLoaded;
+	}
+	
 	
 	public static native void matrixMultDenseDense(double [] m1, double [] m2, double [] ret, int m1rlen, int m1clen, int m2clen);
 	public static native void conv2dDense(double [] input, double [] filter, double [] ret, int N, int C, int H, int W, 

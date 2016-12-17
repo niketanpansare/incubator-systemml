@@ -19,9 +19,9 @@
 
 // *****************************************************************
 // We support Intel MKL (recommended) or OpenBLAS.
-// Later, try using _WIN32 and following methods: LoadLibrary or dlopen and GetProcAddress or dlsym.
-#define USE_INTEL_MKL
-// #define USE_OPEN_BLAS
+#ifndef USE_OPEN_BLAS
+	#define USE_INTEL_MKL
+#endif
 // *****************************************************************
 
 #include "systemml.h"
