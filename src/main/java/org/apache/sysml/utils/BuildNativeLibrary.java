@@ -28,12 +28,12 @@ import org.apache.sysml.api.DMLScript;
 
 public class BuildNativeLibrary {
 	// Used to compile systemml.cpp via pip, run following command:
-	// cd `python -c 'import imp; import os; print os.path.join(imp.find_module("systemml")[1], "systemml-java")'`
-	// java -classpath systemml*.jar org.apache.sysml.utils.BuildNativeLibrary
+	// cd `python -c 'import imp; import os; print imp.find_module("systemml")[1]'`
+	// java -classpath systemml-java/systemml*.jar org.apache.sysml.utils.BuildNativeLibrary
 	// This is useful as it checks for ENABLE_NATIVE_BLAS as well
 	public static void main(String [] args) throws InterruptedException, IOException {
 		if(DMLScript.ENABLE_NATIVE_BLAS) {
-			String pipDirectory = getOutput("python -c 'import imp; import os; print imp.find_module(\"systemml\")[1]'");
+			String pipDirectory = System.getProperty("user.dir"); // getOutput("python -c 'import imp; import os; print imp.find_module(\"systemml\")[1]'");
 			String cppDirectory = pipDirectory + File.separator + "systemml-cpp";
 			String cppFile = pipDirectory + File.separator + "systemml-cpp" + File.separator + "systemml.cpp";
 			
