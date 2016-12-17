@@ -19,16 +19,24 @@
 
 package org.apache.sysml.utils;
 
+import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 
 import org.apache.sysml.api.DMLScript;
 
 public class BuildNativeLibrary {
 	// Used to compile systemml.cpp via pip, run following command:
-	// java -classpath SystemML.jar org.apache.sysml.utils.BuildNativeLibrary
+	// cd `python -c 'import imp; import os; print os.path.join(imp.find_module("systemml")[1], "systemml-java")'`
+	// java -classpath systemml*.jar org.apache.sysml.utils.BuildNativeLibrary
 	// This is useful as it checks for ENABLE_NATIVE_BLAS as well
 	public static void main(String [] args) throws InterruptedException, IOException {
 		if(DMLScript.ENABLE_NATIVE_BLAS) {
+			String pipDirectory = getOutput("python -c 'import imp; import os; print imp.find_module(\"systemml\")[1]'");
+			String cppDirectory = pipDirectory + File.separator + "systemml-cpp";
+			String cppFile = pipDirectory + File.separator + "systemml-cpp" + File.separator + "systemml.cpp";
+			
 			String javaHome = System.getenv("JAVA_HOME");
 			if(javaHome == null) {
 				System.out.println("To build native library, JAVA_HOME needs to be set. Enter JAVA_HOME path or press enter to skip:");
@@ -64,11 +72,11 @@ public class BuildNativeLibrary {
 					String bitRelatedFlags = " -m32 -L" + mklRoot + "/lib/ia32 ";
 					if(is64bit)
 						bitRelatedFlags = " -m64 -L" + mklRoot + "/lib/intel64 ";
-					String includeHeaders = " -Isystemml/systemml-cpp/ " + "-I" + javaHome + "/include -I" + javaHome + "/include/linux " 
+					String includeHeaders = " -I" + cppDirectory + " -I" + javaHome + "/include -I" + javaHome + "/include/linux " 
 						+ "-I" + mklRoot + "/include ";
 					String otherFlags = " -O3 " + bitRelatedFlags;
 					String linkerFlags = " -Wl,--no-as-needed -lmkl_rt -lpthread -lm -ldl ";
-					cmd = "g++ -shared -fPIC -o libsystemml.so systemml/systemml-cpp/systemml.cpp " + includeHeaders + otherFlags + linkerFlags;
+					cmd = "g++ -shared -fPIC -o libsystemml.so " + cppFile + includeHeaders + otherFlags + linkerFlags;
 				}
 				else {
 					System.out.println("Unsupported OS. Skipping the build of native systemml library.");
@@ -83,7 +91,8 @@ public class BuildNativeLibrary {
 			}
 			
 			if(cmd != null) {
-				System.out.println("To build systemml native library, executing command:" + cmd);
+				System.out.println("To build systemml native library, executing command:\n" + cmd + "\n");
+				
 				(new ProcessBuilder().command(cmd).inheritIO().start()).waitFor();
 			}
 			return;
@@ -91,5 +100,15 @@ public class BuildNativeLibrary {
 		else {
 			System.out.println("Native BLAS is disabled in current version. Skipping the build of native systemml library.");
 		}
+	}
+	
+	private static String getOutput(String cmd) throws IOException {
+		Process p = new ProcessBuilder().command(cmd).start();
+		BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+		String line = null; String ret = "";
+		while ( (line = reader.readLine()) != null) {
+		   ret += line + "\n";
+		}
+		return ret;
 	}
 }
