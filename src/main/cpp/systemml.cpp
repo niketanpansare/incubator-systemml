@@ -17,6 +17,13 @@
  * under the License.
  */
 
+// *****************************************************************
+// We support Intel MKL (recommended) or OpenBLAS.
+// Later, try using _WIN32 and following methods: LoadLibrary or dlopen and GetProcAddress or dlsym.
+#define USE_INTEL_MKL
+// #define USE_OPEN_BLAS
+// *****************************************************************
+
 #include "systemml.h"
 #include <vector>
 #include <cstdlib>
@@ -29,9 +36,18 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-// #include <cblas.h>
+
+#ifdef USE_OPEN_BLAS
+#include <cblas.h>
+extern int openblas_get_num_threads(void);
+extern void openblas_set_num_threads(int num_threads);
+#endif
+
+#ifdef USE_INTEL_MKL
 #include <mkl.h>
 #include <mkl_service.h>
+#endif
+
 #ifdef __cplusplus
 }
 #endif
@@ -44,22 +60,36 @@ extern "C" {
   env->ReleasePrimitiveArrayCritical(input, inputPtr, 0)
 // env->ReleaseDoubleArrayElements(input, inputPtr, 0)
 
-// ------------------------------------------------------------
-// TODO: Generalize this logic to support non-MKL BLAS.
 int NUM_THREADS = -1;
 void setSequentialBLAS() {
+#ifdef USE_INTEL_MKL
 	if(NUM_THREADS == -1) {
 		NUM_THREADS = mkl_get_max_threads();
 	}
 	mkl_set_num_threads(1);
+#endif
+
+#ifdef USE_OPEN_BLAS
+	if(NUM_THREADS == -1) {
+		NUM_THREADS = openblas_get_num_threads();
+	}
+	openblas_set_num_threads(1);
+#endif
 }
 void setMultiThreadedBLAS() {
+#ifdef USE_INTEL_MKL
 	if(NUM_THREADS == -1) {
 		NUM_THREADS = mkl_get_max_threads();
 	}
 	mkl_set_num_threads(NUM_THREADS);
+#endif
+#ifdef USE_OPEN_BLAS
+	if(NUM_THREADS == -1) {
+		NUM_THREADS = openblas_get_num_threads();
+	}
+	openblas_set_num_threads(NUM_THREADS);
+#endif
 }
-// ------------------------------------------------------------
 
 // Multiplies two matrices m1Ptr and m2Ptr in row-major format of shape
 // (m1rlen, m1clen) and (m1clen, m2clen)
