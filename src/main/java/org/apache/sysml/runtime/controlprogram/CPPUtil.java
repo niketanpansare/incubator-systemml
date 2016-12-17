@@ -19,6 +19,8 @@
 
 package org.apache.sysml.runtime.controlprogram;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
 
 
@@ -34,6 +36,7 @@ import org.apache.sysml.api.DMLScript;
  */
 public class CPPUtil {
 	
+	private static final Log LOG = LogFactory.getLog(CPPUtil.class.getName());
 	private static boolean libraryLoaded = false;
 	static {
 		// Load native library at runtime
@@ -42,8 +45,9 @@ public class CPPUtil {
 			try {
 				System.loadLibrary("systemml");
 				libraryLoaded = true;
+				LOG.debug("Successfully loaded native library");
 			}
-			catch(Exception e) {}
+			catch (UnsatisfiedLinkError e) { }
 		}
 	}
 	public static boolean isLibraryLoaded() {
