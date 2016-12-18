@@ -121,7 +121,7 @@ def get_linker_flags(blas_root):
 
 def get_other_flags():
     if my_os == 'linux':
-        return ' -fopenmp -O3 -shared -fPIC'
+        return ' -fopenmp -O3 -shared -fPIC -mavx -mfma'
     elif my_os == 'win32':
         return ' /openmp'
         
