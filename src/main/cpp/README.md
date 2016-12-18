@@ -86,23 +86,23 @@ By default, if the user doesnot specify `USE_BLAS`, SystemML compiles using Inte
 Also, if the user doesnot specify `COMPILE_NATIVE=1`, then during pip installation we output the command the user can use to 
 compile SystemML library post-installation. Here are some examples of the output after completing step 3:
 
-	* Example 1: Intel MKL on Linux:
-		
-		```bash
-		==========================================================
-	  	Executing following command to compile native systemml library:
-	  	g++ -o /home/[username]/libsystemml.so systemml-cpp/systemml.cpp  -I/[path-java-home]/include -Isystemml-cpp -I/opt/intel/mkl/include -I/[path-java-home]/include/linux -lmkl_rt -lpthread -lm -ldl -L/opt/intel/mkl/lib/intel64 -m64 -Wl,--no-as-needed -fopenmp -O3 -shared -fPIC
-	  	==========================================================
-		```
+* Example 1: Intel MKL on Linux:
 	
-	* Example 2: OpenBLAS on Linux:
-		
-		```bash
-		==========================================================
-	  	Executing following command to compile native systemml library:
-	  	g++ -o /home/[username]/libsystemml.so systemml-cpp/systemml.cpp  -I/[path-java-home]/include -Isystemml-cpp -I/opt/openblas/include -I/[path-java-home]/include/linux -lopenblas -lpthread -lm -ldl -DUSE_OPEN_BLAS -L/opt/openblas/lib -fopenmp -O3 -shared -fPIC
-	  	==========================================================
-		```
+	```bash
+	==========================================================
+  	Executing following command to compile native systemml library:
+  	g++ -o /home/[username]/libsystemml.so systemml-cpp/systemml.cpp  -I/[path-java-home]/include -Isystemml-cpp -I/opt/intel/mkl/include -I/[path-java-home]/include/linux -lmkl_rt -lpthread -lm -ldl -L/opt/intel/mkl/lib/intel64 -m64 -Wl,--no-as-needed -fopenmp -O3 -shared -fPIC
+  	==========================================================
+	```
+
+* Example 2: OpenBLAS on Linux:
+	
+	```bash
+	==========================================================
+  	Executing following command to compile native systemml library:
+  	g++ -o /home/[username]/libsystemml.so systemml-cpp/systemml.cpp  -I/[path-java-home]/include -Isystemml-cpp -I/opt/openblas/include -I/[path-java-home]/include/linux -lopenblas -lpthread -lm -ldl -DUSE_OPEN_BLAS -L/opt/openblas/lib -fopenmp -O3 -shared -fPIC
+  	==========================================================
+	```
 
 
 # Step 3: Install SystemML using pip
