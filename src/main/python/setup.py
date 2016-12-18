@@ -79,7 +79,16 @@ def get_mkl_root():
     return None
 
 def get_openblas_root():
+    if os.environ.get('OPENBLASROOT') is not None:
+        return os.environ.get('OPENBLASROOT')
+    elif my_os == 'linux' or my_os == 'darwin':
+        if os.path.isdir('/opt/openblas'):
+            return '/opt/openblas'
+    elif my_os == 'win32':
+        # TODO: Return default MKL installation path
+        return None
     return None
+
       
 def get_include_dirs(blas_root):
     ret = [ os.path.join(java_home, 'include'), 'systemml-cpp', os.path.join(blas_root, 'include') ]
@@ -100,7 +109,7 @@ def get_linker_flags(blas_root):
             mkl_lib_path = '-L' + os.path.join(blas_root, 'lib', 'ia32') + ' -m32 -Wl,--no-as-needed'
         return ' -lmkl_rt -lpthread -lm -ldl ' + mkl_lib_path
     elif my_os == 'linux' and blas_type == 'openblas':
-        return ' -lopenblas -lpthread -lm -ldl -L' + os.path.join(blas_root, 'lib')
+        return ' -lopenblas -lpthread -lm -ldl -DUSE_OPEN_BLAS -L' + os.path.join(blas_root, 'lib')
     elif my_os == 'win32' and blas_type == 'mkl':
         mkl_lib_path = [ 'mkl_intel_c_dll.lib', 'mkl_intel_thread_dll.lib', 'mkl_core_dll.lib' ]
         is_64_bit = False if 'x86' in blas_root else True
@@ -126,17 +135,22 @@ def compile_cpp():
         print('Cannot find BLAS root directory. Skipping the building of systemml native library.')
         return
     if my_os == 'linux':
-        cmd = 'g++ -o libsystemml.so systemml-cpp/systemml.cpp '
+        cmd = 'g++ -o ' + os.path.join(os.path.expanduser('~'), 'libsystemml.so') + ' systemml-cpp/systemml.cpp '
     elif my_os == 'win32':
-        cmd = 'cl systemml.cpp -Fesystemml.dll '
+        cmd = 'cl systemml.cpp -Fe'  + os.path.join(os.path.expanduser('~'), 'systemml.dll') + ' '
     else:
         cmd = 'TODO'
     cmd = cmd + get_include_dirs(blas_root) + get_linker_flags(blas_root) + get_other_flags()
     print('\n==========================================================')
-    # For now, we only print the compilation instruction.
-    print('Please use following command to compile native systemml library:')
-    print('cd `python -c \'import imp; import os; imp.find_module("systemml")[1]\'`')
+    should_compile = os.environ.get('COMPILE_NATIVE')
+    should_compile = should_compile is not None and should_compile == '1'
+    if should_compile:
+        print('Executing following command to compile native systemml library:')
+    else:
+        print('Please use following command to compile native systemml library:')
     print(cmd)
+    if should_compile:
+        os.system(cmd.replace('systemml-cpp', os.path.join('systemml', 'systemml-cpp')))
     print('==========================================================\n')
 
 class CustomInstallCommand(install):
