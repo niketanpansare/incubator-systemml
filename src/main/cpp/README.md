@@ -113,3 +113,11 @@ cd incubator-systemml
 mvn clean package -P distribution
 pip install target/systemml-0.12.0-incubating-SNAPSHOT-python.tgz -v
 ```
+
+# Step 4: Make the native SystemML library accessible to Java
+
+* Linux: Place `libsystemml.so` into `LD_LIBRARY_PATH`.
+
+* Windows: Place `systemml.dll` into `PATH`.
+
+Alternatively, the path to the native library can be provided via `-Djava.library.path=/path`. 
