@@ -19,6 +19,10 @@
 
 package org.apache.sysml.utils;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.lang.management.CompilationMXBean;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
@@ -40,6 +44,7 @@ import org.apache.sysml.runtime.instructions.MRJobInstruction;
 import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNN;
+import org.apache.sysml.runtime.matrix.data.LibMatrixMult;
 
 /**
  * This class captures all statistics.
@@ -594,6 +599,24 @@ public class Statistics
 	 */
 	public static String display(int maxHeavyHitters)
 	{
+		
+		try {
+		    PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter("time1.txt", true)));
+		    String setup = "Java";
+		    String isSingleThreaded = LibMatrixMult.isSingleThreaded ? "SingleThreaded" : "MultiThreaded";
+		    String matMultTime = String.format("%.6f", LibMatrixMult.matmultTime*1e-9);
+		    if(numNativeCalls.get() > 0) {
+		    	String blas_type = System.getenv("USE_BLAS");
+		    	if(blas_type == null || blas_type.equals("mkl"))
+		    		setup = "IntelMKL";
+		    	else
+		    		setup = "OpenBLAS";
+		    }	
+		    out.println(setup + "," + isSingleThreaded + "," + LibMatrixMult.m1Dim1 + "," 
+		    		+ LibMatrixMult.m1Dim2 + "," + LibMatrixMult.m2Dim2 + "," + matMultTime);
+		    out.close();
+		} catch (IOException e) { }
+		
 		StringBuilder sb = new StringBuilder();
 		
 		sb.append("SystemML Statistics:\n");

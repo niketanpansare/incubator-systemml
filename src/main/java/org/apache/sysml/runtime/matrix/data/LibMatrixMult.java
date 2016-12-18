@@ -124,6 +124,10 @@ public class LibMatrixMult
 	{
 		matrixMult(m1, m2, ret, rl, ru, true);
 	}
+	
+	public static long m1Dim1, m1Dim2, m2Dim2;
+	public static boolean isSingleThreaded = false;
+	public static long matmultTime = 0;
 
 	public static void matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int rl, int ru, boolean examSparsity) 
 		throws DMLRuntimeException
@@ -134,10 +138,16 @@ public class LibMatrixMult
 			return;
 		}
 		
+		m1Dim1 = m1.rlen;
+		m1Dim2 = m1.clen;
+		m2Dim2 = m2.clen;
+		
 		if(DMLScript.isNativeEnabled() && !m1.isInSparseFormat() && !m2.isInSparseFormat()) {
 			LibMatrixNative.matrixMult(m1, m2, ret);
 			return;
 		}
+		
+		isSingleThreaded = true;
 		
 		//Timing time = new Timing(true);
 		
@@ -194,6 +204,10 @@ public class LibMatrixMult
 			ret.examSparsity(); //turn empty dense into sparse
 			return;
 		}
+		
+		m1Dim1 = m1.rlen;
+		m1Dim2 = m1.clen;
+		m2Dim2 = m2.clen;
 		
 		if(DMLScript.isNativeEnabled() && !m1.isInSparseFormat() && !m2.isInSparseFormat()) {
 			LibMatrixNative.matrixMult(m1, m2, ret);

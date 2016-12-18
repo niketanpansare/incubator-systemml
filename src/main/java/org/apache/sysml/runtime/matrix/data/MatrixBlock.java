@@ -4883,12 +4883,13 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		else
 			ret.reset(rl, cl, sp.sparse, sp.estimatedNonZeros);
 		
+		long start = System.nanoTime();
 		//compute matrix multiplication (only supported binary aggregate operation)
 		if( op.getNumThreads() > 1 )
 			LibMatrixMult.matrixMult(m1, m2, ret, op.getNumThreads());
 		else
 			LibMatrixMult.matrixMult(m1, m2, ret);
-		
+		LibMatrixMult.matmultTime += (System.nanoTime() - start);
 		return ret;
 	}
 
