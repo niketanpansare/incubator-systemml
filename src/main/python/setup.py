@@ -23,6 +23,7 @@ from __future__ import print_function
 import os
 import sys
 from setuptools import find_packages, setup
+from setuptools.command.install import install
 import time
 
 try:
@@ -57,6 +58,91 @@ for path, subdirs, files in os.walk(cpp_dir_full_path):
     for name in files:
         PACKAGE_DATA = PACKAGE_DATA + [ os.path.join(path, name).replace('./', '') ]
 PACKAGE_DATA = PACKAGE_DATA + [os.path.join(python_dir, 'LICENSE'), os.path.join(python_dir, 'DISCLAIMER'), os.path.join(python_dir, 'NOTICE')]
+
+java_home = os.environ.get('JAVA_HOME')
+blas_type = os.environ.get('USE_BLAS') if os.environ.get('USE_BLAS') is not None else 'mkl' 
+from sys import platform
+if platform == "linux" or platform == "linux2":
+    my_os = 'linux'
+else:
+    my_os = platform
+
+def get_mkl_root():
+    if os.environ.get('MKLROOT') is not None:
+        return os.environ.get('MKLROOT')
+    elif my_os == 'linux' or my_os == 'darwin':
+        if os.path.isdir('/opt/intel/mkl'):
+            return '/opt/intel/mkl'
+    elif my_os == 'win32':
+        # TODO: Return default MKL installation path
+        return None
+    return None
+
+def get_openblas_root():
+    return None
+      
+def get_include_dirs(blas_root):
+    ret = [ os.path.join(java_home, 'include'), 'systemml-cpp', os.path.join(blas_root, 'include') ]
+    if my_os == 'linux':
+        ret = ret + [ os.path.join(java_home, 'include', 'linux') ]
+    elif my_os == 'win32':
+        ret = ret + [ os.path.join(java_home, 'include', 'win32') ]
+    # TODO: MacOSX
+    return ''.join([ ' -I' + include_path for include_path in ret ])
+        
+def get_linker_flags(blas_root):
+    if my_os == 'linux' and blas_type == 'mkl':
+        import subprocess
+        is_64_bit = '64' in subprocess.Popen(["getconf", "LONG_BIT"], stdout=subprocess.PIPE).communicate()[0]
+        if is_64_bit:
+            mkl_lib_path = '-L' + os.path.join(blas_root, 'lib', 'intel64') + ' -m64 -Wl,--no-as-needed'
+        else:
+            mkl_lib_path = '-L' + os.path.join(blas_root, 'lib', 'ia32') + ' -m32 -Wl,--no-as-needed'
+        return ' -lmkl_rt -lpthread -lm -ldl ' + mkl_lib_path
+    elif my_os == 'linux' and blas_type == 'openblas':
+        return ' -lopenblas -lpthread -lm -ldl -L' + os.path.join(blas_root, 'lib')
+    elif my_os == 'win32' and blas_type == 'mkl':
+        mkl_lib_path = [ 'mkl_intel_c_dll.lib', 'mkl_intel_thread_dll.lib', 'mkl_core_dll.lib' ]
+        is_64_bit = False if 'x86' in blas_root else True
+        if is_64_bit:
+            mkl_lib_path = [ os.path.join(blas_root, 'lib', 'intel64_win', l) for l in mkl_lib_path ]
+        else:
+            mkl_lib_path = [ os.path.join(blas_root, 'lib', 'ia32_win', l) for l in mkl_lib_path ]
+        return ' -MD -LD ' + ' '.join(mkl_lib_path)
+
+def get_other_flags():
+    if my_os == 'linux':
+        return ' -fopenmp -O3 -shared -fPIC'
+    elif my_os == 'win32':
+        return ' /openmp'
+        
+def compile_cpp():
+    is_jdk_installed = (java_home is not None) and os.path.isdir(os.path.join(java_home, 'include'))
+    if not is_jdk_installed:
+        print('JAVA_HOME is not set. Skipping the building of systemml native library.')
+        return
+    blas_root = get_openblas_root() if blas_type == 'openblas' else get_mkl_root()
+    if blas_root is None:
+        print('Cannot find BLAS root directory. Skipping the building of systemml native library.')
+        return
+    if my_os == 'linux':
+        cmd = 'g++ -o libsystemml.so systemml-cpp/systemml.cpp '
+    elif my_os == 'win32':
+        cmd = 'cl systemml.cpp -Fesystemml.dll '
+    else:
+        cmd = 'TODO'
+    cmd = cmd + get_include_dirs(blas_root) + get_linker_flags(blas_root) + get_other_flags()
+    print('\n==========================================================')
+    # For now, we only print the compilation instruction.
+    print('Please use following command to compile native systemml library:')
+    print('cd `python -c \'import imp; import os; imp.find_module("systemml")[1]\'`')
+    print(cmd)
+    print('==========================================================\n')
+
+class CustomInstallCommand(install):
+    def run(self):
+        install.run(self)
+        compile_cpp()
 
 setup(
     name=ARTIFACT_NAME,
@@ -93,4 +179,5 @@ setup(
         'Topic :: Software Development :: Libraries',
         ],
     license='Apache 2.0',
+    cmdclass={ 'install': CustomInstallCommand },
     )
