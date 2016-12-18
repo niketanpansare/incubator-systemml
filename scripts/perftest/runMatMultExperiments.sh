@@ -22,7 +22,7 @@
 
 #-------------------------------------------------------------
 # STEP 1: Make sure the current directory contains:
-# libsystemml.so_mkl, libsystemml.so_openblas, SystemML.jar, matmult.dml
+# libsystemml.so_mkl, libsystemml.so_openblas, SystemML.jar, matmult.dml, lib/*, log4j.properties
 
 # STEP 2: Set CUDA Library Path if you plan to test GPU performance:
 export LD_LIBRARY_PATH=. # Include jcuda and cuda lib if you plan to test GPU
