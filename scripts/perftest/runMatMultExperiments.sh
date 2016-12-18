@@ -25,8 +25,8 @@
 # libsystemml.so_mkl, libsystemml.so_openblas, SystemML.jar, matmult.dml
 
 # STEP 2: Set CUDA Library Path if you plan to test GPU performance:
-export LD_LIBRARY_PATH=/home/biuser/jcuda:/usr/local/cuda-7.5/lib64:/home/biuser/cuda/lib64/:.
-export CUDA_HOME=/home/biuser/cuda/
+export LD_LIBRARY_PATH=. # Include jcuda and cuda lib if you plan to test GPU
+# export CUDA_HOME=..
 
 # STEP 3: Set appropriate size so that you are not measuring only garbage collection time
 JAVA_OPTS="-Xmx20g -Xms20g -Xmn2048m -server"
@@ -86,7 +86,7 @@ do
         invoke_systemml $i $j $k $iter Java
         
         # GPU
-        invoke_systemml $i $j $k $iter GPU
+        # invoke_systemml $i $j $k $iter GPU
 done
 done
 done

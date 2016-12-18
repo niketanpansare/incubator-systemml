@@ -56,6 +56,7 @@ import static jcuda.runtime.JCuda.cudaMalloc;
 import static jcuda.runtime.JCuda.cudaMemcpy;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
 import static jcuda.jcudnn.cudnnActivationMode.CUDNN_ACTIVATION_RELU;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -86,8 +87,8 @@ import org.apache.sysml.runtime.matrix.operators.LeftScalarOperator;
 import org.apache.sysml.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysml.utils.Statistics;
-import static jcuda.jcudnn.JCudnn.cudnnAddTensor;
 
+import static jcuda.jcudnn.JCudnn.cudnnAddTensor;
 import jcuda.Pointer;
 import jcuda.Sizeof;
 import jcuda.jcublas.JCublas2;
@@ -508,6 +509,7 @@ public class LibMatrixCUDA {
 	public static MatrixObject matmult(ExecutionContext ec, MatrixObject left1, MatrixObject right1, String outputName,
 			boolean isLeftTransposed1, boolean isRightTransposed1) throws DMLRuntimeException {
 		
+		long start = System.nanoTime();
 		if(!left1.getGPUObject().isAllocated() || !right1.getGPUObject().isAllocated())
 			throw new DMLRuntimeException("One of input is not allocated:" + left1.getGPUObject().isAllocated() + " " + right1.getGPUObject().isAllocated());
 		
@@ -530,6 +532,7 @@ public class LibMatrixCUDA {
 			ec.allocateGPUMatrixObject(outputName);
 			eitherSparseMatmult(output, left1, right1, isLeftTransposed1, isRightTransposed1);
 		}
+		LibMatrixMult.matmultTime += (System.nanoTime() - start);
 		
 		return output;
 	}
