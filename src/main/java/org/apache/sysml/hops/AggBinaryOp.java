@@ -31,6 +31,7 @@ import org.apache.sysml.hops.Hop.MultiThreadedHop;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.lops.LopsException;
+import org.apache.sysml.lops.ConvolutionTransform;
 import org.apache.sysml.lops.MMCJ;
 import org.apache.sysml.lops.MMRJ;
 import org.apache.sysml.lops.MMTSJ;
@@ -665,7 +666,16 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 			}
 			else { 
 				int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
-				matmultCP = new Binary(getInput().get(0).constructLops(),getInput().get(1).constructLops(), 
+				Lop in = getInput().get(0).constructLops();
+				if(getInput().get(0) instanceof UnaryOp && ((UnaryOp) getInput().get(0)).getOp() == OpOp1.SELP 
+						&& in.getExecType() == ExecType.CP) {
+					matmultCP = new ConvolutionTransform( getInput().get(0).getInput().get(0).constructLops(), 
+							ConvolutionTransform.OperationTypes.RELU_MATMULT, getDataType(), getValueType(), ExecType.CP, k);
+					Lop in1 = getInput().get(1).constructLops();
+					matmultCP.addInput(in1); in1.addOutput(matmultCP);
+				}
+				else
+					matmultCP = new Binary(in, getInput().get(1).constructLops(), 
 										 Binary.OperationTypes.MATMULT, getDataType(), getValueType(), ExecType.CP, k);
 			}
 			setOutputDimensions(matmultCP);

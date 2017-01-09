@@ -26,12 +26,15 @@ import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.functionobjects.SwapIndex;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.ConvolutionParameters;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNN;
+import org.apache.sysml.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
+import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
 
 public class ConvolutionCPInstruction extends UnaryCPInstruction {
@@ -46,8 +49,8 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	public ConvolutionCPInstruction(CPOperand in, CPOperand in2, CPOperand out, String opcode, String istr, int numThreads) throws DMLRuntimeException {
 		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out,
 				opcode, istr);
-		if(!opcode.equals("bias_add")) {
-			throw new DMLRuntimeException("Incorrect usage. Expected the opcode to be bias_add, but found " + opcode);
+		if(!(opcode.equals("bias_add") || opcode.equals("relu_ba+*"))) {
+			throw new DMLRuntimeException("Incorrect usage. Expected the opcode to be bias_add or relu_ba+*, but found " + opcode);
 		}
 		_in2 = in2;
 		_cptype = CPINSTRUCTION_TYPE.Convolution;
@@ -153,7 +156,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			return new ConvolutionCPInstruction(in, in2, out, opcode, str, stride,
 					padding, input_shape, filter_shape, k);
 		} 
-		else if (opcode.equalsIgnoreCase("bias_add")) {
+		else if (opcode.equalsIgnoreCase("bias_add") || opcode.equalsIgnoreCase("relu_ba+*")) {
 			InstructionUtils.checkNumFields(parts, 4);
 			in.split(parts[1]);
 			CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
@@ -172,6 +175,36 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		return (int) ec.getScalarInput(aL.get(index).getName(),
 				aL.get(index).getValueType(), aL.get(index).isLiteral())
 				.getLongValue();
+	}
+	
+	public void processReluMatMultInstruction(ExecutionContext ec) throws DMLRuntimeException {
+		// Perform RELU
+		MatrixBlock m1 = ec.getMatrixInput(input1.getName());
+		MatrixBlock reluOutput = null;
+		if(m1.isInSparseFormat()) {
+			reluOutput = (MatrixBlock) (m1.unaryOperations(new UnaryOperator(Builtin.getBuiltinFnObject("sel+")), new MatrixBlock()));
+		}
+		else {
+			reluOutput = new MatrixBlock(m1.getNumRows(), m1.getNumColumns(), false);
+			reluOutput.allocateDenseBlock();
+			double [] reluOutputDenseBlk = reluOutput.getDenseBlock();
+			double [] inputBlk = m1.getDenseBlock();
+			long nnz = 0;
+			for(int i = 0; i < reluOutputDenseBlk.length; i++) {
+				reluOutputDenseBlk[i] = Math.max(0, inputBlk[i]);
+				nnz += (reluOutputDenseBlk[i] != 0) ? 1 : 0;
+			}
+			reluOutput.setNonZeros(nnz);
+		}
+		ec.releaseMatrixInput(input1.getName());
+		
+		// Perform matrix multiplication (without intermediate examine sparsity for dense)
+		MatrixBlock m2 = ec.getMatrixInput(_in2.getName());
+		boolean isOutputSparse = (reluOutput.isUltraSparse() || m2.isUltraSparse());
+		MatrixBlock outputBlock = new MatrixBlock(reluOutput.getNumRows(), m2.getNumColumns(), isOutputSparse);
+		LibMatrixMult.matrixMult(reluOutput, m2, outputBlock, _numThreads);
+		ec.releaseMatrixInput(_in2.getName());
+		ec.setMatrixOutput(getOutputVariableName(), outputBlock);
 	}
 	
 	public void processBiasInstruction(ExecutionContext ec) throws DMLRuntimeException {
@@ -208,6 +241,10 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			throws DMLRuntimeException {
 		if (instOpcode.equalsIgnoreCase("bias_add")) {
 			processBiasInstruction(ec);
+			return;
+		}
+		else if (instOpcode.equalsIgnoreCase("relu_ba+*")) {
+			processReluMatMultInstruction(ec);
 			return;
 		}
 		
