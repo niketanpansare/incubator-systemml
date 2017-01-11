@@ -132,8 +132,8 @@ public class LibMatrixDNN {
 	 * @param filter filter used in conv2d 
 	 * @param dout errors from next layer
 	 * @param outputBlock  output errors
-	 * @param params
-	 * @throws DMLRuntimeException
+	 * @param params convolution parameters
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void conv2dBackwardData(MatrixBlock filter, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
 		params.input1 = filter;
@@ -165,8 +165,8 @@ public class LibMatrixDNN {
 	 * @param image input image 
 	 * @param dout errors from next layer
 	 * @param outputBlock  output errors
-	 * @param params 
-	 * @throws DMLRuntimeException
+	 * @param params convolution parameters
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void conv2dBackwardFilter(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
 		params.input1 = input;
@@ -194,9 +194,9 @@ public class LibMatrixDNN {
 	
 	/**
 	 * Performs the operation: ret += elem
-	 * @param ret
-	 * @param elem
-	 * @throws DMLRuntimeException
+	 * @param ret left and output matrix
+	 * @param elem right matrix
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static void elementWiseInPlaceAddition(MatrixBlock ret, MatrixBlock elem) throws DMLRuntimeException {
 		if(ret.getNumRows() != elem.getNumRows() || ret.getNumColumns() != elem.getNumColumns()) {
@@ -225,9 +225,10 @@ public class LibMatrixDNN {
 	
 	/**
 	 * Performs the operation: ret += t(elem)
-	 * @param ret
-	 * @param elem
-	 * @throws DMLRuntimeException
+	 * @param ret left and output matrix
+	 * @param elem right untransposed matrix
+	 * @param params convolution parameters
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static void elementWiseInPlaceTransposedAddition(MatrixBlock ret, MatrixBlock elem) throws DMLRuntimeException {
 		if(ret.getNumRows() != elem.getNumColumns() || ret.getNumColumns() != elem.getNumRows()) {
@@ -376,11 +377,11 @@ public class LibMatrixDNN {
 	/**
 	 * This method computes the backpropogation errors for previous layer of maxpooling operation
 	 * 
-	 * @param input
-	 * @param dout
-	 * @param outputBlock
-	 * @param params
-	 * @throws DMLRuntimeException
+	 * @param input input matrix
+	 * @param dout dout matrix
+	 * @param outputBlock output matrix
+	 * @param params convolution parameters
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void maxpoolingBackward(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
 		params.input1 = input;
@@ -594,11 +595,11 @@ public class LibMatrixDNN {
 	/**
 	 * This method computes the backpropagation errors for previous layer of relu operation
 	 * 
-	 * @param input
-	 * @param dout
-	 * @param outputBlock
-	 * @param numThreads
-	 * @throws DMLRuntimeException
+	 * @param input input matrix
+	 * @param dout errors from next layer
+	 * @param outputBlock output matrix
+	 * @param numThreads number of threads
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void reluBackward(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, int numThreads) throws DMLRuntimeException {
 		int N = input.getNumRows();
@@ -668,11 +669,11 @@ public class LibMatrixDNN {
 	 * output = input + matrix(bias %*% ones, rows=1, cols=F*Hout*Wout)
 	 * This operation is often followed by conv2d and hence we have introduced bias_add(input, bias) built-in function
 	 * 
-	 * @param input
-	 * @param bias
-	 * @param outputBlock
-	 * @param numThreads
-	 * @throws DMLRuntimeException
+	 * @param input input matrix
+	 * @param bias bias matrix
+	 * @param outputBlock output matrix
+	 * @param numThreads number of threads
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void biasAdd(MatrixBlock input, MatrixBlock bias, MatrixBlock outputBlock, int numThreads) throws DMLRuntimeException {
 		int N = input.getNumRows();
