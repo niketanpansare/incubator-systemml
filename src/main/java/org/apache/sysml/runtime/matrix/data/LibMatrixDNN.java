@@ -1004,6 +1004,8 @@ public class LibMatrixDNN {
 					for(int n = n1; n < n2; n++) 
 						doLoopedIm2ColConv2d(n, im2ColOutBlock, params);
 					im2ColOutBlocks.add(im2ColOutBlock);
+					if(params.bias != null)
+						addBias(n1, n2, params);
 					break;
 				}
 				case LoopedIm2ColConv2dBwdFilter:
@@ -1030,6 +1032,37 @@ public class LibMatrixDNN {
 					throw new DMLRuntimeException("Unsupported ConvTask:" + type.name());
 			}
 			return null;
+		}
+	}
+	
+	private static void addBias(int n1, int n2, ConvolutionParameters params) {
+		int PQ = params.P*params.Q;
+		int K = params.K;
+		double [] outputArr = params.output.getDenseBlock();
+		if(!params.bias.isInSparseFormat()) {
+			double [] biasArr = params.bias.getDenseBlock();
+			int index = n1*K*PQ;
+			for(int n = n1; n < n2; n++) {
+				for(int k = 0; k < K; k++) {
+					for(int pq = 0; pq < PQ; pq++, index++) {
+						outputArr[index] += biasArr[k];
+					}
+				}
+			}
+		}
+		else {
+			Iterator<IJV> iter = params.bias.getSparseBlockIterator();
+			while(iter.hasNext()) {
+				IJV ijv = iter.next();
+				int k = ijv.getI();
+				double val = ijv.getV();
+				for(int n = n1; n < n2; n++) {
+					int index = n*K*PQ + k*PQ;
+					for(int pq = 0; pq < PQ; pq++, index++) {
+						outputArr[index] += val;
+					}
+				}
+			}
 		}
 	}
 		
