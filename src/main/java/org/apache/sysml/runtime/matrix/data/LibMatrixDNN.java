@@ -162,7 +162,7 @@ public class LibMatrixDNN {
 	/**
 	 * This method computes the backpropogation errors for filter of convolution operation
 	 * 
-	 * @param image input image 
+	 * @param input input image 
 	 * @param dout errors from next layer
 	 * @param outputBlock  output errors
 	 * @param params convolution parameters
