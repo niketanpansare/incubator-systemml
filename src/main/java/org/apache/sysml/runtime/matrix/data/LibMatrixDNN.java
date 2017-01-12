@@ -23,7 +23,6 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -296,7 +295,7 @@ public class LibMatrixDNN {
 			loopedConvBwdFilterIm2ColTime.addAndGet(t2-t1);
 		}
 		if(!temp.isEmptyBlock())
-			elementWiseInPlaceTransposedAddition(partialRetBlock, temp);
+			elementWiseInPlaceAddition(partialRetBlock, temp);
 		return partialRetBlock;
 	}
 	
@@ -866,51 +865,48 @@ public class LibMatrixDNN {
 	}
 	
 	// ----------------------------------------------------------------------------------------------------------------
-	private static void addMatrixBlocks(int poolSize, TaskType type, ConvolutionParameters params, 
-			ConcurrentLinkedQueue<MatrixBlock> im2ColOutBlocks, ConcurrentLinkedQueue<MatrixBlock> doutReshapedBlocks,
-			ConcurrentLinkedQueue<MatrixBlock> partialRetBlocks) {
-		for(int i = 0; i < poolSize; i++) {
-			if(type == TaskType.LoopedIm2ColConv2d || type == TaskType.LoopedIm2ColConv2dBwdFilter) {
-				MatrixBlock im2ColOutBlock = new MatrixBlock(params.C*params.R*params.S, params.P*params.Q, false);
-				im2ColOutBlock.allocateDenseBlock(true);
-				im2ColOutBlocks.add(im2ColOutBlock);
-			}
-			
-			if(type == TaskType.LoopedIm2ColConv2dBwdFilter) {
-				MatrixBlock partialRetBlock = new MatrixBlock(params.K, params.C*params.R*params.S, false);
-				partialRetBlock.allocateDenseBlock(true);
-				partialRetBlocks.add(partialRetBlock);
-			}
-			
-			if(type == TaskType.LoopedIm2ColConv2dBwdData || type == TaskType.LoopedIm2ColConv2dBwdFilter) {
-				MatrixBlock doutReshapedBlock = new MatrixBlock(params.P*params.Q, params.K, false);
-				doutReshapedBlock.allocateDenseBlock(true);
-				doutReshapedBlocks.add(doutReshapedBlock);
-			}
+	private static ConvTask createTask(int n1, int n2, TaskType type, ConvolutionParameters params) {
+		if(type == TaskType.LoopedIm2ColConv2d) {
+			MatrixBlock im2ColOutBlock = new MatrixBlock(params.C*params.R*params.S, params.P*params.Q, false);
+			im2ColOutBlock.allocateDenseBlock(true);
+			return new ConvTask(n1, n2, type, params, im2ColOutBlock, null, null);
+		}
+		else if (type == TaskType.LoopedIm2ColConv2dBwdFilter) {
+			MatrixBlock partialRetBlock = new MatrixBlock(params.C*params.R*params.S, params.K, false);
+			partialRetBlock.allocateDenseBlock(true);
+			MatrixBlock im2ColOutBlock = new MatrixBlock(params.C*params.R*params.S, params.P*params.Q, false);
+			im2ColOutBlock.allocateDenseBlock(true);
+			MatrixBlock doutReshapedBlock = new MatrixBlock(params.P*params.Q, params.K, false);
+			doutReshapedBlock.allocateDenseBlock(true);
+			return new ConvTask(n1, n2, type, params, im2ColOutBlock, doutReshapedBlock, partialRetBlock);
+		}
+		else if(type == TaskType.LoopedIm2ColConv2dBwdData) {
+			MatrixBlock doutReshapedBlock = new MatrixBlock(params.P*params.Q, params.K, false);
+			doutReshapedBlock.allocateDenseBlock(true);
+			return new ConvTask(n1, n2, type, params, null, doutReshapedBlock, null);
+		}
+		else {
+			return new ConvTask(n1, n2, type, params, null, null, null);
 		}
 	}
 	// Methods to execute convolution-related tasks using multiple threads.
 	private static void runConvTask(TaskType type, ConvolutionParameters params) throws DMLRuntimeException {
 		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
-		ConcurrentLinkedQueue<MatrixBlock> im2ColOutBlocks = new ConcurrentLinkedQueue<MatrixBlock>();
-		ConcurrentLinkedQueue<MatrixBlock> doutReshapedBlocks = new ConcurrentLinkedQueue<MatrixBlock>();
-		ConcurrentLinkedQueue<MatrixBlock> partialRetBlocks = new ConcurrentLinkedQueue<MatrixBlock>();
 		if (ALLOW_MULTI_THREADED_OPS && params.isOutputThreadSafe() && constrainedNumThreads > 1) {
 			int poolSize = Math.min(constrainedNumThreads, params.N);
-			addMatrixBlocks(poolSize, type, params, im2ColOutBlocks, doutReshapedBlocks, partialRetBlocks);
 			ArrayList<ConvTask> tasks = new ArrayList<ConvTask>();
 			int NSize = params.N - poolSize;
 			if(NSize >= constrainedNumThreads) {
 				for(int n = 0; n < params.N; n++) 
-					tasks.add(new ConvTask(n, n+1, type, params, im2ColOutBlocks, doutReshapedBlocks, partialRetBlocks));
+					tasks.add(createTask(n, n+1, type, params));
 			}
 			else {
 				int numNTasks = (int) Math.ceil(((double) NSize) / constrainedNumThreads);
 				for (int n = 0; n < NSize; n += numNTasks) {
-					tasks.add(new ConvTask(n, Math.min(NSize, n+numNTasks), type, params, im2ColOutBlocks, doutReshapedBlocks, partialRetBlocks));
+					tasks.add(createTask(n, Math.min(NSize, n+numNTasks), type, params));
 				}
 				for (int n = NSize; n < params.N; n++)
-					tasks.add(new ConvTask(n, n+1, type, params, im2ColOutBlocks, doutReshapedBlocks, partialRetBlocks));
+					tasks.add(createTask(n, n+1, type, params));
 			}
 			
 			ExecutorService pool = Executors.newFixedThreadPool( poolSize );
@@ -922,8 +918,9 @@ public class LibMatrixDNN {
 					task.get();
 				}
 				if(type == TaskType.LoopedIm2ColConv2dBwdFilter) {
-					for(MatrixBlock partialRetBlock : partialRetBlocks) {
-						elementWiseInPlaceAddition(params.output, partialRetBlock);
+					for(ConvTask task : tasks) {
+						MatrixBlock partialRetBlock = task.partialRetBlock;
+						elementWiseInPlaceTransposedAddition(params.output, partialRetBlock);
 					}
 				}
 			} catch (InterruptedException e) {
@@ -933,8 +930,7 @@ public class LibMatrixDNN {
 			}
 		}
 		else {
-			addMatrixBlocks(1, type, params, im2ColOutBlocks, doutReshapedBlocks, partialRetBlocks);
-			ConvTask task = new ConvTask(0, 0, type, params, im2ColOutBlocks, doutReshapedBlocks, partialRetBlocks);
+			ConvTask task = createTask(0, 0, type, params);
 			try {
 				for(int n = 0; n < params.N; n++) {
 					task.n1 = n;
@@ -942,9 +938,8 @@ public class LibMatrixDNN {
 					task.call();
 				}
 				if(type == TaskType.LoopedIm2ColConv2dBwdFilter) {
-					for(MatrixBlock partialRetBlock : partialRetBlocks) {
-						elementWiseInPlaceAddition(params.output, partialRetBlock);
-					}
+					MatrixBlock partialRetBlock = task.partialRetBlock;
+					elementWiseInPlaceTransposedAddition(params.output, partialRetBlock);
 				}
 			} catch (Exception e) {
 				throw new DMLRuntimeException("Error while executing single-threaded " + type.name(), e);
@@ -962,20 +957,20 @@ public class LibMatrixDNN {
 		public int n1; public int n2; 
 		ConvolutionParameters params;
 		TaskType type;
-		ConcurrentLinkedQueue<MatrixBlock> im2ColOutBlocks;
-		ConcurrentLinkedQueue<MatrixBlock> partialRetBlocks;
-		ConcurrentLinkedQueue<MatrixBlock> doutReshapedBlocks;
+		MatrixBlock im2ColOutBlock;
+		public MatrixBlock partialRetBlock;
+		MatrixBlock doutReshapedBlock;
 		public ConvTask(int n1, int n2, TaskType type, ConvolutionParameters params, 
-				ConcurrentLinkedQueue<MatrixBlock> im2ColOutBlocks,
-				ConcurrentLinkedQueue<MatrixBlock> doutReshapedBlocks,
-				ConcurrentLinkedQueue<MatrixBlock> partialRetBlocks) {
+				MatrixBlock im2ColOutBlock,
+				MatrixBlock doutReshapedBlock,
+				MatrixBlock partialRetBlock) {
 			this.n1 = n1;
 			this.n2 = n2;
 			this.type = type;
 			this.params = params;
-			this.im2ColOutBlocks = im2ColOutBlocks;
-			this.partialRetBlocks = partialRetBlocks;
-			this.doutReshapedBlocks = doutReshapedBlocks;
+			this.im2ColOutBlock = im2ColOutBlock;
+			this.partialRetBlock = partialRetBlock;
+			this.doutReshapedBlock = doutReshapedBlock;
 		}
 		
 		@Override
@@ -1001,32 +996,22 @@ public class LibMatrixDNN {
 					break;
 				case LoopedIm2ColConv2d:
 				{	
-					MatrixBlock im2ColOutBlock = im2ColOutBlocks.remove();
 					for(int n = n1; n < n2; n++) 
 						doLoopedIm2ColConv2d(n, im2ColOutBlock, params);
-					im2ColOutBlocks.add(im2ColOutBlock);
 					if(params.bias != null)
 						addBias(n1, n2, params);
 					break;
 				}
 				case LoopedIm2ColConv2dBwdFilter:
 				{
-					MatrixBlock im2ColOutBlock = im2ColOutBlocks.remove();
-					MatrixBlock partialRetBlock = partialRetBlocks.remove();
-					MatrixBlock doutReshapedBlock = doutReshapedBlocks.remove();
 					for(int n = n1; n < n2; n++) 
 						partialRetBlock = doLoopedIm2ColConv2dBwdFilter(n, im2ColOutBlock, doutReshapedBlock, partialRetBlock, params);
-					im2ColOutBlocks.add(im2ColOutBlock);
-					partialRetBlocks.add(partialRetBlock);
-					doutReshapedBlocks.add(doutReshapedBlock);
 					break;
 				}
 				case LoopedIm2ColConv2dBwdData:
 				{
-					MatrixBlock doutReshapedBlock = doutReshapedBlocks.remove();
 					for(int n = n1; n < n2; n++) 
 						doLoopedIm2ColConv2dBwdData(n, doutReshapedBlock, params);
-					doutReshapedBlocks.add(doutReshapedBlock);
 					break;
 				}
 				default:
