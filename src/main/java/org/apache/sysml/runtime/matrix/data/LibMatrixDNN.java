@@ -35,6 +35,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.utils.NativeHelper;
+import org.apache.sysml.utils.Statistics;
 
 /**
  * This class allows users to invoke deep learning related operations 
@@ -156,6 +158,17 @@ public class LibMatrixDNN {
 			}
 		}
 		
+		if(DMLScript.isNativeEnabled() && !dout.isInSparseFormat() && !filter.isInSparseFormat()) {
+			int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
+			if (!(ALLOW_MULTI_THREADED_OPS && params.isOutputThreadSafe() && constrainedNumThreads > 1))
+				params.numThreads = 1;
+			Statistics.numNativeLibMatrixDNNCalls.addAndGet(1);
+			NativeHelper.conv2dBackwardDataDense(filter.denseBlock, dout.denseBlock, outputBlock.denseBlock, params.N, params.C, params.H, params.W, 
+						params.K, params.R, params.S, params.stride_h, params.stride_w, params.pad_h, params.pad_w, 
+						params.P, params.Q, params.numThreads);
+			return;
+		}
+		
 		runConvTask(TaskType.LoopedIm2ColConv2dBwdData, params);
 	}
 	
@@ -188,6 +201,18 @@ public class LibMatrixDNN {
 				conv2dBwdFilterDenseCount.addAndGet(1);
 			}
 		}
+		
+		if(DMLScript.isNativeEnabled() && !dout.isInSparseFormat() && !input.isInSparseFormat()) {
+			int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
+			if (!(ALLOW_MULTI_THREADED_OPS && params.isOutputThreadSafe() && constrainedNumThreads > 1))
+				params.numThreads = 1;
+			Statistics.numNativeLibMatrixDNNCalls.addAndGet(1);
+			NativeHelper.conv2dBackwardFilterDense(input.denseBlock, dout.denseBlock, outputBlock.denseBlock, params.N, params.C, params.H, params.W, 
+						params.K, params.R, params.S, params.stride_h, params.stride_w, params.pad_h, params.pad_w, 
+						params.P, params.Q, params.numThreads);
+			return;
+		}
+		
 		
 		runConvTask(TaskType.LoopedIm2ColConv2dBwdFilter, params);
 	}
@@ -330,6 +355,26 @@ public class LibMatrixDNN {
 		}
 		if(!filter.isInSparseFormat() && TEST_SPARSE_FILTER) {
 			filter.denseToSparse();
+		}
+		
+		if(DMLScript.isNativeEnabled() && !input.isInSparseFormat() && !filter.isInSparseFormat()) {
+			int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
+			if (!(ALLOW_MULTI_THREADED_OPS && params.isOutputThreadSafe() && constrainedNumThreads > 1))
+				params.numThreads = 1;
+			if(params.bias == null)
+				NativeHelper.conv2dDense(input.denseBlock, filter.denseBlock, outputBlock.denseBlock, params.N, params.C, params.H, params.W, 
+						params.K, params.R, params.S, params.stride_h, params.stride_w, params.pad_h, params.pad_w, 
+						params.P, params.Q, params.numThreads);
+			else {
+				if(params.bias.isInSparseFormat())
+					params.bias.sparseToDense(); // Bias matrix is usually extremely small
+				NativeHelper.conv2dBiasAddDense(input.denseBlock, params.bias.denseBlock, filter.denseBlock, outputBlock.denseBlock, 
+						params.N, params.C, params.H, params.W, 
+						params.K, params.R, params.S, params.stride_h, params.stride_w, params.pad_h, params.pad_w, 
+						params.P, params.Q, params.numThreads);
+			}
+			Statistics.numNativeLibMatrixDNNCalls.addAndGet(1);
+			return;
 		}
 		
 		runConvTask(TaskType.LoopedIm2ColConv2d, params);
