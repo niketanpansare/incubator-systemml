@@ -84,6 +84,7 @@ import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.utils.Explain;
 import org.apache.sysml.utils.Explain.ExplainCounts;
 import org.apache.sysml.utils.Explain.ExplainType;
+import org.apache.sysml.utils.NativeHelper;
 import org.apache.sysml.utils.Statistics;
 import org.apache.sysml.yarn.DMLAppMasterUtils;
 import org.apache.sysml.yarn.DMLYarnClientProxy;
@@ -129,6 +130,10 @@ public class DMLScript
 	public static boolean DISABLE_SPARSE = false;
 	public static boolean DISABLE_CACHING = false;
 	// ------------------------------------------------------------------------
+	
+	// Native BLAS is enabled by default and we fall back to Java BLAS whenever the library is not available 
+	// or whenever operation is not supported (eg: sparse matrix multiplication). 
+	public static final boolean ENABLE_NATIVE_BLAS = true;
 	
 	// flag that indicates whether or not to suppress any prints to stdout
 	public static boolean _suppressPrint2Stdout = false;
@@ -547,6 +552,9 @@ public class DMLScript
 		}
 	}
 	
+	public static boolean isNativeEnabled() {
+		return DMLScript.ENABLE_NATIVE_BLAS && NativeHelper.isNativeLibraryLoaded();
+	}
 	
 	///////////////////////////////
 	// private internal interface 
