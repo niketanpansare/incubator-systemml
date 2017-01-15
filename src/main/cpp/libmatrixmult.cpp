@@ -62,6 +62,8 @@ void matmult(double* m1Ptr, double* m2Ptr, double* retPtr, int m1rlen,
   	// but for simplifying performance testing we are sticking to this approach.  
   	// See https://software.intel.com/en-us/node/528707
   	
+  	// Performance TODO: Use GNU_THREADING for Intel MKL on Linux
+  	
   	// Performance TODO: Use Column-wise parallelism (only if RHS is extremely wide) ... has additional overhead of in-place transpose 
   	// For example: if(m1rlen < numThreads && m2clen > 2*numThreads)
   	//  m1 %*% m2 = t( t(m2) %*% t(m1) )
