@@ -26,13 +26,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-/*
- * Class:     org_apache_sysml_utils_NativeHelper
- * Method:    matrixMultTransposeSelfDense
- * Signature: ([D[DZIII)V
- */
-JNIEXPORT void JNICALL Java_org_apache_sysml_utils_NativeHelper_matrixMultTransposeSelfDense
-  (JNIEnv *, jclass, jdoubleArray, jdoubleArray, jboolean, jint, jint, jint);
 
 /*
  * Class:     org_apache_sysml_utils_NativeHelper

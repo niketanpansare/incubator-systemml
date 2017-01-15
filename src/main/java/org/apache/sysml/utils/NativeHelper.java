@@ -191,10 +191,7 @@ public class NativeHelper {
 		
 	}
 	
-	// TODO: Add pmm, wsloss, mmchain, etc.
-	// LibMatrixMult operations:
-	// leftTranspose: true=> t(X)%*%X and false => X%*%t(X)
-	public static native void matrixMultTransposeSelfDense( double [] m1, double [] ret, boolean leftTranspose, int m1rlen, int m1clen, int numThreads);
+	// TODO: Add tsmm, pmm, wsloss, mmchain, etc.
 	public static native void matrixMultDenseDense(double [] m1, double [] m2, double [] ret, int m1rlen, int m1clen, int m2clen, int numThreads);
 	
 	// LibMatrixDNN operations:
