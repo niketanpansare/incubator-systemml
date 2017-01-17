@@ -23,18 +23,19 @@
 #include "libmatrixdnn.h"
 
 // Linux:
-// g++ -o libsystemml_mkl-linux-x86_64.so *.cpp  -I$JAVA_HOME/include -I$MKLROOT/include -I$JAVA_HOME/include/linux -lmkl_rt -lpthread -lm -ldl -L$MKLROOT/lib/intel64 -m64 -fopenmp -O3 -shared -fPIC
-// g++ -o libsystemml_openblas-linux-x86_64.so *.cpp  -I$JAVA_HOME/include  -I$JAVA_HOME/include/linux -lopenblas -lpthread -lm -ldl -DUSE_OPEN_BLAS -fopenmp -O3 -shared -fPIC
+// g++ -o libsystemml_mkl-linux-x86_64.so *.cpp  -I$JAVA_HOME/include -I$MKLROOT/include -I$JAVA_HOME/include/linux -lmkl_rt -lpthread  -lm -ldl -DUSE_INTEL_MKL -DUSE_GNU_THREADING -L$MKLROOT/lib/intel64 -m64 -fopenmp -O3 -shared -fPIC
+// g++ -o libsystemml_openblas-linux-x86_64.so *.cpp  -I$JAVA_HOME/include  -I$JAVA_HOME/include/linux -lopenblas -lpthread -lm -ldl -DUSE_OPEN_BLAS -L/opt/OpenBLAS/lib/ -fopenmp -O3 -shared -fPIC
+
+// Results from Matrix-vector/vector-matrix 1M x 1K, dense show that GetDoubleArrayElements creates a copy on OpenJDK.
 
 // JNI Methods to get/release double* 
 #define GET_DOUBLE_ARRAY(env, input) \
-  env->GetDoubleArrayElements(input,NULL)
-// ((double*)env->GetPrimitiveArrayCritical(input, NULL))
+  ((double*)env->GetPrimitiveArrayCritical(input, NULL))
+// env->GetDoubleArrayElements(input,NULL)
  
 #define RELEASE_DOUBLE_ARRAY(env, input, inputPtr) \
-  env->ReleaseDoubleArrayElements(input, inputPtr, 0)
-// env->ReleasePrimitiveArrayCritical(input, inputPtr, 0)
-
+  env->ReleasePrimitiveArrayCritical(input, inputPtr, 0)
+// env->ReleaseDoubleArrayElements(input, inputPtr, 0)
 
 JNIEXPORT void JNICALL Java_org_apache_sysml_utils_NativeHelper_matrixMultDenseDense(
     JNIEnv* env, jclass cls, jdoubleArray m1, jdoubleArray m2, jdoubleArray ret,
