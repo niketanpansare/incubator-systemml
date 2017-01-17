@@ -26,11 +26,9 @@
 // *****************************************************************
 // We support Intel MKL (recommended) or OpenBLAS.
 // These flags are used for conditional compilation with mkl and openblas
-#ifndef USE_OPEN_BLAS
-#define USE_INTEL_MKL
-#else
-#undef USE_INTEL_MKL
-#endif
+// #define USE_INTEL_MKL
+// #define USE_GNU_THREADING
+// #define USE_OPEN_BLAS
 // *****************************************************************
 
 #ifdef __cplusplus
@@ -48,8 +46,7 @@ extern void openblas_set_num_threads(int numThreads);
 }
 #endif
 
-// This method is called during every systemml call, but the if condition is only executed once.
-void ensureSequentialBLAS();
+void setNumThreadsForBLAS(int numThreads);
 
 // Multiplies two matrices m1Ptr and m2Ptr in row-major format of shape
 // (m1rlen, m1clen) and (m1clen, m2clen)

@@ -94,3 +94,15 @@ Note: The default `SystemML-config.xml` is located in `<path to SystemML root>/c
     hadoop jar SystemML.jar [-? | -help | -f <filename>] (-config=<config_filename>) ([-args | -nvargs] <args-list>)
     
 See [Invoking SystemML in Hadoop Batch Mode](hadoop-batch-mode.html) for details of the syntax. 
+
+## Slow performance with OpenBLAS
+
+SystemML expects that OpenBLAS was built with OpenMP. If not, please follow below steps:
+
+    git clone https://github.com/xianyi/OpenBLAS.git
+    cd OpenBLAS/
+    make clean
+    make USE_OPENMP=1
+    sudo make install
+
+You may also want to add `/opt/OpenBLAS/lib` to your LD_LIBRARY_PATH or `java.library.path`.

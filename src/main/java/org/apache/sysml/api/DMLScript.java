@@ -552,8 +552,14 @@ public class DMLScript
 		}
 	}
 	
-	public static boolean isNativeEnabled() {
-		return DMLScript.ENABLE_NATIVE_BLAS && NativeHelper.isNativeLibraryLoaded();
+	public static boolean isNativeEnabled(int numThreads) {
+		return DMLScript.ENABLE_NATIVE_BLAS && NativeHelper.isNativeLibraryLoaded(numThreads);
+	}
+	
+	// blasType can be openblas or mkl
+	public static boolean isNativeEnabled(int numThreads, String blasType) {
+		String blas = NativeHelper.blasType != null ? NativeHelper.blasType : "";
+		return DMLScript.ENABLE_NATIVE_BLAS && NativeHelper.isNativeLibraryLoaded(numThreads) && blasType.equalsIgnoreCase(blas);
 	}
 	
 	///////////////////////////////

@@ -20,15 +20,19 @@
 package org.apache.sysml.utils;
 
 import java.io.IOException;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
 import java.util.HashMap;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.File;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.SystemUtils;
+import org.apache.sysml.hops.OptimizerUtils;
 
 /**
  * This class helps in loading native library.
@@ -60,11 +64,13 @@ public class NativeHelper {
 				LOG.warn("Using Java-based BLAS as unable to load native BLAS");
 			}
 		}
-		
 	}
 	
-	public static boolean isNativeLibraryLoaded() {
-		return isSystemMLLoaded;
+	private static int maxNumThreads = -1;
+	public static boolean isNativeLibraryLoaded(int numThreads) {
+		if(maxNumThreads == -1)
+			maxNumThreads = OptimizerUtils.getConstrainedNumThreads(-1);
+		return isSystemMLLoaded && (numThreads == maxNumThreads);
 	}
 	
 	private static String getBLASType() {
@@ -91,13 +97,27 @@ public class NativeHelper {
 		}
 	}
 	
+	private static boolean isPreloadSystemML = false;
 	private static boolean isMKLAvailable() {
 		try {
+			// ------------------------------------------------------------
+			// Set environment variable MKL_THREADING_LAYER to GNU on Linux for performance
+			if(SystemUtils.IS_OS_LINUX) {
+				if(!isPreloadSystemML) {
+					loadLibrary("preload_systemml", "");
+					EnvironmentHelper.setEnv("MKL_THREADING_LAYER", "GNU");
+					isPreloadSystemML = true;
+				}
+			}
+			// ------------------------------------------------------------
 			System.loadLibrary("mkl_rt");
 			return true;
 		}
 		catch (UnsatisfiedLinkError e) {
 			LOG.warn("Unable to load mkl:" + e.getMessage());
+			return false;
+		} catch (IOException e) {
+			LOG.warn("Unable to load preload_systemml required for mkl:" + e.getMessage());
 			return false;
 		}
 	}

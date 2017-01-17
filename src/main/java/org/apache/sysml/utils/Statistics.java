@@ -640,7 +640,7 @@ public class Statistics
 		if( DMLScript.STATISTICS ) 
 		{
 			String blas = NativeHelper.blasType != null ? NativeHelper.blasType : ""; 
-			sb.append("Number of native " + NativeHelper.blasType + " calls (Mult/DNN):\t" + numNativeLibMatrixMultCalls.get()  + "/" + numNativeLibMatrixDNNCalls.get() + ".\n");
+			sb.append("Native " + blas + " calls (Mult/DNN):\t" + numNativeLibMatrixMultCalls.get()  + "/" + numNativeLibMatrixDNNCalls.get() + ".\n");
 			sb.append("Cache hits (Mem, WB, FS, HDFS):\t" + CacheStatistics.displayHits() + ".\n");
 			sb.append("Cache writes (WB, FS, HDFS):\t" + CacheStatistics.displayWrites() + ".\n");
 			sb.append("Cache times (ACQr/m, RLS, EXP):\t" + CacheStatistics.displayTime() + " sec.\n");

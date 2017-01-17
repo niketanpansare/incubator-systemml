@@ -158,8 +158,8 @@ public class LibMatrixDNN {
 			}
 		}
 		
-		if(DMLScript.isNativeEnabled() && !dout.isInSparseFormat() && !filter.isInSparseFormat()) {
-			int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
+		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
+		if(DMLScript.isNativeEnabled(constrainedNumThreads) && !dout.isInSparseFormat() && !filter.isInSparseFormat()) {
 			if (!(ALLOW_MULTI_THREADED_OPS && params.isOutputThreadSafe() && constrainedNumThreads > 1))
 				params.numThreads = 1;
 			Statistics.numNativeLibMatrixDNNCalls.addAndGet(1);
@@ -202,8 +202,8 @@ public class LibMatrixDNN {
 			}
 		}
 		
-		if(DMLScript.isNativeEnabled() && !dout.isInSparseFormat() && !input.isInSparseFormat()) {
-			int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
+		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
+		if(DMLScript.isNativeEnabled(constrainedNumThreads) && !dout.isInSparseFormat() && !input.isInSparseFormat()) {
 			if (!(ALLOW_MULTI_THREADED_OPS && params.isOutputThreadSafe() && constrainedNumThreads > 1))
 				params.numThreads = 1;
 			Statistics.numNativeLibMatrixDNNCalls.addAndGet(1);
@@ -357,8 +357,8 @@ public class LibMatrixDNN {
 			filter.denseToSparse();
 		}
 		
-		if(DMLScript.isNativeEnabled() && !input.isInSparseFormat() && !filter.isInSparseFormat()) {
-			int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
+		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
+		if(DMLScript.isNativeEnabled(constrainedNumThreads) && !input.isInSparseFormat() && !filter.isInSparseFormat()) {
 			if (!(ALLOW_MULTI_THREADED_OPS && params.isOutputThreadSafe() && constrainedNumThreads > 1))
 				params.numThreads = 1;
 			if(params.bias == null)
