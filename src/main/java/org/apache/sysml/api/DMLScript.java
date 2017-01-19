@@ -134,6 +134,7 @@ public class DMLScript
 	// Native BLAS is enabled by default and we fall back to Java BLAS whenever the library is not available 
 	// or whenever operation is not supported (eg: sparse matrix multiplication). 
 	public static final boolean ENABLE_NATIVE_BLAS = true;
+	public static final boolean ENABLE_NATIVE_BLAS_IN_PARFOR = true;
 	
 	// flag that indicates whether or not to suppress any prints to stdout
 	public static boolean _suppressPrint2Stdout = false;
