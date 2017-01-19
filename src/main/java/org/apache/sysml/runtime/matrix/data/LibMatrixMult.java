@@ -126,6 +126,15 @@ public class LibMatrixMult
 	{
 		matrixMult(m1, m2, ret, rl, ru, true);
 	}
+	
+	// We could encapsulate heuristics in this function
+	// For now, we only consider matrix-vector operation to be memory bound
+	private static boolean isMatMultMemoryBound(int m1Rlen, int m1Clen, int m2Clen) {
+		if(m1Rlen == 1 || m2Clen == 1)
+			return true;
+		else
+			return false;
+	}
 
 	public static void matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int rl, int ru, boolean examSparsity) 
 		throws DMLRuntimeException
@@ -136,39 +145,51 @@ public class LibMatrixMult
 			return;
 		}
 		
-		
-		//Timing time = new Timing(true);
-		
-		//pre-processing: output allocation
-		boolean tm2 = checkPrepMatrixMultRightInput(m1,m2);
-		m2 = prepMatrixMultRightInput(m1, m2);
-		ret.sparse = (m1.isUltraSparse() || m2.isUltraSparse());
-		if( !ret.sparse )
+		if(DMLScript.isNativeEnabled(1) && !isMatMultMemoryBound(m1.rlen, m1.clen, m2.clen) && !m1.isInSparseFormat() && !m2.isInSparseFormat()) {
+			ret.sparse = false;
 			ret.allocateDenseBlock();
+			Statistics.numNativeLibMatrixMultCalls.addAndGet(1);
+			NativeHelper.matrixMultDenseDense(m1.denseBlock, m2.denseBlock, ret.denseBlock, m1.getNumRows(), 
+					m1.getNumColumns(), m2.getNumColumns(), 1);
+			ret.recomputeNonZeros();
+		}
+		else {
 		
-		//prepare row-upper for special cases of vector-matrix
-		boolean pm2 = checkParMatrixMultRightInputRows(m1, m2, Integer.MAX_VALUE);
-		int ru2 = (pm2 && ru==m1.rlen) ? m2.rlen : ru; 
-		int cu = m2.clen;
-		
-		//core matrix mult computation
-		if( m1.isUltraSparse() || m2.isUltraSparse() )
-			matrixMultUltraSparse(m1, m2, ret, 0, ru2);
-		else if(!m1.sparse && !m2.sparse)
-			matrixMultDenseDense(m1, m2, ret, tm2, pm2, 0, ru2, 0, cu);
-		else if(m1.sparse && m2.sparse)
-			matrixMultSparseSparse(m1, m2, ret, pm2, 0, ru2);
-		else if(m1.sparse)
-			matrixMultSparseDense(m1, m2, ret, pm2, 0, ru2);
-		else
-			matrixMultDenseSparse(m1, m2, ret, pm2, 0, ru2);
+			//Timing time = new Timing(true);
 			
+			//pre-processing: output allocation
+			boolean tm2 = checkPrepMatrixMultRightInput(m1,m2);
+			m2 = prepMatrixMultRightInput(m1, m2);
+			ret.sparse = (m1.isUltraSparse() || m2.isUltraSparse());
+			if( !ret.sparse )
+				ret.allocateDenseBlock();
+			
+			//prepare row-upper for special cases of vector-matrix
+			boolean pm2 = checkParMatrixMultRightInputRows(m1, m2, Integer.MAX_VALUE);
+			int ru2 = (pm2 && ru==m1.rlen) ? m2.rlen : ru; 
+			int cu = m2.clen;
+			
+			//core matrix mult computation
+			if( m1.isUltraSparse() || m2.isUltraSparse() )
+				matrixMultUltraSparse(m1, m2, ret, 0, ru2);
+			else if(!m1.sparse && !m2.sparse)
+				matrixMultDenseDense(m1, m2, ret, tm2, pm2, 0, ru2, 0, cu);
+			else if(m1.sparse && m2.sparse)
+				matrixMultSparseSparse(m1, m2, ret, pm2, 0, ru2);
+			else if(m1.sparse)
+				matrixMultSparseDense(m1, m2, ret, pm2, 0, ru2);
+			else
+				matrixMultDenseSparse(m1, m2, ret, pm2, 0, ru2);
+		
+		}
+		
 		//post-processing: nnz/representation
 		if( !ret.sparse )
 			ret.recomputeNonZeros();
 		
 		if(examSparsity)
 			ret.examSparsity();
+		
 		
 		//System.out.println("MM ("+m1.isInSparseFormat()+","+m1.getNumRows()+","+m1.getNumColumns()+","+m1.getNonZeros()+")x" +
 		//		              "("+m2.isInSparseFormat()+","+m2.getNumRows()+","+m2.getNumColumns()+","+m2.getNonZeros()+") in "+time.stop());
@@ -193,7 +214,7 @@ public class LibMatrixMult
 			return;
 		}
 		
-		if(DMLScript.isNativeEnabled(k) && !m1.isInSparseFormat() && !m2.isInSparseFormat()) {
+		if(DMLScript.isNativeEnabled(k) && !isMatMultMemoryBound(m1.rlen, m1.clen, m2.clen) && !m1.isInSparseFormat() && !m2.isInSparseFormat()) {
 			ret.sparse = false;
 			ret.allocateDenseBlock();
 			Statistics.numNativeLibMatrixMultCalls.addAndGet(1);

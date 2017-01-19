@@ -32,6 +32,7 @@ import java.io.File;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.SystemUtils;
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.OptimizerUtils;
 
 /**
@@ -68,9 +69,14 @@ public class NativeHelper {
 	
 	private static int maxNumThreads = -1;
 	public static boolean isNativeLibraryLoaded(int numThreads) {
-		if(maxNumThreads == -1)
-			maxNumThreads = OptimizerUtils.getConstrainedNumThreads(-1);
-		return isSystemMLLoaded && (numThreads == maxNumThreads);
+		if(DMLScript.ENABLE_NATIVE_BLAS_IN_PARFOR) {
+			return isSystemMLLoaded;
+		}
+		else {
+			if(maxNumThreads == -1)
+				maxNumThreads = OptimizerUtils.getConstrainedNumThreads(-1);
+			return isSystemMLLoaded && (numThreads == maxNumThreads);
+		}
 	}
 	
 	private static String getBLASType() {
