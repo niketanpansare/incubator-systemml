@@ -94,6 +94,42 @@ object ExternalUDFRegistration {
   val fnMapping: HashMap[String, Function0[Array[FunctionParameter]]] = new HashMap[String, Function0[Array[FunctionParameter]]]()
   val fnSignatureMapping: HashMap[String, Array[String]] = new HashMap[String, Array[String]]()
   val udfMapping:HashMap[String, GenericFunction] = new HashMap[String, GenericFunction]();
+  
+  def convertReturnToOutput(ret:Any): Array[FunctionParameter] = {
+    ret match {
+       case x:Tuple1[Any] => Array(ExternalUDFRegistration.convertToOutput(x._1))
+       case x:Tuple2[Any, Any] => Array(ExternalUDFRegistration.convertToOutput(x._1), ExternalUDFRegistration.convertToOutput(x._2))
+       case x:Tuple3[Any, Any, Any] => Array(ExternalUDFRegistration.convertToOutput(x._1), ExternalUDFRegistration.convertToOutput(x._2), ExternalUDFRegistration.convertToOutput(x._3))
+       case x:Tuple4[Any, Any, Any, Any] => Array(ExternalUDFRegistration.convertToOutput(x._1), ExternalUDFRegistration.convertToOutput(x._2), ExternalUDFRegistration.convertToOutput(x._3), ExternalUDFRegistration.convertToOutput(x._4))
+       case x:Tuple5[Any, Any, Any, Any, Any] => Array(ExternalUDFRegistration.convertToOutput(x._1), ExternalUDFRegistration.convertToOutput(x._2), ExternalUDFRegistration.convertToOutput(x._3), ExternalUDFRegistration.convertToOutput(x._4), ExternalUDFRegistration.convertToOutput(x._5))
+       case x:Tuple6[Any, Any, Any, Any, Any, Any] => Array(ExternalUDFRegistration.convertToOutput(x._1), ExternalUDFRegistration.convertToOutput(x._2), ExternalUDFRegistration.convertToOutput(x._3), ExternalUDFRegistration.convertToOutput(x._4), ExternalUDFRegistration.convertToOutput(x._5), ExternalUDFRegistration.convertToOutput(x._6))
+       case x:Tuple7[Any, Any, Any, Any, Any, Any, Any] => Array(ExternalUDFRegistration.convertToOutput(x._1), ExternalUDFRegistration.convertToOutput(x._2), ExternalUDFRegistration.convertToOutput(x._3), ExternalUDFRegistration.convertToOutput(x._4), ExternalUDFRegistration.convertToOutput(x._5), ExternalUDFRegistration.convertToOutput(x._6), ExternalUDFRegistration.convertToOutput(x._7))
+       case x:Tuple8[Any, Any, Any, Any, Any, Any, Any, Any] => Array(ExternalUDFRegistration.convertToOutput(x._1), ExternalUDFRegistration.convertToOutput(x._2), ExternalUDFRegistration.convertToOutput(x._3), ExternalUDFRegistration.convertToOutput(x._4), ExternalUDFRegistration.convertToOutput(x._5), ExternalUDFRegistration.convertToOutput(x._6), ExternalUDFRegistration.convertToOutput(x._7), ExternalUDFRegistration.convertToOutput(x._8))
+       case x:Tuple9[Any, Any, Any, Any, Any, Any, Any, Any, Any] => Array(ExternalUDFRegistration.convertToOutput(x._1), ExternalUDFRegistration.convertToOutput(x._2), ExternalUDFRegistration.convertToOutput(x._3), ExternalUDFRegistration.convertToOutput(x._4), ExternalUDFRegistration.convertToOutput(x._5), ExternalUDFRegistration.convertToOutput(x._6), ExternalUDFRegistration.convertToOutput(x._7), 
+                                                                 ExternalUDFRegistration.convertToOutput(x._8), ExternalUDFRegistration.convertToOutput(x._9))
+       case x:Tuple10[Any, Any, Any, Any, Any, Any, Any, Any, Any, Any] => Array(ExternalUDFRegistration.convertToOutput(x._1), ExternalUDFRegistration.convertToOutput(x._2), ExternalUDFRegistration.convertToOutput(x._3), ExternalUDFRegistration.convertToOutput(x._4), ExternalUDFRegistration.convertToOutput(x._5), ExternalUDFRegistration.convertToOutput(x._6), ExternalUDFRegistration.convertToOutput(x._7), 
+                                                                 ExternalUDFRegistration.convertToOutput(x._8), ExternalUDFRegistration.convertToOutput(x._9), ExternalUDFRegistration.convertToOutput(x._10))                                                          
+       case _ => Array(ExternalUDFRegistration.convertToOutput(ret))
+     }
+  }
+  
+  def convertToOutput(x:Any): FunctionParameter = {
+     x match {
+       case x1:Int => return new Scalar(ScalarValueType.Integer, String.valueOf(x))
+       case x1:java.lang.Integer => return new Scalar(ScalarValueType.Integer, String.valueOf(x))
+       case x1:Double => return new Scalar(ScalarValueType.Double, String.valueOf(x))
+       case x1:java.lang.Double => return new Scalar(ScalarValueType.Double, String.valueOf(x))
+       case x1:java.lang.String => return new Scalar(ScalarValueType.Text, String.valueOf(x))
+       case x1:java.lang.Boolean => return new Scalar(ScalarValueType.Boolean, String.valueOf(x))
+       case x1:Boolean => return new Scalar(ScalarValueType.Boolean, String.valueOf(x))
+       case x1:scala.Array[scala.Array[Double]] => {
+         val mat = new Matrix( "temp", x1.length, x1(0).length, ValueType.Double );
+			   mat.setMatrixDoubleArray(x1)
+			   return mat
+       }
+       case _ => throw new RuntimeException("Unsupported output type:" + x.getClass().getName)
+     }
+   }
 }
 
 /**
@@ -168,7 +204,7 @@ class ExternalUDFRegistration {
     val anonfun0 = new Function0[Array[FunctionParameter]] {
        def apply(): Array[FunctionParameter] = {
          val udf = ExternalUDFRegistration.udfMapping.get(name);
-         return convertReturnToOutput(func.apply(udf.getInput(typeOf[A1].toString(), 0).asInstanceOf[A1]))
+         return ExternalUDFRegistration.convertReturnToOutput(func.apply(udf.getInput(typeOf[A1].toString(), 0).asInstanceOf[A1]))
        }
     }
     ExternalUDFRegistration.fnSignatureMapping.put(name, Array(typeOf[A1].toString(), typeOf[RT].toString()))
@@ -182,7 +218,7 @@ class ExternalUDFRegistration {
     val anonfun0 = new Function0[Array[FunctionParameter]] {
        def apply(): Array[FunctionParameter] = {
          val udf = ExternalUDFRegistration.udfMapping.get(name);
-         return convertReturnToOutput(func.apply(udf.getInput(typeOf[A1].toString(), 0).asInstanceOf[A1],
+         return ExternalUDFRegistration.convertReturnToOutput(func.apply(udf.getInput(typeOf[A1].toString(), 0).asInstanceOf[A1],
              udf.getInput(typeOf[A2].toString(), 1).asInstanceOf[A2]))
        }
     }
@@ -198,7 +234,7 @@ class ExternalUDFRegistration {
     val anonfun0 = new Function0[Array[FunctionParameter]] {
        def apply(): Array[FunctionParameter] = {
          val udf = ExternalUDFRegistration.udfMapping.get(name);
-         return convertReturnToOutput(func.apply(udf.getInput(typeOf[A1].toString(), 0).asInstanceOf[A1],
+         return ExternalUDFRegistration.convertReturnToOutput(func.apply(udf.getInput(typeOf[A1].toString(), 0).asInstanceOf[A1],
              udf.getInput(typeOf[A2].toString(), 1).asInstanceOf[A2], 
              udf.getInput(typeOf[A3].toString(), 2).asInstanceOf[A3]))
        }
@@ -218,7 +254,7 @@ class ExternalUDFRegistration {
     val anonfun0 = new Function0[Array[FunctionParameter]] {
        def apply(): Array[FunctionParameter] = {
          val udf = ExternalUDFRegistration.udfMapping.get(name);
-         return convertReturnToOutput(func.apply(udf.getInput(typeOf[A1].toString(), 0).asInstanceOf[A1],
+         return ExternalUDFRegistration.convertReturnToOutput(func.apply(udf.getInput(typeOf[A1].toString(), 0).asInstanceOf[A1],
              udf.getInput(typeOf[A2].toString(), 1).asInstanceOf[A2], 
              udf.getInput(typeOf[A3].toString(), 2).asInstanceOf[A3],
              udf.getInput(typeOf[A4].toString(), 3).asInstanceOf[A4]))
@@ -241,7 +277,7 @@ class ExternalUDFRegistration {
     val anonfun0 = new Function0[Array[FunctionParameter]] {
        def apply(): Array[FunctionParameter] = {
          val udf = ExternalUDFRegistration.udfMapping.get(name);
-         return convertReturnToOutput(func.apply(udf.getInput(typeOf[A1].toString(), 0).asInstanceOf[A1],
+         return ExternalUDFRegistration.convertReturnToOutput(func.apply(udf.getInput(typeOf[A1].toString(), 0).asInstanceOf[A1],
              udf.getInput(typeOf[A2].toString(), 1).asInstanceOf[A2], 
              udf.getInput(typeOf[A3].toString(), 2).asInstanceOf[A3],
              udf.getInput(typeOf[A4].toString(), 3).asInstanceOf[A4], 
@@ -267,7 +303,7 @@ class ExternalUDFRegistration {
     val anonfun0 = new Function0[Array[FunctionParameter]] {
        def apply(): Array[FunctionParameter] = {
          val udf = ExternalUDFRegistration.udfMapping.get(name);
-         return convertReturnToOutput(func.apply(udf.getInput(typeOf[A1].toString(), 0).asInstanceOf[A1],
+         return ExternalUDFRegistration.convertReturnToOutput(func.apply(udf.getInput(typeOf[A1].toString(), 0).asInstanceOf[A1],
              udf.getInput(typeOf[A2].toString(), 1).asInstanceOf[A2], 
              udf.getInput(typeOf[A3].toString(), 2).asInstanceOf[A3],
              udf.getInput(typeOf[A4].toString(), 3).asInstanceOf[A4], 
@@ -295,7 +331,7 @@ class ExternalUDFRegistration {
     val anonfun0 = new Function0[Array[FunctionParameter]] {
        def apply(): Array[FunctionParameter] = {
          val udf = ExternalUDFRegistration.udfMapping.get(name);
-         return convertReturnToOutput(func.apply(udf.getInput(typeOf[A1].toString(), 0).asInstanceOf[A1],
+         return ExternalUDFRegistration.convertReturnToOutput(func.apply(udf.getInput(typeOf[A1].toString(), 0).asInstanceOf[A1],
              udf.getInput(typeOf[A2].toString(), 1).asInstanceOf[A2], 
              udf.getInput(typeOf[A3].toString(), 2).asInstanceOf[A3],
              udf.getInput(typeOf[A4].toString(), 3).asInstanceOf[A4], 
@@ -326,7 +362,7 @@ class ExternalUDFRegistration {
     val anonfun0 = new Function0[Array[FunctionParameter]] {
        def apply(): Array[FunctionParameter] = {
          val udf = ExternalUDFRegistration.udfMapping.get(name);
-         return convertReturnToOutput(func.apply(udf.getInput(typeOf[A1].toString(), 0).asInstanceOf[A1],
+         return ExternalUDFRegistration.convertReturnToOutput(func.apply(udf.getInput(typeOf[A1].toString(), 0).asInstanceOf[A1],
              udf.getInput(typeOf[A2].toString(), 1).asInstanceOf[A2], 
              udf.getInput(typeOf[A3].toString(), 2).asInstanceOf[A3],
              udf.getInput(typeOf[A4].toString(), 3).asInstanceOf[A4], 
@@ -359,7 +395,7 @@ class ExternalUDFRegistration {
     val anonfun0 = new Function0[Array[FunctionParameter]] {
        def apply(): Array[FunctionParameter] = {
          val udf = ExternalUDFRegistration.udfMapping.get(name);
-         return convertReturnToOutput(func.apply(udf.getInput(typeOf[A1].toString(), 0).asInstanceOf[A1],
+         return ExternalUDFRegistration.convertReturnToOutput(func.apply(udf.getInput(typeOf[A1].toString(), 0).asInstanceOf[A1],
              udf.getInput(typeOf[A2].toString(), 1).asInstanceOf[A2], 
              udf.getInput(typeOf[A3].toString(), 2).asInstanceOf[A3],
              udf.getInput(typeOf[A4].toString(), 3).asInstanceOf[A4], 
@@ -395,7 +431,7 @@ class ExternalUDFRegistration {
     val anonfun0 = new Function0[Array[FunctionParameter]] {
        def apply(): Array[FunctionParameter] = {
          val udf = ExternalUDFRegistration.udfMapping.get(name);
-         return convertReturnToOutput(func.apply(udf.getInput(typeOf[A1].toString(), 0).asInstanceOf[A1],
+         return ExternalUDFRegistration.convertReturnToOutput(func.apply(udf.getInput(typeOf[A1].toString(), 0).asInstanceOf[A1],
              udf.getInput(typeOf[A2].toString(), 1).asInstanceOf[A2], 
              udf.getInput(typeOf[A3].toString(), 2).asInstanceOf[A3],
              udf.getInput(typeOf[A4].toString(), 3).asInstanceOf[A4], 
@@ -429,39 +465,6 @@ class ExternalUDFRegistration {
   
   // ------------------------------------------------------------------------------------------
   
-  def convertReturnToOutput(ret:Any): Array[FunctionParameter] = {
-    ret match {
-       case x:Tuple1[Any] => Array(convertToOutput(x._1))
-       case x:Tuple2[Any, Any] => Array(convertToOutput(x._1), convertToOutput(x._2))
-       case x:Tuple3[Any, Any, Any] => Array(convertToOutput(x._1), convertToOutput(x._2), convertToOutput(x._3))
-       case x:Tuple4[Any, Any, Any, Any] => Array(convertToOutput(x._1), convertToOutput(x._2), convertToOutput(x._3), convertToOutput(x._4))
-       case x:Tuple5[Any, Any, Any, Any, Any] => Array(convertToOutput(x._1), convertToOutput(x._2), convertToOutput(x._3), convertToOutput(x._4), convertToOutput(x._5))
-       case x:Tuple6[Any, Any, Any, Any, Any, Any] => Array(convertToOutput(x._1), convertToOutput(x._2), convertToOutput(x._3), convertToOutput(x._4), convertToOutput(x._5), convertToOutput(x._6))
-       case x:Tuple7[Any, Any, Any, Any, Any, Any, Any] => Array(convertToOutput(x._1), convertToOutput(x._2), convertToOutput(x._3), convertToOutput(x._4), convertToOutput(x._5), convertToOutput(x._6), convertToOutput(x._7))
-       case x:Tuple8[Any, Any, Any, Any, Any, Any, Any, Any] => Array(convertToOutput(x._1), convertToOutput(x._2), convertToOutput(x._3), convertToOutput(x._4), convertToOutput(x._5), convertToOutput(x._6), convertToOutput(x._7), convertToOutput(x._8))
-       case x:Tuple9[Any, Any, Any, Any, Any, Any, Any, Any, Any] => Array(convertToOutput(x._1), convertToOutput(x._2), convertToOutput(x._3), convertToOutput(x._4), convertToOutput(x._5), convertToOutput(x._6), convertToOutput(x._7), 
-                                                                 convertToOutput(x._8), convertToOutput(x._9))
-       case x:Tuple10[Any, Any, Any, Any, Any, Any, Any, Any, Any, Any] => Array(convertToOutput(x._1), convertToOutput(x._2), convertToOutput(x._3), convertToOutput(x._4), convertToOutput(x._5), convertToOutput(x._6), convertToOutput(x._7), 
-                                                                 convertToOutput(x._8), convertToOutput(x._9), convertToOutput(x._10))                                                          
-       case _ => Array(convertToOutput(ret))
-     }
-  }
    val rand = new java.util.Random()
-   def convertToOutput(x:Any): FunctionParameter = {
-     x match {
-       case x1:Int => return new Scalar(ScalarValueType.Integer, String.valueOf(x))
-       case x1:java.lang.Integer => return new Scalar(ScalarValueType.Integer, String.valueOf(x))
-       case x1:Double => return new Scalar(ScalarValueType.Double, String.valueOf(x))
-       case x1:java.lang.Double => return new Scalar(ScalarValueType.Double, String.valueOf(x))
-       case x1:java.lang.String => return new Scalar(ScalarValueType.Text, String.valueOf(x))
-       case x1:java.lang.Boolean => return new Scalar(ScalarValueType.Boolean, String.valueOf(x))
-       case x1:Boolean => return new Scalar(ScalarValueType.Boolean, String.valueOf(x))
-       case x1:scala.Array[scala.Array[Double]] => {
-         val mat = new Matrix( "temp" + rand.nextLong, x1.length, x1(0).length, ValueType.Double );
-			   mat.setMatrixDoubleArray(x1)
-			   return mat
-       }
-       case _ => throw new RuntimeException("Unsupported output type:" + x.getClass().getName)
-     }
-   }
+   
 }

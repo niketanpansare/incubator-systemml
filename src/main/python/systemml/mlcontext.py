@@ -225,6 +225,72 @@ class Script(object):
         self._output.extend(names)
         return self
 
+class UDFProxy(object):
+    """
+    Proxy for the Python UDF.
+
+    Parameters
+    ----------
+    func: Function pointer
+        Function
+    """
+    def __init__(self, func):
+        self.func = func
+    def performOperation(x1):
+        return self.func(x1)
+    def performOperation(x1, x2):
+        return self.func(x1, x2)
+    def performOperation(x1, x2, x3):
+        return self.func(x1, x2, x3)
+    def performOperation(x1, x2, x3, x4):
+        return self.func(x1, x2, x3, x4)
+    def performOperation(x1, x2, x3, x4, x5):
+        return self.func(x1, x2, x3, x4, x5)
+    def performOperation(x1, x2, x3, x4, x5, x6):
+        return self.func(x1, x2, x3, x4, x5, x6)
+    def performOperation(x1, x2, x3, x4, x5, x6, x7):
+        return self.func(x1, x2, x3, x4, x5, x6, x7)
+    def performOperation(x1, x2, x3, x4, x5, x6, x7, x8):
+        return self.func(x1, x2, x3, x4, x5, x6, x7, x8)
+    def performOperation(x1, x2, x3, x4, x5, x6, x7, x8, x9):
+        return self.func(x1, x2, x3, x4, x5, x6, x7, x8, x9)
+    def performOperation(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10):
+        return self.func(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10)
+    class Java:
+        implements = ['org.apache.sysml.udf.lib.Py4JCallbackInterface']
+
+class UDFRegistration(object):
+    """
+    UDF Registration Wrapper.
+
+    Parameters
+    ----------
+    ml: MLContext
+        MLContext
+    """
+    def __init__(self, ml):
+        self.ml = ml
+        self._registeredFunction = False
+        self.callBackParams = self.ml._sc._gateway.callback_server_parameters
+    
+    def setPortNumber(self, portNumber):
+        self.callBackParams.port = portNumber
+    
+    def start(self):
+        self.isCallbackStartedByThisCall = False
+        if self._registeredFunction:
+            self.isCallbackStartedByThisCall = self.ml._sc._gateway.start_callback_server(self.callBackParams)
+            
+    def stop(self):
+        if self._registeredFunction and self.isCallbackStartedByThisCall:
+            self.ml._sc._gateway.shutdown_callback_server()
+            
+    def register(self, name, func, funcSignature=None):
+        if funcSignature is None:
+            raise ValueError("The current version requires function signature")
+        self._registeredFunction = True
+        udf = UDFProxy(func)
+        tmp = self.ml._sc._jvm.org.apache.sysml.api.Py4JCallbackImpl(name, udf, funcSignature, self.ml._ml)
 
 class MLContext(object):
     """
@@ -240,10 +306,11 @@ class MLContext(object):
             raise ValueError("Expected sc to be a SparkContext, got " % sc)
         self._sc = sc
         self._ml = createJavaObject(sc, 'mlcontext')
+        self.udf = UDFRegistration(self)
         
     def __repr__(self):
         return "MLContext"
-
+    
     def execute(self, script):
         """
         Execute a DML / PyDML script.
@@ -260,6 +327,7 @@ class MLContext(object):
         """
         if not isinstance(script, Script):
             raise ValueError("Expected script to be an instance of Script")
+        self.udf.start()
         scriptString = script.scriptString
         if script.scriptType == "dml":
             if scriptString.endswith(".dml"):
@@ -294,6 +362,7 @@ class MLContext(object):
                 py4j.java_gateway.get_method(script_java, "in")(key, _py2java(self._sc, val))
         for val in script._output:
             script_java.out(val)
+        self.udf.stop()
         return MLResults(self._ml.execute(script_java), self._sc)
 
     def setStatistics(self, statistics):

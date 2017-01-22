@@ -98,4 +98,23 @@ public class GenericFunction extends PackageFunction {
 		throw new RuntimeException("Unsupported type: " + type);
 	}
 
+	public Object getPythonInput(String type, int pos) throws DMLRuntimeException, IOException {
+		if(type.equals("integer")) {
+			return Integer.parseInt(((Scalar)getFunctionInput(pos)).getValue());
+		}
+		else if(type.equals("double")) {
+			return Double.parseDouble(((Scalar)getFunctionInput(pos)).getValue());
+		}
+		else if(type.equals("string")) {
+			return ((Scalar)getFunctionInput(pos)).getValue();
+		}
+		else if(type.equals("boolean")) {
+			return Boolean.parseBoolean(((Scalar)getFunctionInput(pos)).getValue());
+		}
+		else if(type.equals("matrix[double]")) {
+			return ((Matrix) getFunctionInput(pos)).getMatrixAsDoubleArray();
+		}
+		
+		throw new RuntimeException("Unsupported type: " + type);
+	}
 }
