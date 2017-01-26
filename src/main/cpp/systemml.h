@@ -67,6 +67,14 @@ JNIEXPORT void JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dBackwardDa
 JNIEXPORT void JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dBackwardFilterDense
   (JNIEnv *, jclass, jdoubleArray, jdoubleArray, jdoubleArray, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint);
 
+/*
+ * Class:     org_apache_sysml_utils_NativeHelper
+ * Method:    getStatistics
+ * Signature: (I)D
+ */
+JNIEXPORT jdouble JNICALL Java_org_apache_sysml_utils_NativeHelper_getStatistics
+  (JNIEnv *, jclass, jint);
+
 #ifdef __cplusplus
 }
 #endif

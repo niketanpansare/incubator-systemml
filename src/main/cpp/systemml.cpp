@@ -21,6 +21,7 @@
 #include "systemml.h"
 #include "libmatrixmult.h"
 #include "libmatrixdnn.h"
+#include <ctime>
 
 // Linux:
 // g++ -o libsystemml_mkl-linux-x86_64.so *.cpp  -I$JAVA_HOME/include -I$MKLROOT/include -I$JAVA_HOME/include/linux -lmkl_rt -lpthread  -lm -ldl -DUSE_INTEL_MKL -DUSE_GNU_THREADING -L$MKLROOT/lib/intel64 -m64 -fopenmp -O3 -shared -fPIC
@@ -37,6 +38,8 @@
   env->ReleasePrimitiveArrayCritical(input, inputPtr, 0)
 // env->ReleaseDoubleArrayElements(input, inputPtr, 0)
 
+double matmultTime = 0;
+
 JNIEXPORT void JNICALL Java_org_apache_sysml_utils_NativeHelper_matrixMultDenseDense(
     JNIEnv* env, jclass cls, jdoubleArray m1, jdoubleArray m2, jdoubleArray ret,
     jint m1rlen, jint m1clen, jint m2clen, jint numThreads) {
@@ -44,11 +47,23 @@ JNIEXPORT void JNICALL Java_org_apache_sysml_utils_NativeHelper_matrixMultDenseD
   double* m2Ptr = GET_DOUBLE_ARRAY(env, m2);
   double* retPtr = GET_DOUBLE_ARRAY(env, ret);
 
+  clock_t t = clock();
   matmult(m1Ptr, m2Ptr, retPtr, (int)m1rlen, (int)m1clen, (int)m2clen, (int)numThreads);
+  t = clock() - t;
+  matmultTime += ((double)t * 1000)/CLOCKS_PER_SEC; // store in milliseconds
 
   RELEASE_DOUBLE_ARRAY(env, m1, m1Ptr);
   RELEASE_DOUBLE_ARRAY(env, m2, m2Ptr);
   RELEASE_DOUBLE_ARRAY(env, ret, retPtr);    
+}
+
+
+JNIEXPORT jdouble JNICALL Java_org_apache_sysml_utils_NativeHelper_getStatistics
+  (JNIEnv * env, jclass cls, jint op) {
+	// For now only return matmult execution time
+	double tmp = matmultTime;
+	matmultTime = 0;
+	return (jdouble) tmp;
 }
 
 JNIEXPORT void JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dDense(

@@ -4,7 +4,6 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
@@ -12,6 +11,7 @@ import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyze
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.functionobjects.Multiply;
 import org.apache.sysml.runtime.functionobjects.Plus;
+import org.apache.sysml.utils.NativeHelper;
 
 public class ExperimentDispatcher {
 	
@@ -19,7 +19,7 @@ public class ExperimentDispatcher {
 	private static MatrixBlock m2 = null;
 	private static int M = 1000000;
 	private static int K = 1000;
-	private static int NUM_ITERS = 10;
+	private static int NUM_ITERS = 20;
 	public static void runExperiment(int num, String[] args) throws DMLRuntimeException {
 		switch(num){
 			case 1:
@@ -50,7 +50,7 @@ public class ExperimentDispatcher {
 	
 	private static void runExperiment(int num, int m, int n, int k, double sparsity) throws DMLRuntimeException {
 		generateInputs(m, n, k, sparsity);
-		double results[][] = new double[NUM_ITERS][4]; //single/multi-threaded
+		double results[][] = new double[NUM_ITERS][6]; //single/multi-threaded
 		for(int i = -5; i < NUM_ITERS; i++) {
 			Timing time1 = new Timing(true);
 			DMLScript.ENABLE_NATIVE_BLAS = false;
@@ -61,6 +61,7 @@ public class ExperimentDispatcher {
 			DMLScript.ENABLE_NATIVE_BLAS = true;
 			m1.aggregateBinaryOperations(m1, m2, new MatrixBlock(), getMatMultOperator(true));
 			double t2 = time2.stop();
+			double t5 = NativeHelper.getStatistics(0);
 			
 			Timing time3 = new Timing(true);
 			DMLScript.ENABLE_NATIVE_BLAS = false;
@@ -71,12 +72,15 @@ public class ExperimentDispatcher {
 			DMLScript.ENABLE_NATIVE_BLAS = true;
 			m1.aggregateBinaryOperations(m1, m2, new MatrixBlock(), getMatMultOperator(false));
 			double t4 = time4.stop();
+			double t6 = NativeHelper.getStatistics(0);
 			
 			if(i >= 0) {
 				results[i][0] = t1;
 				results[i][1] = t2;
 				results[i][2] = t3;
 				results[i][3] = t4;
+				results[i][4] = t5;
+				results[i][5] = t6;
 			}
 		}
 		writeResultFile("result_" + num +".txt", results);
