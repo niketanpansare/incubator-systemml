@@ -133,7 +133,7 @@ public class DMLScript
 	
 	// Native BLAS is enabled by default and we fall back to Java BLAS whenever the library is not available 
 	// or whenever operation is not supported (eg: sparse matrix multiplication). 
-	public static final boolean ENABLE_NATIVE_BLAS = true;
+	public static boolean ENABLE_NATIVE_BLAS = true;
 	public static final boolean ENABLE_NATIVE_BLAS_IN_PARFOR = true;
 	
 	// flag that indicates whether or not to suppress any prints to stdout
@@ -256,6 +256,15 @@ public class DMLScript
 		//check for clean
 		else if( args.length==1 && args[0].equalsIgnoreCase("-clean") ){
 			cleanSystemMLWorkspace();
+			return true;
+		}
+		
+		//check for experiments
+		else if( args[0].equalsIgnoreCase("-exp") ){
+			int num = Integer.parseInt(args[1]);
+			String[] args2 = new String[args.length-2];
+			System.arraycopy(args, 2, args2, 0, args2.length);
+			ExperimentDispatcher.runExperiment(num, args2);
 			return true;
 		}
 			
