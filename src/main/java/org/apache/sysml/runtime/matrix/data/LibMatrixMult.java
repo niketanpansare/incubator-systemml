@@ -154,7 +154,7 @@ public class LibMatrixMult
 			if(!m1.isInSparseFormat() && !m2.isInSparseFormat())
 				NativeHelper.matrixMultDenseDense(m1.denseBlock, m2.denseBlock, ret.denseBlock, m1.getNumRows(), 
 					m1.getNumColumns(), m2.getNumColumns(), 1);
-			else if(m1.isInSparseFormat() && !m2.isInSparseFormat())
+			else if(m1.isInSparseFormat() && !m2.isInSparseFormat()) 
 				NativeHelper.matMultSparseDense(
 						((SparseBlockCSR)m1.sparseBlock).values(), ((SparseBlockCSR)m1.sparseBlock).indexes(), ((SparseBlockCSR)m1.sparseBlock).rowPointers(), 
 						m2.denseBlock, ret.denseBlock, m1.getNumRows(), 
@@ -237,6 +237,7 @@ public class LibMatrixMult
 						m1.getNumColumns(), m2.getNumColumns(), k > 0 ? k : 1);
 			else
 				throw new DMLRuntimeException("Unsupported format");
+			ret.recomputeNonZeros();
 		}
 		else {
 			
