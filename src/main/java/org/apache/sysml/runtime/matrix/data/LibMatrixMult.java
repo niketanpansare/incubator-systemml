@@ -147,13 +147,12 @@ public class LibMatrixMult
 			return;
 		}
 		
-		if(DMLScript.isNativeEnabled(1) && !isMatMultMemoryBound(m1.rlen, m1.clen, m2.clen) && !m1.isInSparseFormat() && !m2.isInSparseFormat()) {
+		if(DMLScript.ENABLE_NATIVE_BLAS) {
 			ret.sparse = false;
 			ret.allocateDenseBlock();
 			Statistics.numNativeLibMatrixMultCalls.addAndGet(1);
 			NativeHelper.matrixMultDenseDense(m1.denseBlock, m2.denseBlock, ret.denseBlock, m1.getNumRows(), 
 					m1.getNumColumns(), m2.getNumColumns(), 1);
-			ret.recomputeNonZeros();
 		}
 		else {
 		
@@ -216,13 +215,12 @@ public class LibMatrixMult
 			return;
 		}
 		
-		if(DMLScript.isNativeEnabled(k) && !isMatMultMemoryBound(m1.rlen, m1.clen, m2.clen) && !m1.isInSparseFormat() && !m2.isInSparseFormat()) {
+		if(DMLScript.ENABLE_NATIVE_BLAS) {
 			ret.sparse = false;
 			ret.allocateDenseBlock();
 			Statistics.numNativeLibMatrixMultCalls.addAndGet(1);
 			NativeHelper.matrixMultDenseDense(m1.denseBlock, m2.denseBlock, ret.denseBlock, m1.getNumRows(), 
 					m1.getNumColumns(), m2.getNumColumns(), k > 0 ? k : 1);
-			ret.recomputeNonZeros();
 		}
 		else {
 			
@@ -410,20 +408,28 @@ public class LibMatrixMult
 			return;
 		}
 		
-		//Timing time = new Timing(true);
-		
-		//pre-processing
-		m1 = prepMatrixMultTransposeSelfInput(m1, leftTranspose);
-		ret.sparse = false;
-		ret.allocateDenseBlock();
-
-		if( m1.sparse )
-			matrixMultTransposeSelfSparse(m1, ret, leftTranspose, 0, ret.rlen);
-		else 
-			matrixMultTransposeSelfDense(m1, ret, leftTranspose, 0, ret.rlen );
-
-		//post-processing
-		copyUpperToLowerTriangle( ret );		
+		if(DMLScript.ENABLE_NATIVE_BLAS) {
+			ret.sparse = false;
+			ret.allocateDenseBlock();
+			Statistics.numNativeLibMatrixMultCalls.addAndGet(1);
+			NativeHelper.tsmm(m1.denseBlock, ret.denseBlock, m1.getNumRows(),  m1.getNumColumns(), leftTranspose, 1);
+		}
+		else {
+			//Timing time = new Timing(true);
+			
+			//pre-processing
+			m1 = prepMatrixMultTransposeSelfInput(m1, leftTranspose);
+			ret.sparse = false;
+			ret.allocateDenseBlock();
+	
+			if( m1.sparse )
+				matrixMultTransposeSelfSparse(m1, ret, leftTranspose, 0, ret.rlen);
+			else 
+				matrixMultTransposeSelfDense(m1, ret, leftTranspose, 0, ret.rlen );
+	
+			//post-processing
+			copyUpperToLowerTriangle( ret );
+		}
 		ret.recomputeNonZeros();
 		ret.examSparsity();	
 		
@@ -439,40 +445,48 @@ public class LibMatrixMult
 			return;
 		}
 		
-		//check no parallelization benefit (fallback to sequential)
-		//check too small workload in terms of flops (fallback to sequential too)
-		if( ret.rlen == 1 
-			|| leftTranspose && 1L * m1.rlen * m1.clen * m1.clen < PAR_MINFLOP_THRESHOLD
-			|| !leftTranspose && 1L * m1.clen * m1.rlen * m1.rlen < PAR_MINFLOP_THRESHOLD) 
-		{ 
-			matrixMultTransposeSelf(m1, ret, leftTranspose);
-			return;
+		if(DMLScript.ENABLE_NATIVE_BLAS) {
+			ret.sparse = false;
+			ret.allocateDenseBlock();
+			Statistics.numNativeLibMatrixMultCalls.addAndGet(1);
+			NativeHelper.tsmm(m1.denseBlock, ret.denseBlock, m1.getNumRows(),  m1.getNumColumns(), leftTranspose, 1);
 		}
+		else {
+			//check no parallelization benefit (fallback to sequential)
+			//check too small workload in terms of flops (fallback to sequential too)
+			if( ret.rlen == 1 
+				|| leftTranspose && 1L * m1.rlen * m1.clen * m1.clen < PAR_MINFLOP_THRESHOLD
+				|| !leftTranspose && 1L * m1.clen * m1.rlen * m1.rlen < PAR_MINFLOP_THRESHOLD) 
+			{ 
+				matrixMultTransposeSelf(m1, ret, leftTranspose);
+				return;
+			}
+			
+			//Timing time = new Timing(true);
+			
+			//pre-processing (no need to check isThreadSafe)
+			m1 = prepMatrixMultTransposeSelfInput(m1, leftTranspose);
+			ret.sparse = false;	
+			ret.allocateDenseBlock();
 		
-		//Timing time = new Timing(true);
-		
-		//pre-processing (no need to check isThreadSafe)
-		m1 = prepMatrixMultTransposeSelfInput(m1, leftTranspose);
-		ret.sparse = false;	
-		ret.allocateDenseBlock();
-	
-		//core multi-threaded matrix mult computation
-		try {
-			ExecutorService pool = Executors.newFixedThreadPool( k );
-			ArrayList<MatrixMultTransposeTask> tasks = new ArrayList<MatrixMultTransposeTask>();
-			//load balance via #tasks=2k due to triangular shape 
-			int blklen = (int)(Math.ceil((double)ret.rlen/(2*k)));
-			for( int i=0; i<2*k & i*blklen<ret.rlen; i++ )
-				tasks.add(new MatrixMultTransposeTask(m1, ret, leftTranspose, i*blklen, Math.min((i+1)*blklen, ret.rlen)));
-			pool.invokeAll(tasks);	
-			pool.shutdown();
+			//core multi-threaded matrix mult computation
+			try {
+				ExecutorService pool = Executors.newFixedThreadPool( k );
+				ArrayList<MatrixMultTransposeTask> tasks = new ArrayList<MatrixMultTransposeTask>();
+				//load balance via #tasks=2k due to triangular shape 
+				int blklen = (int)(Math.ceil((double)ret.rlen/(2*k)));
+				for( int i=0; i<2*k & i*blklen<ret.rlen; i++ )
+					tasks.add(new MatrixMultTransposeTask(m1, ret, leftTranspose, i*blklen, Math.min((i+1)*blklen, ret.rlen)));
+				pool.invokeAll(tasks);	
+				pool.shutdown();
+			}
+			catch(Exception ex) {
+				throw new DMLRuntimeException(ex);
+			}
+			
+			//post-processing
+			copyUpperToLowerTriangle( ret );	
 		}
-		catch(Exception ex) {
-			throw new DMLRuntimeException(ex);
-		}
-		
-		//post-processing
-		copyUpperToLowerTriangle( ret );		
 		ret.recomputeNonZeros();
 		ret.examSparsity();	
 		

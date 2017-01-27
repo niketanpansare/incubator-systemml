@@ -74,6 +74,22 @@ JNIEXPORT void JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dBackwardFi
  */
 JNIEXPORT jdouble JNICALL Java_org_apache_sysml_utils_NativeHelper_getStatistics
   (JNIEnv *, jclass, jint);
+  
+/*
+ * Class:     org_apache_sysml_utils_NativeHelper
+ * Method:    tsmm
+ * Signature: ([D[DIIZI)V
+ */
+JNIEXPORT void JNICALL Java_org_apache_sysml_utils_NativeHelper_tsmm
+  (JNIEnv *, jclass, jdoubleArray, jdoubleArray, jint, jint, jboolean, jint);
+
+/*
+ * Class:     org_apache_sysml_utils_NativeHelper
+ * Method:    matMultSparseDense
+ * Signature: ([D[I[I[D[DIIII)V
+ */
+JNIEXPORT void JNICALL Java_org_apache_sysml_utils_NativeHelper_matMultSparseDense
+  (JNIEnv *, jclass, jdoubleArray, jintArray, jintArray, jdoubleArray, jdoubleArray, jint, jint, jint, jint);
 
 #ifdef __cplusplus
 }

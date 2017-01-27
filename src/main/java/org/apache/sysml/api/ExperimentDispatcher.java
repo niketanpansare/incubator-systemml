@@ -23,22 +23,38 @@ public class ExperimentDispatcher {
 	public static void runExperiment(int num, String[] args) throws DMLRuntimeException {
 		switch(num){
 			case 1:
-				// Matrix-vector/vector-matrix 1M x 1K, dense (~8GB)
+				// Matrix-vector 1M x 1K, dense (~8GB)
 				runExperiment(num, M, K, 1, 0.9);
 				return;
+			case 2:
+				// Vector-matrix 1M x 1K, dense (~8GB)
+				runExperiment(num, 1, M, K, 0.9);
+				return;	
 			case 3:
+				// Matrix-vector/vector-matrix 1M x 10K, sparsity=0.1 (~12GB)
+				runExperiment(num, M, 10*K, 1, 0.1);
+				return;
+			case 4:
+				// Vector-matrix 1M x 10K, sparsity=0.1 (~12GB)
+				runExperiment(num, 1, M, 10*K, 0.1);
+				return;
+			case 5:
 				// Matrix-matrix/matrix-Matrix 1M x 1K x 20, dense (40GFLOPs)
 				runExperiment(num, M, K, 20, 0.9);
 				return;
-			case 5:
+			case 6:
+				// Matrix-matrix/matrix-Matrix 1M x 10K (sparsity=0.1) x 20, (40 GFLOPs)
+				runExperiment(num, M, 10*K, 20, 0.1);
+				return;
+			case 7:
 				// Squared matrix 3K x 3K, dense (54 GFLOPs)
 				runExperiment(num, 3*K, 3*K, 3*K, 0.9);
 				return;
-			case 6:
+			case 8:
 				// n rows x 196,608 columns %*% 196,608 x 512
 				runExperiment(num, 64, 196608, 512, 0.9);
 				return;
-			case 7:
+			case 9:
 				// n rows x 196,608 columns %*% 196,608 x 512
 				runExperiment(num, 1024, 196608, 512, 0.9);
 				return;
@@ -50,7 +66,7 @@ public class ExperimentDispatcher {
 	
 	private static void runExperiment(int num, int m, int n, int k, double sparsity) throws DMLRuntimeException {
 		generateInputs(m, n, k, sparsity);
-		double results[][] = new double[NUM_ITERS][6]; //single/multi-threaded
+		double results[][] = new double[NUM_ITERS][4]; //single/multi-threaded
 		for(int i = -5; i < NUM_ITERS; i++) {
 			Timing time1 = new Timing(true);
 			DMLScript.ENABLE_NATIVE_BLAS = false;
@@ -79,8 +95,9 @@ public class ExperimentDispatcher {
 				results[i][1] = t2;
 				results[i][2] = t3;
 				results[i][3] = t4;
-				results[i][4] = t5;
-				results[i][5] = t6;
+				// C++ clock() is not accurate enough
+				// results[i][4] = t5;
+				// results[i][5] = t6;
 			}
 		}
 		writeResultFile("result_" + num +".txt", results);

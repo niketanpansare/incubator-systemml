@@ -53,4 +53,8 @@ void setNumThreadsForBLAS(int numThreads);
 void matmult(double* m1Ptr, double* m2Ptr, double* retPtr, int m1rlen,
              int m1clen, int m2clen, int numThreads);
              
+void tsmm(double* m1Ptr, double* retPtr, int m1rlen, int m1clen, bool isLeftTranspose,  int numThreads);
+void csrMatmult(double* m1Val, int* m1Indx, int* m1Ptr, double* m2Ptr, double* retPtr, int m1rlen,
+             int m1clen, int m2clen, int numThreads);
+             
 #endif

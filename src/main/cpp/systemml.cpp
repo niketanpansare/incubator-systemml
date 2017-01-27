@@ -38,6 +38,14 @@
   env->ReleasePrimitiveArrayCritical(input, inputPtr, 0)
 // env->ReleaseDoubleArrayElements(input, inputPtr, 0)
 
+#define GET_INT_ARRAY(env, input) \
+  ((int*)env->GetPrimitiveArrayCritical(input, NULL))
+// env->GetIntArrayElements(input,NULL)
+ 
+#define RELEASE_INT_ARRAY(env, input, inputPtr) \
+  env->ReleasePrimitiveArrayCritical(input, inputPtr, 0)
+// env->ReleaseIntArrayElements(input, inputPtr, 0)
+
 double matmultTime = 0;
 
 JNIEXPORT void JNICALL Java_org_apache_sysml_utils_NativeHelper_matrixMultDenseDense(
@@ -54,9 +62,41 @@ JNIEXPORT void JNICALL Java_org_apache_sysml_utils_NativeHelper_matrixMultDenseD
 
   RELEASE_DOUBLE_ARRAY(env, m1, m1Ptr);
   RELEASE_DOUBLE_ARRAY(env, m2, m2Ptr);
-  RELEASE_DOUBLE_ARRAY(env, ret, retPtr);    
+  RELEASE_DOUBLE_ARRAY(env, ret, retPtr);
 }
 
+JNIEXPORT void JNICALL Java_org_apache_sysml_utils_NativeHelper_tsmm
+  (JNIEnv * env, jclass cls, jdoubleArray m1, jdoubleArray ret, jint m1rlen, jint m1clen, jboolean isLeftTranspose, jint numThreads) {
+  double* m1Ptr = GET_DOUBLE_ARRAY(env, m1);
+  double* retPtr = GET_DOUBLE_ARRAY(env, ret);
+
+  clock_t t = clock();
+  tsmm(m1Ptr, retPtr, (int) m1rlen, (int) m1clen, (bool) isLeftTranspose, (int) numThreads);
+  t = clock() - t;
+  matmultTime += ((double)t * 1000)/CLOCKS_PER_SEC; // store in milliseconds
+
+  RELEASE_DOUBLE_ARRAY(env, m1, m1Ptr);
+  RELEASE_DOUBLE_ARRAY(env, ret, retPtr);
+}
+
+JNIEXPORT void JNICALL Java_org_apache_sysml_utils_NativeHelper_matMultSparseDense
+  (JNIEnv * env, jclass cls, jdoubleArray m1Val1, jintArray m1Indx1, jintArray m1Ptr1, 
+  	jdoubleArray m2, jdoubleArray ret, jint m1rlen, jint m1clen, jint m2clen, jint numThreads) {
+  double* m2Ptr = GET_DOUBLE_ARRAY(env, m2);
+  double* retPtr = GET_DOUBLE_ARRAY(env, ret);
+  double* m1Val = GET_DOUBLE_ARRAY(env, m1Val1);
+  int* m1Indx = GET_INT_ARRAY(env, m1Indx1);
+  int* m1Ptr = GET_INT_ARRAY(env, m1Ptr1);
+  
+  csrMatmult(m1Val, m1Indx, m1Ptr, m2Ptr, retPtr, (int) m1rlen,
+             (int) m1clen, (int) m2clen, (int) numThreads);
+  
+  RELEASE_INT_ARRAY(env, m1Ptr1, m1Ptr);
+  RELEASE_INT_ARRAY(env, m1Indx1, m1Indx);
+  RELEASE_DOUBLE_ARRAY(env, m1Val1, m1Val);
+  RELEASE_DOUBLE_ARRAY(env, m2, m2Ptr);
+  RELEASE_DOUBLE_ARRAY(env, ret, retPtr);
+}
 
 JNIEXPORT jdouble JNICALL Java_org_apache_sysml_utils_NativeHelper_getStatistics
   (JNIEnv * env, jclass cls, jint op) {

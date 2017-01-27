@@ -220,6 +220,10 @@ public class NativeHelper {
 	// TODO: Add tsmm, pmm, wsloss, mmchain, etc.
 	public static native void matrixMultDenseDense(double [] m1, double [] m2, double [] ret, int m1rlen, int m1clen, int m2clen, int numThreads);
 	
+	public static native void tsmm(double [] m1, double [] ret, int m1rlen, int m1clen, boolean isLeftTranspose, int numThreads);
+	public static native void matMultSparseDense(double [] m1Val, int [] m1Indx, int [] m1Ptr, double [] m2Ptr, double[] retPtr, int m1rlen,
+             int m1clen, int m2clen, int numThreads);
+	
 	// LibMatrixDNN operations:
 	// N = number of images, C = number of channels, H = image height, W = image width
 	// K = number of filters, R = filter height, S = filter width
