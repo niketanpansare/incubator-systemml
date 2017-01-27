@@ -19,9 +19,16 @@
 package org.apache.sysml.udf.lib;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.Map.Entry;
+import java.util.TreeMap;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheException;
+import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
@@ -66,7 +73,7 @@ public class RowClassMeet extends PackageFunction {
 
 	private static final long serialVersionUID = 1L;
 	private Matrix CMat, NMat;
-	private MatrixBlock A, B, C, N, NZ, A_full, B_full, tX_full;
+	private MatrixBlock A, B, C, N;
 	private int nr, nc;
 
 	@Override
@@ -83,7 +90,52 @@ public class RowClassMeet extends PackageFunction {
 		else
 			throw new RuntimeException("RowClassMeet produces only one output");
 	}
-
+	
+	
+	public class ClassLabels {
+		public double aVal;
+		public double bVal;
+		public ClassLabels(double aVal, double bVal) {
+			this.aVal = aVal;
+			this.bVal = bVal;
+		}
+	}
+	
+	public class ClassLabelComparator implements Comparator<ClassLabels> {
+		Integer tmp1, tmp2;
+		@Override
+		public int compare(ClassLabels o1, ClassLabels o2) {
+			if(o1.aVal != o2.aVal) {
+				tmp1 = (int) o1.aVal;
+				tmp2 = (int) o2.aVal;
+			}
+			else {
+				tmp1 = (int) o1.bVal;
+				tmp2 = (int) o2.bVal;
+			}
+			return tmp1.compareTo(tmp2);
+		}
+	}
+	
+	double [] getRow(MatrixBlock B, double [] bRow, int i) {
+		if(B.getNumRows() == 1) 
+			i = 0;
+		Arrays.fill(bRow, 0);
+		if(B.isInSparseFormat()) {
+			Iterator<IJV> iter = B.getSparseBlockIterator(i, i+1);
+			while(iter.hasNext()) {
+				IJV ijv = iter.next();
+				bRow[ijv.getI()*B.getNumColumns() + ijv.getJ()] = ijv.getV();
+			}
+		}
+		else {
+			double [] denseBlk = B.getDenseBlock();
+			if(denseBlk != null)
+			System.arraycopy(denseBlk, i*B.getNumColumns(), bRow, 0, B.getNumColumns());
+		}
+		return bRow;
+	}
+	
 	@Override
 	public void execute() {
 		try {
@@ -92,70 +144,48 @@ public class RowClassMeet extends PackageFunction {
 			nr = Math.max(A.getNumRows(), B.getNumRows());
 			nc = Math.max(A.getNumColumns(), B.getNumColumns());
 			
-			// Simplification:
-			if(A.isInSparseFormat())
-				A.sparseToDense();
-			else if(A.getDenseBlock() == null)
-				throw new RuntimeException("Empty input is not supported");
-			if(B.isInSparseFormat())
-				B.sparseToDense();
-			else if(B.getDenseBlock() == null)
-				throw new RuntimeException("Empty input is not supported");
-			
-			// C = matrix (0, rows = nr, cols = nc);
-		    // N = matrix (0, rows = nr, cols = nc);
-			// NZ = matrix (0, rows = nr, cols = nc);
+			double [] aRow = new double[A.getNumColumns()];
+			double [] bRow = new double[B.getNumColumns()];
 			CMat = new Matrix( createOutputFilePathAndName( "TMP" ), nr, nc, ValueType.Double );
 			C = new MatrixBlock(nr, nc, false);
 			C.allocateDenseBlock();
-			NMat = new Matrix( createOutputFilePathAndName( "TMP1" ), nr, nc, ValueType.Double );
+			NMat = new Matrix( createOutputFilePathAndName( "TMP" ), nr, nc, ValueType.Double );
 			N = new MatrixBlock(nr, nc, false);
 			N.allocateDenseBlock();
-			NZ = new MatrixBlock(nr, nc, false);
-			NZ.allocateDenseBlock();
-		
-//			if (nrow (A) == nr) {
-//		        NZ [, 1 : ncol (A)] = ppred (A, 0, "!=");
-//		        NZ [, 1 : ncol (B)] = NZ [, 1 : ncol (B)] * ppred (B, 0, "!=");
-//		    } else {
-//		        NZ [, 1 : ncol (B)] = ppred (B, 0, "!=");
-//		        NZ [, 1 : ncol (A)] = NZ [, 1 : ncol (A)] * ppred (A, 0, "!=");
-//		    }
-			if(A.getNumRows() == nr) 
-				operation1(A, B);
-			else
-				operation1(B, A);
 			
-			if(max(NZ) > 0) {
-				// A_full = matrix (0, rows = nr, cols = nc);
-				// B_full = matrix (0, rows = nr, cols = nc);
-				// tX_full = matrix (0, rows = 3, cols = nc);
-				A_full = new MatrixBlock(nr, nc, false);
-				A_full.allocateDenseBlock();
-				B_full = new MatrixBlock(nr, nc, false);
-				B_full.allocateDenseBlock();
-				tX_full = new MatrixBlock(3, nc, false);
-				tX_full.allocateDenseBlock();
+			double [] cBlk = C.getDenseBlock();
+			double [] nBlk = N.getDenseBlock();
+			
+			for(int i = 0; i < A.getNumRows(); i++) {
+				getRow(A, aRow, i);
+				getRow(B, bRow, i);
 				
-				// A_full [, 1 : ncol (A)] = NZ [, 1 : ncol (A)] * A
-				operation2(A_full, A);
-				// B_full [, 1 : ncol (B)] = NZ [, 1 : ncol (B)] * B;
-				operation2(B_full, B);
-				// tX_full [3, ] = t(seq (1, nc, 1));
-				for(int j = 0; j < tX_full.getNumColumns(); j++) {
-					set(tX_full, 2, j, j+1);
+				// Intersection
+				for(int j = 0; j < aRow.length; j++) {
+					double multiplier = aRow[j] != 0 && bRow[j] != 0 ? 1 : 0;
+					aRow[j] *= multiplier;
+					bRow[j] *= multiplier;
 				}
 				
-				for(int rowID = 0; rowID < nr; rowID++) {
-					if(sum(NZ, rowID) > 0) {
-//						tX_full [1, ] = A_full [rowID, ];
-//		                tX_full [2, ] = B_full [rowID, ];
-						row_copy(tX_full, A_full, 0, rowID);
-						row_copy(tX_full, B_full, 1, rowID);
-						
-						// TODO:
-						
+				// Create class labels
+				TreeMap<ClassLabels, ArrayList<Integer>> classLabelMapping = new TreeMap<ClassLabels, ArrayList<Integer>>(new ClassLabelComparator());
+				for(int j = 0; j < aRow.length; j++) {
+					if(aRow[j] != 0) {
+						ClassLabels key = new ClassLabels(aRow[j], bRow[j]);
+						if(!classLabelMapping.containsKey(key))
+							classLabelMapping.put(key, new ArrayList<Integer>());
+						classLabelMapping.get(key).add(j);
 					}
+				}
+				
+				int labelID = 1;
+				for(Entry<ClassLabels, ArrayList<Integer>> entry : classLabelMapping.entrySet()) {
+					double nVal = entry.getValue().size();
+					for(Integer j : entry.getValue()) {
+						nBlk[i*nc + j] = nVal;
+						cBlk[i*nc + j] = labelID;
+					}
+					labelID++;
 				}
 			}
 			
@@ -163,10 +193,7 @@ public class RowClassMeet extends PackageFunction {
 			((Matrix) getFunctionInput(1)).getMatrixObject().release();
 		} catch (CacheException e) {
 			throw new RuntimeException("Error while executing RowClassMeet", e);
-		} catch (DMLRuntimeException e) {
-			throw new RuntimeException("Error while executing RowClassMeet", e);
-		}
-		
+		} 
 		
 		try {
 			C.recomputeNonZeros();
@@ -182,85 +209,5 @@ public class RowClassMeet extends PackageFunction {
 		}
 	}
 	
-	void row_copy(MatrixBlock dest, MatrixBlock src, int destRowIndex, int srcRowIndex) throws DMLRuntimeException {
-		if(src.getNumColumns() != dest.getNumColumns())
-			throw new DMLRuntimeException("The number of columns of src and dest should match");
-		System.arraycopy(src, srcRowIndex*src.getNumColumns(), dest, destRowIndex*dest.getNumColumns(), src.getNumColumns());
-	}
 	
-	// NZ [, 1 : ncol (A)] = ppred (A, 0, "!=");
-	// NZ [, 1 : ncol (B)] = NZ [, 1 : ncol (B)] * ppred (B, 0, "!=");
-	void operation1(MatrixBlock A, MatrixBlock B) {
-		// NZ, A = always matrix, matrix
-		for(int i = 0; i < A.getNumRows(); i++) {
-			for(int j = 0; j < A.getNumColumns(); j++) {
-				set(NZ, i, j , ppred_not_eq_zero(A, i, j));
-			}
-		}
-		if(B.getNumRows() == NZ.getNumRows()) {
-			// NZ, B = matrix, matrix
-			for(int i = 0; i < B.getNumRows(); i++) {
-				for(int j = 0; j < B.getNumColumns(); j++) {
-					set(NZ, i, j , get(NZ, i, j)*ppred_not_eq_zero(A, i, j));
-				}
-			}
-		}
-		else if(B.getNumRows() == 1) {
-			// NZ, B = matrix, vector
-			for(int i = 0; i < NZ.getNumRows(); i++) {
-				for(int j = 0; j < B.getNumColumns(); j++) {
-					set(NZ, i, j , get(NZ, i, j)*ppred_not_eq_zero(A, i, j));
-				}
-			}
-		}
-		else {
-			throw new RuntimeException("Incorrect dimensions");
-		}
-	}
-	
-	// A_full [, 1 : ncol (A)] = NZ [, 1 : ncol (A)] * A
-	void operation2(MatrixBlock A_full, MatrixBlock A) {
-		for(int i = 0; i < A.getNumRows(); i++) {
-			for(int j = 0; j < A.getNumColumns(); j++) {
-				set(A_full, i, j , get(NZ, i, j)*get(A, i, j));
-			}
-		}
-	}
-	
-//	  X = t(removeEmpty (target = tX_full, margin = "cols", select = NZ [rowID, ]));
-//    nx = nrow (X);
-//    X = order (target = X, by = 1, decreasing = FALSE, index.return = FALSE);
-//    X = order (target = X, by = 2, decreasing = FALSE, index.return = FALSE);
-	MatrixBlock operation3(MatrixBlock tX_full, int rowID) {
-		
-		
-		return null;
-	}
-	
-	double ppred_not_eq_zero(MatrixBlock A, int i, int j) {
-		return A.getDenseBlock()[i*A.getNumColumns()+j] != 0 ? 1 : 0;
-	}
-	
-	void set(MatrixBlock A, int i, int j, double val) {
-		A.getDenseBlock()[i*A.getNumColumns()+j] = val;
-	}
-	double  get(MatrixBlock A, int i, int j) {
-		return A.getDenseBlock()[i*A.getNumColumns()+j];
-	}
-	
-	double sum(MatrixBlock A, int rowID) {
-		double sum = 0;
-		for(int j = 0; j < A.getNumColumns(); j++) {
-			sum += get(A, rowID, j);
-		}
-		return sum;
-	}
-	
-	double max(MatrixBlock A) {
-		double [] denseblk = A.getDenseBlock(); 
-		double ret = denseblk[0];
-		for(int i = 1; i < denseblk.length; i++)
-			ret = Math.max(ret, denseblk[i]);
-		return ret;
-	}
 }
