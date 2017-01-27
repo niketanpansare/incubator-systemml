@@ -191,15 +191,30 @@ public class RowClassMeet extends PackageFunction {
 	// NZ [, 1 : ncol (A)] = ppred (A, 0, "!=");
 	// NZ [, 1 : ncol (B)] = NZ [, 1 : ncol (B)] * ppred (B, 0, "!=");
 	void operation1(MatrixBlock A, MatrixBlock B) {
+		// NZ, A = always matrix, matrix
 		for(int i = 0; i < A.getNumRows(); i++) {
 			for(int j = 0; j < A.getNumColumns(); j++) {
 				set(NZ, i, j , ppred_not_eq_zero(A, i, j));
 			}
 		}
-		for(int i = 0; i < B.getNumRows(); i++) {
-			for(int j = 0; j < B.getNumColumns(); j++) {
-				set(NZ, i, j , get(NZ, i, j)*ppred_not_eq_zero(A, i, j));
+		if(B.getNumRows() == NZ.getNumRows()) {
+			// NZ, B = matrix, matrix
+			for(int i = 0; i < B.getNumRows(); i++) {
+				for(int j = 0; j < B.getNumColumns(); j++) {
+					set(NZ, i, j , get(NZ, i, j)*ppred_not_eq_zero(A, i, j));
+				}
 			}
+		}
+		else if(B.getNumRows() == 1) {
+			// NZ, B = matrix, vector
+			for(int i = 0; i < NZ.getNumRows(); i++) {
+				for(int j = 0; j < B.getNumColumns(); j++) {
+					set(NZ, i, j , get(NZ, i, j)*ppred_not_eq_zero(A, i, j));
+				}
+			}
+		}
+		else {
+			throw new RuntimeException("Incorrect dimensions");
 		}
 	}
 	
