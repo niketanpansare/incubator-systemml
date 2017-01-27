@@ -71,8 +71,8 @@ void csrMatmult(double* m1Val, int* m1Indx, int* m1Ptr, double* m2Ptr, double* r
   
   setNumThreadsForBLAS(numThreads);
   
-  char matdescra[6] = {'g', 'l', 'n', 'c', 'x', 'x'};
-  char transa = 'n';
+  char matdescra[6] = { 'G', 'x', 'N', 'C', 'x', 'x' };
+  char transa = 'N';
   double beta = 0.0; double alpha = 1.0;
   mkl_dcsrmm(&transa, &m, &n, &k, &alpha, matdescra, m1Val, m1Indx, m1Ptr, &(m1Ptr[1]), m2Ptr, &n, &beta, retPtr, &n);
 }

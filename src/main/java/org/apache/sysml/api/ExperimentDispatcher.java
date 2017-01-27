@@ -117,9 +117,12 @@ public class ExperimentDispatcher {
 	}
 	
 	private static void generateInputs(int m, int n, int k, double sparsity) {
+		generateInputs(m, n, k, sparsity, 0.9);
+	}
+	private static void generateInputs(int m, int n, int k, double sparsity1, double sparsity2) {
 		try {
-			m1 = MatrixBlock.randOperations(m, n, sparsity, 0, 1, "uniform", 1234);
-			m2 = MatrixBlock.randOperations(n, k, sparsity, 0, 1, "uniform", 5467);
+			m1 = MatrixBlock.randOperations(m, n, sparsity1, 0, 1, "uniform", 1234);
+			m2 = MatrixBlock.randOperations(n, k, sparsity2, 0, 1, "uniform", 5467);
 		} catch (DMLRuntimeException e) {
 			throw new RuntimeException("ExperimentDispatcher: unable to run experiment", e);
 		}
