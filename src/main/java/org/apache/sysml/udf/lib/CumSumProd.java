@@ -149,9 +149,9 @@ public class CumSumProd extends PackageFunction {
 			retMB.examSparsity();
 			ret.setMatrixDoubleArray(retMB, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
 		} catch (DMLRuntimeException e) {
-			throw new RuntimeException("Error while executing MultiInputCbind", e);
+			throw new RuntimeException("Error while executing CumSumProd", e);
 		} catch (IOException e) {
-			throw new RuntimeException("Error while executing MultiInputCbind", e);
+			throw new RuntimeException("Error while executing CumSumProd", e);
 		}
 	}
 	
