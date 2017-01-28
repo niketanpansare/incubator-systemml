@@ -125,13 +125,13 @@ public class RowClassMeet extends PackageFunction {
 			Iterator<IJV> iter = B.getSparseBlockIterator(i, i+1);
 			while(iter.hasNext()) {
 				IJV ijv = iter.next();
-				bRow[ijv.getI()*B.getNumColumns() + ijv.getJ()] = ijv.getV();
+				bRow[ijv.getJ()] = ijv.getV();
 			}
 		}
 		else {
 			double [] denseBlk = B.getDenseBlock();
 			if(denseBlk != null)
-			System.arraycopy(denseBlk, i*B.getNumColumns(), bRow, 0, B.getNumColumns());
+				System.arraycopy(denseBlk, i*B.getNumColumns(), bRow, 0, B.getNumColumns());
 		}
 		return bRow;
 	}
