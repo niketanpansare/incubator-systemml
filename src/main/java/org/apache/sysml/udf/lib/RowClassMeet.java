@@ -144,7 +144,6 @@ public class RowClassMeet extends PackageFunction {
 			nr = Math.max(A.getNumRows(), B.getNumRows());
 			nc = Math.max(A.getNumColumns(), B.getNumColumns());
 			
-			double [] aRow = new double[A.getNumColumns()];
 			double [] bRow = new double[B.getNumColumns()];
 			CMat = new Matrix( createOutputFilePathAndName( "TMP" ), nr, nc, ValueType.Double );
 			C = new MatrixBlock(nr, nc, false);
@@ -156,27 +155,45 @@ public class RowClassMeet extends PackageFunction {
 			double [] cBlk = C.getDenseBlock();
 			double [] nBlk = N.getDenseBlock();
 			
+			if(B.getNumRows() == 1)
+				getRow(B, bRow, 0);
+			
 			for(int i = 0; i < A.getNumRows(); i++) {
-				getRow(A, aRow, i);
-				getRow(B, bRow, i);
-				
-				// Intersection
-				for(int j = 0; j < aRow.length; j++) {
-					double multiplier = aRow[j] != 0 && bRow[j] != 0 ? 1 : 0;
-					aRow[j] *= multiplier;
-					bRow[j] *= multiplier;
-				}
+				if(B.getNumRows() != 1)
+					getRow(B, bRow, i);
 				
 				// Create class labels
 				TreeMap<ClassLabels, ArrayList<Integer>> classLabelMapping = new TreeMap<ClassLabels, ArrayList<Integer>>(new ClassLabelComparator());
-				for(int j = 0; j < aRow.length; j++) {
-					if(aRow[j] != 0) {
-						ClassLabels key = new ClassLabels(aRow[j], bRow[j]);
-						if(!classLabelMapping.containsKey(key))
-							classLabelMapping.put(key, new ArrayList<Integer>());
-						classLabelMapping.get(key).add(j);
+				if(A.isInSparseFormat()) {
+					Iterator<IJV> iter = A.getSparseBlockIterator(i, i+1);
+					while(iter.hasNext()) {
+						IJV ijv = iter.next();
+						int j = ijv.getJ();
+						double aVal = ijv.getV();
+						if(aVal != 0 && bRow[j] != 0) {
+							ClassLabels key = new ClassLabels(aVal, bRow[j]);
+							if(!classLabelMapping.containsKey(key))
+								classLabelMapping.put(key, new ArrayList<Integer>());
+							classLabelMapping.get(key).add(j);
+						}
 					}
 				}
+				else {
+					double [] denseBlk = A.getDenseBlock();
+					if(denseBlk != null) {
+						int offset = i*A.getNumColumns();
+						for(int j = 0; j < A.getNumColumns(); j++) {
+							double aVal = denseBlk[offset + j];
+							if(aVal != 0 && bRow[j] != 0) {
+								ClassLabels key = new ClassLabels(aVal, bRow[j]);
+								if(!classLabelMapping.containsKey(key))
+									classLabelMapping.put(key, new ArrayList<Integer>());
+								classLabelMapping.get(key).add(j);
+							}
+						}
+					}
+				}
+				
 				
 				int labelID = 1;
 				for(Entry<ClassLabels, ArrayList<Integer>> entry : classLabelMapping.entrySet()) {
