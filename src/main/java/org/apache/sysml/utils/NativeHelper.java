@@ -69,7 +69,7 @@ public class NativeHelper {
 	
 	private static int maxNumThreads = -1;
 	public static boolean isNativeLibraryLoaded(int numThreads) {
-		if(DMLScript.ENABLE_NATIVE_BLAS_IN_PARFOR) {
+		if(DMLScript.ENABLE_NATIVE_BLAS_IN_MULTITHREADED_SCENARIO) {
 			return isSystemMLLoaded;
 		}
 		else {
@@ -77,6 +77,12 @@ public class NativeHelper {
 				maxNumThreads = OptimizerUtils.getConstrainedNumThreads(-1);
 			return isSystemMLLoaded && (numThreads == maxNumThreads);
 		}
+	}
+	
+	public static int getMaxNumThreads() {
+		if(maxNumThreads == -1)
+			maxNumThreads = OptimizerUtils.getConstrainedNumThreads(-1);
+		return maxNumThreads;
 	}
 	
 	private static String getBLASType() {
@@ -217,18 +223,19 @@ public class NativeHelper {
 		
 	}
 	
-	// TODO: Add tsmm, pmm, wsloss, mmchain, etc.
-	public static native void matrixMultDenseDense(double [] m1, double [] m2, double [] ret, int m1rlen, int m1clen, int m2clen, int numThreads);
+	// TODO: Add pmm, wsloss, mmchain, etc.
+	public static native boolean matrixMultDenseDense(double [] m1, double [] m2, double [] ret, int m1rlen, int m1clen, int m2clen, int numThreads);
+	public static native boolean tsmm(double [] m1, double [] ret, int m1rlen, int m1clen, boolean isLeftTranspose, int numThreads);
 	
 	// LibMatrixDNN operations:
 	// N = number of images, C = number of channels, H = image height, W = image width
 	// K = number of filters, R = filter height, S = filter width
-	public static native void conv2dDense(double [] input, double [] filter, double [] ret, int N, int C, int H, int W, 
+	public static native boolean conv2dDense(double [] input, double [] filter, double [] ret, int N, int C, int H, int W, 
 			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads);
-	public static native void conv2dBiasAddDense(double [] input, double [] bias, double [] filter, double [] ret, int N, int C, int H, int W, 
+	public static native boolean conv2dBiasAddDense(double [] input, double [] bias, double [] filter, double [] ret, int N, int C, int H, int W, 
 			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads);
-	public static native void conv2dBackwardDataDense(double [] filter, double [] dout, double [] ret, int N, int C, int H, int W, 
+	public static native boolean conv2dBackwardDataDense(double [] filter, double [] dout, double [] ret, int N, int C, int H, int W, 
 			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads);
-	public static native void conv2dBackwardFilterDense(double [] input, double [] dout, double [] ret, int N, int C, int H, int W, 
+	public static native boolean conv2dBackwardFilterDense(double [] input, double [] dout, double [] ret, int N, int C, int H, int W, 
 			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads);
 }

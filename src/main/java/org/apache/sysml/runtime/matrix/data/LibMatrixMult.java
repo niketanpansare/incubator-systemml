@@ -148,40 +148,45 @@ public class LibMatrixMult
 		if(DMLScript.isNativeEnabled(1) && !isMatMultMemoryBound(m1.rlen, m1.clen, m2.clen) && !m1.isInSparseFormat() && !m2.isInSparseFormat()) {
 			ret.sparse = false;
 			ret.allocateDenseBlock();
-			Statistics.numNativeLibMatrixMultCalls.addAndGet(1);
-			NativeHelper.matrixMultDenseDense(m1.denseBlock, m2.denseBlock, ret.denseBlock, m1.getNumRows(), 
-					m1.getNumColumns(), m2.getNumColumns(), 1);
-			ret.recomputeNonZeros();
+			if(NativeHelper.matrixMultDenseDense(m1.denseBlock, m2.denseBlock, ret.denseBlock, m1.getNumRows(), 
+					m1.getNumColumns(), m2.getNumColumns(), 1)) {
+				Statistics.numNativeLibMatrixMultCalls.addAndGet(1);
+				ret.recomputeNonZeros();
+				if(examSparsity)
+					ret.examSparsity();
+				return;
+			}
+			else {
+				// Else fall back to Java
+				Statistics.incrementNativeFailuresCounter();
+			}
 		}
-		else {
+			
+		//Timing time = new Timing(true);
+			
+		//pre-processing: output allocation
+		boolean tm2 = checkPrepMatrixMultRightInput(m1,m2);
+		m2 = prepMatrixMultRightInput(m1, m2);
+		ret.sparse = (m1.isUltraSparse() || m2.isUltraSparse());
+		if( !ret.sparse )
+			ret.allocateDenseBlock();
 		
-			//Timing time = new Timing(true);
-			
-			//pre-processing: output allocation
-			boolean tm2 = checkPrepMatrixMultRightInput(m1,m2);
-			m2 = prepMatrixMultRightInput(m1, m2);
-			ret.sparse = (m1.isUltraSparse() || m2.isUltraSparse());
-			if( !ret.sparse )
-				ret.allocateDenseBlock();
-			
-			//prepare row-upper for special cases of vector-matrix
-			boolean pm2 = checkParMatrixMultRightInputRows(m1, m2, Integer.MAX_VALUE);
-			int ru2 = (pm2 && ru==m1.rlen) ? m2.rlen : ru; 
-			int cu = m2.clen;
-			
-			//core matrix mult computation
-			if( m1.isUltraSparse() || m2.isUltraSparse() )
-				matrixMultUltraSparse(m1, m2, ret, 0, ru2);
-			else if(!m1.sparse && !m2.sparse)
-				matrixMultDenseDense(m1, m2, ret, tm2, pm2, 0, ru2, 0, cu);
-			else if(m1.sparse && m2.sparse)
-				matrixMultSparseSparse(m1, m2, ret, pm2, 0, ru2);
-			else if(m1.sparse)
-				matrixMultSparseDense(m1, m2, ret, pm2, 0, ru2);
-			else
-				matrixMultDenseSparse(m1, m2, ret, pm2, 0, ru2);
+		//prepare row-upper for special cases of vector-matrix
+		boolean pm2 = checkParMatrixMultRightInputRows(m1, m2, Integer.MAX_VALUE);
+		int ru2 = (pm2 && ru==m1.rlen) ? m2.rlen : ru; 
+		int cu = m2.clen;
 		
-		}
+		//core matrix mult computation
+		if( m1.isUltraSparse() || m2.isUltraSparse() )
+			matrixMultUltraSparse(m1, m2, ret, 0, ru2);
+		else if(!m1.sparse && !m2.sparse)
+			matrixMultDenseDense(m1, m2, ret, tm2, pm2, 0, ru2, 0, cu);
+		else if(m1.sparse && m2.sparse)
+			matrixMultSparseSparse(m1, m2, ret, pm2, 0, ru2);
+		else if(m1.sparse)
+			matrixMultSparseDense(m1, m2, ret, pm2, 0, ru2);
+		else
+			matrixMultDenseSparse(m1, m2, ret, pm2, 0, ru2);
 		
 		//post-processing: nnz/representation
 		if( !ret.sparse )
@@ -217,71 +222,78 @@ public class LibMatrixMult
 		if(DMLScript.isNativeEnabled(k) && !isMatMultMemoryBound(m1.rlen, m1.clen, m2.clen) && !m1.isInSparseFormat() && !m2.isInSparseFormat()) {
 			ret.sparse = false;
 			ret.allocateDenseBlock();
-			Statistics.numNativeLibMatrixMultCalls.addAndGet(1);
-			NativeHelper.matrixMultDenseDense(m1.denseBlock, m2.denseBlock, ret.denseBlock, m1.getNumRows(), 
-					m1.getNumColumns(), m2.getNumColumns(), k > 0 ? k : 1);
-			ret.recomputeNonZeros();
+			if(NativeHelper.matrixMultDenseDense(m1.denseBlock, m2.denseBlock, ret.denseBlock, m1.getNumRows(), 
+					m1.getNumColumns(), m2.getNumColumns(), k > 0 ? k : NativeHelper.getMaxNumThreads())) {
+				Statistics.numNativeLibMatrixMultCalls.addAndGet(1);
+				ret.recomputeNonZeros();
+				//post-processing (nnz maintained in parallel)
+				ret.examSparsity();
+				return;
+			}
+			else {
+				// Else fall back to Java
+				Statistics.incrementNativeFailuresCounter();
+			}
 		}
-		else {
 			
-			//check too high additional vector-matrix memory requirements (fallback to sequential)
-			//check too small workload in terms of flops (fallback to sequential too)
-			if( m1.rlen == 1 && (8L * m2.clen * k > MEM_OVERHEAD_THRESHOLD || !LOW_LEVEL_OPTIMIZATION || m2.clen==1 || m1.isUltraSparse() || m2.isUltraSparse()) 
-				|| 2L * m1.rlen * m1.clen * m2.clen < PAR_MINFLOP_THRESHOLD ) 
-			{ 
-				matrixMult(m1, m2, ret);
-				return;
-			}
-			
-			//Timing time = new Timing(true);
-			
-			//pre-processing: output allocation (in contrast to single-threaded,
-			//we need to allocate sparse as well in order to prevent synchronization)
-			boolean tm2 = checkPrepMatrixMultRightInput(m1,m2);
-			m2 = prepMatrixMultRightInput(m1, m2);
-			ret.sparse = (m1.isUltraSparse() || m2.isUltraSparse());
-			if( !ret.sparse )
-				ret.allocateDenseBlock();
-			else
-				ret.allocateSparseRowsBlock();
-			
-			if (!ret.isThreadSafe()){
-				matrixMult(m1, m2, ret);
-				return;
-			}
-			
-			//prepare row-upper for special cases of vector-matrix / matrix-matrix
-			boolean pm2r = checkParMatrixMultRightInputRows(m1, m2, k);
-			boolean pm2c = checkParMatrixMultRightInputCols(m1, m2, k, pm2r);
-			int num = pm2r ? m2.rlen : pm2c ? m2.clen : m1.rlen; 
-			
-			//core multi-threaded matrix mult computation
-			//(currently: always parallelization over number of rows)
-			try {
-				ExecutorService pool = Executors.newFixedThreadPool( k );
-				ArrayList<MatrixMultTask> tasks = new ArrayList<MatrixMultTask>();
-				int nk = (pm2r||pm2c) ? k : UtilFunctions.roundToNext(Math.min(8*k,num/32), k);
-				ArrayList<Integer> blklens = getBalancedBlockSizes(num, nk);
-				for( int i=0, lb=0; i<blklens.size(); lb+=blklens.get(i), i++ )
-					tasks.add(new MatrixMultTask(m1, m2, ret, tm2, pm2r, pm2c, lb, lb+blklens.get(i)));
-				//execute tasks
-				List<Future<Object>> taskret = pool.invokeAll(tasks);	
-				pool.shutdown();
-				//aggregate partial results (nnz, ret for vector/matrix)
-				ret.nonZeros = 0; //reset after execute
-				for( Future<Object> task : taskret ) {
-					if( pm2r )
-						vectAdd((double[])task.get(), ret.denseBlock, 0, 0, ret.rlen*ret.clen);
-					else
-						ret.nonZeros += (Long)task.get();
-				}
+		//check too high additional vector-matrix memory requirements (fallback to sequential)
+		//check too small workload in terms of flops (fallback to sequential too)
+		if( m1.rlen == 1 && (8L * m2.clen * k > MEM_OVERHEAD_THRESHOLD || !LOW_LEVEL_OPTIMIZATION || m2.clen==1 || m1.isUltraSparse() || m2.isUltraSparse()) 
+			|| 2L * m1.rlen * m1.clen * m2.clen < PAR_MINFLOP_THRESHOLD ) 
+		{ 
+			matrixMult(m1, m2, ret);
+			return;
+		}
+		
+		//Timing time = new Timing(true);
+		
+		//pre-processing: output allocation (in contrast to single-threaded,
+		//we need to allocate sparse as well in order to prevent synchronization)
+		boolean tm2 = checkPrepMatrixMultRightInput(m1,m2);
+		m2 = prepMatrixMultRightInput(m1, m2);
+		ret.sparse = (m1.isUltraSparse() || m2.isUltraSparse());
+		if( !ret.sparse )
+			ret.allocateDenseBlock();
+		else
+			ret.allocateSparseRowsBlock();
+		
+		if (!ret.isThreadSafe()){
+			matrixMult(m1, m2, ret);
+			return;
+		}
+		
+		//prepare row-upper for special cases of vector-matrix / matrix-matrix
+		boolean pm2r = checkParMatrixMultRightInputRows(m1, m2, k);
+		boolean pm2c = checkParMatrixMultRightInputCols(m1, m2, k, pm2r);
+		int num = pm2r ? m2.rlen : pm2c ? m2.clen : m1.rlen; 
+		
+		//core multi-threaded matrix mult computation
+		//(currently: always parallelization over number of rows)
+		try {
+			ExecutorService pool = Executors.newFixedThreadPool( k );
+			ArrayList<MatrixMultTask> tasks = new ArrayList<MatrixMultTask>();
+			int nk = (pm2r||pm2c) ? k : UtilFunctions.roundToNext(Math.min(8*k,num/32), k);
+			ArrayList<Integer> blklens = getBalancedBlockSizes(num, nk);
+			for( int i=0, lb=0; i<blklens.size(); lb+=blklens.get(i), i++ )
+				tasks.add(new MatrixMultTask(m1, m2, ret, tm2, pm2r, pm2c, lb, lb+blklens.get(i)));
+			//execute tasks
+			List<Future<Object>> taskret = pool.invokeAll(tasks);	
+			pool.shutdown();
+			//aggregate partial results (nnz, ret for vector/matrix)
+			ret.nonZeros = 0; //reset after execute
+			for( Future<Object> task : taskret ) {
 				if( pm2r )
-					ret.recomputeNonZeros();
+					vectAdd((double[])task.get(), ret.denseBlock, 0, 0, ret.rlen*ret.clen);
+				else
+					ret.nonZeros += (Long)task.get();
 			}
-			catch(Exception ex) {
-				throw new DMLRuntimeException(ex);
-			}
+			if( pm2r )
+				ret.recomputeNonZeros();
 		}
+		catch(Exception ex) {
+			throw new DMLRuntimeException(ex);
+		}
+		
 		
 		//post-processing (nnz maintained in parallel)
 		ret.examSparsity();
@@ -408,6 +420,22 @@ public class LibMatrixMult
 			return;
 		}
 		
+		if(DMLScript.isNativeEnabled(1) && !m1.isInSparseFormat()) {
+			ret.sparse = false;
+			ret.allocateDenseBlock();
+			if(NativeHelper.tsmm(m1.denseBlock, ret.denseBlock, m1.getNumRows(), 
+					m1.getNumColumns(), leftTranspose, 1)) {
+				Statistics.numNativeLibMatrixMultCalls.addAndGet(1);
+				ret.recomputeNonZeros();
+				ret.examSparsity();
+				return;
+			}
+			else {
+				// Else fall back to Java
+				Statistics.incrementNativeFailuresCounter();
+			}
+		}
+		
 		//Timing time = new Timing(true);
 		
 		//pre-processing
@@ -435,6 +463,22 @@ public class LibMatrixMult
 		if( m1.isEmptyBlock(false) ) {
 			ret.examSparsity(); //turn empty dense into sparse
 			return;
+		}
+		
+		if(DMLScript.isNativeEnabled(k) && !m1.isInSparseFormat()) {
+			ret.sparse = false;
+			ret.allocateDenseBlock();
+			if(NativeHelper.tsmm(m1.denseBlock, ret.denseBlock, m1.getNumRows(), 
+					m1.getNumColumns(), leftTranspose, k > 0 ? k : NativeHelper.getMaxNumThreads())) {
+				Statistics.numNativeLibMatrixMultCalls.addAndGet(1);
+				ret.recomputeNonZeros();
+				ret.examSparsity();
+				return;
+			}
+			else {
+				// Else fall back to Java
+				Statistics.incrementNativeFailuresCounter();
+			}
 		}
 		
 		//check no parallelization benefit (fallback to sequential)

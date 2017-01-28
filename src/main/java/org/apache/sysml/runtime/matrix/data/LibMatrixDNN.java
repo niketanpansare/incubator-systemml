@@ -163,10 +163,16 @@ public class LibMatrixDNN {
 			if (!(ALLOW_MULTI_THREADED_OPS && params.isOutputThreadSafe() && constrainedNumThreads > 1))
 				params.numThreads = 1;
 			Statistics.numNativeLibMatrixDNNCalls.addAndGet(1);
-			NativeHelper.conv2dBackwardDataDense(filter.denseBlock, dout.denseBlock, outputBlock.denseBlock, params.N, params.C, params.H, params.W, 
+			if(NativeHelper.conv2dBackwardDataDense(filter.denseBlock, dout.denseBlock, outputBlock.denseBlock, params.N, params.C, params.H, params.W, 
 						params.K, params.R, params.S, params.stride_h, params.stride_w, params.pad_h, params.pad_w, 
-						params.P, params.Q, params.numThreads);
-			return;
+						params.P, params.Q, params.numThreads)) {
+				Statistics.numNativeLibMatrixDNNCalls.addAndGet(1);
+				return;
+			}
+			else {
+				// Fall back to Java when failures
+				Statistics.incrementNativeFailuresCounter();
+			}
 		}
 		
 		runConvTask(TaskType.LoopedIm2ColConv2dBwdData, params);
@@ -207,12 +213,17 @@ public class LibMatrixDNN {
 			if (!(ALLOW_MULTI_THREADED_OPS && params.isOutputThreadSafe() && constrainedNumThreads > 1))
 				params.numThreads = 1;
 			Statistics.numNativeLibMatrixDNNCalls.addAndGet(1);
-			NativeHelper.conv2dBackwardFilterDense(input.denseBlock, dout.denseBlock, outputBlock.denseBlock, params.N, params.C, params.H, params.W, 
+			if(NativeHelper.conv2dBackwardFilterDense(input.denseBlock, dout.denseBlock, outputBlock.denseBlock, params.N, params.C, params.H, params.W, 
 						params.K, params.R, params.S, params.stride_h, params.stride_w, params.pad_h, params.pad_w, 
-						params.P, params.Q, params.numThreads);
-			return;
+						params.P, params.Q, params.numThreads)) {
+				Statistics.numNativeLibMatrixDNNCalls.addAndGet(1);
+				return;
+			}
+			else {
+				// Fall back to Java when failures
+				Statistics.incrementNativeFailuresCounter();
+			}
 		}
-		
 		
 		runConvTask(TaskType.LoopedIm2ColConv2dBwdFilter, params);
 	}
@@ -361,20 +372,33 @@ public class LibMatrixDNN {
 		if(DMLScript.isNativeEnabled(constrainedNumThreads) && !input.isInSparseFormat() && !filter.isInSparseFormat()) {
 			if (!(ALLOW_MULTI_THREADED_OPS && params.isOutputThreadSafe() && constrainedNumThreads > 1))
 				params.numThreads = 1;
-			if(params.bias == null)
-				NativeHelper.conv2dDense(input.denseBlock, filter.denseBlock, outputBlock.denseBlock, params.N, params.C, params.H, params.W, 
+			if(params.bias == null) {
+				if(NativeHelper.conv2dDense(input.denseBlock, filter.denseBlock, outputBlock.denseBlock, params.N, params.C, params.H, params.W, 
 						params.K, params.R, params.S, params.stride_h, params.stride_w, params.pad_h, params.pad_w, 
-						params.P, params.Q, params.numThreads);
+						params.P, params.Q, params.numThreads)) {
+					Statistics.numNativeLibMatrixDNNCalls.addAndGet(1);
+					return;
+				}
+				else {
+					// Fall back to Java when failures
+					Statistics.incrementNativeFailuresCounter();
+				}
+			}
 			else {
 				if(params.bias.isInSparseFormat())
 					params.bias.sparseToDense(); // Bias matrix is usually extremely small
-				NativeHelper.conv2dBiasAddDense(input.denseBlock, params.bias.denseBlock, filter.denseBlock, outputBlock.denseBlock, 
+				if(NativeHelper.conv2dBiasAddDense(input.denseBlock, params.bias.denseBlock, filter.denseBlock, outputBlock.denseBlock, 
 						params.N, params.C, params.H, params.W, 
 						params.K, params.R, params.S, params.stride_h, params.stride_w, params.pad_h, params.pad_w, 
-						params.P, params.Q, params.numThreads);
+						params.P, params.Q, params.numThreads)) {
+					Statistics.numNativeLibMatrixDNNCalls.addAndGet(1);
+					return;
+				}
+				else {
+					// Fall back to Java when failures
+					Statistics.incrementNativeFailuresCounter();
+				}
 			}
-			Statistics.numNativeLibMatrixDNNCalls.addAndGet(1);
-			return;
 		}
 		
 		runConvTask(TaskType.LoopedIm2ColConv2d, params);

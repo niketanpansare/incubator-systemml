@@ -50,4 +50,14 @@ void matmult(double* m1Ptr, double* m2Ptr, double* retPtr, int m1rlen,
   // else 
   	cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1, m1Ptr, k, m2Ptr, n, 0, retPtr, n);
 }
+
+void tsmm(double* m1Ptr, double* retPtr, int m1rlen, int m1clen, bool isLeftTranspose, int numThreads) {
+  int m = isLeftTranspose ? m1clen : m1rlen;
+  int n = isLeftTranspose ? m1clen : m1rlen;
+  int k = isLeftTranspose ? m1rlen : m1clen;
+  
+  setNumThreadsForBLAS(numThreads);
+  
+  cblas_dgemm(CblasRowMajor, isLeftTranspose ? CblasTrans : CblasNoTrans, isLeftTranspose ? CblasNoTrans : CblasTrans, m, n, k, 1, m1Ptr, k, m1Ptr, n, 0, retPtr, n);
+}
  
