@@ -119,6 +119,14 @@ public class NativeHelper {
 					loadLibrary("preload_systemml", "");
 					EnvironmentHelper.setEnv("MKL_THREADING_LAYER", "GNU");
 					isPreloadSystemML = true;
+					
+					try {
+						System.loadLibrary("gomp");
+					}
+					catch (UnsatisfiedLinkError e) {
+						LOG.warn("Unable to load mkl: GNU OpenMP (libgomp) required for loading MKL-enabled  SystemML library" + e.getMessage());
+						return false;
+					}
 				}
 			}
 			// ------------------------------------------------------------

@@ -106,3 +106,13 @@ SystemML expects that OpenBLAS was built with OpenMP. If not, please follow belo
     sudo make install
 
 You may also want to add `/opt/OpenBLAS/lib` to your LD_LIBRARY_PATH or `java.library.path`.
+
+## SystemML with MKL is not enabled in Linux
+
+First, make sure MKL is in LD_LIBRARY_PATH. You can put following line in `~/.bashrc`
+
+	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/intel/mkl/lib/intel64/
+
+GNU OpenMP is required for loading SystemML with MKL. Make sure `libgomp.so` is available in the LD_LIBRARY_PATH.
+
+	sudo ln -s /lib64/libgomp.so.1 /usr/lib64/libgomp.so
