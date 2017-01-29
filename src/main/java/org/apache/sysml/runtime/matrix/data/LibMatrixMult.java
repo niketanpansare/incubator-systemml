@@ -130,10 +130,10 @@ public class LibMatrixMult
 	// We could encapsulate heuristics in this function
 	// For now, we only consider matrix-vector operation to be memory bound
 	private static boolean isMatMultMemoryBound(int m1Rlen, int m1Clen, int m2Clen) {
-		if(m1Rlen == 1 || m2Clen == 1)
-			return true;
-		else
-			return false;
+//		if(m1Rlen == 1 || m2Clen == 1)
+//			return true;
+//		else
+		return false;
 	}
 
 	public static void matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int rl, int ru, boolean examSparsity) 
