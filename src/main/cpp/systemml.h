@@ -74,6 +74,14 @@ JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dBackwa
 JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dBackwardFilterDense
   (JNIEnv *, jclass, jdoubleArray, jdoubleArray, jdoubleArray, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint);
 
+/*
+ * Class:     org_apache_sysml_utils_NativeHelper
+ * Method:    setMaxNumThreads
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL Java_org_apache_sysml_utils_NativeHelper_setMaxNumThreads
+  (JNIEnv *, jclass, jint);
+
 #ifdef __cplusplus
 }
 #endif

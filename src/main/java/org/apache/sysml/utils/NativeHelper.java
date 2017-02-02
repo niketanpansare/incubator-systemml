@@ -68,13 +68,18 @@ public class NativeHelper {
 	}
 	
 	private static int maxNumThreads = -1;
+	private static boolean setMaxNumThreads = false;
 	public static boolean isNativeLibraryLoaded(int numThreads) {
+		if(maxNumThreads == -1)
+			maxNumThreads = OptimizerUtils.getConstrainedNumThreads(-1);
+		if(isSystemMLLoaded && !setMaxNumThreads) {
+			setMaxNumThreads(maxNumThreads);
+			setMaxNumThreads = true;
+		}
 		if(DMLScript.ENABLE_NATIVE_BLAS_IN_MULTITHREADED_SCENARIO) {
 			return isSystemMLLoaded;
 		}
 		else {
-			if(maxNumThreads == -1)
-				maxNumThreads = OptimizerUtils.getConstrainedNumThreads(-1);
 			return isSystemMLLoaded && (numThreads == maxNumThreads);
 		}
 	}
@@ -246,4 +251,6 @@ public class NativeHelper {
 			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads);
 	public static native boolean conv2dBackwardFilterDense(double [] input, double [] dout, double [] ret, int N, int C, int H, int W, 
 			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads);
+	
+	private static native void setMaxNumThreads(int numThreads);
 }
