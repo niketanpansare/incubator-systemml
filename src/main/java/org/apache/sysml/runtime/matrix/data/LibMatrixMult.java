@@ -420,21 +420,22 @@ public class LibMatrixMult
 			return;
 		}
 		
-		if(DMLScript.isNativeEnabled(1) && !m1.isInSparseFormat()) {
-			ret.sparse = false;
-			ret.allocateDenseBlock();
-			if(NativeHelper.tsmm(m1.denseBlock, ret.denseBlock, m1.getNumRows(), 
-					m1.getNumColumns(), leftTranspose, 1)) {
-				Statistics.numNativeLibMatrixMultCalls.addAndGet(1);
-				ret.recomputeNonZeros();
-				ret.examSparsity();
-				return;
-			}
-			else {
-				// Else fall back to Java
-				Statistics.incrementNativeFailuresCounter();
-			}
-		}
+//		// Needs debugging
+//		if(DMLScript.isNativeEnabled(1) && !m1.isInSparseFormat()) {
+//			ret.sparse = false;
+//			ret.allocateDenseBlock();
+//			if(NativeHelper.tsmm(m1.denseBlock, ret.denseBlock, m1.getNumRows(), 
+//					m1.getNumColumns(), leftTranspose, 1)) {
+//				Statistics.numNativeLibMatrixMultCalls.addAndGet(1);
+//				ret.recomputeNonZeros();
+//				ret.examSparsity();
+//				return;
+//			}
+//			else {
+//				// Else fall back to Java
+//				Statistics.incrementNativeFailuresCounter();
+//			}
+//		}
 		
 		//Timing time = new Timing(true);
 		
@@ -465,21 +466,23 @@ public class LibMatrixMult
 			return;
 		}
 		
-		if(DMLScript.isNativeEnabled(k) && !m1.isInSparseFormat()) {
-			ret.sparse = false;
-			ret.allocateDenseBlock();
-			if(NativeHelper.tsmm(m1.denseBlock, ret.denseBlock, m1.getNumRows(), 
-					m1.getNumColumns(), leftTranspose, k > 0 ? k : NativeHelper.getMaxNumThreads())) {
-				Statistics.numNativeLibMatrixMultCalls.addAndGet(1);
-				ret.recomputeNonZeros();
-				ret.examSparsity();
-				return;
-			}
-			else {
-				// Else fall back to Java
-				Statistics.incrementNativeFailuresCounter();
-			}
-		}
+		
+//		// Needs debugging
+//		if(DMLScript.isNativeEnabled(k) && !m1.isInSparseFormat()) {
+//			ret.sparse = false;
+//			ret.allocateDenseBlock();
+//			if(NativeHelper.tsmm(m1.denseBlock, ret.denseBlock, m1.getNumRows(), 
+//					m1.getNumColumns(), leftTranspose, k > 0 ? k : NativeHelper.getMaxNumThreads())) {
+//				Statistics.numNativeLibMatrixMultCalls.addAndGet(1);
+//				ret.recomputeNonZeros();
+//				ret.examSparsity();
+//				return;
+//			}
+//			else {
+//				// Else fall back to Java
+//				Statistics.incrementNativeFailuresCounter();
+//			}
+//		}
 		
 		//check no parallelization benefit (fallback to sequential)
 		//check too small workload in terms of flops (fallback to sequential too)
