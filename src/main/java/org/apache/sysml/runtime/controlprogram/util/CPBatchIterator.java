@@ -23,6 +23,7 @@ import java.util.Iterator;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -34,12 +35,14 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.instructions.cp.Data;
+import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.IndexRange;
+import org.apache.sysml.utils.Statistics;
 
 public class CPBatchIterator implements Iterator<Data>, Iterable<Data> {
 	
@@ -75,7 +78,11 @@ public class CPBatchIterator implements Iterator<Data>, Iterable<Data> {
 		X = (MatrixObject) ec.getVariable( iterablePredicateVars[1] );
 		// assumption: known at runtime
 		N = X.getNumRows();
-		batchSize = Long.parseLong(iterablePredicateVars[3]); // ((ScalarObject) ec.getVariable( iterablePredicateVars[3] )).getLongValue();
+		try {
+			batchSize = Long.parseLong(iterablePredicateVars[3]); 
+		} catch(NumberFormatException e) {  
+			batchSize = ((ScalarObject) ec.getVariable( iterablePredicateVars[3] )).getLongValue();
+		}
 		numBatches = (long) Math.ceil(  ((double)N) / batchSize);
 		double prefetchMemoryBudgetInMB = ConfigurationManager.getDMLConfig().getDoubleValue(DMLConfig.PREFETCH_MEM_BUDGET);
 		double requiredBudgetInMB = (batchSize*X.getNumColumns()*8)/1000000;
@@ -104,6 +111,7 @@ public class CPBatchIterator implements Iterator<Data>, Iterable<Data> {
 
 	@Override
 	public MatrixObject next() {
+		long startTime = DMLScript.STATISTICS ? System.nanoTime() : -1;
 		long beg = (currentBatchIndex * batchSize) % N + 1;
 		currentBatchIndex++;
 		long end = Math.min(N, beg + batchSize - 1);
@@ -127,6 +135,12 @@ public class CPBatchIterator implements Iterator<Data>, Iterable<Data> {
 			ret.release();
 		} catch (DMLRuntimeException e) {
 			throw new RuntimeException("Error while fetching a batch", e);
+		}
+		
+		if(DMLScript.STATISTICS) {
+			long endTime = System.nanoTime();
+			Statistics.batchFetchingTimeInIndexing = endTime - startTime;
+			Statistics.batchFetchingTimeInNext = Statistics.batchFetchingTimeInIndexing; 
 		}
 		return ret;
 	}

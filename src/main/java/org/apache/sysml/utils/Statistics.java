@@ -113,6 +113,9 @@ public class Statistics
 	public static AtomicLong cudaFromDevCount = new AtomicLong(0);
 	public static AtomicLong cudaEvictionCount = new AtomicLong(0);
 	
+	public static long batchFetchingTimeInNext = 0;
+	public static long batchFetchingTimeInIndexing = 0;
+	
 	public static synchronized void setNoOfExecutedMRJobs(int iNoOfExecutedMRJobs) {
 		Statistics.iNoOfExecutedMRJobs = iNoOfExecutedMRJobs;
 	}
@@ -374,6 +377,8 @@ public class Statistics
 		cudaFromDevCount.set(0);
 		cudaEvictionCount.set(0);
 		LibMatrixDNN.resetStatistics();
+		batchFetchingTimeInIndexing = 0;
+		batchFetchingTimeInNext = 0;
 	}
 
 	public static void resetJITCompileTime(){
@@ -634,6 +639,10 @@ public class Statistics
 		//show extended caching/compilation statistics
 		if( DMLScript.STATISTICS ) 
 		{
+			if(batchFetchingTimeInIndexing > 0) {
+				sb.append("Batch fetching time (next, indexing):\t" + String.format("%.3f", batchFetchingTimeInNext*1e-9) + "/"
+						+ String.format("%.3f", batchFetchingTimeInIndexing*1e-9) + " sec.\n");
+			}
 			sb.append("Cache hits (Mem, WB, FS, HDFS):\t" + CacheStatistics.displayHits() + ".\n");
 			sb.append("Cache writes (WB, FS, HDFS):\t" + CacheStatistics.displayWrites() + ".\n");
 			sb.append("Cache times (ACQr/m, RLS, EXP):\t" + CacheStatistics.displayTime() + " sec.\n");

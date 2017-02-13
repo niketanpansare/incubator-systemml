@@ -22,7 +22,7 @@
 
 sum = 0;
 X = matrix(1, rows=18, cols=25);
-for( [ Xb ] in [ X ], nrow = 4) 
+for(Xb in X, nrow = 4) 
 {
    sum = sum + sum(Xb); 
 }  

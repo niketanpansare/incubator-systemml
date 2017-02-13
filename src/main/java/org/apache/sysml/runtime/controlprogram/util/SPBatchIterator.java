@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.storage.StorageLevel;
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -40,6 +41,7 @@ import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.IndexRange;
 import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.utils.Statistics;
 
 public class SPBatchIterator extends CPBatchIterator {
 	MatrixCharacteristics mcIn;
@@ -90,6 +92,8 @@ public class SPBatchIterator extends CPBatchIterator {
 	
 	@Override
 	public MatrixObject next() {
+		long startTime = DMLScript.STATISTICS ? System.nanoTime() : -1;
+		MatrixObject currentBatch = null; 
 		if(isPrefetchEnabled) {
 			if(prefetchThread != null) {
 				// Prefetching in-progress
@@ -99,10 +103,9 @@ public class SPBatchIterator extends CPBatchIterator {
 					throw new RuntimeException("Prefetching thread is interrupter.", e);
 				}
 				if(nextBatch != null) {
-					MatrixObject currentBatch = nextBatch;
+					currentBatch = nextBatch;
 					nextBatch = null;
 					startPrefetch();
-					return currentBatch;
 				}
 				else {
 					throw new RuntimeException("No block returned by prefetching thread.");
@@ -116,12 +119,15 @@ public class SPBatchIterator extends CPBatchIterator {
 			long beg = (currentBatchIndex * batchSize) % N + 1;
 			currentBatchIndex++;
 			long end = Math.min(N, beg + batchSize - 1);
-			return getNextBatch(beg, end);
+			currentBatch = getNextBatch(beg, end);
 		}
+		Statistics.batchFetchingTimeInNext = DMLScript.STATISTICS ? (System.nanoTime() - startTime) : 0;
+		return currentBatch;
 	}
 	
 	
 	private MatrixObject getNextBatch(long beg, long end) {
+		long startTime = DMLScript.STATISTICS ? System.nanoTime() : -1;
 		IndexRange ixrange = new IndexRange(beg-1, end-1, 0, X.getNumColumns()-1);
 		MatrixObject ret = null;
 		
@@ -160,6 +166,7 @@ public class SPBatchIterator extends CPBatchIterator {
 		} catch (DMLRuntimeException e) {
 			throw new RuntimeException("Error while fetching a batch", e);
 		}
+		Statistics.batchFetchingTimeInIndexing = DMLScript.STATISTICS ? (System.nanoTime() - startTime) : 0;
 		return ret;
 	}
 	
