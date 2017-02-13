@@ -92,6 +92,8 @@ public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		String opcode = getOpcode();
 		
+		System.out.println(this.instString);
+		
 		//get indexing range
 		long rl = ec.getScalarInput(rowLower.getName(), rowLower.getValueType(), rowLower.isLiteral()).getLongValue();
 		long ru = ec.getScalarInput(rowUpper.getName(), rowUpper.getValueType(), rowUpper.isLiteral()).getLongValue();

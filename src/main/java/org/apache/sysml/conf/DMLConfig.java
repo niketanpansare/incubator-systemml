@@ -76,6 +76,7 @@ public class DMLConfig
 	public static final String GPU_MEMORY_UTILIZATION_FACTOR    = "gpu.memory.util.factor";
 	// Invoke cudaMemGetInfo to get available memory information. Useful if GPU is shared among multiple application.
 	public static final String REFRESH_AVAILABLE_MEMORY_EVERY_TIME    = "gpu.memory.refresh";
+	public static final String PREFETCH_MEM_BUDGET    = "prefetch.budget.mb";
 
 	// supported prefixes for custom map/reduce configurations
 	public static final String PREFIX_MAPRED = "mapred";
@@ -109,6 +110,7 @@ public class DMLConfig
 		_defaultVals.put(COMPRESSED_LINALG,      "false" );
 		_defaultVals.put(GPU_MEMORY_UTILIZATION_FACTOR,      "0.9" );
 		_defaultVals.put(REFRESH_AVAILABLE_MEMORY_EVERY_TIME,      "true" );
+		_defaultVals.put(PREFETCH_MEM_BUDGET,      "0" );
 	}
 	
 	public DMLConfig()

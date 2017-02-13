@@ -94,6 +94,7 @@ import org.apache.sysml.runtime.controlprogram.parfor.stat.StatisticMonitor;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDHandler;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysml.runtime.controlprogram.util.CPBatchIterator;
 import org.apache.sysml.runtime.instructions.cp.BooleanObject;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.DoubleObject;
@@ -517,10 +518,14 @@ public class ParForProgramBlock extends ForProgramBlock
 		ALLOW_REUSE_MR_PAR_WORKER = ALLOW_REUSE_MR_JVMS;
 	}
 	
+	static int numParForLoops = 0;
+	
 	@Override	
 	public void execute(ExecutionContext ec)
 		throws DMLRuntimeException
 	{	
+		numParForLoops++;
+		
 		ParForStatementBlock sb = (ParForStatementBlock)getStatementBlock();
 		
 		// add the iterable predicate variable to the variable set
@@ -669,7 +674,13 @@ public class ParForProgramBlock extends ForProgramBlock
 		resetOptimizerFlags(); //after release, deletes dp_varnames
 		
 		//execute exit instructions (usually empty)
-		executeInstructions(_exitInstructions, ec);			
+		executeInstructions(_exitInstructions, ec);		
+		
+		numParForLoops--;
+	}
+	
+	public static boolean isInParForLoop() {
+		return numParForLoops != 0;
 	}
 
 

@@ -674,20 +674,27 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 				else if(iterPreds.size() == 0) {
 					notifyErrorListeners("invalid syntax: at minimum, we allow iterating over 1 variables", ctx.start);
 				}
-				else if(iterPreds.size() > 2) {
-					notifyErrorListeners("invalid syntax: at maximum, we allow iterating over two variables", ctx.start);
+				else if(iterPreds.size() >= 2) {
+					notifyErrorListeners("invalid syntax: in current version, we allow iterating over only 1 variables", ctx.start);
+					// notifyErrorListeners("invalid syntax: at maximum, we allow iterating over two variables", ctx.start);
 				}
 				else {
 					// TODO:
 					HashMap<String, String> parForParamValues = null;
 					forStmt.setAllPositions(currentFile, line, col, line, col);
 					ArrayList<ParameterExpression> paramExpression = getParameterExpressionList(ctx.paramExprs);
+					if(paramExpression != null && paramExpression.size() > 0 && !paramExpression.get(0).getName().equals("nrow")) {
+						notifyErrorListeners("invalid syntax: expected \'nrow\' instead of " + paramExpression.get(0).getName(), ctx.start);
+						return;
+					}
+					
 					Expression incrementExpr = null;
 					if(paramExpression == null || paramExpression.size() == 0) {
 						incrementExpr = new IntIdentifier(1, currentFile, line, col, line, col);
 					}
 					else if(paramExpression.size() >= 2) {
 						notifyErrorListeners("invalid syntax: more than 2 parameters not allowed in for", ctx.start);
+						return;
 					}
 					else {
 						incrementExpr = paramExpression.get(0).getExpr();

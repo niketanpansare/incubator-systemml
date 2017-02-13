@@ -43,7 +43,7 @@ public class ForLoopPredicateTest extends AutomatedTestBase
 	private final static String TEST_CLASS_DIR = TEST_DIR + ForLoopPredicateTest.class.getSimpleName() + "/";
 	
 	private final static double from = 1;
-	private final static double to = 10.2;
+	private final static double to = 450.2;
 	private final static int increment = 1;
 	
 	@Override
@@ -116,7 +116,7 @@ public class ForLoopPredicateTest extends AutomatedTestBase
 	@Test
 	public void testForIterator1() 
 	{
-		runForPredicateTest(8, false);
+		runForPredicateTest(8, true);
 	}
 	
 	@Test
