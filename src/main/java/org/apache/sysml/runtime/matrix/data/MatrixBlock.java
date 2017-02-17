@@ -30,6 +30,7 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.hadoop.io.DataInputBuffer;
@@ -333,6 +334,19 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			allocateDenseBlock();
 	}
 	
+	private static AtomicLong memoryAllocatedUntilNowInBytes = new AtomicLong(0);
+	private static long localMemoryBudgetInBytes = (long) OptimizerUtils.getLocalMemBudget();
+	private static final long WAIT_THRESHOLD = 60000;
+	
+	@Override
+	protected void finalize() {
+		// TODO: handle sparse blocks, CP in-memory caching.
+		if(denseBlock != null) {
+			memoryAllocatedUntilNowInBytes.addAndGet(-denseBlock.length*Double.BYTES);
+		}
+	}
+	
+	
 	public void allocateDenseBlock(boolean clearNNZ) 
 			throws RuntimeException 
 	{
@@ -347,6 +361,15 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		
 		//allocate block if non-existing or too small (guaranteed to be 0-initialized),
 		if(denseBlock == null || denseBlock.length < limit) {
+			long waitTime = 0;
+			while(memoryAllocatedUntilNowInBytes.get() + limit > localMemoryBudgetInBytes) {
+				if(waitTime > WAIT_THRESHOLD)
+					throw new RuntimeException("Starvation while allocating memory. You may want to reduce the number of executor cores.");
+				waitTime += 100;
+				try {
+					Thread.sleep(100);
+				} catch (InterruptedException e) { }
+			}
 			denseBlock = new double[(int)limit];
 		}
 		
