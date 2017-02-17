@@ -370,6 +370,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 					Thread.sleep(100);
 				} catch (InterruptedException e) { }
 			}
+			memoryAllocatedUntilNowInBytes.addAndGet(denseBlock.length*Double.BYTES);
 			denseBlock = new double[(int)limit];
 		}
 		
