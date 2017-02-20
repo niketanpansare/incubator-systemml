@@ -94,3 +94,25 @@ Note: The default `SystemML-config.xml` is located in `<path to SystemML root>/c
     hadoop jar SystemML.jar [-? | -help | -f <filename>] (-config=<config_filename>) ([-args | -nvargs] <args-list>)
     
 See [Invoking SystemML in Hadoop Batch Mode](hadoop-batch-mode.html) for details of the syntax. 
+
+## Slow performance with OpenBLAS
+
+SystemML expects that OpenBLAS was built with OpenMP. If not, please follow below steps:
+
+    git clone https://github.com/xianyi/OpenBLAS.git
+    cd OpenBLAS/
+    make clean
+    make USE_OPENMP=1
+    sudo make install
+
+You may also want to add `/opt/OpenBLAS/lib` to your LD_LIBRARY_PATH or `java.library.path`.
+
+## SystemML with MKL is not enabled on Linux
+
+First, make sure MKL is in LD_LIBRARY_PATH. You can put following line in `~/.bashrc`
+
+	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/intel/mkl/lib/intel64/
+
+GNU OpenMP is required for loading SystemML with MKL. Make sure `libgomp.so` is available in the LD_LIBRARY_PATH.
+
+	sudo ln -s /lib64/libgomp.so.1 /usr/lib64/libgomp.so

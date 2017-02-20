@@ -113,6 +113,17 @@ public class Statistics
 	public static AtomicLong cudaFromDevCount = new AtomicLong(0);
 	public static AtomicLong cudaEvictionCount = new AtomicLong(0);
 	
+	private static AtomicLong numNativeFailures = new AtomicLong(0);
+	public static AtomicLong numNativeLibMatrixMultCalls = new AtomicLong(0);
+	public static AtomicLong numNativeLibMatrixDNNCalls = new AtomicLong(0);
+	public static void incrementNativeFailuresCounter() {
+		numNativeFailures.addAndGet(1);
+		// This is very rare and am not sure it is possible at all. Our initial experiments never encountered this case.
+		// Note: all the native calls have a fallback to Java; so if the user wants she can recompile SystemML by 
+		// commenting this exception and everything should work fine.
+		throw new RuntimeException("Unexpected ERROR: OOM caused during JNI transfer. Please disable native BLAS by setting enviroment variable: SYSTEMML_BLAS=none");
+	}
+	
 	public static synchronized void setNoOfExecutedMRJobs(int iNoOfExecutedMRJobs) {
 		Statistics.iNoOfExecutedMRJobs = iNoOfExecutedMRJobs;
 	}
@@ -373,6 +384,9 @@ public class Statistics
 		cudaToDevCount.set(0);
 		cudaFromDevCount.set(0);
 		cudaEvictionCount.set(0);
+		numNativeLibMatrixMultCalls.set(0);
+		numNativeLibMatrixDNNCalls.set(0);
+		numNativeFailures.set(0);
 		LibMatrixDNN.resetStatistics();
 	}
 
@@ -615,6 +629,7 @@ public class Statistics
 			sb.append("Number of executed MR Jobs:\t" + getNoOfExecutedMRJobs() + ".\n");	
 		}
 		
+		
 		if( DMLScript.USE_ACCELERATOR && DMLScript.STATISTICS ) {
 			sb.append("CUDA/CuLibraries init time:\t" + String.format("%.3f", cudaInitTime*1e-9) + "/"
 					+ String.format("%.3f", cudaLibrariesInitTime*1e-9) + " sec.\n");
@@ -637,6 +652,8 @@ public class Statistics
 		//show extended caching/compilation statistics
 		if( DMLScript.STATISTICS ) 
 		{
+			String blas = NativeHelper.blasType != null ? NativeHelper.blasType : ""; 
+			sb.append("Native " + blas + " calls (Mult/DNN/Fails):\t" + numNativeLibMatrixMultCalls.get()  + "/" + numNativeLibMatrixDNNCalls.get() + "/" + numNativeFailures.get() + ".\n");
 			sb.append("Cache hits (Mem, WB, FS, HDFS):\t" + CacheStatistics.displayHits() + ".\n");
 			sb.append("Cache writes (WB, FS, HDFS):\t" + CacheStatistics.displayWrites() + ".\n");
 			sb.append("Cache times (ACQr/m, RLS, EXP):\t" + CacheStatistics.displayTime() + " sec.\n");

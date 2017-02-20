@@ -30,6 +30,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.apache.commons.math3.util.FastMath;
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.lops.MapMultChain.ChainType;
 import org.apache.sysml.lops.WeightedCrossEntropy.WCeMMType;
 import org.apache.sysml.lops.WeightedDivMM.WDivMMType;
@@ -41,6 +42,8 @@ import org.apache.sysml.runtime.functionobjects.SwapIndex;
 import org.apache.sysml.runtime.functionobjects.ValueFunction;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.runtime.util.UtilFunctions;
+import org.apache.sysml.utils.NativeHelper;
+import org.apache.sysml.utils.Statistics;
 
 /**
  * MB:
@@ -123,6 +126,15 @@ public class LibMatrixMult
 	{
 		matrixMult(m1, m2, ret, rl, ru, true);
 	}
+	
+	// We could encapsulate heuristics in this function
+	// For now, we only consider matrix-vector operation to be memory bound
+	private static boolean isMatMultMemoryBound(int m1Rlen, int m1Clen, int m2Clen) {
+		if(m1Rlen == 1 || m1Clen == 1 || m2Clen == 1)
+			return true;
+		else
+			return false;
+	}
 
 	public static void matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int rl, int ru, boolean examSparsity) 
 		throws DMLRuntimeException
@@ -133,8 +145,25 @@ public class LibMatrixMult
 			return;
 		}
 		
+		if(DMLScript.isNativeEnabled(1) && !isMatMultMemoryBound(m1.rlen, m1.clen, m2.clen) && !m1.isInSparseFormat() && !m2.isInSparseFormat()) {
+			ret.sparse = false;
+			ret.allocateDenseBlock();
+			if(NativeHelper.matrixMultDenseDense(m1.denseBlock, m2.denseBlock, ret.denseBlock, m1.getNumRows(), 
+					m1.getNumColumns(), m2.getNumColumns(), 1)) {
+				Statistics.numNativeLibMatrixMultCalls.addAndGet(1);
+				ret.recomputeNonZeros();
+				if(examSparsity)
+					ret.examSparsity();
+				return;
+			}
+			else {
+				// Else fall back to Java
+				Statistics.incrementNativeFailuresCounter();
+			}
+		}
+			
 		//Timing time = new Timing(true);
-		
+			
 		//pre-processing: output allocation
 		boolean tm2 = checkPrepMatrixMultRightInput(m1,m2);
 		m2 = prepMatrixMultRightInput(m1, m2);
@@ -166,6 +195,7 @@ public class LibMatrixMult
 		if(examSparsity)
 			ret.examSparsity();
 		
+		
 		//System.out.println("MM ("+m1.isInSparseFormat()+","+m1.getNumRows()+","+m1.getNumColumns()+","+m1.getNonZeros()+")x" +
 		//		              "("+m2.isInSparseFormat()+","+m2.getNumRows()+","+m2.getNumColumns()+","+m2.getNonZeros()+") in "+time.stop());
 	}
@@ -189,6 +219,23 @@ public class LibMatrixMult
 			return;
 		}
 		
+		if(DMLScript.isNativeEnabled(k) && !isMatMultMemoryBound(m1.rlen, m1.clen, m2.clen) && !m1.isInSparseFormat() && !m2.isInSparseFormat()) {
+			ret.sparse = false;
+			ret.allocateDenseBlock();
+			if(NativeHelper.matrixMultDenseDense(m1.denseBlock, m2.denseBlock, ret.denseBlock, m1.getNumRows(), 
+					m1.getNumColumns(), m2.getNumColumns(), k > 0 ? k : NativeHelper.getMaxNumThreads())) {
+				Statistics.numNativeLibMatrixMultCalls.addAndGet(1);
+				ret.recomputeNonZeros();
+				//post-processing (nnz maintained in parallel)
+				ret.examSparsity();
+				return;
+			}
+			else {
+				// Else fall back to Java
+				Statistics.incrementNativeFailuresCounter();
+			}
+		}
+			
 		//check too high additional vector-matrix memory requirements (fallback to sequential)
 		//check too small workload in terms of flops (fallback to sequential too)
 		if( m1.rlen == 1 && (8L * m2.clen * k > MEM_OVERHEAD_THRESHOLD || !LOW_LEVEL_OPTIMIZATION || m2.clen==1 || m1.isUltraSparse() || m2.isUltraSparse()) 
@@ -246,6 +293,7 @@ public class LibMatrixMult
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
 		}
+		
 		
 		//post-processing (nnz maintained in parallel)
 		ret.examSparsity();

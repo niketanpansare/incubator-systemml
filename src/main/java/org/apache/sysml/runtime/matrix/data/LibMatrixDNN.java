@@ -34,6 +34,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.utils.NativeHelper;
+import org.apache.sysml.utils.Statistics;
 
 /**
  * This class allows users to invoke deep learning related operations 
@@ -158,6 +160,23 @@ public class LibMatrixDNN {
 			}
 		}
 		
+		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
+		if(DMLScript.isNativeEnabled(constrainedNumThreads) && !dout.isInSparseFormat() && !filter.isInSparseFormat()) {
+			if (!(ALLOW_MULTI_THREADED_OPS && params.isOutputThreadSafe() && constrainedNumThreads > 1))
+				params.numThreads = 1;
+			Statistics.numNativeLibMatrixDNNCalls.addAndGet(1);
+			if(NativeHelper.conv2dBackwardDataDense(filter.denseBlock, dout.denseBlock, outputBlock.denseBlock, params.N, params.C, params.H, params.W, 
+						params.K, params.R, params.S, params.stride_h, params.stride_w, params.pad_h, params.pad_w, 
+						params.P, params.Q, params.numThreads)) {
+				Statistics.numNativeLibMatrixDNNCalls.addAndGet(1);
+				return;
+			}
+			else {
+				// Fall back to Java when failures
+				Statistics.incrementNativeFailuresCounter();
+			}
+		}
+		
 		runConvTask(TaskType.LoopedIm2ColConv2dBwdData, params);
 		
 		//post-processing: maintain nnz
@@ -192,6 +211,23 @@ public class LibMatrixDNN {
 			}
 			else {
 				conv2dBwdFilterDenseCount.addAndGet(1);
+			}
+		}
+		
+		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
+		if(DMLScript.isNativeEnabled(constrainedNumThreads) && !dout.isInSparseFormat() && !input.isInSparseFormat()) {
+			if (!(ALLOW_MULTI_THREADED_OPS && params.isOutputThreadSafe() && constrainedNumThreads > 1))
+				params.numThreads = 1;
+			Statistics.numNativeLibMatrixDNNCalls.addAndGet(1);
+			if(NativeHelper.conv2dBackwardFilterDense(input.denseBlock, dout.denseBlock, outputBlock.denseBlock, params.N, params.C, params.H, params.W, 
+						params.K, params.R, params.S, params.stride_h, params.stride_w, params.pad_h, params.pad_w, 
+						params.P, params.Q, params.numThreads)) {
+				Statistics.numNativeLibMatrixDNNCalls.addAndGet(1);
+				return;
+			}
+			else {
+				// Fall back to Java when failures
+				Statistics.incrementNativeFailuresCounter();
 			}
 		}
 		
@@ -342,6 +378,39 @@ public class LibMatrixDNN {
 		}
 		if(!filter.isInSparseFormat() && TEST_SPARSE_FILTER) {
 			filter.denseToSparse();
+		}
+		
+		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
+		if(DMLScript.isNativeEnabled(constrainedNumThreads) && !input.isInSparseFormat() && !filter.isInSparseFormat()) {
+			if (!(ALLOW_MULTI_THREADED_OPS && params.isOutputThreadSafe() && constrainedNumThreads > 1))
+				params.numThreads = 1;
+			if(params.bias == null) {
+				if(NativeHelper.conv2dDense(input.denseBlock, filter.denseBlock, outputBlock.denseBlock, params.N, params.C, params.H, params.W, 
+						params.K, params.R, params.S, params.stride_h, params.stride_w, params.pad_h, params.pad_w, 
+						params.P, params.Q, params.numThreads)) {
+					Statistics.numNativeLibMatrixDNNCalls.addAndGet(1);
+					return;
+				}
+				else {
+					// Fall back to Java when failures
+					Statistics.incrementNativeFailuresCounter();
+				}
+			}
+			else {
+				if(params.bias.isInSparseFormat())
+					params.bias.sparseToDense(); // Bias matrix is usually extremely small
+				if(NativeHelper.conv2dBiasAddDense(input.denseBlock, params.bias.denseBlock, filter.denseBlock, outputBlock.denseBlock, 
+						params.N, params.C, params.H, params.W, 
+						params.K, params.R, params.S, params.stride_h, params.stride_w, params.pad_h, params.pad_w, 
+						params.P, params.Q, params.numThreads)) {
+					Statistics.numNativeLibMatrixDNNCalls.addAndGet(1);
+					return;
+				}
+				else {
+					// Fall back to Java when failures
+					Statistics.incrementNativeFailuresCounter();
+				}
+			}
 		}
 		
 		runConvTask(TaskType.LoopedIm2ColConv2d, params);
