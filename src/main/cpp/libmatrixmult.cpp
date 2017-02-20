@@ -16,7 +16,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
- 
+
+#include "config.h"
 #include "libmatrixmult.h"
 #include <cstdlib>
 #include "omp.h"

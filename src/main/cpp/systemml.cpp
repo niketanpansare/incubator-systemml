@@ -17,7 +17,7 @@
  * under the License.
  */
  
-
+#include "config.h"
 #include "systemml.h"
 #include "libmatrixmult.h"
 #include "libmatrixdnn.h"
