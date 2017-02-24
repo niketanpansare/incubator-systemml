@@ -35,7 +35,9 @@ import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.spark.data.LazyIterableIterator;
 import org.apache.sysml.runtime.instructions.spark.functions.ExtractBlockForBinaryReblock;
+import org.apache.sysml.runtime.instructions.spark.functions.Im2ColSingleRowBlockPartitionIterator;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils;
+import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.data.ConvolutionParameters;
@@ -45,7 +47,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
-import org.apache.sysml.runtime.util.ConvolutionUtils;
 
 import scala.Tuple2;
 
@@ -54,49 +55,54 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 	private CPOperand _in3; 
 	private ArrayList<CPOperand> _input_shape;
 	private ArrayList<CPOperand> _filter_shape;
-	private ArrayList<CPOperand> _stride = new ArrayList<CPOperand>();
-	private ArrayList<CPOperand> _padding = new ArrayList<CPOperand>();
+	private ArrayList<CPOperand> _stride;
+	private ArrayList<CPOperand> _padding;
 
 	public ConvolutionSPInstruction(CPOperand in, CPOperand out, String opcode,
-			String istr, ArrayList<CPOperand> stride,
-			ArrayList<CPOperand> padding, ArrayList<CPOperand> input_shape,
-			ArrayList<CPOperand> filter_shape) {
+			String istr, String[] parts, int start) {
 		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out,
 				opcode, istr);
 		_sptype = SPINSTRUCTION_TYPE.Convolution;
-		_stride = stride;
-		_padding = padding;
-		_input_shape = input_shape;
-		_filter_shape = filter_shape;
+		initializeStridePadAndShapes(parts, start);
 	}
 
 	public ConvolutionSPInstruction(CPOperand in, CPOperand in2, CPOperand out,
-			String opcode, String istr, ArrayList<CPOperand> stride,
-			ArrayList<CPOperand> padding, ArrayList<CPOperand> input_shape,
-			ArrayList<CPOperand> filter_shape) {
+			String opcode, String istr, String[] parts, int start) {
 		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out,
 				opcode, istr);
 		_in2 = in2;
 		_sptype = SPINSTRUCTION_TYPE.Convolution;
-		_stride = stride;
-		_padding = padding;
-		_input_shape = input_shape;
-		_filter_shape = filter_shape;
+		initializeStridePadAndShapes(parts, start);
+	}
+	
+	private void initializeStridePadAndShapes(String[] parts, int start) {
+		_stride = new ArrayList<CPOperand>();
+		_padding = new ArrayList<CPOperand>();
+		_input_shape = new ArrayList<CPOperand>();
+		_filter_shape = new ArrayList<CPOperand>();
+		_stride.add(new CPOperand(parts[start++]));
+		_stride.add(new CPOperand(parts[start++]));
+		_padding.add(new CPOperand(parts[start++]));
+		_padding.add(new CPOperand(parts[start++]));
+		_input_shape.add(new CPOperand(parts[start++]));
+		_input_shape.add(new CPOperand(parts[start++]));
+		_input_shape.add(new CPOperand(parts[start++]));
+		_input_shape.add(new CPOperand(parts[start++]));
+		_filter_shape.add(new CPOperand(parts[start++]));
+		_filter_shape.add(new CPOperand(parts[start++]));
+		_filter_shape.add(new CPOperand(parts[start++]));
+		_filter_shape.add(new CPOperand(parts[start++]));
 	}
 
 	public ConvolutionSPInstruction(CPOperand in, CPOperand in2, CPOperand in3,
 			CPOperand out, String opcode, String istr,
-			ArrayList<CPOperand> stride, ArrayList<CPOperand> padding,
-			ArrayList<CPOperand> input_shape, ArrayList<CPOperand> filter_shape) {
+			String[] parts, int start) {
 		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out,
 				opcode, istr);
 		_in2 = in2;
 		_in3 = in3;
 		_sptype = SPINSTRUCTION_TYPE.Convolution;
-		_stride = stride;
-		_padding = padding;
-		_input_shape = input_shape;
-		_filter_shape = filter_shape;
+		initializeStridePadAndShapes(parts, start);
 	}
 
 	public ConvolutionSPInstruction(CPOperand in, CPOperand in2, CPOperand out,
@@ -106,6 +112,7 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 		_in2 = in2;
 		_sptype = SPINSTRUCTION_TYPE.Convolution;
 	}
+	
 
 	public static ConvolutionSPInstruction parseInstruction( String str ) throws DMLRuntimeException {
 		CPOperand in = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
@@ -113,98 +120,34 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
-		if (opcode.equalsIgnoreCase("maxpooling") || opcode.equalsIgnoreCase("relu_maxpooling")) {
+		if (opcode.equalsIgnoreCase("maxpooling") || opcode.equalsIgnoreCase("relu_maxpooling")
+			|| opcode.equalsIgnoreCase("im2col") || opcode.equalsIgnoreCase("reshape_col")
+			|| opcode.equalsIgnoreCase("rotate180") || opcode.equalsIgnoreCase("col2im")) {
 			InstructionUtils.checkNumFields(parts, 14);
-			// stride1, stride2, padding1, padding2
-			// input_shape1, input_shape2, input_shape3, input_shape4,
-			// filter_shape1, filter_shape2, filter_shape3, filter_shape4, k
 			in.split(parts[1]);
 			out.split(parts[14]);
-
-			ArrayList<CPOperand> stride = new ArrayList<CPOperand>();
-			ArrayList<CPOperand> padding = new ArrayList<CPOperand>();
-			ArrayList<CPOperand> input_shape = new ArrayList<CPOperand>();
-			ArrayList<CPOperand> filter_shape = new ArrayList<CPOperand>();
-			stride.add(new CPOperand(parts[2]));
-			stride.add(new CPOperand(parts[3]));
-			padding.add(new CPOperand(parts[4]));
-			padding.add(new CPOperand(parts[5]));
-			input_shape.add(new CPOperand(parts[6]));
-			input_shape.add(new CPOperand(parts[7]));
-			input_shape.add(new CPOperand(parts[8]));
-			input_shape.add(new CPOperand(parts[9]));
-			filter_shape.add(new CPOperand(parts[10]));
-			filter_shape.add(new CPOperand(parts[11]));
-			filter_shape.add(new CPOperand(parts[12]));
-			filter_shape.add(new CPOperand(parts[13]));
-
-			return new ConvolutionSPInstruction(in, out, opcode, str, stride,
-					padding, input_shape, filter_shape);
+			return new ConvolutionSPInstruction(in, out, opcode, str, parts, 2);
 		} 
 		else if (opcode.equalsIgnoreCase("maxpooling_backward")
 				|| opcode.equalsIgnoreCase("conv2d")
 				|| opcode.equalsIgnoreCase("conv2d_backward_filter")
 				|| opcode.equalsIgnoreCase("conv2d_backward_data")) {
 			InstructionUtils.checkNumFields(parts, 15);
-			// dout, stride1, stride2, padding1, padding2
-			// input_shape1, input_shape2, input_shape3, input_shape4,
-			// filter_shape1, filter_shape2, filter_shape3, filter_shape4, k
 			in.split(parts[1]);
 			CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 			in2.split(parts[2]);
 			out.split(parts[15]);
-
-			ArrayList<CPOperand> stride = new ArrayList<CPOperand>();
-			ArrayList<CPOperand> padding = new ArrayList<CPOperand>();
-			ArrayList<CPOperand> input_shape = new ArrayList<CPOperand>();
-			ArrayList<CPOperand> filter_shape = new ArrayList<CPOperand>();
-			stride.add(new CPOperand(parts[3]));
-			stride.add(new CPOperand(parts[4]));
-			padding.add(new CPOperand(parts[5]));
-			padding.add(new CPOperand(parts[6]));
-			input_shape.add(new CPOperand(parts[7]));
-			input_shape.add(new CPOperand(parts[8]));
-			input_shape.add(new CPOperand(parts[9]));
-			input_shape.add(new CPOperand(parts[10]));
-			filter_shape.add(new CPOperand(parts[11]));
-			filter_shape.add(new CPOperand(parts[12]));
-			filter_shape.add(new CPOperand(parts[13]));
-			filter_shape.add(new CPOperand(parts[14]));
-
-			return new ConvolutionSPInstruction(in, in2, out, opcode, str, stride,
-					padding, input_shape, filter_shape);
+			return new ConvolutionSPInstruction(in, in2, out, opcode, str, parts, 3);
 		}
 		else if (opcode.equalsIgnoreCase("conv2d_bias_add")) {
 			InstructionUtils.checkNumFields(parts, 16);
-			// dout, stride1, stride2, padding1, padding2
-			// input_shape1, input_shape2, input_shape3, input_shape4,
-			// filter_shape1, filter_shape2, filter_shape3, filter_shape4, k
 			in.split(parts[1]);
 			CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 			in2.split(parts[2]);
 			CPOperand in3 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 			in3.split(parts[3]);
 			out.split(parts[16]);
-
-			ArrayList<CPOperand> stride = new ArrayList<CPOperand>();
-			ArrayList<CPOperand> padding = new ArrayList<CPOperand>();
-			ArrayList<CPOperand> input_shape = new ArrayList<CPOperand>();
-			ArrayList<CPOperand> filter_shape = new ArrayList<CPOperand>();
-			stride.add(new CPOperand(parts[4]));
-			stride.add(new CPOperand(parts[5]));
-			padding.add(new CPOperand(parts[6]));
-			padding.add(new CPOperand(parts[7]));
-			input_shape.add(new CPOperand(parts[8]));
-			input_shape.add(new CPOperand(parts[9]));
-			input_shape.add(new CPOperand(parts[10]));
-			input_shape.add(new CPOperand(parts[11]));
-			filter_shape.add(new CPOperand(parts[12]));
-			filter_shape.add(new CPOperand(parts[13]));
-			filter_shape.add(new CPOperand(parts[14]));
-			filter_shape.add(new CPOperand(parts[15]));
-
-			return new ConvolutionSPInstruction(in, in2, in3, out, opcode, str, stride,
-					padding, input_shape, filter_shape);
+			return new ConvolutionSPInstruction(in, in2, in3, out, opcode, str, parts, 4);
 		}
 		else if (opcode.equalsIgnoreCase("bias_add")) {
 			InstructionUtils.checkNumFields(parts, 3);
@@ -239,6 +182,28 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 		sec.releaseMatrixInput(name);
 		return sec.getSparkContext().broadcast(mb);
 	}
+	
+	private ConvolutionParameters parseConvolutionParameters(ExecutionContext ec) throws DMLRuntimeException {
+		int N = getScalarInput(ec, _input_shape, 0);
+		return parseConvolutionParameters(ec, N);
+	}
+	
+	private ConvolutionParameters parseConvolutionParameters(ExecutionContext ec, int N) throws DMLRuntimeException {
+		int pad_h = getScalarInput(ec, _padding, 0);
+		int pad_w = getScalarInput(ec, _padding, 1);
+		int stride_h = getScalarInput(ec, _stride, 0);
+		int stride_w = getScalarInput(ec, _stride, 1);
+
+		// int N = getScalarInput(ec, _input_shape, 0);
+		int C = getScalarInput(ec, _input_shape, 1);
+		int H = getScalarInput(ec, _input_shape, 2);
+		int W = getScalarInput(ec, _input_shape, 3);
+
+		int K = getScalarInput(ec, _filter_shape, 0);
+		int R = getScalarInput(ec, _filter_shape, 2);
+		int S = getScalarInput(ec, _filter_shape, 3);
+		return new ConvolutionParameters(N, C, H, W, K, R, S, stride_h, stride_w, pad_h, pad_w, 1);
+	}
 
 	@Override
 	public void processInstruction(ExecutionContext ec)
@@ -264,23 +229,7 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 			}
 			// ------------------------------------
 			
-			int pad_h = getScalarInput(ec, _padding, 0);
-			int pad_w = getScalarInput(ec, _padding, 1);
-			int stride_h = getScalarInput(ec, _stride, 0);
-			int stride_w = getScalarInput(ec, _stride, 1);
-
-			// int N = getScalarInput(ec, _input_shape, 0);
-			int C = getScalarInput(ec, _input_shape, 1);
-			int H = getScalarInput(ec, _input_shape, 2);
-			int W = getScalarInput(ec, _input_shape, 3);
-
-			int K = getScalarInput(ec, _filter_shape, 0);
-			int R = getScalarInput(ec, _filter_shape, 2);
-			int S = getScalarInput(ec, _filter_shape, 3);
-			int P = (int) ConvolutionUtils.getP(H, R, stride_h, pad_h);
-			int Q = (int) ConvolutionUtils.getQ(W, S, stride_w, pad_w);
-			
-			ConvolutionParameters params = new ConvolutionParameters(numRowsPerBlock, C, H, W, K, R, S, stride_h, stride_w, pad_h, pad_w, 1);
+			ConvolutionParameters params = parseConvolutionParameters(ec, numRowsPerBlock);
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out = inputRDD.mapPartitionsToPair(new RDDConv2dMapMMFunction(filterBroadcast, params, instOpcode, biasBroadcast, mcRdd.getRows()), true);
 			
 			//put output RDD handle into symbol table
@@ -288,15 +237,43 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 			sec.addLineageRDD(output.getName(), rddVar);
 			
 			long nnz = -1; // TODO: Handle nnz
-			long numCols = ((long)K)*((long)P)*((long)Q);
+			long numCols = ((long)params.K)*((long)params.P)*((long)params.Q);
 			if(instOpcode.equalsIgnoreCase("maxpooling") || instOpcode.equalsIgnoreCase("relu_maxpooling")) {
-				numCols = ((long)C)*((long)P)*((long)Q);
+				numCols = ((long)params.C)*((long)params.P)*((long)params.Q);
 			}
 			if(numCols > Integer.MAX_VALUE) {
 				throw new DMLRuntimeException("The current operator doesnot support large outputs.");
 			}
 			sec.setMetaData(output.getName(), 
 					new MatrixFormatMetaData(new MatrixCharacteristics(mcRdd.getRows(), numCols, numRowsPerBlock, (int)numCols, nnz), OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
+		}
+		else if(instOpcode.equalsIgnoreCase("im2col")) {
+			String rddVar = input1.getName();
+			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( rddVar );
+			MatrixCharacteristics mcRdd = sec.getMatrixCharacteristics(rddVar);
+			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+			ConvolutionParameters params = parseConvolutionParameters(ec);
+			if(params.C*params.R*params.S <= mcOut.getNumRowBlocks()) {
+				double relativePartitionIncrease = (params.R*params.S*params.P*params.Q) / (params.H*params.W);
+				JavaPairRDD<MatrixIndexes,MatrixBlock> tmp = null;
+				if(relativePartitionIncrease <= 1) 
+					tmp = in1.mapPartitionsToPair(new Im2ColSingleRowBlockPartitionFunction(mcRdd, params, mcOut));
+				else
+					tmp = in1.flatMapToPair(new Im2ColSingleRowBlockFunction(mcRdd, params, mcOut));
+				
+				//aggregate partial matrix blocks (w/ preferred number of output 
+				//partitions as the data is likely smaller in binary block format,
+				//but also to bound the size of partitions for compressed inputs)
+				int parts = SparkUtils.getNumPreferredPartitions(mcRdd, tmp);
+				JavaPairRDD<MatrixIndexes,MatrixBlock> out = RDDAggregateUtils.mergeByKey(tmp, parts, false);
+				//put output RDD handle into symbol table
+				sec.setRDDHandleForVariable(output.getName(), out);
+				sec.addLineageRDD(output.getName(), rddVar);
+			}
+			else {
+				// TODO:
+				throw new DMLRuntimeException("Multiblock im2col not implemented.");
+			}
 		}
 		else {
 			throw new DMLRuntimeException("Not implemented: " + instOpcode);
@@ -308,6 +285,39 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 		return (int) ec.getScalarInput(aL.get(index).getName(),
 				aL.get(index).getValueType(), aL.get(index).isLiteral())
 				.getLongValue();
+	}
+	
+	private static class Im2ColSingleRowBlockFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>, MatrixIndexes, MatrixBlock> {
+		private static final long serialVersionUID = 8659320504097002135L;
+		MatrixCharacteristics mcRdd; MatrixCharacteristics mcOut;
+		ConvolutionParameters params;
+		public Im2ColSingleRowBlockFunction(MatrixCharacteristics mcRdd, ConvolutionParameters params, MatrixCharacteristics mcOut) {
+			this.mcRdd = mcRdd;
+			this.params = params;
+			this.mcOut = mcOut;
+		}
+
+		@Override
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Tuple2<MatrixIndexes, MatrixBlock> arg0) throws Exception {
+			return new Im2ColSingleRowBlockPartitionIterator(arg0, mcRdd, params, mcOut);
+		}
+		
+	}
+	
+	private static class Im2ColSingleRowBlockPartitionFunction implements PairFlatMapFunction<Iterator<Tuple2<MatrixIndexes, MatrixBlock>>, MatrixIndexes, MatrixBlock> {
+		private static final long serialVersionUID = -4743880357434292715L;
+		MatrixCharacteristics mcRdd; MatrixCharacteristics mcOut;
+		ConvolutionParameters params;
+		public Im2ColSingleRowBlockPartitionFunction(MatrixCharacteristics mcRdd, ConvolutionParameters params, MatrixCharacteristics mcOut) {
+			this.mcRdd = mcRdd;
+			this.params = params;
+			this.mcOut = mcOut;
+		}
+		@Override
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<MatrixIndexes, MatrixBlock>> arg0)
+				throws Exception {
+			return new Im2ColSingleRowBlockPartitionIterator(arg0, mcRdd, params, mcOut);
+		}
 	}
 	
 	private static class RDDConv2dMapMMFunction implements PairFlatMapFunction<Iterator<Tuple2<MatrixIndexes, MatrixBlock>>, MatrixIndexes, MatrixBlock> {

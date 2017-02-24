@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -2838,8 +2839,20 @@ public class DMLTranslator
 		case CONV2D:
 		{
 			Hop image = expr;
-			ArrayList<Hop> inHops1 = getALHopsForConvOp(image, source, 1, hops);
-			currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(), Hop.ConvOp.DIRECT_CONV2D, inHops1);
+			Hop filter = expr2;
+			
+			Random rand = new Random();
+			// Step 1: IM2COL
+			// N x CHW ==> CRS x NPQ
+			ArrayList<Hop> inHops1 = getALHopsForConvOp(image, source, 2, hops);
+			Hop loweredMat = new ConvolutionOp(image.getName(), image.getDataType(), image.getValueType(), Hop.ConvOp.IM2COL, inHops1);
+			
+			// Step 2: Matrix multiplication K x CRS %*% CRS x NPQ
+			Hop temp = new AggBinaryOp("temp_" + rand.nextLong(), image.getDataType(), image.getValueType(), OpOp2.MULT, AggOp.SUM, filter, loweredMat);
+			
+			// Step 3: Reshape col: K x NPQ ==> N x KPQ
+			ArrayList<Hop> inHops2 = getALHopsForConvOp(temp, source, 2, hops);
+			currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(), Hop.ConvOp.RESHAPE_COL, inHops2);
 			setBlockSizeAndRefreshSizeInfo(image, currBuiltinOp);
 			break;
 		}
@@ -2875,17 +2888,50 @@ public class DMLTranslator
 		case CONV2D_BACKWARD_FILTER:
 		{
 			Hop image = expr;
-			ArrayList<Hop> inHops1 = getALHopsForConvOp(image, source, 1, hops);
-			currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(), Hop.ConvOp.DIRECT_CONV2D_BACKWARD_FILTER, inHops1);
+			Hop dout = expr2;
+			
+			Random rand = new Random();
+			// Step 1: IM2COL
+			// N x CHW ==> CRS x NPQ
+			ArrayList<Hop> inHops1 = getALHopsForConvOp(image, source, 2, hops);
+			Hop loweredMat = new ConvolutionOp(image.getName(), image.getDataType(), image.getValueType(), Hop.ConvOp.IM2COL, inHops1);
+			
+			// Step 2: ROTATE180
+			// N x KPQ ==> NPQ x K
+			ArrayList<Hop> inHops2 = getALHopsForConvOp(dout, source, 2, hops);
+			Hop dout_reshaped = new ConvolutionOp(dout.getName(), dout.getDataType(), dout.getValueType(), Hop.ConvOp.ROTATE180, inHops2);
+			
+			// Step 3: Matrix multiplication: CRS x NPQ %*% NPQ x K ==> CRS x K
+			Hop temp = new AggBinaryOp("temp_" + rand.nextLong(), image.getDataType(), image.getValueType(), OpOp2.MULT, AggOp.SUM, loweredMat, dout_reshaped);
+			
+			// Step 4: Transpose temp: CRS x K ==> K x CRS 
+			Hop temp2 = new ReorgOp("temp_" + rand.nextLong(), image.getDataType(), image.getValueType(), Hop.ReOrgOp.TRANSPOSE, temp);
+			
+			// Pass: to simplify ConvolutionOp code
+			ArrayList<Hop> inHops3 = getALHopsForConvOp(temp2, source, 2, hops);
+			currBuiltinOp = new ConvolutionOp("temp_" + rand.nextLong(), dout.getDataType(), dout.getValueType(), Hop.ConvOp.PASS, inHops3);
 			setBlockSizeAndRefreshSizeInfo(image, currBuiltinOp);
 			break;
 		}
 		case CONV2D_BACKWARD_DATA:
 		{
-			Hop image = expr;
-			ArrayList<Hop> inHops1 = getALHopsForConvOp(image, source, 1, hops);
-			currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(), Hop.ConvOp.DIRECT_CONV2D_BACKWARD_DATA, inHops1);
-			setBlockSizeAndRefreshSizeInfo(image, currBuiltinOp);
+			Hop filter = expr;
+			Hop dout = expr2;
+			
+			Random rand = new Random();
+			// Step 1: ROTATE180
+			// N x KPQ ==> NPQ x K
+			ArrayList<Hop> inHops1 = getALHopsForConvOp(dout, source, 2, hops);
+			Hop dout_reshaped = new ConvolutionOp(dout.getName(), dout.getDataType(), dout.getValueType(), Hop.ConvOp.ROTATE180, inHops1);
+			
+			// Step 2: Matrix multiplication: NPQ x K %*% K x CRS ==> NPQ x CRS
+			Hop temp = new AggBinaryOp("temp_" + rand.nextLong(), dout.getDataType(), dout.getValueType(), OpOp2.MULT, AggOp.SUM, dout_reshaped, filter);
+			
+			// Step 3: COL2IM
+			// NPQ x CRS ==> N x CHW
+			ArrayList<Hop> inHops2 = getALHopsForConvOp(temp, source, 2, hops);
+			currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(), Hop.ConvOp.COL2IM, inHops2);
+			setBlockSizeAndRefreshSizeInfo(dout, currBuiltinOp);
 			break;
 		}
 			 

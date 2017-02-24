@@ -139,6 +139,11 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "conv2d_bias_add", SPINSTRUCTION_TYPE.Convolution);
 		String2SPInstructionType.put( "maxpooling",             SPINSTRUCTION_TYPE.Convolution);
 		String2SPInstructionType.put( "relu_maxpooling",          SPINSTRUCTION_TYPE.Convolution);
+		String2SPInstructionType.put( "bias_add",          SPINSTRUCTION_TYPE.Convolution);
+		String2SPInstructionType.put( "im2col",          SPINSTRUCTION_TYPE.Convolution);
+		String2SPInstructionType.put( "reshape_col",          SPINSTRUCTION_TYPE.Convolution);
+		String2SPInstructionType.put( "rotate180",          SPINSTRUCTION_TYPE.Convolution);
+		String2SPInstructionType.put( "col2im",          SPINSTRUCTION_TYPE.Convolution);
 		
 		String2SPInstructionType.put( "rangeReIndex"   	, SPINSTRUCTION_TYPE.MatrixIndexing);
 		String2SPInstructionType.put( "leftIndex"   	, SPINSTRUCTION_TYPE.MatrixIndexing);

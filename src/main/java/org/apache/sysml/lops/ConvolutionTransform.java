@@ -32,7 +32,13 @@ public class ConvolutionTransform extends Lop
 	public enum OperationTypes {
 		MAX_POOLING, MAX_POOLING_BACKWARD, RELU_MAX_POOLING, RELU_BACKWARD,
 		DIRECT_CONV2D, DIRECT_CONV2D_BACKWARD_FILTER, DIRECT_CONV2D_BACKWARD_DATA,
-		BIAS_ADD, DIRECT_CONV2D_BIAS_ADD
+		BIAS_ADD, DIRECT_CONV2D_BIAS_ADD,
+		
+		// Spark-specific operators:
+		IM2COL, // N x CHW ==> CRS x NPQ
+		RESHAPE_COL, // K x NPQ ==> N x KPQ
+		ROTATE180, // N x KPQ ==> NPQ x K 
+		COL2IM // NPQ x CRS ==> N x CHW
 	};
 	
 	private OperationTypes operation = null;
@@ -106,6 +112,18 @@ public class ConvolutionTransform extends Lop
 	private String getOpcode() {
 		switch(operation) {
 				
+		case IM2COL:		
+			return "im2col";		
+							
+		case RESHAPE_COL:		
+			return "reshape_col";	
+				
+		case ROTATE180:		
+			return "rotate180";		
+				
+		case COL2IM:		
+			return "col2im";
+		
 		case MAX_POOLING:
 			return "maxpooling";
 			

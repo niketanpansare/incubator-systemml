@@ -1044,8 +1044,16 @@ public abstract class Hop
 	
 	public enum ConvOp {
 		MAX_POOLING, MAX_POOLING_BACKWARD,
-		DIRECT_CONV2D, DIRECT_CONV2D_BACKWARD_FILTER, DIRECT_CONV2D_BACKWARD_DATA,
-		BIAS_ADD
+		// DIRECT_CONV2D, 
+		DIRECT_CONV2D_BACKWARD_FILTER, DIRECT_CONV2D_BACKWARD_DATA,
+		BIAS_ADD,
+		
+		// Spark-specific operators:
+		IM2COL, // N x CHW ==> CRS x NPQ
+		RESHAPE_COL, // K x NPQ ==> N x KPQ
+		ROTATE180, // N x KPQ ==> NPQ x K 
+		COL2IM, // NPQ x CRS ==> N x CHW
+		PASS
 	};
 	
 	public enum DataGenMethod {
@@ -1108,9 +1116,13 @@ public abstract class Hop
 	protected static final HashMap<ConvOp, org.apache.sysml.lops.ConvolutionTransform.OperationTypes> HopsConv2Lops;
 	static {
 		HopsConv2Lops = new HashMap<ConvOp, org.apache.sysml.lops.ConvolutionTransform.OperationTypes>();
+		HopsConv2Lops.put(ConvOp.IM2COL, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.IM2COL);		
+		HopsConv2Lops.put(ConvOp.RESHAPE_COL, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.RESHAPE_COL);		
+		HopsConv2Lops.put(ConvOp.ROTATE180, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.ROTATE180);		
+		HopsConv2Lops.put(ConvOp.COL2IM, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.COL2IM);
+		 
 		HopsConv2Lops.put(ConvOp.MAX_POOLING, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.MAX_POOLING);
 		HopsConv2Lops.put(ConvOp.MAX_POOLING_BACKWARD, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.MAX_POOLING_BACKWARD);
-		HopsConv2Lops.put(ConvOp.DIRECT_CONV2D, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.DIRECT_CONV2D);
 		HopsConv2Lops.put(ConvOp.BIAS_ADD, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.BIAS_ADD);
 		HopsConv2Lops.put(ConvOp.DIRECT_CONV2D_BACKWARD_FILTER, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.DIRECT_CONV2D_BACKWARD_FILTER);
 		HopsConv2Lops.put(ConvOp.DIRECT_CONV2D_BACKWARD_DATA, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.DIRECT_CONV2D_BACKWARD_DATA);

@@ -134,7 +134,7 @@ public class Conv2DTest extends AutomatedTestBase
 	@Test
 	public void testConv2DDense1SP() 
 	{
-		int numImg = 5; int imgSize = 3; int numChannels = 3; int numFilters = 6; int filterSize = 2; int stride = 1; int pad = 0;
+		int numImg = 5; int imgSize = 64; int numChannels = 3; int numFilters = 6; int filterSize = 2; int stride = 1; int pad = 0;
 		runConv2DTest(ExecType.SPARK, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false);
 	}
 	

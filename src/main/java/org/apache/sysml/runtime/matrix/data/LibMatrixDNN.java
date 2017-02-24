@@ -325,7 +325,9 @@ public class LibMatrixDNN {
 		
 		if(input.getNumRows() != params.N || input.getNumColumns() != params.C*params.H*params.W || 
 				filter.getNumRows() != params.K || filter.getNumColumns() != params.C*params.R*params.S) {
-			throw new DMLRuntimeException("Incorrect input to conv2d: " + input.getNumRows());
+			throw new DMLRuntimeException("Incorrect input to conv2d: " + input.getNumRows() + " != " +  params.N + " || " +  
+				input.getNumColumns() + " != " + params.C*params.H*params.W + " || " + 
+				filter.getNumRows() + " != " + params.K + " || " + filter.getNumColumns() + " != " + params.C*params.R*params.S);
 		}
 		
 		if(DMLScript.STATISTICS && DISPLAY_STATISTICS) {
