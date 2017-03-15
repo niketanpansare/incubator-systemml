@@ -19,6 +19,11 @@
 package org.apache.sysml.runtime.instructions.gpu.context;
 
 import static jcuda.jcublas.cublasOperation.CUBLAS_OP_T;
+import static jcuda.jcudnn.JCudnn.cudnnCreateTensorDescriptor;
+import static jcuda.jcudnn.JCudnn.cudnnDestroyTensorDescriptor;
+import static jcuda.jcudnn.JCudnn.cudnnSetTensor4dDescriptor;
+import static jcuda.jcudnn.cudnnDataType.CUDNN_DATA_DOUBLE;
+import static jcuda.jcudnn.cudnnTensorFormat.CUDNN_TENSOR_NCHW;
 import static jcuda.jcusparse.JCusparse.cusparseCreateMatDescr;
 import static jcuda.jcusparse.JCusparse.cusparseDcsr2dense;
 import static jcuda.jcusparse.JCusparse.cusparseDdense2csr;
@@ -51,6 +56,7 @@ import jcuda.Pointer;
 // import jcuda.Sizeof;
 import jcuda.jcublas.JCublas2;
 import jcuda.jcublas.cublasHandle;
+import jcuda.jcudnn.cudnnTensorDescriptor;
 import jcuda.jcusparse.JCusparse;
 import jcuda.jcusparse.cusparseDirection;
 import jcuda.jcusparse.cusparseHandle;
@@ -63,7 +69,34 @@ import jcuda.jcusparse.cusparsePointerMode;
 public class JCudaObject extends GPUObject {
 
 	private static final Log LOG = LogFactory.getLog(JCudaObject.class.getName());
-
+	
+	private cudnnTensorDescriptor tensorDescriptor = null;
+	
+	/**
+	 * Returns a previously allocated tensor descriptor or null
+	 * @return cudnn tensor descriptor
+	 */
+	public cudnnTensorDescriptor getTensorDescriptor() {
+		return tensorDescriptor;
+	}
+	
+	/**
+	 * Returns a previously allocated or allocates and returns a tensor descriptor
+	 * @param N number of images
+	 * @param C number of channels
+	 * @param H height
+	 * @param W width
+	 * @return cudnn tensor descriptor
+	 */
+	public cudnnTensorDescriptor allocateTensorDescriptor(int N, int C, int H, int W) {
+		if(tensorDescriptor == null) {
+			tensorDescriptor = new cudnnTensorDescriptor();
+			cudnnCreateTensorDescriptor(tensorDescriptor);
+			cudnnSetTensor4dDescriptor(tensorDescriptor, CUDNN_TENSOR_NCHW, CUDNN_DATA_DOUBLE, N, C, H, W);
+		}
+		return tensorDescriptor;
+	}
+	
 	/**
 	 * Compressed Sparse Row (CSR) format for CUDA
 	 * Generalized matrix multiply is implemented for CSR format in the cuSparse library among other operations
@@ -733,6 +766,10 @@ public class JCudaObject extends GPUObject {
 		}
 		jcudaDenseMatrixPtr = null;
 		jcudaSparseMatrixPtr = null;
+		if(tensorDescriptor != null) {
+			cudnnDestroyTensorDescriptor(tensorDescriptor);
+			tensorDescriptor = null;
+		}
 		numLocks.set(0);
 	}
 	
