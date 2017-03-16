@@ -465,7 +465,7 @@ public class LibMatrixCUDA {
 
 	}
 	
-	private void validateBatchNormalizationDimensions(MatrixObject scale, MatrixObject bias, MatrixObject runningMean, MatrixObject runningVar, int C) throws DMLRuntimeException {
+	private static void validateBatchNormalizationDimensions(MatrixObject scale, MatrixObject bias, MatrixObject runningMean, MatrixObject runningVar, int C) throws DMLRuntimeException {
 		if(scale.getNumRows() != 1 || scale.getNumColumns() != C) {
 			throw new DMLRuntimeException("Incorrect dimensions for scale");
 		}
@@ -480,7 +480,7 @@ public class LibMatrixCUDA {
 		}
 	}
 	
-	private void validateBatchNormalizationDimensions(MatrixObject scale,  MatrixObject runningMean, MatrixObject runningVar, int C) throws DMLRuntimeException {
+	private static void validateBatchNormalizationDimensions(MatrixObject scale,  MatrixObject runningMean, MatrixObject runningVar, int C) throws DMLRuntimeException {
 		if(scale.getNumRows() != 1 || scale.getNumColumns() != C) {
 			throw new DMLRuntimeException("Incorrect dimensions for scale");
 		}
@@ -505,7 +505,7 @@ public class LibMatrixCUDA {
 	 * @param epsilon epsilon value used in the batch normalization formula
 	 * @throws DMLRuntimeException if error occurs
 	 */
-	public void batchNormalizationForwardInference(String instName, MatrixObject image, 
+	public static void batchNormalizationForwardInference(String instName, MatrixObject image, 
 			MatrixObject scale, MatrixObject bias, MatrixObject runningMean, MatrixObject runningVar, 
 			MatrixObject ret, double epsilon) throws DMLRuntimeException {
 		int mode = cudnnBatchNormMode.CUDNN_BATCHNORM_SPATIAL;
@@ -550,7 +550,7 @@ public class LibMatrixCUDA {
 	 * @param exponentialAverageFactor factor used in the moving average computation
 	 * @throws DMLRuntimeException if error occurs
 	 */
-	public void batchNormalizationForwardTraining(String instName, MatrixObject image, 
+	public static void batchNormalizationForwardTraining(String instName, MatrixObject image, 
 			MatrixObject scale,  MatrixObject bias, MatrixObject runningMean, MatrixObject runningVar, 
 			MatrixObject ret, MatrixObject retRunningMean, MatrixObject retRunningVar,
 			double epsilon, double exponentialAverageFactor) throws DMLRuntimeException {
@@ -652,7 +652,7 @@ public class LibMatrixCUDA {
 	 * @param epsilon epsilon value used in the batch normalization formula
 	 * @throws DMLRuntimeException if error occurs
 	 */
-	public void batchNormalizationBackward(String instName, MatrixObject image, MatrixObject dout, 
+	public static void batchNormalizationBackward(String instName, MatrixObject image, MatrixObject dout, 
 			MatrixObject scale, MatrixObject runningMean, MatrixObject runningVar, 
 			MatrixObject ret, MatrixObject retScale, MatrixObject retBias,
 			double epsilon) throws DMLRuntimeException {
