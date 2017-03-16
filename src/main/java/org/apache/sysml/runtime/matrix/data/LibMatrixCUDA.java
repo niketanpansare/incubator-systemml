@@ -595,7 +595,7 @@ public class LibMatrixCUDA {
 	 */
 	private static cudnnTensorDescriptor allocateNCHWDescriptors(int N, int C, long CHW, MatrixObject [] input, MatrixObject [] output) throws DMLRuntimeException {
 		cudnnTensorDescriptor ret  = null; // Return any one
-		if(CHW > Integer.MAX_VALUE*C) {
+		if(CHW > ((long)Integer.MAX_VALUE)*C) {
 			throw new DMLRuntimeException("image size (height*width) should be less than " + Integer.MAX_VALUE);
 		}
 		cudnnTensorDescriptor knownNCHWdescriptor = null;
