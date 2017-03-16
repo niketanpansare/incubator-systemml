@@ -19,8 +19,6 @@
 
 package org.apache.sysml.runtime.matrix.data;
 
-import java.util.Random;
-
 import jcuda.Pointer;
 import jcuda.Sizeof;
 import jcuda.jcublas.JCublas2;
@@ -40,9 +38,7 @@ import jcuda.jcusparse.cusparseHandle;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.caching.CacheException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.functionobjects.And;
@@ -79,8 +75,6 @@ import org.apache.sysml.runtime.instructions.gpu.context.JCudaContext;
 import org.apache.sysml.runtime.instructions.gpu.context.JCudaKernels;
 import org.apache.sysml.runtime.instructions.gpu.context.JCudaObject;
 import org.apache.sysml.runtime.instructions.gpu.context.JCudaObject.CSRPointer;
-import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MatrixDimensionsMetaData;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
@@ -639,22 +633,6 @@ public class LibMatrixCUDA {
 			ret = new cudnnTensorDescriptor();
 			cudnnCreateTensorDescriptor(ret);
 			cudnnSetTensor4dDescriptor(ret, CUDNN_TENSOR_NCHW, CUDNN_DATA_DOUBLE, N, C, H, W);
-		}
-		return ret;
-	}
-	
-	public static MatrixObject convertForTesting(double[] data, int rlen, int clen) {
-		Random rand = new Random();
-		MatrixObject ret = new MatrixObject(ValueType.DOUBLE, "tmp_" + rand.nextLong() + "_" + rand.nextLong(), 
-				new MatrixDimensionsMetaData(new MatrixCharacteristics(rlen, clen, 1000, 1000)));
-		MatrixBlock newData = new MatrixBlock(rlen, clen, false);
-		newData.allocateDenseBlock();
-		System.arraycopy(data, 0, newData.denseBlock, 0, data.length);
-		try {
-			ret.acquireModify(newData);
-			ret.release();
-		} catch (CacheException e) {
-			throw new RuntimeException(e);
 		}
 		return ret;
 	}
