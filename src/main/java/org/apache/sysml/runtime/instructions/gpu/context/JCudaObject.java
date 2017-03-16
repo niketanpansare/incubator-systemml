@@ -82,6 +82,15 @@ public class JCudaObject extends GPUObject {
 	// An optional tensor descriptor that can be set by a tensor instruction such as convolution, maxpooling
 	// and exploited by a subsequent non-tensor instruction such as relu
 	private cudnnTensorDescriptor tensorDescriptor = null;
+	private int [] tensorShape = null;
+	
+	/**
+	 * Returns a previously allocated tensor shape or null
+	 * @return int array of four elements or null
+	 */
+	public int [] getTensorShape() {
+		return tensorShape;
+	}
 	
 	/**
 	 * Returns a previously allocated tensor descriptor or null
@@ -104,10 +113,15 @@ public class JCudaObject extends GPUObject {
 			tensorDescriptor = new cudnnTensorDescriptor();
 			cudnnCreateTensorDescriptor(tensorDescriptor);
 			cudnnSetTensor4dDescriptor(tensorDescriptor, CUDNN_TENSOR_NCHW, CUDNN_DATA_DOUBLE, N, C, H, W);
+			tensorShape = new int[4];
+			tensorShape[0] = N;
+			tensorShape[1] = C;
+			tensorShape[2] = H;
+			tensorShape[3] = W;
 		}
 		return tensorDescriptor;
 	}
-
+	
 	/**
 	 * Compressed Sparse Row (CSR) format for CUDA
 	 * Generalized matrix multiply is implemented for CSR format in the cuSparse library among other operations

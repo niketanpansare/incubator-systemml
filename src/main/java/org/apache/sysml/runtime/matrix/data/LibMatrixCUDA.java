@@ -34,6 +34,7 @@ import jcuda.jcudnn.cudnnPoolingDescriptor;
 import jcuda.jcudnn.cudnnTensorDescriptor;
 import jcuda.jcusparse.JCusparse;
 import jcuda.jcusparse.cusparseHandle;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
@@ -94,6 +95,7 @@ import static jcuda.jcudnn.JCudnn.cudnnCreateActivationDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnCreateConvolutionDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnCreateFilterDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnCreatePoolingDescriptor;
+import static jcuda.jcudnn.JCudnn.cudnnCreateTensorDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnDestroyConvolutionDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnDestroyFilterDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnDestroyPoolingDescriptor;
@@ -106,6 +108,7 @@ import static jcuda.jcudnn.JCudnn.cudnnSetActivationDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnSetConvolution2dDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnSetFilter4dDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnSetPooling2dDescriptor;
+import static jcuda.jcudnn.JCudnn.cudnnSetTensor4dDescriptor;
 import static jcuda.jcudnn.cudnnActivationMode.CUDNN_ACTIVATION_RELU;
 import static jcuda.jcudnn.cudnnConvolutionMode.CUDNN_CROSS_CORRELATION;
 import static jcuda.jcudnn.cudnnDataType.CUDNN_DATA_DOUBLE;
@@ -462,6 +465,33 @@ public class LibMatrixCUDA {
 
 	}
 	
+	private void validateBatchNormalizationDimensions(MatrixObject scale, MatrixObject bias, MatrixObject runningMean, MatrixObject runningVar, int C) throws DMLRuntimeException {
+		if(scale.getNumRows() != 1 || scale.getNumColumns() != C) {
+			throw new DMLRuntimeException("Incorrect dimensions for scale");
+		}
+		if(bias.getNumRows() != 1 || bias.getNumColumns() != C) {
+			throw new DMLRuntimeException("Incorrect dimensions for bias");
+		}
+		if(runningMean.getNumRows() != 1 || runningMean.getNumColumns() != C) {
+			throw new DMLRuntimeException("Incorrect dimensions for running mean");
+		}
+		if(runningVar.getNumRows() != 1 || runningVar.getNumColumns() != C) {
+			throw new DMLRuntimeException("Incorrect dimensions for running variance");
+		}
+	}
+	
+	private void validateBatchNormalizationDimensions(MatrixObject scale,  MatrixObject runningMean, MatrixObject runningVar, int C) throws DMLRuntimeException {
+		if(scale.getNumRows() != 1 || scale.getNumColumns() != C) {
+			throw new DMLRuntimeException("Incorrect dimensions for scale");
+		}
+		if(runningMean.getNumRows() != 1 || runningMean.getNumColumns() != C) {
+			throw new DMLRuntimeException("Incorrect dimensions for running mean");
+		}
+		if(runningVar.getNumRows() != 1 || runningVar.getNumColumns() != C) {
+			throw new DMLRuntimeException("Incorrect dimensions for running variance");
+		}
+	}
+	
 	/**
 	 * Performs the forward BatchNormalization layer computation for inference
 	 * 
@@ -472,21 +502,22 @@ public class LibMatrixCUDA {
 	 * @param runningMean running mean accumulated during training phase: shape [1, C, 1, 1]
 	 * @param runningVar running variance accumulated during training phase: shape [1, C, 1, 1]
 	 * @param ret normalized input
-	 * @param N number of image
-	 * @param C number of channels
-	 * @param H height
-	 * @param W width
 	 * @param epsilon epsilon value used in the batch normalization formula
 	 * @throws DMLRuntimeException if error occurs
 	 */
 	public void batchNormalizationForwardInference(String instName, MatrixObject image, 
 			MatrixObject scale, MatrixObject bias, MatrixObject runningMean, MatrixObject runningVar, 
-			MatrixObject ret, int N, int C, int H, int W, double epsilon) throws DMLRuntimeException {
+			MatrixObject ret, double epsilon) throws DMLRuntimeException {
 		int mode = cudnnBatchNormMode.CUDNN_BATCHNORM_SPATIAL;
 		
+		int N = (int) image.getNumRows();
+		int C = (int) scale.getNumColumns();
+		long CHW = image.getNumColumns();
+		validateBatchNormalizationDimensions(scale, bias, runningMean, runningVar, C);
+		
 		// Allocate descriptors
-		cudnnTensorDescriptor srcTensorDesc = allocateTensorDescriptor(image, N, C, H, W);
-		cudnnTensorDescriptor dstTensorDesc = allocateTensorDescriptor(ret, N, C, H, W);
+		cudnnTensorDescriptor nCHWDescriptor = allocateNCHWDescriptors(N, C, CHW, 
+				new MatrixObject[] {image},  new MatrixObject[] {ret});
 		cudnnTensorDescriptor scaleTensorDesc = allocateTensorDescriptor(scale, 1, C, 1, 1);
 		
 		// Get underlying dense pointer
@@ -498,7 +529,7 @@ public class LibMatrixCUDA {
 		Pointer runningVarPtr = getDensePointer(runningVar, true, instName);
 		
 		checkStatus(cudnnBatchNormalizationForwardInference(cudnnHandle, mode, one(), zero(),
-			srcTensorDesc, imagePtr, dstTensorDesc, retPtr,
+				nCHWDescriptor, imagePtr, nCHWDescriptor, retPtr,
 			scaleTensorDesc, scalePtr, biasPtr,
 			runningMeanPtr, runningVarPtr, epsilon));
 	}
@@ -515,10 +546,6 @@ public class LibMatrixCUDA {
 	 * @param ret normalized input
 	 * @param retRunningMean updated running mean
 	 * @param retRunningVar updated running variance
-	 * @param N number of image
-	 * @param C number of channels
-	 * @param H height
-	 * @param W width
 	 * @param epsilon epsilon value used in the batch normalization formula
 	 * @param exponentialAverageFactor factor used in the moving average computation
 	 * @throws DMLRuntimeException if error occurs
@@ -526,12 +553,17 @@ public class LibMatrixCUDA {
 	public void batchNormalizationForwardTraining(String instName, MatrixObject image, 
 			MatrixObject scale,  MatrixObject bias, MatrixObject runningMean, MatrixObject runningVar, 
 			MatrixObject ret, MatrixObject retRunningMean, MatrixObject retRunningVar,
-			int N, int C, int H, int W, double epsilon, double exponentialAverageFactor) throws DMLRuntimeException {
+			double epsilon, double exponentialAverageFactor) throws DMLRuntimeException {
 		int mode = cudnnBatchNormMode.CUDNN_BATCHNORM_SPATIAL;
 		
+		int N = (int) image.getNumRows();
+		int C = (int) scale.getNumColumns();
+		long CHW = image.getNumColumns();
+		validateBatchNormalizationDimensions(scale, bias, runningMean, runningVar, C);
+		
 		// Allocate descriptors
-		cudnnTensorDescriptor srcTensorDesc = allocateTensorDescriptor(image, N, C, H, W);
-		cudnnTensorDescriptor dstTensorDesc = allocateTensorDescriptor(ret, N, C, H, W);
+		cudnnTensorDescriptor nCHWDescriptor = allocateNCHWDescriptors(N, C, CHW, 
+				new MatrixObject[] {image},  new MatrixObject[] {ret});
 		cudnnTensorDescriptor scaleTensorDesc = allocateTensorDescriptor(scale, 1, C, 1, 1);
 		
 		// Get underlying dense pointer
@@ -545,9 +577,64 @@ public class LibMatrixCUDA {
 		Pointer retRunningVarPtr = getDensePointer(retRunningVar, true, instName);
 		
 		checkStatus(cudnnBatchNormalizationForwardTraining(cudnnHandle, mode, one(), zero(),
-			srcTensorDesc, imagePtr, dstTensorDesc, retPtr,
+				nCHWDescriptor, imagePtr, nCHWDescriptor, retPtr,
 			scaleTensorDesc, scalePtr, biasPtr, exponentialAverageFactor,
 			runningMeanPtr, runningVarPtr, epsilon, retRunningMeanPtr, retRunningVarPtr));
+	}
+	
+	/**
+	 * Convenient utility for batch normalization that returns a NCHW descriptor
+	 * 
+	 * @param N number of images
+	 * @param C number of channels
+	 * @param CHW channels*height*width
+	 * @param input input matrix objects
+	 * @param output output matrix objects
+	 * @return one of the NCHW descriptor
+	 * @throws DMLRuntimeException if error occurs
+	 */
+	private static cudnnTensorDescriptor allocateNCHWDescriptors(int N, int C, long CHW, MatrixObject [] input, MatrixObject [] output) throws DMLRuntimeException {
+		cudnnTensorDescriptor ret  = null; // Return any one
+		if(CHW > Integer.MAX_VALUE*C) {
+			throw new DMLRuntimeException("image size (height*width) should be less than " + Integer.MAX_VALUE);
+		}
+		cudnnTensorDescriptor knownNCHWdescriptor = null;
+		int H = -1; int W = -1;
+		for(int i = 0; i < input.length; i++) {
+			knownNCHWdescriptor = ((JCudaObject)input[i].getGPUObject()).getTensorDescriptor();
+			if(knownNCHWdescriptor != null) {
+				int [] shape = ((JCudaObject)input[i].getGPUObject()).getTensorShape();
+				if(shape[0] != N || shape[1] != C) {
+					throw new DMLRuntimeException("Incorrect N and C:" + shape[0]  + " != " + N + " || " + shape[1]  + " != " +  C);
+				}
+				H = shape[2];
+				W = shape[3];
+				break;
+			}
+		}
+		if(knownNCHWdescriptor != null) {
+			// We precisely know N, C, H, W
+			for(int i = 0; i < input.length; i++) {
+				ret = allocateTensorDescriptor(input[i], N, C, H, W);
+			}
+			for(int i = 0; i < output.length; i++) {
+				ret = allocateTensorDescriptor(output[i], N, C, H, W);
+			}
+		}
+		else {
+			int HW = (int) (CHW / C);
+			H = HW; W = 1; // If not known
+			double potentialH = Math.sqrt(HW);
+			if(potentialH == ((int) potentialH)) {
+				H = (int) potentialH; 
+				W = H; 
+			}
+			// We are not sure about H and W, hence don't allocate them.
+			ret = new cudnnTensorDescriptor();
+			cudnnCreateTensorDescriptor(ret);
+			cudnnSetTensor4dDescriptor(ret, CUDNN_TENSOR_NCHW, CUDNN_DATA_DOUBLE, N, C, H, W);
+		}
+		return ret;
 	}
 	
 	/**
@@ -555,30 +642,30 @@ public class LibMatrixCUDA {
 	 * 
 	 * @param instName name of the instruction
 	 * @param image input image
-	 * @param dout
+	 * @param dout input errors of shape C, H, W
 	 * @param scale scale (as per CuDNN) and gamma as per original paper: shape [1, C, 1, 1]
 	 * @param runningMean running mean accumulated during training phase: shape [1, C, 1, 1]
 	 * @param runningVar running variance accumulated during training phase: shape [1, C, 1, 1]
 	 * @param ret backpropagation errors for previous layer
 	 * @param retScale backpropagation error for scale
 	 * @param retBias backpropagation error for bias
-	 * @param N number of image
-	 * @param C number of channels
-	 * @param H height
-	 * @param W width
 	 * @param epsilon epsilon value used in the batch normalization formula
 	 * @throws DMLRuntimeException if error occurs
 	 */
 	public void batchNormalizationBackward(String instName, MatrixObject image, MatrixObject dout, 
 			MatrixObject scale, MatrixObject runningMean, MatrixObject runningVar, 
 			MatrixObject ret, MatrixObject retScale, MatrixObject retBias,
-			int N, int C, int H, int W, double epsilon) throws DMLRuntimeException {
+			double epsilon) throws DMLRuntimeException {
 		int mode = cudnnBatchNormMode.CUDNN_BATCHNORM_SPATIAL;
 		
+		int N = (int) image.getNumRows();
+		int C = (int) scale.getNumColumns();
+		long CHW = image.getNumColumns();
+		validateBatchNormalizationDimensions(scale, runningMean, runningVar, C);
+		
 		// Allocate descriptors
-		cudnnTensorDescriptor srcTensorDesc = allocateTensorDescriptor(image, N, C, H, W);
-		cudnnTensorDescriptor doutTensorDesc = allocateTensorDescriptor(dout, N, C, H, W);
-		cudnnTensorDescriptor dstTensorDesc = allocateTensorDescriptor(ret, N, C, H, W);
+		cudnnTensorDescriptor nCHWDescriptor = allocateNCHWDescriptors(N, C, CHW, 
+				new MatrixObject[] {image, dout},  new MatrixObject[] {ret});
 		cudnnTensorDescriptor scaleTensorDesc = allocateTensorDescriptor(scale, 1, C, 1, 1);
 		
 		// Get underlying dense pointer
@@ -592,7 +679,7 @@ public class LibMatrixCUDA {
 		Pointer retBiasPtr = getDensePointer(retBias, true, instName);
 		
 		checkStatus(cudnnBatchNormalizationBackward(cudnnHandle, mode,  one(), zero(), one(), zero(),
-				srcTensorDesc,  imagePtr, doutTensorDesc, doutPtr, dstTensorDesc, retPtr,
+				nCHWDescriptor,  imagePtr, nCHWDescriptor, doutPtr, nCHWDescriptor, retPtr,
 				scaleTensorDesc, scalePtr, retScalePtr, retBiasPtr, epsilon, runningMeanPtr, runningVarPtr));
 	}
 
