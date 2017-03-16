@@ -784,8 +784,15 @@ public class LibMatrixCUDA {
 			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
 			int Q) throws DMLRuntimeException {
 		Pointer x = getDensePointer(image, true, instName);
+		cudnnTensorDescriptor xDesc = allocateTensorDescriptor(image, N, C, H, W);
+		performMaxpooling(instName, x, xDesc, outputBlock, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
+	}
+	
+	public static void performMaxpooling(String instName, Pointer x, cudnnTensorDescriptor xDesc,
+			MatrixObject outputBlock, int N, int C, int H, int W, int K, int R,
+			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
+			int Q) throws DMLRuntimeException {
 		Pointer y = getDensePointer(outputBlock, true, instName);
-
 		cudnnPoolingDescriptor poolingDesc = null;
 
 		try {
@@ -793,7 +800,6 @@ public class LibMatrixCUDA {
 			if (GPUStatistics.DISPLAY_STATISTICS) t1 = System.nanoTime();
 			// Allocate descriptors
 			cudnnTensorDescriptor yDesc = allocateTensorDescriptor(outputBlock, N, C, P, Q);
-			cudnnTensorDescriptor xDesc = allocateTensorDescriptor(image, N, C, H, W);
 			poolingDesc = allocatePoolingDescriptor(R, S, pad_h, pad_w, stride_h, stride_w);
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CUDNN_INIT, System.nanoTime() - t1);
 
@@ -838,18 +844,12 @@ public class LibMatrixCUDA {
 			MatrixObject outputBlock, int N, int C, int H, int W, int K, int R,
 			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
 			int Q) throws DMLRuntimeException {
-		
-		//TODO:
-//		if(isInSparseFormat(image)) {
-//			((JCudaObject)image.getGPUObject()).sparseToDense(instName);
-//		}
-//		long size  = image.getNumRows() * image.getNumColumns() * Sizeof.DOUBLE;
-//		Pointer x = ((JCudaObject)image.getGPUObject()).jcudaDenseMatrixPtr;
-//		Pointer y = ((JCudaObject)outputBlock.getGPUObject()).jcudaDenseMatrixPtr;
-//		Pointer tmp = allocate(size);
-//		performReLU(instName, x, tmp, N, C, H, W);
-//		performMaxpooling(instName, tmp, y, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
-//		cudaFreeHelper(tmp);
+		cudnnTensorDescriptor srcTensorDesc = allocateTensorDescriptor(image, N, C, H, W);
+		long size  = image.getNumRows() * image.getNumColumns() * Sizeof.DOUBLE;
+		Pointer tmp = allocate(size);
+		performCuDNNReLU(instName, image, tmp, srcTensorDesc);
+		performMaxpooling(instName, tmp, srcTensorDesc, outputBlock, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
+		cudaFreeHelper(tmp, true); // Perform eager cuda free
 	}
 
 	/**
@@ -933,14 +933,12 @@ public class LibMatrixCUDA {
 		}
 	}
 	
-	private static void performCuDNNReLU(String instName, MatrixObject in, MatrixObject ret, cudnnTensorDescriptor srcTensorDesc) throws DMLRuntimeException {
+	private static void performCuDNNReLU(String instName, MatrixObject in, Pointer dstData, cudnnTensorDescriptor srcTensorDesc) throws DMLRuntimeException {
 		long t0=0;
 		try {
 			cudnnTensorDescriptor dstTensorDesc = srcTensorDesc;
 			
 			Pointer srcData = getDensePointer(in, true, instName);
-			Pointer dstData = getDensePointer(ret, true, instName);
-			
 			cudnnActivationDescriptor activationDescriptor = new cudnnActivationDescriptor();
 			cudnnCreateActivationDescriptor(activationDescriptor);
 			double dummy = -1;
@@ -985,7 +983,7 @@ public class LibMatrixCUDA {
 			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_RELU_KERNEL, System.nanoTime() - t0);
 		}
 		else {
-			performCuDNNReLU(instName, in, output, srcTensorDesc);
+			performCuDNNReLU(instName, in, getDensePointer(output, true, instName), srcTensorDesc);
 		}
 	}
 
