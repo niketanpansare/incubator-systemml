@@ -336,12 +336,12 @@ public class ScriptExecutor {
 	 */
 	protected void cleanupAfterExecution() {
 		restoreInputsInSymbolTable();
-//		try {
-//			if (gpu)
-//				executionContext.destroyGPUContext();
-//		} catch (DMLRuntimeException e) {
-//			throw new MLContextException("Exception occurred during cleanup of GPU related resources", e);
-//		}
+		try {
+			if (gpu)
+				executionContext.destroyGPUContext();
+		} catch (DMLRuntimeException e) {
+			throw new MLContextException("Exception occurred during cleanup of GPU related resources", e);
+		}
 	}
 
 	/**
