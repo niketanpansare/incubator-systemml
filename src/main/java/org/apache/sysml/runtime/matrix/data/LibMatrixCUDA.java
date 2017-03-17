@@ -529,16 +529,18 @@ public class LibMatrixCUDA {
 	 * @param image input image
 	 * @param scale scale (as per CuDNN) and gamma as per original paper: shape [1, C, 1, 1]
 	 * @param bias bias (as per CuDNN) and beta as per original paper: shape [1, C, 1, 1]
-	 * @param runningMean (input/output) running mean accumulated during training phase: shape [1, C, 1, 1]
-	 * @param runningVar (input/output) running variance accumulated during training phase: shape [1, C, 1, 1]
+	 * @param runningMean running mean accumulated during training phase: shape [1, C, 1, 1]
+	 * @param runningVar running variance accumulated during training phase: shape [1, C, 1, 1]
 	 * @param ret (output) normalized input
+	 * @param retRunningMean (output) running mean accumulated during training phase: shape [1, C, 1, 1]
+	 * @param retRunningVar (output) running variance accumulated during training phase: shape [1, C, 1, 1]
 	 * @param epsilon epsilon value used in the batch normalization formula
 	 * @param exponentialAverageFactor factor used in the moving average computation
 	 * @throws DMLRuntimeException if error occurs
 	 */
 	public static void batchNormalizationForwardTraining(String instName, MatrixObject image, 
 			MatrixObject scale,  MatrixObject bias, MatrixObject runningMean, MatrixObject runningVar, 
-			MatrixObject ret, double epsilon, double exponentialAverageFactor) throws DMLRuntimeException {
+			MatrixObject ret, MatrixObject retRunningMean, MatrixObject retRunningVar, double epsilon, double exponentialAverageFactor) throws DMLRuntimeException {
 		int mode = cudnnBatchNormMode.CUDNN_BATCHNORM_SPATIAL;
 		
 		int N = (int) image.getNumRows();
@@ -559,11 +561,17 @@ public class LibMatrixCUDA {
 		Pointer runningMeanPtr = getDensePointer(runningMean, true, instName);
 		Pointer runningVarPtr = getDensePointer(runningVar, true, instName);
 		
+		// To allow for copy-on-write
+		Pointer retRunningMeanPtr = getDensePointer(retRunningMean, true, instName);
+		Pointer retRunningVarPtr = getDensePointer(retRunningVar, true, instName);
+		cudaMemcpy(retRunningMeanPtr, runningMeanPtr, C * Sizeof.DOUBLE, cudaMemcpyDeviceToDevice);
+		cudaMemcpy(retRunningVarPtr, runningVarPtr, C * Sizeof.DOUBLE, cudaMemcpyDeviceToDevice);
+		
 		// ignoring resultSaveMean and resultSaveVariance as it requires state management
 		checkStatus(cudnnBatchNormalizationForwardTraining(cudnnHandle, mode, one(), zero(),
 				nCHWDescriptor, imagePtr, nCHWDescriptor, retPtr,
 			scaleTensorDesc, scalePtr, biasPtr, exponentialAverageFactor,
-			runningMeanPtr, runningVarPtr, epsilon, new Pointer(), new Pointer()));
+			retRunningMeanPtr, retRunningVarPtr, epsilon, new Pointer(), new Pointer()));
 	}
 	
 	/**
@@ -628,7 +636,7 @@ public class LibMatrixCUDA {
 	 * @param image input image
 	 * @param dout input errors of shape C, H, W
 	 * @param scale scale (as per CuDNN) and gamma as per original paper: shape [1, C, 1, 1]
-	 * @param ret (output backpropagation errors for previous layer
+	 * @param ret (output) backpropagation errors for previous layer
 	 * @param retScale backpropagation error for scale
 	 * @param retBias backpropagation error for bias
 	 * @param epsilon epsilon value used in the batch normalization formula
