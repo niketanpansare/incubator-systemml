@@ -79,7 +79,7 @@ public class JCudaObject extends GPUObject {
 
 	private static final Log LOG = LogFactory.getLog(JCudaObject.class.getName());
 	
-	// An optional tensor descriptor that can be set by a tensor instruction such as convolution, maxpooling
+	// An optional tensor descriptor (and shape) that can be set by a tensor instruction such as convolution, maxpooling
 	// and exploited by a subsequent non-tensor instruction such as relu
 	private cudnnTensorDescriptor tensorDescriptor = null;
 	private int [] tensorShape = null;
