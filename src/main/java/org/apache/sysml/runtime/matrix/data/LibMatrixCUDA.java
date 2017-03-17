@@ -922,8 +922,9 @@ public class LibMatrixCUDA {
 		long size  = image.getNumRows() * image.getNumColumns() * Sizeof.DOUBLE;
 		Pointer tmp = allocate(size);
 		performCuDNNReLU(instName, image, tmp, srcTensorDesc);
+		cudaDeviceSynchronize(); // It seemed like the cudnn operation in performCuDNNReLU was being done aysnchronously, this adds the neccesary sync
 		performMaxpooling(instName, tmp, srcTensorDesc, outputBlock, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
-		cudaFreeHelper(tmp, true); // Perform eager cuda free
+		cudaFreeHelper(tmp);
 	}
 
 	/**
