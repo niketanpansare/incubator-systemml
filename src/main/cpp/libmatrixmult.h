@@ -31,20 +31,12 @@
 // #define USE_OPEN_BLAS
 // *****************************************************************
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-#ifdef USE_OPEN_BLAS
-#include <cblas.h>
-extern void openblas_set_num_threads(int numThreads);
-#endif
-#ifdef USE_INTEL_MKL
-#include <mkl.h>
-#include <mkl_service.h>
-#endif
-#ifdef __cplusplus
-}
-#endif
+//#ifdef __cplusplus
+//extern "C" {
+//#endif
+//#ifdef __cplusplus
+//}
+//#endif
 
 void setNumThreadsForBLAS(int numThreads);
 

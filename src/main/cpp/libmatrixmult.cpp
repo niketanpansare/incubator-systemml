@@ -16,22 +16,31 @@
  * specific language governing permissions and limitations
  * under the License.
  */
- 
+
+#include "config.h"
 #include "libmatrixmult.h"
 #include <cstdlib>
 #include "omp.h"
 #include <cmath>
 
+#ifdef USE_OPEN_BLAS
+#include <cblas.h>
+extern void openblas_set_num_threads(int numThreads);
+#elif defined USE_INTEL_MKL
+#include <mkl.h>
+#include <mkl_service.h>
+#endif
+
+
 int SYSML_CURRENT_NUM_THREADS = -1;
 void setNumThreadsForBLAS(int numThreads) {
 	if(SYSML_CURRENT_NUM_THREADS != numThreads) {
-		SYSML_CURRENT_NUM_THREADS = numThreads;
-#ifdef USE_INTEL_MKL
-		mkl_set_num_threads(numThreads);
-#endif
 #ifdef USE_OPEN_BLAS
 		openblas_set_num_threads(numThreads);
+#else
+		mkl_set_num_threads(numThreads);
 #endif
+	    SYSML_CURRENT_NUM_THREADS = numThreads;
 	}
 }
  
