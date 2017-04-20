@@ -123,6 +123,14 @@ make
 After the shared library object is generated, it may need to be renamed to what the Java code expects.
 
 
+### On Windows
+- Install MKL or Download the OpenBlas Binary
+- Install Visual Studio Community Edition (tested on VS 2017)
+- Use the CMake GUI, select the source directory, the output directory
+- Press the `configure` button, set the `generator` and `use default native compilers` option
+- By default, `USE_INTEL_MKL` is selected, if you wanted to use OpenBLAS, unselect the `USE_INTEL_MKL`, select the `USE_OPEN_BLAS`.
+- You might run into errors a couple of times, select the appropriate library and include files/directories (For MKL or OpenBLAS) a couple of times, and all the errors should go away. 
+- Then press generate. This will generate Visual Studio project files, which you can open in VS2017 to compile the libraries.
 
 ## Manually
 
