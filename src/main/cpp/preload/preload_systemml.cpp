@@ -22,10 +22,14 @@
 //  g++ -o libpreload_systemml-linux-x86_64.so preload_systemml.cpp  -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -lm -ldl -O3 -shared -fPIC
 JNIEXPORT void JNICALL Java_org_apache_sysml_utils_EnvironmentHelper_setEnv(JNIEnv * env, jclass c, jstring jname, jstring jvalue) {
 	const char* name = (env)->GetStringUTFChars(jname, NULL);
-    const char* value = (env)->GetStringUTFChars(jvalue,NULL);
+    	const char* value = (env)->GetStringUTFChars(jvalue,NULL);
+#if defined _WIN32 || defined _WIN64 
+	_putenv_s(name, value);
+#else 
 	setenv(name, value, 1);
+#endif
 	(env)->ReleaseStringUTFChars(jname, name); 
-    (env)->ReleaseStringUTFChars(jvalue, value);
+    	(env)->ReleaseStringUTFChars(jvalue, value);
 }
  
  
