@@ -28,6 +28,9 @@ operations such matrix multiplication, convolution, etc.
 If the shared libraries for BLAS are not accessible, SystemML
 falls back to its internal Java library.
 
+To force SystemML to use internal Java library rather than native BLAS,
+please set the configuration property `native.blas` to `false`.
+
 ## Step 1: Install BLAS
 
 ### Option 1: Install Intel MKL (recommended)
@@ -127,11 +130,11 @@ For this project, I typically make a directory in the `cpp` folder (this folder)
 The above script also validates whether additional dependencies have been added while compiling and warns the developer.  
 The current set of dependencies other than MKL and OpenBLAS, are as follows:
 
-- GNU Standard C++ Library: libstdc++.so.6
-- GCC version 4.8 shared support library: libgcc_s.so.1
-- The GNU libc libraries: libm.so.6, libdl.so.2, libc.so.6, libpthread.so.0
-- GCC OpenMP v3.0 shared support library: libgomp.so.1
-- Additional OpenBLAS dependencies: Fortran runtime (libgfortran.so.3) and GCC __float128 shared support library (libquadmath.so.0)
+- GNU Standard C++ Library: `libstdc++.so.6`
+- GCC version 4.8 shared support library: `libgcc_s.so.1`
+- The GNU libc libraries: `libm.so.6, libdl.so.2, libc.so.6, libpthread.so.0`
+- GCC OpenMP v3.0 shared support library: `libgomp.so.1`
+- Additional OpenBLAS dependencies: Fortran runtime (`libgfortran.so.3`) and GCC `__float128` shared support library (`libquadmath.so.0`)
 	
 ## 64-bit x86 Windows
 
