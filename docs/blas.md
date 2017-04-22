@@ -1,0 +1,164 @@
+<!--
+{% comment %}
+Licensed to the Apache Software Foundation (ASF) under one or more
+contributor license agreements.  See the NOTICE file distributed with
+this work for additional information regarding copyright ownership.
+The ASF licenses this file to you under the Apache License, Version 2.0
+(the "License"); you may not use this file except in compliance with
+the License.  You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+{% endcomment %}
+-->
+
+# User Guide
+
+By default, SystemML implements all its matrix operations in Java.
+This simplifies deployment especially in a distributed environment.
+
+In some cases (such as deep learning), the user might want to use native BLAS
+rather than SystemML's internal Java library for performing single-node
+operations such matrix multiplication, convolution, etc.
+If the shared libraries for BLAS are not accessible, SystemML
+falls back to its internal Java library.
+
+## Step 1: Install BLAS
+
+### Option 1: Install Intel MKL (recommended)
+
+1. Download and install the [community version of Intel MKL](https://software.intel.com/sites/campaigns/nest/).
+Intel requires you to first register your email address and then sends the download link to your email address
+with license key.
+
+	* Linux users will have to extract the downloaded `.tgz` file and execute `install.sh`.
+	* Windows users will have to execute the downloaded `.exe` file and follow the guided setup.
+
+2. Set `MKLROOT` enviroment variable to point to the installed location.
+
+	* Linux: By default, Intel MKL will be installed in `/opt/intel/mkl/`.
+
+		```bash
+		export MKLROOT=/opt/intel/mkl/
+		```
+
+	* Windows: By default, Intel MKL will be installed in `C:\Program Files (x86)\IntelSWTools\compilers_and_libraries_2017\windows\mkl`.
+
+To add a new enviroment variable on Windows, the user has to right-click on `Computer` and then click `Properties > Advanced system settings > Environment Variables > New`.
+
+### Option 2: Install OpenBLAS  
+
+1. Linux:
+	```bash
+	# The default OpenBLAS (via yum/apt-get) uses its internal threading rather than OpenMP, 
+	# which can lead to performance degradation when using SystemML. So, instead we recommend that you
+	# compile OpenBLAS from the source. 
+	# RedHat / CentOS: sudo yum install openblas
+	# Ubuntu: sudo apt-get install openblas
+	git clone https://github.com/xianyi/OpenBLAS.git
+	cd OpenBLAS/
+	make clean
+	make USE_OPENMP=1
+	sudo make install
+	```
+
+2. Windows:
+Download [pre-built binaries](https://sourceforge.net/projects/openblas/) or install from [the source](https://github.com/xianyi/OpenBLAS).
+
+## Step 2: Install other dependencies
+
+1. Linux:
+
+	# Centos/RedHat
+	sudo yum install gcc-c++
+	# Ubuntu
+	sudo apt-get install g++
+
+2. Windows:
+
+TODO: When cmake works
+
+3. Mac:
+
+TODO: 
+
+# Developer Guide
+
+This section describes how to compile shared libraries in the folder `src/main/cpp/lib`. 
+This is required when the developer makes changes to cpp directory or while validating the source package during the release process.
+
+## Intro to CMake
+If you are familiar with cmake, skip this section.
+
+In a regular project with a Makefile, the compiled object files are placed in the same directory as the source.
+Sometimes we don't want to pollute the source tree. We might also want to have different binaries for different configurations. For instance, if we want to link a binary with separate libraries.
+CMake supports out of source tree builds. As an illustration, you can create a directory called "BUILD" and invoke cmake like so : `cmake <path/to/source>`. The makefile and other config files are placed in this "BUILD" directory. You can now say `make` and the compiled objects and binary files are created in this directory. You can then create another "BUILD2" directory and repeat the process.
+You can pass options to cmake as well. In this instance, it might be to specify whether to build with Intel MKL or OpenBLAS. This can be done from the command line with a "-D" appended to it, but more interestingly, it can also be done form a n-curses GUI which is invoked as `ccmake <path/to/source>`. (You may need to install this separately).
+Also, the C, C++ compilers and their flags are picked up by cmake when set in standard environment variables. These are respectively `CC`, `CXX`, `CFLAGS` & `CXFLAGS`. As an example, they may be specified as:
+
+	CXX=gcc-6 cmake ..
+
+For this project, I typically make a directory in the `cpp` folder (this folder) and name it the config I use. For instance, `INTEL` for Intel MKL and `OPENBLAS` for OpenBLAS.
+
+## 64-bit x86 Linux
+
+1. Install `g++`, OpenBLAS and MKL using the above instructions
+
+2. Set `JAVA_HOME` to JDK.
+
+	export JAVA_HOME=<path to JDK 1.8>
+
+3. Install cmake
+
+	# Centos/RedHat
+	sudo yum install cmake3
+	# Ubuntu
+	sudo apt-get install cmake
+
+4. Compile the libs using the shell script:
+
+	./compile-lib-linux-x86_64.sh
+
+The above script also validates whether additional dependencies have been added while compiling and warns the developer.  
+The current set of dependencies other than MKL and OpenBLAS, are as follows:
+
+- GNU Standard C++ Library: libstdc++.so.6
+- GCC version 4.8 shared support library: libgcc_s.so.1
+- The GNU libc libraries: libm.so.6, libdl.so.2, libc.so.6, libpthread.so.0
+- GCC OpenMP v3.0 shared support library: libgomp.so.1
+- Additional OpenBLAS dependencies: Fortran runtime (libgfortran.so.3) and GCC __float128 shared support library (libquadmath.so.0)
+	
+## 64-bit x86 Windows
+
+- Install MKL or Download the OpenBlas Binary
+- Install Visual Studio Community Edition (tested on VS 2017)
+- Use the CMake GUI, select the source directory, the output directory
+- Press the `configure` button, set the `generator` and `use default native compilers` option
+- By default, `USE_INTEL_MKL` is selected, if you wanted to use OpenBLAS, unselect the `USE_INTEL_MKL`, select the `USE_OPEN_BLAS`.
+- You might run into errors a couple of times, select the appropriate library and include files/directories (For MKL or OpenBLAS) a couple of times, and all the errors should go away. 
+- Then press generate. This will generate Visual Studio project files, which you can open in VS2017 to compile the libraries.
+
+## 64-bit x86 Mac
+
+TODO:
+
+The version of clang that ships with Mac does not come with OpenMP. `brew install` either `llvm` or `g++`. The instructions that follow are for llvm:
+
+1. Intel MKL - CMake should detect the MKL installation path, otherwise it can specified by the environment variable `MKLROOT`. To use (with gcc-6):
+```
+mkdir INTEL && cd INTEL
+CXX=/usr/local/opt/llvm/bin/clang++ CC=/usr/local/opt/llvm/bin/clang LDFLAGS=-L/usr/local/opt/llvm/lib CPPFLAGS=-I/usr/local/opt/llvm/include cmake  -DUSE_INTEL_MKL=ON ..
+make
+```
+2. OpenBLAS - CMake should be able to detect the path of OpenBLAS. If it can't, set the `OpenBLAS` environment variable. If using `brew` to install OpenBLAS, set the `OpenBLAS_HOME` environment variable to `/usr/local/opt/openblas/`. To use (with gcc-6):
+```
+export OpenBLAS_HOME=/usr/local/opt/openblas/
+mkdir OPENBLAS && cd OPENBLAS
+CXX=/usr/local/opt/llvm/bin/clang++ CC=/usr/local/opt/llvm/bin/clang LDFLAGS=-L/usr/local/opt/llvm/lib CPPFLAGS=-I/usr/local/opt/llvm/include cmake  -DUSE_OPEN_BLAS=ON ..
+make
+```
