@@ -71,7 +71,17 @@ To add a new enviroment variable on Windows, the user has to right-click on `Com
 	```
 
 2. Windows:
-Download [pre-built binaries](https://sourceforge.net/projects/openblas/) or install from [the source](https://github.com/xianyi/OpenBLAS).
+
+We recommend that you build `libopenblas.dll` from source instead of 
+downloading [pre-built binaries](https://sourceforge.net/projects/openblas/) to avoid performance degradation when using SystemML.:
+
+- Download source: `git clone https://github.com/xianyi/OpenBLAS.git`
+- Install [CMake](https://cmake.org/download/) and Visual Studio Community Edition. 
+- Open `CMake-GUI` and point source code to the openblas directory.
+- Click `Add Entry` and add entry `USE_OPENMP` and select it.
+- Then click `Configure`, `Generate` and then `Open Project`. This should open a Visual Studio IDE.
+- Build libopenblas project and place the generated `libopenblas.dll` in your `PATH`.
+
 
 ## Step 2: Install other dependencies
 
@@ -84,7 +94,12 @@ Download [pre-built binaries](https://sourceforge.net/projects/openblas/) or ins
 
 2. Windows:
 
-TODO: When cmake works
+To get other dependencies, either put below given dlls in your `PATH` or 
+install Visual Studio Community edition to get these dlls:
+
+- Visual C OpenMP: vcomp140.dll (for function: `omp_get_thread_num`).
+- Visual C Runtime: vcruntime140.dll (for functions: `memcpy` and `memset`).
+- API-MS-WIN-CRT-ENVIRONMENT-L1-1-0.DLL, API-MS-WIN-CRT-RUNTIME-L1-1-0.DLL and API-MS-WIN-CRT-HEAP-L1-1-0.DLL (for functions: `malloc` and `free`).
 
 3. Mac:
 
@@ -145,6 +160,23 @@ The current set of dependencies other than MKL and OpenBLAS, are as follows:
 - By default, `USE_INTEL_MKL` is selected, if you wanted to use OpenBLAS, unselect the `USE_INTEL_MKL`, select the `USE_OPEN_BLAS`.
 - You might run into errors a couple of times, select the appropriate library and include files/directories (For MKL or OpenBLAS) a couple of times, and all the errors should go away. 
 - Then press generate. This will generate Visual Studio project files, which you can open in VS2017 to compile the libraries.
+
+The current set of dependencies are as follows:
+- MKL: mkl_rt.dll (for functions: `mkl_set_num_threads` and `cblas_dgemm`).
+- OpenBLAS: libopenblas.dll (for functions: `openblas_set_num_threads` and `cblas_dgemm`).
+- Visual C OpenMP: vcomp140.dll (for function: `omp_get_thread_num`).
+- Visual C Runtime: vcruntime140.dll (for functions: `memcpy` and `memset`).
+- API-MS-WIN-CRT-ENVIRONMENT-L1-1-0.DLL, API-MS-WIN-CRT-RUNTIME-L1-1-0.DLL and API-MS-WIN-CRT-HEAP-L1-1-0.DLL (for functions: `malloc` and `free`).
+- KERNEL32.dll
+
+If you get an error `Error LNK1181 cannot open input file 'C:/Program.obj'`, 
+you may have to use quotation marks around the path in Visual Studio project properties.
+- Property Pages > C/C++ > General > Additional Include Directories
+- Property Pages > Linker > Command Line
+
+If you get an error `CMake Error at cmake/FindOpenBLAS.cmake:71 (MESSAGE): Could not find OpenBLAS`,
+please set the environment variable `OpenBLAS_HOME` or edit the variables `OpenBLAS_INCLUDE_DIR` and `OpenBLAS_LIB`
+to point to the `include` directory and `libopenblas.dll.a` respectively.
 
 ## 64-bit x86 Mac
 
