@@ -25,11 +25,14 @@ This simplifies deployment especially in a distributed environment.
 In some cases (such as deep learning), the user might want to use native BLAS
 rather than SystemML's internal Java library for performing single-node
 operations such matrix multiplication, convolution, etc.
-If the shared libraries for BLAS are not accessible, SystemML
+By default, SystemML will first attempt to use Intel MKL (if installed)
+and then OpenBLAS (if installed).
+If both Intel MKL and OpenBLAS are not available, SystemML
 falls back to its internal Java library.
 
 To force SystemML to use internal Java library rather than native BLAS,
 please set the configuration property `native.blas` to `false`.
+
 
 ## Step 1: Install BLAS
 
@@ -109,6 +112,10 @@ TODO:
 
 This section describes how to compile shared libraries in the folder `src/main/cpp/lib`. 
 This is required when the developer makes changes to cpp directory or while validating the source package during the release process.
+
+To force SystemML to use OpenBLAS instead of Intel MKL if both are installed,
+please set the environment variable `SYSTEMML_BLAS` to `openblas`.
+This environment variable is used internally for testing and is not required for users.
 
 ## Intro to CMake
 If you are familiar with cmake, skip this section.

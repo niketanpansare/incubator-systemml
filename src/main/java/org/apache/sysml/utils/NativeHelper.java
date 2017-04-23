@@ -62,8 +62,30 @@ public class NativeHelper {
 		    if(supportedArchitectures.containsKey(SystemUtils.OS_ARCH)) {
 		    	synchronized(NativeHelper.class) {
 		    		if(!attemptedLoading) {
-					    // Check if MKL is enabled, if not then check if openblas is enabled
-					    blasType = isMKLAvailable() ? "mkl" : (isOpenBLASAvailable() ? "openblas" : null);
+		    			String userSpecifiedBLAS = System.getenv("SYSTEMML_BLAS");
+		    			if(userSpecifiedBLAS != null) {
+		    				LOG.info("SYSTEMML_BLAS is set to " + userSpecifiedBLAS);
+		    				if(userSpecifiedBLAS.trim().equals("")) {
+			    				// Check if MKL is enabled, if not then check if openblas is enabled
+							    blasType = isMKLAvailable() ? "mkl" : (isOpenBLASAvailable() ? "openblas" : null);
+			    			}
+			    			else if(userSpecifiedBLAS.equalsIgnoreCase("mkl")) {
+			    				blasType = isMKLAvailable() ? "mkl" : null;
+			    			}
+			    			else if(userSpecifiedBLAS.equalsIgnoreCase("openblas")) {
+			    				blasType = isOpenBLASAvailable() ? "openblas" : null;
+			    			}
+			    			else {
+			    				LOG.warn("Unsupported BLAS:" + userSpecifiedBLAS);
+			    			}
+		    			}
+		    			else {
+		    				// Default behavior:
+		    				// Check if MKL is enabled, if not then check if openblas is enabled
+						    blasType = isMKLAvailable() ? "mkl" : (isOpenBLASAvailable() ? "openblas" : null);
+		    			}
+		    			
+					    
 							if(blasType != null) {
 								try {
 									loadLibrary("systemml", "_" + blasType);
