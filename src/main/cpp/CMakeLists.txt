@@ -18,7 +18,7 @@
 
 cmake_minimum_required(VERSION 2.8)
 
-project (systemml-accelerator)
+project (systemml)
 
 # All custom find modules
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
@@ -36,12 +36,25 @@ add_library(preload SHARED preload/preload_systemml.cpp)
 
 set(MATH_LIBRARIES "")
 
+# sets the installation path to src/main/cpp/lib
+set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR})
+install(TARGETS systemml preload LIBRARY DESTINATION lib)
+
+set(CMAKE_BUILD_TYPE Release)
+
+
 if (USE_OPEN_BLAS)
   find_package(OpenBLAS REQUIRED)
+  # sets the name of the output to include the os and the architecture
+  set_target_properties(systemml PROPERTIES OUTPUT_NAME "systemml_openblas-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+  set_target_properties(preload PROPERTIES OUTPUT_NAME "preload_openblas-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
   include_directories(${OpenBLAS_INCLUDE_DIR})
   set(MATH_LIBRARIES "${OpenBLAS_LIB}")
 elseif(USE_INTEL_MKL)
   find_package(MKL REQUIRED)
+  # sets the name of the output to include the os and the architecture
+  set_target_properties(systemml PROPERTIES OUTPUT_NAME "systemml_mkl-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+  set_target_properties(preload PROPERTIES OUTPUT_NAME "preload_mkl-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
   include_directories(${MKL_INCLUDE_DIR})
   set(MATH_LIBRARIES "${MKL_LIBRARIES}")
 endif()
@@ -62,4 +75,3 @@ include_directories(${CMAKE_BINARY_DIR})
 
 # Setting CXX compiler flags
 set_target_properties(systemml PROPERTIES LINK_FLAGS "${OpenMP_CXX_FLAGS} ${MATH_LIBRARIES}")
-
