@@ -6,7 +6,14 @@ The version of clang that ships with Mac does not come with OpenMP. `brew instal
 1. Intel MKL - CMake should detect the MKL installation path, otherwise it can specified by the environment variable `MKLROOT`. To use (with clang):
 ```
 mkdir INTEL && cd INTEL
-CXX=/usr/local/opt/llvm/bin/clang++ CC=/usr/local/opt/llvm/bin/clang LDFLAGS=-L/usr/local/opt/llvm/lib CPPFLAGS=-I/usr/local/opt/llvm/include cmake  -DUSE_INTEL_MKL=ON ..
+CXX=/usr/local/opt/llvm/bin/clang++ CC=/usr/local/opt/llvm/bin/clang LDFLAGS=-L/usr/local/opt/llvm/lib CPPFLAGS=-I/usr/local/opt/llvm/include cmake  -DUSE_INTEL_MKL=ON -DCMAKE_BUILD_TYPE=Release ..
+make install
+```
+
+##### (with gcc-6):
+```
+mkdir INTEL && cd INTEL
+CXX=g++-6 CC=gcc-6 cmake  -DUSE_INTEL_MKL=ON -DCMAKE_BUILD_TYPE=Release ..
 make install
 ```
 
@@ -15,6 +22,14 @@ make install
 export OpenBLAS_HOME=/usr/local/opt/openblas/
 mkdir OPENBLAS && cd OPENBLAS
 CXX=/usr/local/opt/llvm/bin/clang++ CC=/usr/local/opt/llvm/bin/clang LDFLAGS=-L/usr/local/opt/llvm/lib CPPFLAGS=-I/usr/local/opt/llvm/include cmake  -DUSE_OPEN_BLAS=ON -DCMAKE_BUILD_TYPE=Release ..
+make install
+```
+
+##### (with gcc-6):
+```
+export OpenBLAS_HOME=/usr/local/opt/openblas/
+mkdir OPENBLAS && cd OPENBLAS
+CXX=g++-6 CC=gcc-6 -DUSE_OPEN_BLAS=ON -DCMAKE_BUILD_TYPE=Release ..
 make install
 ```
 
