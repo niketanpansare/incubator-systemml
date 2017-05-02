@@ -113,6 +113,8 @@ public class NativeHelper {
 	    			// =============================================================================
 				    if(blasType != null && loadLibraryHelper("libsystemml_" + blasType + "-Linux-x86_64.so")) {
 				    	String blasPathAndHint = "";
+				    	// ------------------------------------------------------------
+				    	// This logic gets the list of native libraries that are loaded
 				    	try {
 				    		java.lang.reflect.Field loadedLibraryNamesField = ClassLoader.class.getDeclaredField("loadedLibraryNames");
 								loadedLibraryNamesField.setAccessible(true);
@@ -126,8 +128,11 @@ public class NativeHelper {
 										blasPathAndHint = " from the path " + library + ". Hint: Please make sure that the libopenblas.so is built with GNU OpenMP threading (ldd " + library + " | grep libgomp).";
 									}
 								}
-							} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) { }
-			        
+							} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
+								LOG.debug("Error while finding list of native libraries:" + e.getMessage());
+							}
+				    	// ------------------------------------------------------------
+				    	
 							LOG.info("Using native blas: " + blasType + blasPathAndHint);
 							isSystemMLLoaded = true;
 						}
