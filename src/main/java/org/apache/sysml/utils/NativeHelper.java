@@ -112,15 +112,23 @@ public class NativeHelper {
 	    			}
 	    			// =============================================================================
 				    if(blasType != null && loadLibraryHelper("libsystemml_" + blasType + "-Linux-x86_64.so")) {
+				    	String blasPathAndHint = "";
 				    	try {
 				    		java.lang.reflect.Field loadedLibraryNamesField = ClassLoader.class.getDeclaredField("loadedLibraryNames");
 								loadedLibraryNamesField.setAccessible(true);
 								@SuppressWarnings("unchecked")
 								Vector<String> libraries = (Vector<String>) loadedLibraryNamesField.get(ClassLoader.getSystemClassLoader());
-				        System.out.println(libraries);
+								LOG.debug("List of native libraries loaded:" + libraries);
+								for(String library : libraries) {
+									if(library.endsWith("libmkl_rt.so"))
+										blasPathAndHint = " from the path " + library;
+									else if(library.endsWith("libopenblas.so")) {
+										blasPathAndHint = " from the path " + library + ". Hint: Please make sure that the libopenblas.so is built with GNU OpenMP threading (ldd " + library + " | grep libgomp).";
+									}
+								}
 							} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) { }
 			        
-							LOG.info("Using native blas: " + blasType + " from the path " );
+							LOG.info("Using native blas: " + blasType + blasPathAndHint);
 							isSystemMLLoaded = true;
 						}
 	    		}
