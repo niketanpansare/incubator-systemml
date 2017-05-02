@@ -44,7 +44,7 @@ and then OpenBLAS (if installed).
 If both Intel MKL and OpenBLAS are not available, SystemML
 falls back to its internal Java library.
 
-The current version of SystemML only supports BLAS on Linux machines.
+The current version of SystemML only supports BLAS on **Linux** machines.
 
 ## Step 1: Install BLAS
 
@@ -105,19 +105,20 @@ sudo ln -s /lib64/libgomp.so.1 /lib64/libgomp.so
 	
 ## Step 3: Provide the location of the native libraries
 
-1. Add the location of the native libraries (i.e. BLAS and other dependencies) 
+1. Pass the location of the native libraries using command-line options:
+
+- [Spark](http://spark.apache.org/docs/latest/configuration.html): `--conf spark.executorEnv.LD_LIBRARY_PATH=/path/to/blas-n-other-dependencies`
+- Java: `-Djava.library.path=/path/to/blas-n-other-dependencies`
+
+2. Alternatively, you can add the location of the native libraries (i.e. BLAS and other dependencies) 
 to the environment variable `LD_LIBRARY_PATH` (on Linux). 
-If you want to use SystemML with Spark, please add the following line to `spark-env.sh`
+If you want to use SystemML with Spark, please add the following line to `spark-env.sh` 
+(or to the bash profile).
 
 	```bash
 	export LD_LIBRARY_PATH=/path/to/blas-n-other-dependencies
-	# Or export SPARK_LIBRARY_PATH=/path/to/blas-n-other-dependencies
 	```
 
-2. Alternatively, you can pass the location of the native libraries using command-line options:
-
-- Java: `-Djava.library.path=/path/to/blas-n-other-dependencies`
-- [Spark](http://spark.apache.org/docs/latest/configuration.html): `--driver-library-path`
 
 ## Common issues on Linux
 
