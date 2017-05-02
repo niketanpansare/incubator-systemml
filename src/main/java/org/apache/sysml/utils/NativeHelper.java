@@ -55,6 +55,13 @@ public class NativeHelper {
 	
 	private static boolean attemptedLoading = false;
 	
+	static class CustomClassLoader extends ClassLoader {
+		public String	getBLASPath() {
+			return blasType.equals("mkl") ? super.findLibrary("mkl_rt") : super.findLibrary("openblas");
+		}
+	}
+	
+	
 	// Performing loading in a method instead of a static block will throw a detailed stack trace in case of fatal errors
 	private static void init() {
 		// Only Linux supported for BLAS
@@ -94,24 +101,26 @@ public class NativeHelper {
 	    			if(userSpecifiedBLAS.equalsIgnoreCase("")) {
 	    				blasType = isMKLAvailable() ? "mkl" : isOpenBLASAvailable() ? "openblas" : null;
 	    				if(blasType == null)
-	    					LOG.warn("Unable to load either MKL or OpenBLAS");
+	    					LOG.info("Unable to load either MKL or OpenBLAS. Please set ");
 	    			}
 	    			else if(userSpecifiedBLAS.equalsIgnoreCase("mkl")) {
 	    				blasType = isMKLAvailable() ? "mkl" : null;
 	    				if(blasType == null)
-	    					LOG.warn("Unable to load MKL");
+	    					LOG.info("Unable to load MKL");
 	    			}
 	    			else if(userSpecifiedBLAS.equalsIgnoreCase("openblas")) {
 	    				blasType = isOpenBLASAvailable() ? "openblas" : null;
 	    				if(blasType == null)
-	    					LOG.warn("Unable to load OpenBLAS");
+	    					LOG.info("Unable to load OpenBLAS");
 	    			}
 	    			else {
-	    				LOG.warn("Unsupported BLAS:" + userSpecifiedBLAS);
+	    				LOG.info("Unsupported BLAS:" + userSpecifiedBLAS);
 	    			}
 	    			// =============================================================================
 				    if(blasType != null && loadLibraryHelper("libsystemml_" + blasType + "-Linux-x86_64.so")) {
-							LOG.info("Using native blas: " + blasType);
+				    	String blasPath = (new CustomClassLoader()).getBLASPath();
+				    	String hint = blasType.equals("openblas") ? ". Hint: Please make sure that the libopenblas.so is built with GNU OpenMP threading (ldd " + blasPath + " | grep libgomp)." : "";
+							LOG.info("Using native blas: " + blasType + " from the path " + blasPath + hint);
 							isSystemMLLoaded = true;
 						}
 	    		}
@@ -155,7 +164,7 @@ public class NativeHelper {
 		// ------------------------------------------------------------
 		// Set environment variable MKL_THREADING_LAYER to GNU on Linux for performance
 		if(!loadLibraryHelper("libpreload_systemml-Linux-x86_64.so")) {
-			LOG.warn("Unable to load preload_systemml (required for loading MKL-enabled SystemML library)");
+			LOG.debug("Unable to load preload_systemml (required for loading MKL-enabled SystemML library)");
 			return false;
 		}
 		// The most reliable way in my investigation to ensure that MKL runs smoothly with OpenMP (used by conv2d*)
@@ -181,9 +190,9 @@ public class NativeHelper {
 		}
 		catch (UnsatisfiedLinkError e) {
 			if(optionalMsg != null)
-				LOG.warn("Unable to load " + blas + "(" + optionalMsg + "):" + e.getMessage());
+				LOG.debug("Unable to load " + blas + "(" + optionalMsg + "):" + e.getMessage());
 			else
-				LOG.warn("Unable to load " + blas + ":" + e.getMessage());
+				LOG.debug("Unable to load " + blas + ":" + e.getMessage());
 			return false;
 		}
 	}

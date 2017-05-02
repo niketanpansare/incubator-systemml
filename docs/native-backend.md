@@ -1,3 +1,8 @@
+---
+layout: global
+title: Using SystemML with Native BLAS support
+description: Using SystemML with Native BLAS support
+---
 <!--
 {% comment %}
 Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,6 +22,11 @@ limitations under the License.
 {% endcomment %}
 -->
 
+* This will become a table of contents (this text will be scraped).
+{:toc}
+
+<br/>
+
 # User Guide
 
 By default, SystemML implements all its matrix operations in Java.
@@ -25,16 +35,16 @@ This simplifies deployment especially in a distributed environment.
 In some cases (such as deep learning), the user might want to use native BLAS
 rather than SystemML's internal Java library for performing single-node
 operations such matrix multiplication, convolution, etc.
+
+To allow SystemML to use native BLAS rather than internal Java library,
+please set the configuration property `native.blas` to `true`.
+
 By default, SystemML will first attempt to use Intel MKL (if installed)
 and then OpenBLAS (if installed).
 If both Intel MKL and OpenBLAS are not available, SystemML
 falls back to its internal Java library.
 
-To force SystemML to use internal Java library rather than native BLAS,
-please set the configuration property `native.blas` to `false`.
-
 The current version of SystemML only supports BLAS on Linux machines.
-
 
 ## Step 1: Install BLAS
 
