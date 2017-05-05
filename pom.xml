@@ -187,6 +187,7 @@
 							<goal>shade</goal>
 						</goals>
 						<configuration>
+							<classifier>extra</classifier>
 							<artifactSet>
 								<includes>
 									<include>org.jcuda:*:*</include>
