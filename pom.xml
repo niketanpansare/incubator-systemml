@@ -173,7 +173,6 @@
 									<include>org.apache.wink:wink-json4j:*</include>
 									<include>org.antlr:antlr4-runtime:*</include>
 									<include>org.jcuda:*:*</include>
-									<include>com.google.protobuf:protobuf-java:3.2.0</include>
 								</includes>
 							</artifactSet>
 						</configuration>
@@ -275,8 +274,9 @@
 		                <exclude>**/org/tensorflow/framework/*</exclude>
 		                <exclude>**/org/tensorflow/util/*</exclude>
 		                <exclude>**/org/apache/sysml/api/dl/*</exclude>
-		                <exclude>**/org/jcuda/*</exclude>
-		                <exclude>**/com/google/protobuf/*</exclude>
+		                <exclude>**/jcuda/*</exclude>
+		                <exclude>**/META-INF/maven/org.jcuda/*</exclude>
+		                <exclude>**/lib/*JCu*-${jcuda.version}-${jcuda.os}-${jcuda.arch}*</exclude>
 		              </excludes>
 		            </configuration>
 		          </execution>
@@ -299,8 +299,9 @@
 		                <include>**/org/tensorflow/framework/*</include>
 		                <include>**/org/tensorflow/util/*</include>
 		                <include>**/org/apache/sysml/api/dl/*</include>
-		                <include>**/org/jcuda/*</include>
-		                <include>**/com/google/protobuf/*</include>
+		                <include>**/jcuda/*</include>
+		                <include>**/META-INF/maven/org.jcuda/*</include>
+		                <include>**/lib/*JCu*-${jcuda.version}-${jcuda.os}-${jcuda.arch}*</include>
 		              </includes>
 		            </configuration>
 		          </execution>
