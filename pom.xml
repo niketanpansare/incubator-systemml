@@ -163,6 +163,7 @@
 				<version>2.3</version>
 				<executions>
 					<execution>
+						<id>default-jar</id>
 						<phase>package</phase>
 						<goals>
 							<goal>shade</goal>
@@ -172,6 +173,19 @@
 								<includes>
 									<include>org.apache.wink:wink-json4j:*</include>
 									<include>org.antlr:antlr4-runtime:*</include>
+								</includes>
+							</artifactSet>
+						</configuration>
+					</execution>
+					<execution>
+						<id>extra</id>
+						<phase>package</phase>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+						<configuration>
+							<artifactSet>
+								<includes>
 									<include>org.jcuda:*:*</include>
 								</includes>
 							</artifactSet>
@@ -274,48 +288,6 @@
 		                <exclude>**/org/tensorflow/framework/*</exclude>
 		                <exclude>**/org/tensorflow/util/*</exclude>
 		                <exclude>**/org/apache/sysml/api/dl/*</exclude>
-		                <exclude>**/jcuda/driver/*</exclude>
-		                <exclude>**/jcuda/runtime/*</exclude>
-		                <exclude>**/jcuda/jcublas/*</exclude>
-		                <exclude>**/jcuda/jcufft/*</exclude>
-		                <exclude>**/jcuda/jcusparse/*</exclude>
-		                <exclude>**/jcuda/jcudnn/*</exclude>
-		                <exclude>**/jcuda/jnvgraph/*</exclude>
-		                <exclude>**/jcuda/jcurand/*</exclude>
-		                <exclude>**/jcuda/jcusolver/*</exclude>
-		                <exclude>**/lib/libJCusparse-${jcuda.version}-${jcuda.os}-${jcuda.arch}.so</exclude>
-		                <exclude>**/lib/libJCusparse-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dylib</exclude>
-		                <exclude>**/lib/JCusparse-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dll</exclude>
-		                <exclude>**/lib/libJCusolver-${jcuda.version}-${jcuda.os}-${jcuda.arch}.so</exclude>
-		                <exclude>**/lib/libJCusolver-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dylib</exclude>
-		                <exclude>**/lib/JCusolver-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dll</exclude>
-		                <exclude>**/lib/libJCurand-${jcuda.version}-${jcuda.os}-${jcuda.arch}.so</exclude>
-		                <exclude>**/lib/libJCurand-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dylib</exclude>
-		                <exclude>**/lib/JCurand-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dll</exclude>
-		                <exclude>**/lib/libJNvgraph-${jcuda.version}-${jcuda.os}-${jcuda.arch}.so</exclude>
-		                <exclude>**/lib/libJNvgraph-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dylib</exclude>
-		                <exclude>**/lib/JNvgraph-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dll</exclude>
-		                <exclude>**/lib/libJNvrtc-${jcuda.version}-${jcuda.os}-${jcuda.arch}.so</exclude>
-		                <exclude>**/lib/libJNvrtc-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dylib</exclude>
-		                <exclude>**/lib/JNvrtc-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dll</exclude>
-		                <exclude>**/lib/libJCufft-${jcuda.version}-${jcuda.os}-${jcuda.arch}.so</exclude>
-		                <exclude>**/lib/libJCufft-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dylib</exclude>
-		                <exclude>**/lib/JCufft-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dll</exclude>
-		                <exclude>**/lib/libJCublas2-${jcuda.version}-${jcuda.os}-${jcuda.arch}.so</exclude>
-		                <exclude>**/lib/libJCublas2-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dylib</exclude>
-		                <exclude>**/lib/JCublas2-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dll</exclude>
-		                <exclude>**/lib/libJCublas-${jcuda.version}-${jcuda.os}-${jcuda.arch}.so</exclude>
-		                <exclude>**/lib/libJCublas-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dylib</exclude>
-		                <exclude>**/lib/JCublas-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dll</exclude>
-		                <exclude>**/lib/libJCudaDriver-${jcuda.version}-${jcuda.os}-${jcuda.arch}.so</exclude>
-		                <exclude>**/lib/libJCudaDriver-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dylib</exclude>
-		                <exclude>**/lib/JCudaDriver-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dll</exclude>
-		                <exclude>**/lib/libJCudaRuntime-${jcuda.version}-${jcuda.os}-${jcuda.arch}.so</exclude>
-		                <exclude>**/lib/libJCudaRuntime-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dylib</exclude>
-		                <exclude>**/lib/JCudaRuntime-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dll</exclude>
-		                <exclude>**/lib/libJCudnn-${jcuda.version}-${jcuda.os}-${jcuda.arch}.so</exclude>
-		                <exclude>**/lib/libJCudnn-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dylib</exclude>
-		                <exclude>**/lib/JCudnn-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dll</exclude>
 		              </excludes>
 		            </configuration>
 		          </execution>
@@ -338,48 +310,6 @@
 		                <include>**/org/tensorflow/framework/*</include>
 		                <include>**/org/tensorflow/util/*</include>
 		                <include>**/org/apache/sysml/api/dl/*</include>
-		                <include>**/jcuda/driver/*</include>
-		                <include>**/jcuda/runtime/*</include>
-		                <include>**/jcuda/jcublas/*</include>
-		                <include>**/jcuda/jcufft/*</include>
-		                <include>**/jcuda/jcusparse/*</include>
-		                <include>**/jcuda/jcudnn/*</include>
-		                <include>**/jcuda/jnvgraph/*</include>
-		                <include>**/jcuda/jcurand/*</include>
-		                <include>**/jcuda/jcusolver/*</include>
-		                <include>**/lib/libJCusparse-${jcuda.version}-${jcuda.os}-${jcuda.arch}.so</include>
-		                <include>**/lib/libJCusparse-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dylib</include>
-		                <include>**/lib/JCusparse-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dll</include>
-		                <include>**/lib/libJCusolver-${jcuda.version}-${jcuda.os}-${jcuda.arch}.so</include>
-		                <include>**/lib/libJCusolver-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dylib</include>
-		                <include>**/lib/JCusolver-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dll</include>
-		                <include>**/lib/libJCurand-${jcuda.version}-${jcuda.os}-${jcuda.arch}.so</include>
-		                <include>**/lib/libJCurand-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dylib</include>
-		                <include>**/lib/JCurand-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dll</include>
-		                <include>**/lib/libJNvgraph-${jcuda.version}-${jcuda.os}-${jcuda.arch}.so</include>
-		                <include>**/lib/libJNvgraph-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dylib</include>
-		                <include>**/lib/JNvgraph-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dll</include>
-		                <include>**/lib/libJNvrtc-${jcuda.version}-${jcuda.os}-${jcuda.arch}.so</include>
-		                <include>**/lib/libJNvrtc-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dylib</include>
-		                <include>**/lib/JNvrtc-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dll</include>
-		                <include>**/lib/libJCufft-${jcuda.version}-${jcuda.os}-${jcuda.arch}.so</include>
-		                <include>**/lib/libJCufft-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dylib</include>
-		                <include>**/lib/JCufft-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dll</include>
-		                <include>**/lib/libJCublas2-${jcuda.version}-${jcuda.os}-${jcuda.arch}.so</include>
-		                <include>**/lib/libJCublas2-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dylib</include>
-		                <include>**/lib/JCublas2-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dll</include>
-		                <include>**/lib/libJCublas-${jcuda.version}-${jcuda.os}-${jcuda.arch}.so</include>
-		                <include>**/lib/libJCublas-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dylib</include>
-		                <include>**/lib/JCublas-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dll</include>
-		                <include>**/lib/libJCudaDriver-${jcuda.version}-${jcuda.os}-${jcuda.arch}.so</include>
-		                <include>**/lib/libJCudaDriver-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dylib</include>
-		                <include>**/lib/JCudaDriver-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dll</include>
-		                <include>**/lib/libJCudaRuntime-${jcuda.version}-${jcuda.os}-${jcuda.arch}.so</include>
-		                <include>**/lib/libJCudaRuntime-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dylib</include>
-		                <include>**/lib/JCudaRuntime-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dll</include>
-		                <include>**/lib/libJCudnn-${jcuda.version}-${jcuda.os}-${jcuda.arch}.so</include>
-		                <include>**/lib/libJCudnn-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dylib</include>
-		                <include>**/lib/JCudnn-${jcuda.version}-${jcuda.os}-${jcuda.arch}.dll</include>
 		              </includes>
 		            </configuration>
 		          </execution>
