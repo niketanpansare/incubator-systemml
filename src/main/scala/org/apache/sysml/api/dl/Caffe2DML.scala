@@ -62,9 +62,11 @@ object Caffe2DML  {
   val X = "X"; val y = "y"; val batchSize = "BATCH_SIZE"; val numImages = "num_images"; val numValidationImages = "num_validation"
   val XVal = "X_val"; val yVal = "y_val"
   
-  var USE_NESTEROV_UDF = false
-  def enableNesterovUDF():Unit = {
-    USE_NESTEROV_UDF = true
+  var USE_NESTEROV_UDF = {
+    // Developer environment variable flag 'USE_NESTEROV_UDF' until codegen starts working.
+    // Then, we will remove this flag and also the class org.apache.sysml.udf.lib.SGDNesterovUpdate
+    val envFlagNesterovUDF = System.getenv("USE_NESTEROV_UDF")
+    envFlagNesterovUDF != null && envFlagNesterovUDF.toBoolean
   }
 }
 
