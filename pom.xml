@@ -276,6 +276,7 @@
 		                <exclude>**/org/tensorflow/util/*</exclude>
 		                <exclude>**/org/apache/sysml/api/dl/*</exclude>
 		                <exclude>**/org/jcuda/*</exclude>
+		                <exclude>**/com/google/protobuf/*</exclude>
 		              </excludes>
 		            </configuration>
 		          </execution>
@@ -299,6 +300,7 @@
 		                <include>**/org/tensorflow/util/*</include>
 		                <include>**/org/apache/sysml/api/dl/*</include>
 		                <include>**/org/jcuda/*</include>
+		                <include>**/com/google/protobuf/*</include>
 		              </includes>
 		            </configuration>
 		          </execution>
