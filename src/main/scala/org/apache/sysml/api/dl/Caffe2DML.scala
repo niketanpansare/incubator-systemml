@@ -63,6 +63,9 @@ object Caffe2DML  {
   val XVal = "X_val"; val yVal = "y_val"
   
   var USE_NESTEROV_UDF = false
+  def enableNesterovUDF():Unit = {
+    USE_NESTEROV_UDF = true
+  }
 }
 
 class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter, 
