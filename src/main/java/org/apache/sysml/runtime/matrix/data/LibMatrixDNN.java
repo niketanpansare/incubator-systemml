@@ -523,7 +523,7 @@ public class LibMatrixDNN {
 		}
 	}
 	
-	private static void doPoolingBackward(int n, ConvolutionParameters params, boolean performReluBackward) throws DMLRuntimeException {
+	private static void doPoolingBackward(int rl, int ru, ConvolutionParameters params, boolean performReluBackward) throws DMLRuntimeException {
 		double [] inputArray = null;
 		if (!params.input1.isInSparseFormat())
 			inputArray = params.input1.getDenseBlock();
@@ -538,92 +538,118 @@ public class LibMatrixDNN {
 			
 		if(inputArray != null) {
 			if(doutArray != null)
-				doPoolingBackwardDenseDense(n, inputArray, doutArray, outputArray, params, performReluBackward);
+				doPoolingBackwardDenseDense(rl, ru, inputArray, doutArray, outputArray, params, performReluBackward);
 			else
-				doPoolingBackwardDenseSparse(n, inputArray, params.input2, outputArray, params, performReluBackward);
+				doPoolingBackwardDenseSparse(rl, ru, inputArray, params.input2, outputArray, params, performReluBackward);
 		}
 		else {
 			if(doutArray != null)
-				doPoolingBackwardSparseDense(n, doutArray, outputArray, params, performReluBackward);
+				doPoolingBackwardSparseDense(rl, ru, doutArray, outputArray, params, performReluBackward);
 			else
-				doPoolingBackwardSparseSparse(n, outputArray, params, performReluBackward);
+				doPoolingBackwardSparseSparse(rl, ru, outputArray, params, performReluBackward);
 		}
 	}
 	
-	private static void doPoolingBackwardSparseDense(int n, double [] doutArray,  double [] outputArray, ConvolutionParameters params, boolean performReluBackward) throws DMLRuntimeException {
+	private static void doPoolingBackwardSparseDense(int rl, int ru, double [] doutArray,  double [] outputArray, ConvolutionParameters params, boolean performReluBackward) throws DMLRuntimeException {
 		if (!params.input1.isInSparseFormat())
 			throw new DMLRuntimeException("Incorrect usage: Call optimized versions");
 		
-		for (int c = 0; c < params.C; c++) {
-			for (int p = 0; p < params.P; p++) {
-				for (int q = 0; q < params.Q; q++) {
-					double inVal = doutArray[n*params.C*params.P*params.Q + c*params.P*params.Q +  p * params.Q + q];
-					if(inVal != 0) {
-						final int inputOffset = n*params.C*params.H*params.W + c*params.H*params.W;
-						int maxIndex = getMaxIndexSparse(p, q, inputOffset, n, c, params.input1, params, performReluBackward);
-						if(maxIndex != -1)
-							outputArray[maxIndex] += inVal;
+		for(int n = rl; n < ru; n++)  {
+			for (int c = 0; c < params.C; c++) {
+				for (int p = 0; p < params.P; p++) {
+					for (int q = 0; q < params.Q; q++) {
+						double inVal = doutArray[n*params.C*params.P*params.Q + c*params.P*params.Q +  p * params.Q + q];
+						if(inVal != 0) {
+							final int inputOffset = n*params.C*params.H*params.W + c*params.H*params.W;
+							int maxIndex = getMaxIndexSparse(p, q, inputOffset, n, c, params.input1, params, performReluBackward);
+							if(maxIndex != -1)
+								outputArray[maxIndex] += inVal;
+						}
 					}
 				}
 			}
 		}
 	}
 	
-	private static void doPoolingBackwardSparseSparse(int n, double [] outputArray, ConvolutionParameters params, boolean performReluBackward) throws DMLRuntimeException {
+	private static void doPoolingBackwardSparseSparse(int rl, int ru, double [] outputArray, ConvolutionParameters params, boolean performReluBackward) throws DMLRuntimeException {
 		if (!params.input1.isInSparseFormat())
 			throw new DMLRuntimeException("Incorrect usage: Call optimized versions");
 		
-		if( !params.input2.sparseBlock.isEmpty(n) ) {
-			int [] tensorIndexes = new int[3];
-			int apos = params.input2.sparseBlock.pos(n);
-			int alen = params.input2.sparseBlock.size(n);
-			int[] aix = params.input2.sparseBlock.indexes(n);
-			double[] avals = params.input2.sparseBlock.values(n);
-			for(int j = apos; j < apos+alen; j++) {
-				computeTensorIndexes(aix[j], tensorIndexes, params.P, params.Q);
-				int c = tensorIndexes[0];
-				int p = tensorIndexes[1];
-				int q = tensorIndexes[2];
-				final int inputOffset = n*params.C*params.H*params.W + c*params.H*params.W;
-				int maxIndex = getMaxIndexSparse(p, q, inputOffset, n, c, params.input1, params, performReluBackward);
-				if(maxIndex != -1)
-					outputArray[maxIndex] += avals[j];
+		for(int n = rl; n < ru; n++)  {
+			if( !params.input2.sparseBlock.isEmpty(n) ) {
+				int [] tensorIndexes = new int[3];
+				int apos = params.input2.sparseBlock.pos(n);
+				int alen = params.input2.sparseBlock.size(n);
+				int[] aix = params.input2.sparseBlock.indexes(n);
+				double[] avals = params.input2.sparseBlock.values(n);
+				for(int j = apos; j < apos+alen; j++) {
+					computeTensorIndexes(aix[j], tensorIndexes, params.P, params.Q);
+					int c = tensorIndexes[0];
+					int p = tensorIndexes[1];
+					int q = tensorIndexes[2];
+					final int inputOffset = n*params.C*params.H*params.W + c*params.H*params.W;
+					int maxIndex = getMaxIndexSparse(p, q, inputOffset, n, c, params.input1, params, performReluBackward);
+					if(maxIndex != -1)
+						outputArray[maxIndex] += avals[j];
+				}
 			}
 		}
 	}
 	
-	private static void doPoolingBackwardDenseSparse(int n, double [] inputArray, 
+	private static void doPoolingBackwardDenseSparse(int rl, int ru, double [] inputArray, 
 			MatrixBlock dout, double [] outputArray, ConvolutionParameters params, boolean performReluBackward) throws DMLRuntimeException {
-		if( !dout.sparseBlock.isEmpty(n) ) {
-			int [] tensorIndexes = new int[3];
-			int apos = dout.sparseBlock.pos(n);
-			int alen = dout.sparseBlock.size(n);
-			int[] aix = dout.sparseBlock.indexes(n);
-			double[] avals = dout.sparseBlock.values(n);
-			for(int j = apos; j < apos+alen; j++) {
-				computeTensorIndexes(aix[j], tensorIndexes, params.P, params.Q);
-				int c = tensorIndexes[0];
-				int p = tensorIndexes[1];
-				int q = tensorIndexes[2];
-				final int inputOffset = n*params.C*params.H*params.W + c*params.H*params.W;
-				int maxIndex = getMaxIndex(p, q, inputOffset, inputArray, params, performReluBackward);
-				if(maxIndex != -1)
-					outputArray[maxIndex] += avals[j];
-			}
-		}
-	}
-	
-	private static void doPoolingBackwardDenseDense(int n, double [] inputArray, double [] doutArray, 
-			double [] outputArray, ConvolutionParameters params, boolean performReluBackward) {
-		for (int c = 0; c < params.C; c++) {
-			final int inputOffset = n*params.C*params.H*params.W + c*params.H*params.W;
-			final int outputOffset = n*params.C*params.P*params.Q + c*params.P*params.Q;
-			
-			for (int p = 0; p < params.P; p++) {
-				for (int q = 0; q < params.Q; q++) {
+		for(int n = rl; n < ru; n++) { 
+			if( !dout.sparseBlock.isEmpty(n) ) {
+				int [] tensorIndexes = new int[3];
+				int apos = dout.sparseBlock.pos(n);
+				int alen = dout.sparseBlock.size(n);
+				int[] aix = dout.sparseBlock.indexes(n);
+				double[] avals = dout.sparseBlock.values(n);
+				for(int j = apos; j < apos+alen; j++) {
+					computeTensorIndexes(aix[j], tensorIndexes, params.P, params.Q);
+					int c = tensorIndexes[0];
+					int p = tensorIndexes[1];
+					int q = tensorIndexes[2];
+					final int inputOffset = n*params.C*params.H*params.W + c*params.H*params.W;
 					int maxIndex = getMaxIndex(p, q, inputOffset, inputArray, params, performReluBackward);
 					if(maxIndex != -1)
-						outputArray[maxIndex] += doutArray[outputOffset +  p * params.Q + q];
+						outputArray[maxIndex] += avals[j];
+				}
+			}
+		}
+	}
+	
+	private static void doPoolingBackwardDenseDense(int rl, int ru, double [] inputArray, double [] doutArray, 
+			double [] outputArray, ConvolutionParameters params, boolean performReluBackward) {
+		int CHW = params.C*params.H*params.W;
+		int HW = params.H*params.W;
+		int CPQ = params.C*params.P*params.Q;
+		int PQ = params.P*params.Q;
+		
+		int [] maxIndexes = new int[params.Q];
+		double [] maxValues = new double[params.Q];
+		for(int n = rl; n < ru; n++)  {
+			for (int c = 0; c < params.C; c++) {
+				int inputOffset = n*CHW + c*HW;
+				int outputOffset = n*CPQ + c*PQ;
+				for (int p = 0; p < params.P; p++) {
+					Arrays.fill(maxIndexes, -1); Arrays.fill(maxValues, -Double.MAX_VALUE);
+					for(int h = params.start_indexes_h[p]; h < params.end_indexes_h[p]; h++) {
+						for (int q = 0; q < params.Q; q++) {
+							for (int w = params.start_indexes_w[q]; w < params.end_indexes_w[q]; w++) {
+								double currDoutVal = inputArray[inputOffset +  h*params.W + w];
+								currDoutVal = performReluBackward && currDoutVal < 0 ? 0 : currDoutVal;
+								if(maxValues[q] < currDoutVal) {
+									maxIndexes[q] = inputOffset +  h*params.W + w;
+									maxValues[q] = currDoutVal;
+								}
+							}
+						}
+					}
+					for (int q = 0; q < params.Q; q++) {
+						if(maxIndexes[q] != -1)
+							outputArray[maxIndexes[q]] += doutArray[outputOffset +  p * params.Q + q];
+					}
 				}
 			}
 		}
@@ -1106,12 +1132,10 @@ public class LibMatrixDNN {
 						doPooling(n, _params);
 					break;
 				case MaxPooling_Backward:
-					for(int n = _rl; n < _ru; n++) 
-						doPoolingBackward(n, _params, false);
+					doPoolingBackward(_rl, _ru, _params, false);
 					break;
 				case MaxPooling_Relu_Backward:
-					for(int n = _rl; n < _ru; n++) 
-						doPoolingBackward(n, _params, true);
+					doPoolingBackward(_rl, _ru, _params, true);
 					break;
 				case ReluBackward:
 					lnnz = doReluBackward(_params, _rl, _ru);
