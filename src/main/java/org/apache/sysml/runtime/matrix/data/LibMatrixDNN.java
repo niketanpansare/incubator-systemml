@@ -84,7 +84,7 @@ public class LibMatrixDNN {
 	private static AtomicLong loopedConvBwdDataCol2ImTime = new AtomicLong(0);
 	
 	public static void appendStatistics(StringBuilder sb) {
-		if(DMLScript.STATISTICS && DISPLAY_STATISTICS && (conv2dDenseCount.get() != 0 || conv2dSparseCount.get() != 0)) {
+		if(DMLScript.STATISTICS && DISPLAY_STATISTICS) {
 			sb.append("LibMatrixDNN dense count (conv/bwdF/bwdD/im2col/maxBwd):\t" 
 					+ conv2dDenseCount.get() + "/"
 					+ conv2dBwdFilterDenseCount.get() + "/"
