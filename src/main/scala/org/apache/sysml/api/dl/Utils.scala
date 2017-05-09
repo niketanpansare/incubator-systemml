@@ -34,6 +34,8 @@ import java.io.InputStreamReader;
 import org.apache.sysml.runtime.DMLRuntimeException
 import java.io.StringReader
 import java.io.BufferedReader
+import com.google.protobuf.CodedInputStream
+import org.apache.sysml.runtime.matrix.data.MatrixBlock
 
 object Utils {
   // ---------------------------------------------------------------------------------------------
@@ -80,10 +82,82 @@ object Utils {
 	// --------------------------------------------------------------
 	// Caffe utility functions
 	def readCaffeNet(netFilePath:String):NetParameter = {
+	  // Load network
 		val reader:InputStreamReader = getInputStreamReader(netFilePath); 
   	val builder:NetParameter.Builder =  NetParameter.newBuilder();
   	TextFormat.merge(reader, builder);
   	return builder.build();
+	}
+	
+	def allocateMatrixBlock(data:java.util.List[java.lang.Float], rows:Int, cols:Int, transpose:Boolean):MatrixBlock = {
+	  val mb =  new MatrixBlock(rows, cols, false)
+    mb.allocateDenseBlock()
+    val arr = mb.getDenseBlock
+    if(transpose) {
+      var iter = 0
+      for(i <- 0 until cols) {
+        for(j <- 0 until rows) {
+          arr(j*cols + i) = data.get(iter).doubleValue()
+          iter += 1
+        }
+      }
+    }
+    else {
+      for(i <- 0 until data.size()) {
+        arr(i) = data.get(i).doubleValue()
+      }
+    }
+	  return mb
+	}
+	def validateShape(shape:Array[Int], data:java.util.List[java.lang.Float], layerName:String): Unit = {
+	  if(shape == null) 
+      throw new DMLRuntimeException("Unexpected weight for layer: " + layerName)
+    else if(shape.length != 2) 
+      throw new DMLRuntimeException("Expected shape to be of length 2:" + layerName)
+    else if(shape(0)*shape(1) != data.size())
+      throw new DMLRuntimeException("Incorrect size of blob from caffemodel for the layer " + layerName + ". Expected of size " + shape(0)*shape(1) + ", but found " + data.size())
+	}
+	
+	def readCaffeNet(net:CaffeNetwork, netFilePath:String, weightsFilePath:String, inputVariables:Map[String, MatrixBlock]):NetParameter = {
+	  // Load network
+		val reader:InputStreamReader = getInputStreamReader(netFilePath); 
+  	val builder:NetParameter.Builder =  NetParameter.newBuilder();
+  	TextFormat.merge(reader, builder);
+  	// Load weights
+	  val inputStream = CodedInputStream.newInstance(new FileInputStream(weightsFilePath))
+	  inputStream.setSizeLimit(Integer.MAX_VALUE)
+	  builder.mergeFrom(inputStream)
+	  val net1 = builder.build();
+	  
+	  for(layer <- net1.getLayerList) {
+	    if(layer.getBlobsCount == 0) {
+	      // No weight or bias
+	    }
+	    else if(layer.getBlobsCount == 2) {
+	      // Both weight and bias
+	      val caffe2DMLLayer = net.getCaffeLayer(layer.getName)
+	      val transpose = caffe2DMLLayer.isInstanceOf[InnerProduct]
+	      
+	      // weight
+	      val data = layer.getBlobs(0).getDataList
+	      val shape = caffe2DMLLayer.weightShape()
+	      validateShape(shape, data, layer.getName)
+	      inputVariables.put(caffe2DMLLayer.weight, allocateMatrixBlock(data, shape(0), shape(1), transpose))
+	      
+	      // bias
+	      val biasData = layer.getBlobs(1).getDataList
+	      val biasShape = caffe2DMLLayer.biasShape()
+	      validateShape(biasShape, biasData, layer.getName)
+	      inputVariables.put(caffe2DMLLayer.bias, allocateMatrixBlock(biasData, biasShape(0), biasShape(1), transpose))
+	      
+	    }
+	    else {
+	      throw new DMLRuntimeException("Layer with blob count " + layer.getBlobsCount + " is not supported.")
+	    }
+	  }
+	  
+	  // Return the NetParameter without
+	  return readCaffeNet(netFilePath)
 	}
 	
 	def readCaffeSolver(solverFilePath:String):SolverParameter = {
