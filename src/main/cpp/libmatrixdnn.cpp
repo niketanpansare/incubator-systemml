@@ -310,7 +310,7 @@ void conv2dBackwardFilterSparseDense(int apos, int alen, int* aix, double* avals
 
 int conv2dBiasAddDense(double* inputPtr, double* biasPtr, double* filterPtr, double* retPtr, int N, int C, int H, int W, int K, int R, int S,
     int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, bool addBias, int numThreads) {
-    
+  int KPQ = K * P * Q;
 #ifdef USE_MKL_DNN
   setNumThreadsForBLAS(numThreads);
   // Step 1: Create a description of a DNN operation
@@ -336,19 +336,18 @@ int conv2dBiasAddDense(double* inputPtr, double* biasPtr, double* filterPtr, dou
   }
   
   // Step 2: Perform the DNN operation
-  if(dnnExecute_F64(pConvolution, resources) != E_SUCCESS) {
+  if(dnnExecute_F64(*pConvolution, resources) != E_SUCCESS) {
     return -1; // nnz == -1 indicates error.
   }
   
   // Step 3: Destroy the description of the operation
-  dnnDelete_F64(pConvolution);
+  dnnDelete_F64(*pConvolution);
 #else  
   // ------------------------------------------------------------------------------------
   // First step:  Avoids oversubscription and other openmp/internal blas threading issues
   setNumThreadsForBLAS(1);
   
   int CHW = C * H * W;
-  int KPQ = K * P * Q;
   int PQ = P * Q;
   int numIm2ColElem = C * R * S * P * Q;
   
