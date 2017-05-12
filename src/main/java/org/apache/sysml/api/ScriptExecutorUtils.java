@@ -19,7 +19,6 @@
 
 package org.apache.sysml.api;
 
-import org.apache.sysml.api.mlcontext.MLContext;
 import org.apache.sysml.api.mlcontext.ScriptExecutor;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.codegen.SpoofCompiler;
