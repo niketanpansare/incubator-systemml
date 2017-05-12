@@ -27,6 +27,10 @@
 #include <cstring>
 #include "omp.h"
 
+#ifdef USE_INTEL_MKL
+#include "mkl_dnn.h"
+#endif
+
 int computeNNZ(double* arr, int limit) {
   int nnz = 0;
   #pragma omp parallel for reduction(+: nnz)
@@ -306,6 +310,40 @@ void conv2dBackwardFilterSparseDense(int apos, int alen, int* aix, double* avals
 
 int conv2dBiasAddDense(double* inputPtr, double* biasPtr, double* filterPtr, double* retPtr, int N, int C, int H, int W, int K, int R, int S,
     int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, bool addBias, int numThreads) {
+    
+#ifdef USE_MKL_DNN
+  setNumThreadsForBLAS(numThreads);
+  // Step 1: Create a description of a DNN operation
+  dnnPrimitive_t* pConvolution;
+  size_t dimension = 4;
+  size_t srcSize[4] = {W, H, C, N};
+  size_t dstSize[4] = {Q, P, K, N};
+  size_t filterSize[4] = {S, R, C, K};
+  size_t convolutionStrides[2] = {stride_w, stride_h};
+  int pads[2] = {-pad_w, -pad_h};
+  void* resources[dnnResourceNumber] = {0};
+  resources[dnnResourceSrc] = inputPtr;
+  resources[dnnResourceFilter] = filterPtr;
+  resources[dnnResourceDst] = retPtr;
+  if(addBias) {
+    dnnConvolutionCreateForwardBias_F64(pConvolution, NULL, dnnAlgorithmConvolutionDirect, dimension, 
+      srcSize, dstSize, filterSize, convolutionStrides, pads, dnnBorderZeros);
+    resources[dnnResourceBias] = biasPtr;
+  }
+  else { 
+    dnnConvolutionCreateForward_F64(pConvolution, NULL, dnnAlgorithmConvolutionDirect, dimension, 
+      srcSize, dstSize, filterSize, convolutionStrides, pads, dnnBorderZeros);
+  }
+  
+  // Step 2: Perform the DNN operation
+  if(dnnExecute_F64(pConvolution, resources) != E_SUCCESS) {
+    return -1; // nnz == -1 indicates error.
+  }
+  
+  // Step 3: Destroy the description of the operation
+  dnnDelete_F64(pConvolution);
+#else  
+  // ------------------------------------------------------------------------------------
   // First step:  Avoids oversubscription and other openmp/internal blas threading issues
   setNumThreadsForBLAS(1);
   
@@ -343,7 +381,9 @@ int conv2dBiasAddDense(double* inputPtr, double* biasPtr, double* filterPtr, dou
 		}
     }
   } // end omp parallel for
-  
   delete [] loweredMatArrays;
+  // ------------------------------------------------------------------------------------
+#endif
+  
   return computeNNZ(retPtr, N*KPQ);
 }
