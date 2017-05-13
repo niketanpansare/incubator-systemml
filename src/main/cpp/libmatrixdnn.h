@@ -20,7 +20,7 @@
 #ifndef _libmatrixdnn_h
 #define _libmatrixdnn_h
 
-#ifdef USE_MKL_DNN
+#ifdef USE_INTEL_MKL
 	#include <mkl.h>
 	#if INTEL_MKL_VERSION < 20170000
 		// Will throw an error at development time in non-standard settings

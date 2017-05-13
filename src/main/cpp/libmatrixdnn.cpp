@@ -25,17 +25,15 @@
 #include <cstdio>
 #include <cmath>
 #include <cstring>
-#ifndef USE_MKL_DNN
-#include "omp.h"
-#endif
-
 #ifdef USE_INTEL_MKL
-#include "mkl_dnn.h"
+  #include "mkl_dnn.h"
+#else
+  #include "omp.h"
 #endif
 
 int computeNNZ(double* arr, int limit) {
   int nnz = 0;
-#ifndef USE_MKL_DNN
+#ifndef USE_INTEL_MKL
   #pragma omp parallel for reduction(+: nnz)
 #endif
   for(int i=0; i<limit; i++)
@@ -139,7 +137,7 @@ void im2col(double* inputArray, double* outputArray, int N, int C, int H, int W,
   }
 }
 
-#ifdef USE_MKL_DNN
+#ifdef USE_INTEL_MKL
 // Returns true if error
 bool MKL_DNN_ERROR(dnnError_t code) {
   if(code == E_SUCCESS) return false;
@@ -154,7 +152,7 @@ bool MKL_DNN_ERROR(dnnError_t code) {
 int conv2dBackwardFilterDense(double* inputPtr, double* doutPtr, double* retPtr, int N, int C, int H, int W, int K, int R, int S,
     int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads) {
   int CRS = C*R*S;
-#ifdef USE_MKL_DNN
+#ifdef USE_INTEL_MKL
   setNumThreadsForBLAS(numThreads);
   // Step 1: Create a description of a DNN operation
   dnnPrimitive_t pConvolution;
@@ -248,7 +246,7 @@ int conv2dBackwardFilterDense(double* inputPtr, double* doutPtr, double* retPtr,
 int conv2dBackwardDataDense(double* filterPtr, double* doutPtr, double* retPtr, int N, int C, int H, int W, int K, int R, int S,
     int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads) {
   int CHW = C * H * W;
-#ifdef USE_MKL_DNN
+#ifdef USE_INTEL_MKL
   setNumThreadsForBLAS(numThreads);
   // Step 1: Create a description of a DNN operation
   dnnPrimitive_t pConvolution;
@@ -379,7 +377,7 @@ int conv2dBiasAddDense(double* inputPtr, double* biasPtr, double* filterPtr, dou
     int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, bool addBias, int numThreads) {
   int KPQ = K * P * Q;
   
-#ifdef USE_MKL_DNN
+#ifdef USE_INTEL_MKL
   setNumThreadsForBLAS(numThreads);
   // Step 1: Create a description of a DNN operation
   dnnPrimitive_t pConvolution;
