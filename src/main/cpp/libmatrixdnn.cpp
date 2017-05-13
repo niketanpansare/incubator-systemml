@@ -165,7 +165,7 @@ int conv2dBackwardFilterDense(double* inputPtr, double* doutPtr, double* retPtr,
   void* resources[dnnResourceNumber] = {0};
   resources[dnnResourceDiffDst] = doutPtr;
   resources[dnnResourceSrc] = inputPtr;
-  resources[dnnResourceDst] = retPtr;
+  resources[dnnResourceDiffFilter] = retPtr;
   dnnConvolutionCreateBackwardFilter_F64(&pConvolution, NULL, dnnAlgorithmConvolutionDirect, dimension, 
       srcSize, dstSize, filterSize, convolutionStrides, pads, dnnBorderZeros);
   
@@ -259,7 +259,7 @@ int conv2dBackwardDataDense(double* filterPtr, double* doutPtr, double* retPtr, 
   void* resources[dnnResourceNumber] = {0};
   resources[dnnResourceDiffDst] = doutPtr;
   resources[dnnResourceFilter] = filterPtr;
-  resources[dnnResourceDst] = retPtr;
+  resources[dnnResourceDiffSrc] = retPtr;
   dnnConvolutionCreateBackwardData_F64(&pConvolution, NULL, dnnAlgorithmConvolutionDirect, dimension, 
       srcSize, dstSize, filterSize, convolutionStrides, pads, dnnBorderZeros);
   
