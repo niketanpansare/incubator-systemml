@@ -25,7 +25,9 @@
 #include <cstdio>
 #include <cmath>
 #include <cstring>
+#ifndef USE_MKL_DNN
 #include "omp.h"
+#endif
 
 #ifdef USE_INTEL_MKL
 #include "mkl_dnn.h"
@@ -33,7 +35,9 @@
 
 int computeNNZ(double* arr, int limit) {
   int nnz = 0;
+#ifndef USE_MKL_DNN
   #pragma omp parallel for reduction(+: nnz)
+#endif
   for(int i=0; i<limit; i++)
     nnz += (arr[i]!=0) ? 1 : 0;
   return nnz;
@@ -138,11 +142,36 @@ void im2col(double* inputArray, double* outputArray, int N, int C, int H, int W,
 
 int conv2dBackwardFilterDense(double* inputPtr, double* doutPtr, double* retPtr, int N, int C, int H, int W, int K, int R, int S,
     int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads) {
+  int CRS = C*R*S;
+#ifdef USE_MKL_DNN
+  setNumThreadsForBLAS(numThreads);
+  // Step 1: Create a description of a DNN operation
+  dnnPrimitive_t pConvolution;
+  size_t dimension = 4;
+  size_t srcSize[4] = {W, H, C, N};
+  size_t dstSize[4] = {Q, P, K, N};
+  size_t filterSize[4] = {S, R, C, K};
+  size_t convolutionStrides[2] = {stride_w, stride_h};
+  int pads[2] = {-pad_w, -pad_h};
+  void* resources[dnnResourceNumber] = {0};
+  resources[dnnResourceDiffDst] = doutPtr;
+  resources[dnnResourceSrc] = inputPtr;
+  resources[dnnResourceDst] = retPtr;
+  dnnConvolutionCreateBackwardFilter_F64(&pConvolution, NULL, dnnAlgorithmConvolutionDirect, dimension, 
+      srcSize, dstSize, filterSize, convolutionStrides, pads, dnnBorderZeros);
+  
+  // Step 2: Perform the DNN operation
+  if(dnnExecute_F64(pConvolution, resources) != E_SUCCESS) {
+    return -1; // nnz == -1 indicates error.
+  }
+  
+  // Step 3: Destroy the description of the operation
+  dnnDelete_F64(pConvolution);
+#else
   // First step: Avoids oversubscription and other openmp/internal blas threading issues
   setNumThreadsForBLAS(1);
   
   int CHW = C * H * W;
-  int CRS = C*R*S;
   int PQ = P*Q;
   int KPQ = K*PQ;
   int numRotatedElem = KPQ;
@@ -201,16 +230,42 @@ int conv2dBackwardFilterDense(double* inputPtr, double* doutPtr, double* retPtr,
   }
   
   delete [] temp;
+#endif
   return computeNNZ(retPtr, K*CRS);
 }
 
 int conv2dBackwardDataDense(double* filterPtr, double* doutPtr, double* retPtr, int N, int C, int H, int W, int K, int R, int S,
     int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads) {
+  int CHW = C * H * W;
+#ifdef USE_MKL_DNN
+  setNumThreadsForBLAS(numThreads);
+  // Step 1: Create a description of a DNN operation
+  dnnPrimitive_t pConvolution;
+  size_t dimension = 4;
+  size_t srcSize[4] = {W, H, C, N};
+  size_t dstSize[4] = {Q, P, K, N};
+  size_t filterSize[4] = {S, R, C, K};
+  size_t convolutionStrides[2] = {stride_w, stride_h};
+  int pads[2] = {-pad_w, -pad_h};
+  void* resources[dnnResourceNumber] = {0};
+  resources[dnnResourceDiffDst] = doutPtr;
+  resources[dnnResourceFilter] = filterPtr;
+  resources[dnnResourceDst] = retPtr;
+  dnnConvolutionCreateBackwardData_F64(&pConvolution, NULL, dnnAlgorithmConvolutionDirect, dimension, 
+      srcSize, dstSize, filterSize, convolutionStrides, pads, dnnBorderZeros);
+  
+  // Step 2: Perform the DNN operation
+  if(dnnExecute_F64(pConvolution, resources) != E_SUCCESS) {
+    return -1; // nnz == -1 indicates error.
+  }
+  
+  // Step 3: Destroy the description of the operation
+  dnnDelete_F64(pConvolution);
+#else 
    // First step: Avoids oversubscription and other openmp/internal blas threading issues
   setNumThreadsForBLAS(1);
   
   int CRS = C * R * S;
-  int CHW = C * H * W;
   int PQ = P * Q;
   int KPQ = K * PQ;
   int numRotatedElem = PQ * K;
@@ -244,6 +299,7 @@ int conv2dBackwardDataDense(double* filterPtr, double* doutPtr, double* retPtr, 
   
   delete [] rotatedDoutPtrArrays;
   delete [] col2imInputArrays;
+#endif
   return computeNNZ(retPtr, N*CHW);
 }
 
@@ -343,7 +399,7 @@ int conv2dBiasAddDense(double* inputPtr, double* biasPtr, double* filterPtr, dou
   
   // Step 3: Destroy the description of the operation
   dnnDelete_F64(pConvolution);
-#else  
+#else 
   // ------------------------------------------------------------------------------------
   // First step:  Avoids oversubscription and other openmp/internal blas threading issues
   setNumThreadsForBLAS(1);

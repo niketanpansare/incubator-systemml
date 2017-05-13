@@ -23,7 +23,7 @@
 #include "libmatrixdnn.h"
 
 // Linux:
-// g++ -o lib/libsystemml_mkl-Linux-x86_64.so *.cpp  -I$JAVA_HOME/include -I$MKLROOT/include -I$JAVA_HOME/include/linux -lmkl_rt -lpthread  -lm -ldl -DUSE_INTEL_MKL -DUSE_MKL_DNN -DUSE_GNU_THREADING -L$MKLROOT/lib/intel64 -m64 -fopenmp -O3 -shared -fPIC
+// g++ -o lib/libsystemml_mkl-Linux-x86_64.so *.cpp  -I$JAVA_HOME/include -I$MKLROOT/include -I$JAVA_HOME/include/linux -lmkl_rt -lpthread  -lm -ldl -DUSE_INTEL_MKL -DUSE_MKL_DNN -L$MKLROOT/lib/intel64 -m64 -O3 -shared -fPIC
 // g++ -o lib/libsystemml_openblas-Linux-x86_64.so *.cpp  -I$JAVA_HOME/include  -I$JAVA_HOME/include/linux -lopenblas -lpthread -lm -ldl -DUSE_OPEN_BLAS -I/opt/OpenBLAS/include/ -L/opt/OpenBLAS/lib/ -fopenmp -O3 -shared -fPIC
 
 // Mac OSX:	
