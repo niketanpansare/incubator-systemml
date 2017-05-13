@@ -137,8 +137,19 @@ void im2col(double* inputArray, double* outputArray, int N, int C, int H, int W,
       }
     }
   }
-} 
+}
 
+#ifdef USE_MKL_DNN
+// Returns true if error
+bool MKL_DNN_ERROR(dnnError_t code) {
+  if(code == E_SUCCESS) return false;
+  else if(code == E_INCORRECT_INPUT_PARAMETER) std::cerr << "ERROR: Incorrect input parameter\n";
+  else if(code == E_MEMORY_ERROR) std::cerr << "ERROR: Memory error\n";
+  else if(code == E_UNSUPPORTED_DIMENSION) std::cerr << "ERROR: Unsupported dimensions\n";
+  else if(code == E_UNIMPLEMENTED) std::cerr << "ERROR: Unimplemented operation\n";
+  return true;
+} 
+#endif
 
 int conv2dBackwardFilterDense(double* inputPtr, double* doutPtr, double* retPtr, int N, int C, int H, int W, int K, int R, int S,
     int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads) {
@@ -161,7 +172,7 @@ int conv2dBackwardFilterDense(double* inputPtr, double* doutPtr, double* retPtr,
       srcSize, dstSize, filterSize, convolutionStrides, pads, dnnBorderZeros);
   
   // Step 2: Perform the DNN operation
-  if(dnnExecute_F64(pConvolution, resources) != E_SUCCESS) {
+  if(MKL_DNN_ERROR(dnnExecute_F64(pConvolution, resources))) {
     return -1; // nnz == -1 indicates error.
   }
   
@@ -255,7 +266,7 @@ int conv2dBackwardDataDense(double* filterPtr, double* doutPtr, double* retPtr, 
       srcSize, dstSize, filterSize, convolutionStrides, pads, dnnBorderZeros);
   
   // Step 2: Perform the DNN operation
-  if(dnnExecute_F64(pConvolution, resources) != E_SUCCESS) {
+  if(MKL_DNN_ERROR(dnnExecute_F64(pConvolution, resources))) {
     return -1; // nnz == -1 indicates error.
   }
   
@@ -393,7 +404,7 @@ int conv2dBiasAddDense(double* inputPtr, double* biasPtr, double* filterPtr, dou
   }
   
   // Step 2: Perform the DNN operation
-  if(dnnExecute_F64(pConvolution, resources) != E_SUCCESS) {
+  if(MKL_DNN_ERROR(dnnExecute_F64(pConvolution, resources))) {
     return -1; // nnz == -1 indicates error.
   }
   
