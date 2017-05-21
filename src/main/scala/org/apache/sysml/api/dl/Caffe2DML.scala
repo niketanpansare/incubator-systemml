@@ -159,11 +159,13 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
   // The below method parses the provided network and solver file and generates DML script.
 	def getTrainingScript(isSingleNode:Boolean):(Script, String, String)  = {
 	  val startTrainingTime = System.nanoTime()
-	  // Flags passed by user
+	  
+    reset                                 // Reset the state of DML generator for training script.
+    
+    // Flags passed by user
 	  val DEBUG_TRAINING = if(inputs.containsKey("$debug")) inputs.get("$debug").toLowerCase.toBoolean else false
 	  assign(tabDMLScript, "debug", if(DEBUG_TRAINING) "TRUE" else "FALSE")
 	  
-    reset                                 // Reset the state of DML generator for training script.
 	  appendHeaders(net, solver, true)      // Appends DML corresponding to source and externalFunction statements.
 	  readInputData(net, true)              // Read X_full and y_full
 	  // Initialize the layers and solvers. Reads weights and bias if $weights is set.
@@ -428,10 +430,12 @@ class Caffe2DMLModel(val mloutput: MLResults,
   // The below method parses the provided network and solver file and generates DML script.
   def getPredictionScript(mloutput: MLResults, isSingleNode:Boolean): (Script, String)  = {
     val startPredictionTime = System.nanoTime()
+    
+	  reset                                  // Reset the state of DML generator for training script.
+	  
 	  val DEBUG_PREDICTION = if(estimator.inputs.containsKey("$debug")) estimator.inputs.get("$debug").toLowerCase.toBoolean else false
 	  assign(tabDMLScript, "debug", if(DEBUG_PREDICTION) "TRUE" else "FALSE")
-	  
-	  reset                                  // Reset the state of DML generator for training script.
+    
     appendHeaders(net, solver, false)      // Appends DML corresponding to source and externalFunction statements.
     readInputData(net, false)              // Read X_full and y_full
     
