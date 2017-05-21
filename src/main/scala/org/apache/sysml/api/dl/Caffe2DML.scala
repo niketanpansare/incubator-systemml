@@ -161,6 +161,7 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
 	  val startTrainingTime = System.nanoTime()
 	  // Flags passed by user
 	  val DEBUG_TRAINING = if(inputs.containsKey("$debug")) inputs.get("$debug").toLowerCase.toBoolean else false
+	  assign(tabDMLScript, "debug", if(DEBUG_TRAINING) "TRUE" else "FALSE")
 	  
     reset                                 // Reset the state of DML generator for training script.
 	  appendHeaders(net, solver, true)      // Appends DML corresponding to source and externalFunction statements.
@@ -428,6 +429,7 @@ class Caffe2DMLModel(val mloutput: MLResults,
   def getPredictionScript(mloutput: MLResults, isSingleNode:Boolean): (Script, String)  = {
     val startPredictionTime = System.nanoTime()
 	  val DEBUG_PREDICTION = if(estimator.inputs.containsKey("$debug")) estimator.inputs.get("$debug").toLowerCase.toBoolean else false
+	  assign(tabDMLScript, "debug", if(DEBUG_PREDICTION) "TRUE" else "FALSE")
 	  
 	  reset                                  // Reset the state of DML generator for training script.
     appendHeaders(net, solver, false)      // Appends DML corresponding to source and externalFunction statements.
