@@ -438,6 +438,7 @@ class Caffe2DMLModel(val mloutput: MLResults,
     
     appendHeaders(net, solver, false)      // Appends DML corresponding to source and externalFunction statements.
     readInputData(net, false)              // Read X_full and y_full
+    assign(tabDMLScript, "X", "X_full")
     
     // Initialize the layers and solvers. Reads weights and bias if readWeights is true.
     val readWeights = {
