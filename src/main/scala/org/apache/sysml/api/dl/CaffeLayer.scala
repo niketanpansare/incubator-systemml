@@ -558,6 +558,67 @@ class ReLU(val param:LayerParameter, val id:Int, val net:CaffeNetwork) extends C
   // -------------------------------------------------
 }
 
+class Softmax(val param:LayerParameter, val id:Int, val net:CaffeNetwork) extends CaffeLayer {
+  // -------------------------------------------------
+  override def sourceFileName = "softmax"
+  override def init(dmlScript:StringBuilder) = { }
+  /*
+   * Computes the forward pass for a softmax classifier.  The inputs
+   * are interpreted as unnormalized, log-probabilities for each of
+   * N examples, and the softmax function transforms them to normalized
+   * probabilities.
+   *
+   * This can be interpreted as a generalization of the sigmoid
+   * function to multiple classes.
+   *
+   *   `probs_ij = e^scores_ij / sum(e^scores_i)`
+   *
+   * Inputs:
+   *  - scores: Inputs, of shape (N, D).
+   *
+   * Outputs:
+   *  - probs: Outputs, of shape (N, D).
+   */
+  override def forward(dmlScript:StringBuilder, isPrediction:Boolean) = invokeForward(dmlScript, List[String](out), X)
+  /*
+   * Computes the backward pass for a softmax classifier.
+   *
+   * Note that dscores_ij has multiple source branches:
+   *
+   *   ```
+   *   dprobs_ij/dscores_ij = probs_ij * (1 - probs_ij)
+   *   dprobs_ik/dscores_ij = -probs_ik * probs_ij, for all k != j
+   *
+   *   dloss/dscores_ij =
+   *      (dloss/dprobs_ij * dprobs_ij/dscores_ij)
+   *      + sum_{k!=j}(dloss/dprobs_ik * dprobs_ik/dscores_ij)
+   *   ```
+   *
+   * Inputs:
+   *  - dprobs: Gradient wrt `probs` from upstream, of shape (N, D).
+   *  - scores: Inputs, of shape (N, D).
+   *
+   * Outputs:
+   *  - dscores: Gradient wrt `scores`, of shape (N, D).
+   */
+  override def backward(dmlScript:StringBuilder, outSuffix:String) = invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id), dout, X)
+  override def weightShape():Array[Int] = null
+  override def biasShape():Array[Int] = null
+  // -------------------------------------------------
+}
+
+
+class Threshold(val param:LayerParameter, val id:Int, val net:CaffeNetwork) extends CaffeLayer {
+  override def sourceFileName = null
+  override def init(dmlScript:StringBuilder) = { }
+  val threshold = if(param.getThresholdParam.hasThreshold) param.getThresholdParam.getThreshold else 0
+  override def forward(dmlScript:StringBuilder, isPrediction:Boolean) = assign(dmlScript, out, X + " > " + threshold)
+  override def backward(dmlScript:StringBuilder, outSuffix:String) = throw new DMLRuntimeException("Backward operation for Threshold layer is not supported.")
+  override def weightShape():Array[Int] = null
+  override def biasShape():Array[Int] = null
+}
+
+
 class Dropout(val param:LayerParameter, val id:Int, val net:CaffeNetwork) extends CaffeLayer {
   // -------------------------------------------------
   override def sourceFileName = "dropout"
@@ -933,6 +994,9 @@ class DeConvolution(val param:LayerParameter, val id:Int, val net:CaffeNetwork) 
    */
   override def init(dmlScript: StringBuilder): Unit = 
     invokeInit(dmlScript, List[String](weight, bias), numKernels, numChannels, kernel_h, kernel_w)
+    
+  override def weightShape():Array[Int] = Array(numKernels.toInt, int_mult(numChannels, kernel_h, kernel_w).toInt)
+  override def biasShape():Array[Int] = Array(numKernels.toInt, 1)
     
   /*
    * Computes the forward pass for a 2D spatial transpose convolutional

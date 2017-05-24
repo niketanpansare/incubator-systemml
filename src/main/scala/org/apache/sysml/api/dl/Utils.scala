@@ -36,6 +36,8 @@ import java.io.StringReader
 import java.io.BufferedReader
 import com.google.protobuf.CodedInputStream
 import org.apache.sysml.runtime.matrix.data.MatrixBlock
+import org.apache.sysml.api.mlcontext.MLContext
+import org.apache.spark.SparkContext
 
 object Utils {
   // ---------------------------------------------------------------------------------------------
@@ -89,25 +91,32 @@ object Utils {
   	return builder.build();
 	}
 	
-	def allocateMatrixBlock(data:java.util.List[java.lang.Float], rows:Int, cols:Int, transpose:Boolean):MatrixBlock = {
+	class CopyFloatToDoubleArray(data:java.util.List[java.lang.Float], rows:Int, cols:Int, transpose:Boolean, arr:Array[Double]) extends Thread {
+	  override def run(): Unit = {
+	    if(transpose) {
+        var iter = 0
+        for(i <- 0 until cols) {
+          for(j <- 0 until rows) {
+            arr(j*cols + i) = data.get(iter).doubleValue()
+            iter += 1
+          }
+        }
+      }
+      else {
+        for(i <- 0 until data.size()) {
+          arr(i) = data.get(i).doubleValue()
+        }
+      }
+	  }
+	}
+	
+	def allocateMatrixBlock(data:java.util.List[java.lang.Float], rows:Int, cols:Int, transpose:Boolean):(MatrixBlock,CopyFloatToDoubleArray) = {
 	  val mb =  new MatrixBlock(rows, cols, false)
     mb.allocateDenseBlock()
     val arr = mb.getDenseBlock
-    if(transpose) {
-      var iter = 0
-      for(i <- 0 until cols) {
-        for(j <- 0 until rows) {
-          arr(j*cols + i) = data.get(iter).doubleValue()
-          iter += 1
-        }
-      }
-    }
-    else {
-      for(i <- 0 until data.size()) {
-        arr(i) = data.get(i).doubleValue()
-      }
-    }
-	  return mb
+    val thread = new CopyFloatToDoubleArray(data, rows, cols, transpose, arr)
+	  thread.start
+	  return (mb, thread)
 	}
 	def validateShape(shape:Array[Int], data:java.util.List[java.lang.Float], layerName:String): Unit = {
 	  if(shape == null) 
@@ -118,7 +127,17 @@ object Utils {
       throw new DMLRuntimeException("Incorrect size of blob from caffemodel for the layer " + layerName + ". Expected of size " + shape(0)*shape(1) + ", but found " + data.size())
 	}
 	
-	def readCaffeNet(net:CaffeNetwork, netFilePath:String, weightsFilePath:String, inputVariables:Map[String, MatrixBlock]):NetParameter = {
+	def saveCaffeModelFile(sc:SparkContext, CHW:(Int, Int, Int), deployFilePath:String, caffeModelFilePath:String, outputDirectory:String, format:String):Unit = {
+	  val inputVariables = new java.util.HashMap[String, MatrixBlock]()
+	  readCaffeNet(new CaffeNetwork(deployFilePath, caffe.Caffe.Phase.TEST, CHW._1.toString, CHW._2.toString, CHW._3.toString), deployFilePath, caffeModelFilePath, inputVariables)
+	  val ml = new MLContext(sc)
+	  val dmlScript = new StringBuilder
+	  inputVariables.keys.map(input => dmlScript.append("write(" + input + ", \"" + input + ".mtx\", format=\"" + format + "\");\n"))
+	  val script = org.apache.sysml.api.mlcontext.ScriptFactory.dml(dmlScript.toString()).in(inputVariables)
+	  ml.execute(script)
+	}
+	
+	def readCaffeNet(net:CaffeNetwork, netFilePath:String, weightsFilePath:String, inputVariables:java.util.HashMap[String, MatrixBlock]):NetParameter = {
 	  // Load network
 		val reader:InputStreamReader = getInputStreamReader(netFilePath); 
   	val builder:NetParameter.Builder =  NetParameter.newBuilder();
@@ -129,6 +148,7 @@ object Utils {
 	  builder.mergeFrom(inputStream)
 	  val net1 = builder.build();
 	  
+	  val asyncThreads = new java.util.ArrayList[CopyFloatToDoubleArray]()
 	  for(layer <- net1.getLayerList) {
 	    if(layer.getBlobsCount == 0) {
 	      // No weight or bias
@@ -141,19 +161,48 @@ object Utils {
 	      // weight
 	      val data = layer.getBlobs(0).getDataList
 	      val shape = caffe2DMLLayer.weightShape()
+	      if(shape == null)
+	        throw new DMLRuntimeException("Didnot expect weights for the layer " + layer.getName)
 	      validateShape(shape, data, layer.getName)
-	      inputVariables.put(caffe2DMLLayer.weight, allocateMatrixBlock(data, shape(0), shape(1), transpose))
+	      val ret1 = allocateMatrixBlock(data, shape(0), shape(1), transpose)
+	      asyncThreads.add(ret1._2)
+	      inputVariables.put(caffe2DMLLayer.weight, ret1._1)
 	      
 	      // bias
 	      val biasData = layer.getBlobs(1).getDataList
 	      val biasShape = caffe2DMLLayer.biasShape()
+	      if(biasShape == null)
+	        throw new DMLRuntimeException("Didnot expect bias for the layer " + layer.getName)
 	      validateShape(biasShape, biasData, layer.getName)
-	      inputVariables.put(caffe2DMLLayer.bias, allocateMatrixBlock(biasData, biasShape(0), biasShape(1), transpose))
+	      val ret2 = allocateMatrixBlock(biasData, biasShape(0), biasShape(1), transpose)
+	      asyncThreads.add(ret2._2)
+	      inputVariables.put(caffe2DMLLayer.bias, ret2._1)
 	      
 	    }
-	    else {
-	      throw new DMLRuntimeException("Layer with blob count " + layer.getBlobsCount + " is not supported.")
+	    else if(layer.getBlobsCount == 1) {
+	      // Special case: convolution/deconvolution without bias
+	      // TODO: Extend nn layers to handle this situation + Generalize this to other layers, for example: InnerProduct
+	      val caffe2DMLLayer = net.getCaffeLayer(layer.getName)
+	      val convParam = if((caffe2DMLLayer.isInstanceOf[Convolution] || caffe2DMLLayer.isInstanceOf[DeConvolution]) && caffe2DMLLayer.param.hasConvolutionParam())  caffe2DMLLayer.param.getConvolutionParam else null  
+	      if(convParam == null)
+	        throw new DMLRuntimeException("Layer with blob count " + layer.getBlobsCount + " is not supported for the layer " + layer.getName)
+	     
+	      val data = layer.getBlobs(0).getDataList
+	      val shape = caffe2DMLLayer.weightShape()
+	      validateShape(shape, data, layer.getName)
+	      val ret1 = allocateMatrixBlock(data, shape(0), shape(1), false)
+	      asyncThreads.add(ret1._2)
+	      inputVariables.put(caffe2DMLLayer.weight, ret1._1)
+	      inputVariables.put(caffe2DMLLayer.bias, new MatrixBlock(convParam.getNumOutput, 1, false))
 	    }
+	    else {
+	      throw new DMLRuntimeException("Layer with blob count " + layer.getBlobsCount + " is not supported for the layer " + layer.getName)
+	    }
+	  }
+	  
+	  // Wait for the copy to be finished
+	  for(t <- asyncThreads) {
+	    t.join()
 	  }
 	  
 	  // Return the NetParameter without

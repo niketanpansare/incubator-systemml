@@ -126,12 +126,16 @@ class CaffeNetwork(netFilePath:String, val currentPhase:Phase,
     else l
   })
   
+  // Used while reading caffemodel
+  val replacedLayerNames = new HashMap[String, String]();
+  
   // Condition 5: Deal with incorrect naming
   // Example: layer { name: foo, bottom: arbitrary, top: bar } ... Rename the layer to bar
   private def isIncorrectNamingLayer(l:LayerParameter): Boolean = l.getTopCount == 1 && !l.getTop(0).equalsIgnoreCase(l.getName)
   _caffeLayerParams = _caffeLayerParams.map(l => {
     if(isIncorrectNamingLayer(l)) {
       val builder = l.toBuilder();
+      replacedLayerNames.put(l.getName, l.getTop(0))
       builder.setName(l.getTop(0))
       builder.build()
     }
@@ -161,7 +165,15 @@ class CaffeNetwork(netFilePath:String, val currentPhase:Phase,
   
   private def throwException(layerName:String) = throw new LanguageException("Layer with name " + layerName + " not found")                              
   def getLayers(): List[String] =  _layerNames
-  def getCaffeLayer(layerName:String):CaffeLayer = if(checkKey(_layers, layerName)) _layers.get(layerName).get else throwException(layerName)
+  def getCaffeLayer(layerName:String):CaffeLayer = {
+    if(checkKey(_layers, layerName)) _layers.get(layerName).get
+    else {
+      if(replacedLayerNames.contains(layerName) && checkKey(_layers, replacedLayerNames.get(layerName))) {
+        _layers.get(replacedLayerNames.get(layerName)).get
+      }
+      else throwException(layerName)
+    }
+  }
   def getBottomLayers(layerName:String): Set[String] =  if(checkKey(_bottomLayers, layerName)) _bottomLayers.get(layerName).get else throwException(layerName)
   def getTopLayers(layerName:String): Set[String] = if(checkKey(_topLayers, layerName)) _topLayers.get(layerName).get else throwException(layerName)
   def getLayerID(layerName:String): Int = if(checkKey(_layerIDs, layerName))  _layerIDs.get(layerName).get else throwException(layerName)
@@ -188,6 +200,8 @@ class CaffeNetwork(netFilePath:String, val currentPhase:Phase,
       case "eltwise" => new Elementwise(param, id, this)
       case "concat" => new Concat(param, id, this)
       case "deconvolution" => new DeConvolution(param, id, this)
+      case "threshold" => new Threshold(param, id, this)
+      case "softmax" => new Softmax(param, id, this)
       case _ => throw new LanguageException("Layer of type " + param.getType + " is not supported")
     }
   }
