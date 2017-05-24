@@ -29,16 +29,17 @@ limitations under the License.
 
 ## Introduction
 
-Caffe2DML is an experimental API that converts an Caffe specification to DML.
+Caffe2DML is an **experimental API** that converts an Caffe specification to DML. 
+It is designed to fit well into the mllearn framework and hence supports NumPy, Pandas as well as PySpark DataFrame.
 
-## Example: Train Lenet
+## Example: Train Lenet using Caffe2DML
 
 1. Install `mlextend` package to get MNIST data: `pip install mlxtend`.
-2. (Optional but recommended) Follow the steps mentioned in [the user guide]([the user guide of native backend](http://apache.github.io/incubator-systemml/native-backend)) and install Intel MKL.
-3. Install [SystemML](http://apache.github.io/incubator-systemml/beginners-guide-python#install-systemml).
-4. Invoke PySpark shell: `pyspark --conf spark.executorEnv.LD_LIBRARY_PATH=/path/to/blas-n-other-dependencies`.
+2. (Optional but recommended) Follow the steps mentioned in [the user guide of native backend](http://apache.github.io/incubator-systemml/native-backend) and install Intel MKL or OpenBLAS with OpenMP support.
+3. Install [SystemML](http://systemml.apache.org/install-systemml.html).
+4. Invoke PySpark shell: `pyspark --conf spark.executorEnv.LD_LIBRARY_PATH=/path/to/blas`. 
 
-```bash
+```python
 # Download the MNIST dataset
 from mlxtend.data import mnist_data
 import numpy as np
@@ -85,7 +86,7 @@ Batch size is set in `data_param` of the Data layer:
 	
 - How to set maximum number of iterations for training ?
 
-Caffe allows you to set the maximum number of iterations in solver specification
+The maximum number of iterations can be set in the solver specification
 
 	# The maximum number of iterations
 	max_iter: 2000
@@ -112,8 +113,12 @@ To monitor loss, please set following parameters in the solver specification
 	test_iter: 10
 	test_interval: 500
 	
- - How to pass a single jpeg image to Caffe2DML for prediction ?
+- How to pass a single jpeg image to Caffe2DML for prediction ?
+
+To convert a jpeg into NumPy matrix, you can use the [pillow package](https://pillow.readthedocs.io/) and 
+SystemML's  `convertImageToNumPyArr` utility function. The below pyspark code demonstrates the usage:
  
+	```python
 	from PIL import Image
 	import systemml as sml
 	from systemml.mllearn import Caffe2DML
@@ -121,14 +126,16 @@ To monitor loss, please set following parameters in the solver specification
 	input_image = sml.convertImageToNumPyArr(Image.open(img_file_path), img_shape=img_shape)
 	resnet = Caffe2DML(sqlCtx, solver='ResNet_50_solver.proto', weights='ResNet_50_pretrained_weights', input_shape=img_shape)
 	resnet.predict(input_image)
+	```
 
 - How to prepare a directory of jpeg images for training with Caffe2DML ?
 
-The below example assumes that the input dataset has 2 labels `cat` and `dogs` and the filename has these labels as prefix.
+The below pyspark code assumes that the input dataset has 2 labels `cat` and `dogs` and the filename has these labels as prefix.
 We iterate through the directory and convert each jpeg image into pyspark.ml.linalg.Vector using pyspark.
 These vectors are stored as DataFrame and randomized using Spark SQL's `orderBy(rand())` function.
 The DataFrame is then saved in parquet format to reduce the cost of preprocessing for repeated training.
 
+	```python
 	from systemml.mllearn import Caffe2DML
 	from pyspark.sql import SQLContext
 	import numpy as np
@@ -156,3 +163,9 @@ The DataFrame is then saved in parquet format to reduce the cost of preprocessin
 	# Optional: but helps seperates conversion-related from training
 	# Alternatively, this dataframe can be passed directly to `caffe2dml_model.fit(train_df)`
 	train_df.write.parquet('kaggle-cats-dogs.parquet')
+	```
+
+- Can I use Caffe2DML via Scala ?
+
+Though we recommend using Caffe2DML via its Python interfaces, it is possible to use it by creating an object of the class
+`org.apache.sysml.api.dl.Caffe2DML`. It is important to note that Caffe2DML's scala API is packaged in `systemml-*-extra.jar`.

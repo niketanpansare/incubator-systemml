@@ -57,7 +57,10 @@ class CaffeNetwork(netFilePath:String, val currentPhase:Phase,
   private var _net:NetParameter = Utils.readCaffeNet(netFilePath)
   private var _caffeLayerParams:List[LayerParameter] = _net.getLayerList.filter(l => isIncludedInCurrentPhase(l)).toList
   // This method is used if the user doesnot provide number of channels, height and width
-  private def setCHW(inputShape:caffe.Caffe.BlobShape):Unit = {
+  private def setCHW(inputShapes:java.util.List[caffe.Caffe.BlobShape]):Unit = {
+    if(inputShapes.size != 1)
+        throw new DMLRuntimeException("Expected only one input shape")
+    val inputShape = inputShapes.get(0)
     if(inputShape.getDimCount != 4)
       throw new DMLRuntimeException("Expected the input shape of dimension 4")
     numChannels = inputShape.getDim(1).toString
@@ -67,9 +70,7 @@ class CaffeNetwork(netFilePath:String, val currentPhase:Phase,
   if(numChannels == null && height == null && width == null) {
     val inputLayer:List[LayerParameter] = _caffeLayerParams.filter(_.getType.toLowerCase.equals("input"))
     if(inputLayer.size == 1) {
-      if(inputShape.size != 1)
-        throw new DMLRuntimeException("Expected only one input shape")
-      setCHW(inputLayer(0).getShapeList(0))
+      setCHW(inputLayer(0).getInputParam.getShapeList)
     }
     else if(inputLayer.size == 0) {
       throw new DMLRuntimeException("Input shape (number of channels, height, width) is unknown. Hint: If you are using deprecated input/input_shape API, we recommend you use Input layer.")
@@ -84,7 +85,7 @@ class CaffeNetwork(netFilePath:String, val currentPhase:Phase,
   CaffeNetwork.LOG.debug("Layers in current phase:" + _layerNames)
   
   // Condition 1: assert that each name is unique
-  private val _duplicateLayerNames =_layerNames.diff(_layerNames.distinct)
+  private val _duplicateLayerNames = _layerNames.diff(_layerNames.distinct)
   if(_duplicateLayerNames.size != 0) throw new LanguageException("Duplicate layer names is not supported:" + _duplicateLayerNames)
   
   // Condition 2: only 1 top name, except Data layer
