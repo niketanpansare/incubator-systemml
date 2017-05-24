@@ -34,7 +34,7 @@ It is designed to fit well into the mllearn framework and hence supports NumPy, 
 
 ## Examples
 
-### Train Lenet (7-layer convolutional neural network)
+### Train Lenet
 
 1. Install `mlextend` package to get MNIST data: `pip install mlxtend`.
 2. (Optional but recommended) Follow the steps mentioned in [the user guide of native backend](http://apache.github.io/incubator-systemml/native-backend) and install Intel MKL or OpenBLAS with OpenMP support.
@@ -42,10 +42,13 @@ It is designed to fit well into the mllearn framework and hence supports NumPy, 
 4. Invoke PySpark shell: `pyspark --conf spark.executorEnv.LD_LIBRARY_PATH=/path/to/blas`. 
 
 ```python
-# Download the MNIST dataset
 from mlxtend.data import mnist_data
 import numpy as np
 from sklearn.utils import shuffle
+import urllib
+from systemml.mllearn import Caffe2DML
+
+# Download the MNIST dataset
 X, y = mnist_data()
 X, y = shuffle(X, y)
 
@@ -57,15 +60,30 @@ X_test = X[int(.9 * n_samples):]
 y_test = y[int(.9 * n_samples):]
 
 # Download the Lenet network
-import urllib
-urllib.urlretrieve('https://raw.githubusercontent.com/niketanpansare/model_zoo/master/caffe/vision/lenet/mnist/lenet.proto', 'lenet.proto')
-urllib.urlretrieve('https://raw.githubusercontent.com/niketanpansare/model_zoo/master/caffe/vision/lenet/mnist/lenet_solver.proto', 'lenet_solver.proto')
+urllib.urlretrieve('https://raw.githubusercontent.com/apache/incubator-systemml/master/scripts/nn/examples/caffe2dml/models/mnist_lenet/lenet.proto', 'lenet.proto')
+urllib.urlretrieve('https://raw.githubusercontent.com/apache/incubator-systemml/master/scripts/nn/examples/caffe2dml/models/mnist_lenet/lenet_solver.proto', 'lenet_solver.proto')
 
 # Train Lenet On MNIST using scikit-learn like API
-from systemml.mllearn import Caffe2DML
-lenet = Caffe2DML(sqlCtx, solver='lenet_solver.proto', input_shape=(1, 28, 28)).set(debug=True).setStatistics(True)
+# MNIST dataset contains 28 X 28 gray-scale (number of channel=1).
+lenet = Caffe2DML(sqlCtx, solver='lenet_solver.proto', input_shape=(1, 28, 28))
+
+# debug=True prints will print the generated DML script along with classification report. Please donot test this flag in production.
+lenet.set(debug=True)
+
+# If you want to see the statistics as well as the plan
+lenet.setStatistics(True).setExplain(True)
+
+# If you want to force GPU execution. Please make sure the required dependency are available.  
+# lenet.setGPU(True).setForceGPU(True)
+
+# (Optional but recommended) See http://apache.github.io/incubator-systemml/native-backend
+lenet.setConfigProperty("native.blas", "auto")
+
+# In case, you want to enable codegen
+lenet.setConfigProperty("codegen.enabled", "true").setConfigProperty("codegen.plancache", "true")
+
+# Since Caffe2DML is a mllearn API, it allows for scikit-learn like method for training.
 lenet.fit(X_train, y_train)
-y_predicted = lenet.predict(X_test)
 ```
 
 ## Frequently asked questions
