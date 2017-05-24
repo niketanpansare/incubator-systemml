@@ -32,7 +32,9 @@ limitations under the License.
 Caffe2DML is an **experimental API** that converts an Caffe specification to DML. 
 It is designed to fit well into the mllearn framework and hence supports NumPy, Pandas as well as PySpark DataFrame.
 
-## Example: Train Lenet using Caffe2DML
+## Examples
+
+### Train Lenet (7-layer convolutional neural network)
 
 1. Install `mlextend` package to get MNIST data: `pip install mlxtend`.
 2. (Optional but recommended) Follow the steps mentioned in [the user guide of native backend](http://apache.github.io/incubator-systemml/native-backend) and install Intel MKL or OpenBLAS with OpenMP support.
