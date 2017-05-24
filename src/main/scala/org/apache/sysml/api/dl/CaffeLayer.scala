@@ -154,7 +154,13 @@ class Data(val param:LayerParameter, val id:Int, val net:CaffeNetwork, val numCh
     if(param.hasTransformParam && param.getTransformParam.hasScale) {
       dmlScript.append("X_full = X_full * " + param.getTransformParam.getScale + "\n")
     }
-    dmlScript.append("BATCH_SIZE = " + param.getDataParam.getBatchSize + "\n")
+    if(param.hasDataParam && param.getDataParam.hasBatchSize) {
+      dmlScript.append("BATCH_SIZE = " + param.getDataParam.getBatchSize + "\n")
+    }
+    else {
+      Caffe2DML.LOG.debug("Using default batch size of 64 as batch size is not set with DataParam")
+      dmlScript.append("BATCH_SIZE = 64\n")
+    }
   }
   var dataOutputShape = ("$num_channels", "$height", "$width")
   override def forward(dmlScript:StringBuilder, isPrediction:Boolean) = { }

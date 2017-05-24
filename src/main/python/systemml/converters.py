@@ -19,10 +19,11 @@
 #
 #-------------------------------------------------------------
 
-__all__ = [ 'getNumCols', 'convertToMatrixBlock', 'convertToNumPyArr', 'convertToPandasDF', 'SUPPORTED_TYPES' , 'convertToLabeledDF', 'convertImageToNumPyArr']
+__all__ = [ 'getNumCols', 'convertToMatrixBlock', 'convert_caffemodel', 'convertToNumPyArr', 'convertToPandasDF', 'SUPPORTED_TYPES' , 'convertToLabeledDF', 'convertImageToNumPyArr']
 
 import numpy as np
 import pandas as pd
+import os
 import math
 from pyspark.context import SparkContext
 from scipy.sparse import coo_matrix, spmatrix, csr_matrix
@@ -35,6 +36,56 @@ def getNumCols(numPyArr):
         return 1
     else:
         return numPyArr.shape[1]
+
+def convert_caffemodel(sc, network_file, caffemodel_file, output_dir, format="binary"):
+    """
+    Saves the weights and bias in the caffemodel file to output_dir in the specified format. 
+    This method does not requires caffe to be installed.
+    
+    Parameters
+    ----------
+    sc: SparkContext
+        SparkContext
+    
+    deploy_file: string
+        Path to the input network file
+        
+    caffemodel_file: string
+        Path to the input caffemodel file
+    
+    output_dir: string
+        Path to the output directory
+    
+    format: string
+        Format of the weights and bias (can be binary, csv or text)
+    """
+    self._sc._jvm.org.apache.sysml.api.dl.Utils.saveCaffeModelFile(sc._jsc, deploy_file, caffemodel_file, output_dir, format)
+
+
+def convert_lmdb_to_jpeg(lmdb_img_file, output_dir):
+    """
+    Saves the images in the lmdb file as jpeg in the output_dir. This method requires caffe to be installed along with lmdb and cv2 package.
+    To install cv2 package, do `pip install opencv-python`.
+    
+    Parameters
+    ----------
+    lmdb_img_file: string
+        Path to the input lmdb file
+    
+    output_dir: string
+        Output directory for images (local filesystem)
+    """
+    import lmdb, caffe, cv2
+    lmdb_cursor = lmdb.open(lmdb_file, readonly=True).begin().cursor()
+    datum = caffe.proto.caffe_pb2.Datum()
+    i = 1
+    for _, value in lmdb_cursor:
+        datum.ParseFromString(value)
+        data = caffe.io.datum_to_array(datum)
+        output_file_path = os.path.join(output_dir, 'file_' + str(i) + '.jpg')
+        image = np.transpose(data, (1,2,0)) # CxHxW to HxWxC in cv2
+        cv2.imwrite(output_file_path, image)
+        i = i + 1
 
 
 def convertToLabeledDF(sparkSession, X, y=None):

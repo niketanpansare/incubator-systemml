@@ -38,6 +38,7 @@ import com.google.protobuf.CodedInputStream
 import org.apache.sysml.runtime.matrix.data.MatrixBlock
 import org.apache.sysml.api.mlcontext.MLContext
 import org.apache.spark.SparkContext
+import org.apache.spark.api.java.JavaSparkContext
 
 object Utils {
   // ---------------------------------------------------------------------------------------------
@@ -127,9 +128,14 @@ object Utils {
       throw new DMLRuntimeException("Incorrect size of blob from caffemodel for the layer " + layerName + ". Expected of size " + shape(0)*shape(1) + ", but found " + data.size())
 	}
 	
-	def saveCaffeModelFile(sc:SparkContext, CHW:(Int, Int, Int), deployFilePath:String, caffeModelFilePath:String, outputDirectory:String, format:String):Unit = {
+	def saveCaffeModelFile(sc:JavaSparkContext, deployFilePath:String, 
+	    caffeModelFilePath:String, outputDirectory:String, format:String):Unit = {
+	  saveCaffeModelFile(sc.sc, deployFilePath, caffeModelFilePath, outputDirectory, format)
+	}
+	
+	def saveCaffeModelFile(sc:SparkContext, deployFilePath:String, caffeModelFilePath:String, outputDirectory:String, format:String):Unit = {
 	  val inputVariables = new java.util.HashMap[String, MatrixBlock]()
-	  readCaffeNet(new CaffeNetwork(deployFilePath, caffe.Caffe.Phase.TEST, CHW._1.toString, CHW._2.toString, CHW._3.toString), deployFilePath, caffeModelFilePath, inputVariables)
+	  readCaffeNet(new CaffeNetwork(deployFilePath), deployFilePath, caffeModelFilePath, inputVariables)
 	  val ml = new MLContext(sc)
 	  val dmlScript = new StringBuilder
 	  inputVariables.keys.map(input => dmlScript.append("write(" + input + ", \"" + input + ".mtx\", format=\"" + format + "\");\n"))
