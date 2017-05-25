@@ -242,3 +242,11 @@ object Utils {
 	}
 	// --------------------------------------------------------------
 }
+
+class Utils {
+  def saveCaffeModelFile(sc:JavaSparkContext, deployFilePath:String, 
+	    caffeModelFilePath:String, outputDirectory:String, format:String):Unit = {
+    Utils.saveCaffeModelFile(sc, deployFilePath, caffeModelFilePath, outputDirectory, format)
+  }
+  
+}
