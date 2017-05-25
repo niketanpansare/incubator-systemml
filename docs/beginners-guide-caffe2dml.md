@@ -34,12 +34,22 @@ It is designed to fit well into the mllearn framework and hence supports NumPy, 
 
 ## Examples
 
-### Train Lenet
+### Train Lenet on MNIST dataset
 
-1. Install `mlextend` package to get MNIST data: `pip install mlxtend`.
-2. (Optional but recommended) Follow the steps mentioned in [the user guide of native backend](http://apache.github.io/incubator-systemml/native-backend) and install Intel MKL or OpenBLAS with OpenMP support.
-3. Install [SystemML](http://systemml.apache.org/install-systemml.html).
-4. Invoke PySpark shell: `pyspark --conf spark.executorEnv.LD_LIBRARY_PATH=/path/to/blas`. 
+#### MNIST dataset
+
+The MNIST dataset was constructed from two datasets of the US National Institute of Standards and Technology (NIST). The training set consists of handwritten digits from 250 different people, 50 percent high school students, and 50 percent employees from the Census Bureau. Note that the test set contains handwritten digits from different people following the same split.
+In the below example, we are using mlxtend package to load the mnist dataset into Python NumPy arrays, but you are free to download it directly from http://yann.lecun.com/exdb/mnist/.
+
+```bash
+pip install mlxtend
+```
+
+#### Lenet network
+
+Lenet is a simple convolutional neural network, proposed by Yann LeCun in 1998. It has 2 convolutions/pooling and fully connected layer. 
+Similar to Caffe, the network has been modified to add dropout. 
+For more detail, please see http://yann.lecun.com/exdb/lenet/
 
 ```python
 from mlxtend.data import mnist_data
@@ -76,17 +86,50 @@ lenet.setStatistics(True).setExplain(True)
 # If you want to force GPU execution. Please make sure the required dependency are available.  
 # lenet.setGPU(True).setForceGPU(True)
 
-# (Optional but recommended) See http://apache.github.io/incubator-systemml/native-backend
+# (Optional but recommended) Enable native BLAS. For more detail see http://apache.github.io/incubator-systemml/native-backend
 lenet.setConfigProperty("native.blas", "auto")
 
-# In case, you want to enable codegen
-lenet.setConfigProperty("codegen.enabled", "true").setConfigProperty("codegen.plancache", "true")
+# In case you want to enable experimental feature such as codegen
+# lenet.setConfigProperty("codegen.enabled", "true").setConfigProperty("codegen.plancache", "true")
 
 # Since Caffe2DML is a mllearn API, it allows for scikit-learn like method for training.
 lenet.fit(X_train, y_train)
+lenet.predict(X_test)
 ```
 
 ## Frequently asked questions
+
+#### How can I speedup the training with Caffe2DML ?
+
+- Enable native BLAS to improve the performance of CP convolution and matrix multiplication operators.
+If you are using OpenBLAS, please ensure that it was built with `USE_OPENMP` flag turned on.
+For more detail see http://apache.github.io/incubator-systemml/native-backend
+
+```python
+caffe2dmlObject.setConfigProperty("native.blas", "auto")
+```
+
+- Turn on the experimental codegen feature. This should help reduce unnecessary allocation cost after every binary operation.
+
+```python
+caffe2dmlObject.setConfigProperty("codegen.enabled", "true").setConfigProperty("codegen.plancache", "true")
+```
+
+- Tuned the [Garbage Collector](http://spark.apache.org/docs/latest/tuning.html#garbage-collection-tuning). 
+
+- Enable GPU support (described below).
+
+#### How to enable GPU support in Caffe2DML ?
+
+To be consistent with other mllearn algorithms, we recommend that you use following method instead of setting 
+the `solver_mode` in solver file.
+
+```python
+# The below method tells SystemML optimizer to use a GPU-enabled instruction if the operands fit in the GPU memory 
+caffe2dmlObject.setGPU(True)
+# The below method tells SystemML optimizer to always use a GPU-enabled instruction irrespective of the memory requirement
+caffe2dmlObject.setForceGPU(True)
+```
 
 #### How to set batch size ?
 
