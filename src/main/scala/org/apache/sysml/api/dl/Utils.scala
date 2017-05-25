@@ -183,7 +183,7 @@ object Utils {
 	      val ret2 = allocateMatrixBlock(biasData, biasShape(0), biasShape(1), transpose)
 	      asyncThreads.add(ret2._2)
 	      inputVariables.put(caffe2DMLLayer.bias, ret2._1)
-	      
+	      Caffe2DML.LOG.debug("Read weights/bias for layer:" + layer.getName)
 	    }
 	    else if(layer.getBlobsCount == 1) {
 	      // Special case: convolution/deconvolution without bias
@@ -200,6 +200,7 @@ object Utils {
 	      asyncThreads.add(ret1._2)
 	      inputVariables.put(caffe2DMLLayer.weight, ret1._1)
 	      inputVariables.put(caffe2DMLLayer.bias, new MatrixBlock(convParam.getNumOutput, 1, false))
+	      Caffe2DML.LOG.debug("Read only weight for layer:" + layer.getName)
 	    }
 	    else {
 	      throw new DMLRuntimeException("Layer with blob count " + layer.getBlobsCount + " is not supported for the layer " + layer.getName)
