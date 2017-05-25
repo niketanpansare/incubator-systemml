@@ -37,7 +37,22 @@ def getNumCols(numPyArr):
     else:
         return numPyArr.shape[1]
 
-def convert_caffemodel(sc, deploy_file, caffemodel_file, output_dir, format="binary"):
+def get_pretty_str(key, value):
+    return '\t"' + key + '": ' + str(value) + ',\n'
+        
+def save_tensor_csv(tensor, file_path, shouldTranspose):
+    w = w.reshape(w.shape[0], -1)
+    if shouldTranspose:
+        w = w.T
+    np.savetxt(file_path, w, delimiter=',')
+    with open(file_path + '.mtd', 'w') as file:
+        file.write('{\n\t"data_type": "matrix",\n\t"value_type": "double",\n')
+        file.write(get_pretty_str('rows', w.shape[0]))
+        file.write(get_pretty_str('cols', w.shape[1]))
+        file.write(get_pretty_str('nnz', np.count_nonzero(w)))
+        file.write('\t"format": "csv",\n\t"description": {\n\t\t"author": "SystemML"\n\t}\n}\n')
+    
+def convert_caffemodel(sc, deploy_file, caffemodel_file, output_dir, format="binary", is_caffe_installed=False):
     """
     Saves the weights and bias in the caffemodel file to output_dir in the specified format. 
     This method does not requires caffe to be installed.
@@ -58,12 +73,38 @@ def convert_caffemodel(sc, deploy_file, caffemodel_file, output_dir, format="bin
     
     format: string
         Format of the weights and bias (can be binary, csv or text)
+    
+    is_caffe_installed: bool
+        True if caffe is installed
     """
-    createJavaObject(sc, 'dummy')
-    utilObj = sc._jvm.org.apache.sysml.api.dl.Utils()
-    utilObj.saveCaffeModelFile(sc._jsc, deploy_file, caffemodel_file, output_dir, format)
+    if is_caffe_installed:
+        if format != 'csv':
+            raise ValueError('The format ' + str(format) + ' is not supported when caffe is installed. Hint: Please specify format=csv')
+        import caffe
+        net = caffe.Net(deploy_file, caffemodel_file, caffe.TEST)
+        for layerName in net.params.keys():
+            num_parameters = len(net.params[layerName])
+            if num_parameters == 0:
+                continue
+            elif num_parameters == 2:
+                # Weights and Biases
+                layerType = net.layers[list(net._layer_names).index(layerName)].type
+                shouldTranspose = True if layerType == 'InnerProduct' else False
+                save_tensor_csv(net.params[layerName][0].data, os.path.join(output_dir, layerName + '_weight.mtx'), shouldTranspose)
+                save_tensor_csv(net.params[layerName][1].data, os.path.join(output_dir, layerName + '_bias.mtx'), shouldTranspose)
+            elif num_parameters == 1:
+                # Only Weight
+                layerType = net.layers[list(net._layer_names).index(layerName)].type
+                shouldTranspose = True if layerType == 'InnerProduct' else False
+                save_tensor_csv(net.params[layerName][0].data, os.path.join(output_dir, layerName + '_weight.mtx'), shouldTranspose)
+            else:
+                raise ValueError('Unsupported number of parameters:' + str(num_parameters))
+    else:
+        createJavaObject(sc, 'dummy')
+        utilObj = sc._jvm.org.apache.sysml.api.dl.Utils()
+        utilObj.saveCaffeModelFile(sc._jsc, deploy_file, caffemodel_file, output_dir, format)
 
-
+    
 def convert_lmdb_to_jpeg(lmdb_img_file, output_dir):
     """
     Saves the images in the lmdb file as jpeg in the output_dir. This method requires caffe to be installed along with lmdb and cv2 package.

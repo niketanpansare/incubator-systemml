@@ -65,15 +65,16 @@ class SVM (override val uid: String, val sc: SparkContext, val isMultiClass:Bool
     (script, "X", "Y")
   }
   
+  var mloutput: MLResults = null
   // Note: will update the y_mb as this will be called by Python mllearn
   def fit(X_mb: MatrixBlock, y_mb: MatrixBlock): SVMModel = {
-    val ret = baseFit(X_mb, y_mb, sc)
-    new SVMModel("svm")(ret, sc, isMultiClass)
+    mloutput = baseFit(X_mb, y_mb, sc)
+    new SVMModel(this, isMultiClass)
   }
   
   def fit(df: ScriptsUtils.SparkDataType): SVMModel = {
-    val ret = baseFit(df, sc)
-    new SVMModel("svm")(ret, sc, isMultiClass)
+    mloutput = baseFit(df, sc)
+    new SVMModel(this, isMultiClass)
   }
   
 }
@@ -88,6 +89,10 @@ class SVMModel (override val uid: String)(val mloutput: MLResults, val sc: Spark
   override def copy(extra: ParamMap): SVMModel = {
     val that = new SVMModel(uid)(mloutput, sc, isMultiClass)
     copyValues(that, extra)
+  }
+  
+  def this(estimator:SVM, isMultiClass:Boolean) =  {
+  	this("model")(estimator.mloutput, estimator.sc, isMultiClass)
   }
   
   def getPredictionScript(mloutput: MLResults, isSingleNode:Boolean): (Script, String)  = {

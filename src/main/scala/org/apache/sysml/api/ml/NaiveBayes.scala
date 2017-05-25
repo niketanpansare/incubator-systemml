@@ -44,15 +44,16 @@ class NaiveBayes(override val uid: String, val sc: SparkContext) extends Estimat
   }
   def setLaplace(value: Double) = set(laplace, value)
   
+  var mloutput: MLResults = null
   // Note: will update the y_mb as this will be called by Python mllearn
   def fit(X_mb: MatrixBlock, y_mb: MatrixBlock): NaiveBayesModel = {
-    val ret = baseFit(X_mb, y_mb, sc)
-    new NaiveBayesModel("naive")(ret, sc)
+    mloutput = baseFit(X_mb, y_mb, sc)
+    new NaiveBayesModel(this)
   }
   
   def fit(df: ScriptsUtils.SparkDataType): NaiveBayesModel = {
-    val ret = baseFit(df, sc)
-    new NaiveBayesModel("naive")(ret, sc)
+    mloutput = baseFit(df, sc)
+    new NaiveBayesModel(this)
   }
   
   def getTrainingScript(isSingleNode:Boolean):(Script, String, String)  = {
@@ -76,6 +77,10 @@ object NaiveBayesModel {
 class NaiveBayesModel(override val uid: String)
   (val mloutput: MLResults, val sc: SparkContext) 
   extends Model[NaiveBayesModel] with HasLaplace with BaseSystemMLClassifierModel {
+  
+  def this(estimator:NaiveBayes) =  {
+    this("model")(estimator.mloutput, estimator.sc)
+  }
   
   override def copy(extra: ParamMap): NaiveBayesModel = {
     val that = new NaiveBayesModel(uid)(mloutput, sc)

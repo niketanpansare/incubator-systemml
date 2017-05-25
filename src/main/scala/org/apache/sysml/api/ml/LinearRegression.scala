@@ -48,6 +48,7 @@ class LinearRegression(override val uid: String, val sc: SparkContext, val solve
   def setRegParam(value: Double) = set(regParam, value)
   def setTol(value: Double) = set(tol, value)
   
+  var mloutput: MLResults = null
   override def copy(extra: ParamMap): Estimator[LinearRegressionModel] = {
     val that = new LinearRegression(uid, sc, solver)
     copyValues(that, extra)
@@ -72,11 +73,15 @@ class LinearRegression(override val uid: String, val sc: SparkContext, val solve
     (script, "X", "y")
   }
   
-  def fit(X_mb: MatrixBlock, y_mb: MatrixBlock): LinearRegressionModel = 
-    new LinearRegressionModel("lr")(baseFit(X_mb, y_mb, sc), sc)
+  def fit(X_mb: MatrixBlock, y_mb: MatrixBlock): LinearRegressionModel =  {
+    mloutput = baseFit(X_mb, y_mb, sc)
+    new LinearRegressionModel(this)
+  }
     
-  def fit(df: ScriptsUtils.SparkDataType): LinearRegressionModel = 
-    new LinearRegressionModel("lr")(baseFit(df, sc), sc)
+  def fit(df: ScriptsUtils.SparkDataType): LinearRegressionModel = { 
+    mloutput = baseFit(df, sc)
+    new LinearRegressionModel(this)
+  }
   
 }
 
@@ -85,6 +90,10 @@ class LinearRegressionModel(override val uid: String)(val mloutput: MLResults, v
   override def copy(extra: ParamMap): LinearRegressionModel = {
     val that = new LinearRegressionModel(uid)(mloutput, sc)
     copyValues(that, extra)
+  }
+  
+  def this(estimator:LinearRegression) =  {
+  	this("model")(estimator.mloutput, estimator.sc)
   }
   
   def getPredictionScript(mloutput: MLResults, isSingleNode:Boolean): (Script, String) =

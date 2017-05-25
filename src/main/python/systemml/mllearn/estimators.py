@@ -276,8 +276,10 @@ class BaseSystemMLClassifier(BaseSystemMLEstimator):
     def decode(self, y):
         if self.le is not None:
             return self.le.inverse_transform(np.asarray(y - 1, dtype=int))
-        else:
+        elif self.labelMap is not None:
             return [ self.labelMap[int(i)] for i in y ]
+        else:
+            return y
         
     def predict(self, X):
         predictions = np.asarray(super(BaseSystemMLClassifier, self).predict(X))
@@ -300,6 +302,42 @@ class BaseSystemMLClassifier(BaseSystemMLEstimator):
             return accuracy_score(y, predictions)
         else:
             return accuracy_score(np.asarray(y, dtype='str'), np.asarray(predictions, dtype='str'))
+            
+    def loadLabels(self, file_path):
+        createJavaObject(sc, 'dummy')
+        utilObj = sc._jvm.org.apache.sysml.api.dl.Utils()
+        if utilObj.checkIfFileExists(file_path):
+            df = self.sqlCtx.read.csv(file_path, header=False).toPandas()
+            keys = np.asarray(df._c0, dtype='int')
+            values = np.asarray(df._c1, dtype='str')
+            self.labelMap = {}
+            self.le = None
+            for i in range(len(keys)):
+                self.labelMap[int(keys[i])] = values[i]
+            # self.encode(classes) # Giving incorrect results
+        
+    def save(self, outputDir, format='binary', sep='/'):
+        """
+        Save a trained model.
+        
+        Parameters
+        ----------
+        outputDir: Directory to save the model to
+        format: optional format (default: 'binary')
+        sep: seperator to use (default: '/')
+        """
+        if self.model != None:
+            self.model.save(outputDir, format, sep)
+            if self.le is not None:
+                labelMapping = dict(enumerate(list(self.le.classes_), 1))
+            else:
+                labelMapping = self.labelMap
+            lStr = [ [ int(k), str(labelMapping[k]) ] for k in labelMapping ]
+            df = self.sqlCtx.createDataFrame(lStr)
+            df.write.csv(outputDir + sep + 'labels.txt', mode='overwrite', header=False)
+        else:
+            raise Exception('Cannot save as you need to train the model first using fit')
+        return self
 
 class BaseSystemMLRegressor(BaseSystemMLEstimator):
 
@@ -319,6 +357,22 @@ class BaseSystemMLRegressor(BaseSystemMLEstimator):
         y: NumPy ndarray, Pandas DataFrame, scipy sparse matrix
         """
         return r2_score(y, self.predict(X), multioutput='variance_weighted')
+        
+    def save(self, outputDir, format='binary', sep='/'):
+        """
+        Save a trained model.
+        
+        Parameters
+        ----------
+        outputDir: Directory to save the model to
+        format: optional format (default: 'binary')
+        sep: seperator to use (default: '/')
+        """
+        if self.model != None:
+            self.model.save(outputDir, format, sep)
+        else:
+            raise Exception('Cannot save as you need to train the model first using fit')
+        return self
 
 
 class LogisticRegression(BaseSystemMLClassifier):
@@ -416,6 +470,17 @@ class LogisticRegression(BaseSystemMLClassifier):
         if solver != 'newton-cg':
             raise Exception('Only newton-cg solver supported')
 
+    def load(self, weights=None):
+        """
+        Load a pretrained model. 
+
+        Parameters
+        ----------
+        weights: directory whether learned weights are stored (default: None)
+        """
+        self.weights = weights
+        self.model = self.sc._jvm.org.apache.sysml.api.ml.LinearRegressionModel(self.estimator)
+        self.loadLabels(weights + '/labels.txt')
 
 class LinearRegression(BaseSystemMLRegressor):
     """
@@ -481,6 +546,18 @@ class LinearRegression(BaseSystemMLRegressor):
         self.estimator.setIcpt(icpt)
         self.transferUsingDF = transferUsingDF
         self.setOutputRawPredictionsToFalse = False
+        
+    def load(self, weights=None):
+        """
+        Load a pretrained model. 
+
+        Parameters
+        ----------
+        weights: directory whether learned weights are stored (default: None)
+        """
+        self.weights = weights
+        self.model = self.sc._jvm.org.apache.sysml.api.ml.LinearRegressionModel(self.estimator)
+        self.loadLabels(weights + '/labels.txt')
 
 
 class SVM(BaseSystemMLClassifier):
@@ -526,6 +603,7 @@ class SVM(BaseSystemMLClassifier):
         self.sc = sparkSession._sc
         self.uid = "svm"
         createJavaObject(self.sc, 'dummy')
+        self.is_multi_class = is_multi_class
         self.estimator = self.sc._jvm.org.apache.sysml.api.ml.SVM(self.uid, self.sc._jsc.sc(), is_multi_class)
         self.estimator.setMaxIter(max_iter)
         if C <= 0:
@@ -537,6 +615,18 @@ class SVM(BaseSystemMLClassifier):
         self.estimator.setIcpt(icpt)
         self.transferUsingDF = transferUsingDF
         self.setOutputRawPredictionsToFalse = False
+        
+    def load(self, weights=None):
+        """
+        Load a pretrained model. 
+
+        Parameters
+        ----------
+        weights: directory whether learned weights are stored (default: None)
+        """
+        self.weights = weights
+        self.model = self.sc._jvm.org.apache.sysml.api.ml.SVMModel(self.estimator, self.is_multi_class)
+        self.loadLabels(weights + '/labels.txt')
 
 
 class NaiveBayes(BaseSystemMLClassifier):
@@ -583,6 +673,18 @@ class NaiveBayes(BaseSystemMLClassifier):
         self.estimator.setLaplace(laplace)
         self.transferUsingDF = transferUsingDF
         self.setOutputRawPredictionsToFalse = False
+        
+    def load(self, weights=None):
+        """
+        Load a pretrained model. 
+
+        Parameters
+        ----------
+        weights: directory whether learned weights are stored (default: None)
+        """
+        self.weights = weights
+        self.model = self.sc._jvm.org.apache.sysml.api.ml.NaiveBayesModel(self.estimator)
+        self.loadLabels(weights + '/labels.txt')
 
 class Caffe2DML(BaseSystemMLClassifier):
     """
@@ -606,7 +708,7 @@ class Caffe2DML(BaseSystemMLClassifier):
     >>> caffe2DML = Caffe2DML(sqlCtx, 'lenet_solver.proto').set(max_iter=500)
     >>> caffe2DML.fit(X, y)
     """
-    def __init__(self, sqlCtx, solver, input_shape, weights=None, ignore_weights=None, transferUsingDF=False, tensorboard_log_dir=None):
+    def __init__(self, sqlCtx, solver, input_shape, transferUsingDF=False, tensorboard_log_dir=None):
         """
         Performs training/prediction for a given caffe network. 
 
@@ -615,8 +717,6 @@ class Caffe2DML(BaseSystemMLClassifier):
         sqlCtx: PySpark SQLContext
         solver: caffe solver file path
         input_shape: 3-element list (number of channels, input height, input width)
-        weights: directory whether learned weights are stored (default: None)
-        ignore_weights: names of layers to not read from the weights directory (list of string, default:None)
         transferUsingDF: whether to pass the input dataset via PySpark DataFrame (default: False)
         tensorboard_log_dir: directory to store the event logs (default: None, we use a temporary directory)
         """
@@ -629,30 +729,28 @@ class Caffe2DML(BaseSystemMLClassifier):
             raise ValueError('Expected input_shape as list of 3 element')
         solver = self.sc._jvm.org.apache.sysml.api.dl.Utils.readCaffeSolver(solver)
         self.estimator = self.sc._jvm.org.apache.sysml.api.dl.Caffe2DML(self.sc._jsc.sc(), solver, str(input_shape[0]), str(input_shape[1]), str(input_shape[2]))
-        self.weights = weights
-        if weights is not None:
-            self.estimator.setInput("$weights", str(weights))
-            self._loadLabelTxt()
-            if ignore_weights is not None:
-                self.estimator.setWeightsToIgnore(ignore_weights)
         self.transferUsingDF = transferUsingDF
         self.setOutputRawPredictionsToFalse = False
         self.visualize_called = False
         if tensorboard_log_dir is not None:
             self.estimator.setTensorBoardLogDir(tensorboard_log_dir)
     
-    def _loadLabelTxt(self, format="binary", sep="/"):
-        if(self.weights is not None):
-            self.model = self.sc._jvm.org.apache.sysml.api.dl.Caffe2DMLModel(self.estimator)
-            df = self.sqlCtx.read.csv(self.weights + sep + 'labels.txt', header=False).toPandas()
-            keys = np.asarray(df._c0, dtype='int')
-            values = np.asarray(df._c1, dtype='str')
-            self.labelMap = {}
-            self.le = None
-            for i in range(len(keys)):
-                self.labelMap[int(keys[i])] = values[i]
-            # self.encode(classes) # Giving incorrect results
-    
+    def load(self, weights=None, ignore_weights=None):
+        """
+        Load a pretrained model. 
+
+        Parameters
+        ----------
+        weights: directory whether learned weights are stored (default: None)
+        ignore_weights: names of layers to not read from the weights directory (list of string, default:None)
+        """
+        self.weights = weights
+        self.estimator.setInput("$weights", str(weights))
+        self.model = self.sc._jvm.org.apache.sysml.api.dl.Caffe2DMLModel(self.estimator)
+        self.loadLabels(weights + '/labels.txt')
+        if ignore_weights is not None:
+            self.estimator.setWeightsToIgnore(ignore_weights)
+            
     def set(self, num_classes=None, debug=None):
         """
         Set input to Caffe2DML
@@ -691,25 +789,4 @@ class Caffe2DML(BaseSystemMLClassifier):
         self.visualize_called = True
         return self
     
-    def save(self, outputDir, format='binary', sep='/'):
-        """
-        Save a trained model.
-        
-        Parameters
-        ----------
-        outputDir: Directory to save the model to
-        format: optional format (default: 'binary')
-        sep: seperator to use (default: '/')
-        """
-        if self.model != None:
-            self.model.save(outputDir, format, sep)
-            if self.le is not None:
-                labelMapping = dict(enumerate(list(self.le.classes_), 1))
-            else:
-                labelMapping = self.labelMap
-            lStr = [ [ int(k), str(labelMapping[k]) ] for k in labelMapping ]
-            df = self.sqlCtx.createDataFrame(lStr)
-            df.write.csv(outputDir + sep + 'labels.txt', mode='overwrite', header=False)
-        else:
-            raise Exception('Cannot save as you need to train the model first using fit')
-        return self
+    

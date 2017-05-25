@@ -54,15 +54,16 @@ class LogisticRegression(override val uid: String, val sc: SparkContext) extends
     copyValues(that, extra)
   }
   
+  var mloutput: MLResults = null
   // Note: will update the y_mb as this will be called by Python mllearn
   def fit(X_mb: MatrixBlock, y_mb: MatrixBlock): LogisticRegressionModel = {
-    val ret = baseFit(X_mb, y_mb, sc)
-    new LogisticRegressionModel("log")(ret, sc)
+    mloutput = baseFit(X_mb, y_mb, sc)
+    new LogisticRegressionModel(this)
   }
   
   def fit(df: ScriptsUtils.SparkDataType): LogisticRegressionModel = {
-    val ret = baseFit(df, sc)
-    new LogisticRegressionModel("log")(ret, sc)
+    mloutput = baseFit(df, sc)
+    new LogisticRegressionModel(this)
   }
   
   
@@ -98,7 +99,9 @@ class LogisticRegressionModel(override val uid: String)(
   }
   var outputRawPredictions = true
   def setOutputRawPredictions(outRawPred:Boolean): Unit = { outputRawPredictions = outRawPred }
-  
+  def this(estimator:LogisticRegression) =  {
+  	this("model")(estimator.mloutput, estimator.sc)
+  }
   def getPredictionScript(mloutput: MLResults, isSingleNode:Boolean): (Script, String) =
     PredictionUtils.getGLMPredictionScript(mloutput.getBinaryBlockMatrix("B_out"), isSingleNode, 3)
    
