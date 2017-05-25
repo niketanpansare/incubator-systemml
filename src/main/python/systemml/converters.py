@@ -37,7 +37,7 @@ def getNumCols(numPyArr):
     else:
         return numPyArr.shape[1]
 
-def convert_caffemodel(sc, network_file, caffemodel_file, output_dir, format="binary"):
+def convert_caffemodel(sc, deploy_file, caffemodel_file, output_dir, format="binary"):
     """
     Saves the weights and bias in the caffemodel file to output_dir in the specified format. 
     This method does not requires caffe to be installed.
