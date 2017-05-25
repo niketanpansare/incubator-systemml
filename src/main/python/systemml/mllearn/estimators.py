@@ -479,7 +479,7 @@ class LogisticRegression(BaseSystemMLClassifier):
         weights: directory whether learned weights are stored (default: None)
         """
         self.weights = weights
-        self.model = self.sc._jvm.org.apache.sysml.api.ml.LinearRegressionModel(self.estimator)
+        self.model = self.sc._jvm.org.apache.sysml.api.ml.LogisticRegressionModel(self.estimator)
         self.loadLabels(weights + '/labels.txt')
 
 class LinearRegression(BaseSystemMLRegressor):
