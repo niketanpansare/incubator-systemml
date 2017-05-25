@@ -59,7 +59,8 @@ def convert_caffemodel(sc, deploy_file, caffemodel_file, output_dir, format="bin
     format: string
         Format of the weights and bias (can be binary, csv or text)
     """
-    sc._jvm.org.apache.sysml.api.dl.Utils.saveCaffeModelFile(sc._jsc, deploy_file, caffemodel_file, output_dir, format)
+    utilObj = sc._jvm.org.apache.sysml.api.dl.Utils()
+    utilObj.saveCaffeModelFile(sc._jsc, deploy_file, caffemodel_file, output_dir, format)
 
 
 def convert_lmdb_to_jpeg(lmdb_img_file, output_dir):
