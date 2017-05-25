@@ -47,11 +47,13 @@ class CaffeNetwork(netFilePath:String, val currentPhase:Phase,
      var numChannels:String, var height:String, var width:String
     ) extends Network {
   private def isIncludedInCurrentPhase(l:LayerParameter): Boolean = {
-    if(l.getIncludeCount == 0) true else l.getIncludeList.filter(r => r.hasPhase() && r.getPhase != currentPhase).length == 0
+    if(currentPhase == null) return true // while deployment
+    else if(l.getIncludeCount == 0) true 
+    else l.getIncludeList.filter(r => r.hasPhase() && r.getPhase != currentPhase).length == 0
   }
   private var id = 1
   def this(deployFilePath:String) {
-    this(deployFilePath, Phase.TEST, null, null, null)
+    this(deployFilePath, null, null, null, null)
   }
   // --------------------------------------------------------------------------------
   private var _net:NetParameter = Utils.readCaffeNet(netFilePath)
