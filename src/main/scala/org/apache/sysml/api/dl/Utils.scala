@@ -138,7 +138,13 @@ object Utils {
 	  readCaffeNet(new CaffeNetwork(deployFilePath), deployFilePath, caffeModelFilePath, inputVariables)
 	  val ml = new MLContext(sc)
 	  val dmlScript = new StringBuilder
-	  inputVariables.keys.map(input => dmlScript.append("write(" + input + ", \"" + input + ".mtx\", format=\"" + format + "\");\n"))
+	  if(inputVariables.keys.size == 0)
+	    throw new DMLRuntimeException("No weights found in the file " + caffeModelFilePath)
+	  for(input <- inputVariables.keys) {
+	    dmlScript.append("write(" + input + ", \"" + input + ".mtx\", format=\"" + format + "\");\n")
+	  }
+	  if(Caffe2DML.LOG.isDebugEnabled())
+	    Caffe2DML.LOG.debug("Executing the script:" + dmlScript.toString)
 	  val script = org.apache.sysml.api.mlcontext.ScriptFactory.dml(dmlScript.toString()).in(inputVariables)
 	  ml.execute(script)
 	}
@@ -158,6 +164,7 @@ object Utils {
 	  for(layer <- net1.getLayerList) {
 	    if(layer.getBlobsCount == 0) {
 	      // No weight or bias
+	      Caffe2DML.LOG.debug("The layer:" + layer.getName + " has no blobs")
 	    }
 	    else if(layer.getBlobsCount == 2) {
 	      // Both weight and bias
