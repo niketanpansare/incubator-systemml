@@ -51,6 +51,15 @@ Lenet is a simple convolutional neural network, proposed by Yann LeCun in 1998. 
 Similar to Caffe, the network has been modified to add dropout. 
 For more detail, please see http://yann.lecun.com/exdb/lenet/
 
+The [solver specification](https://raw.githubusercontent.com/apache/incubator-systemml/master/scripts/nn/examples/caffe2dml/models/mnist_lenet/lenet_solver.proto)
+specifies to Caffe2DML to use following configuration when generating the training DML script:  
+- `type: "SGD", momentum: 0.9`: Stochastic Gradient Descent with momentum optimizer with `momentum=0.9`.
+- `lr_policy: "exp", gamma: 0.95, base_lr: 0.01`: Use exponential decay learning rate policy (`base_lr * gamma ^ iter`).
+- `display: 100`: Display training loss after every 100 iterations.
+- `test_interval: 500`: Display validation loss after every 500 iterations.
+- `test_iter: 10`: Validation data size = 10 * BATCH_SIZE.
+ 
+
 ```python
 from mlxtend.data import mnist_data
 import numpy as np
@@ -131,6 +140,16 @@ caffe2dmlObject.setGPU(True)
 caffe2dmlObject.setForceGPU(True)
 ```
 
+#### What is lr_policy in the solver specification ?
+
+The parameter `lr_policy` specifies the learning rate decay policy. Caffe2DML supports following policies:
+- `fixed`: always return `base_lr`.
+- `step`: return `base_lr * gamma ^ (floor(iter / step))`
+- `exp`: return `base_lr * gamma ^ iter`
+- `inv`: return `base_lr * (1 + gamma * iter) ^ (- power)`
+- `poly`: the effective learning rate follows a polynomial decay, to be zero by the max_iter. return `base_lr (1 - iter/max_iter) ^ (power)`
+- `sigmoid`: the effective learning rate follows a sigmod decay return b`ase_lr ( 1/(1 + exp(-gamma * (iter - stepsize))))`
+      
 #### How to set batch size ?
 
 Batch size is set in `data_param` of the Data layer:
