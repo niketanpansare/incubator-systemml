@@ -59,6 +59,7 @@ def convert_caffemodel(sc, deploy_file, caffemodel_file, output_dir, format="bin
     format: string
         Format of the weights and bias (can be binary, csv or text)
     """
+    createJavaObject(sc, 'dummy')
     utilObj = sc._jvm.org.apache.sysml.api.dl.Utils()
     utilObj.saveCaffeModelFile(sc._jsc, deploy_file, caffemodel_file, output_dir, format)
 
