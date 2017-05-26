@@ -124,7 +124,8 @@ trait BaseSystemMLEstimatorModel extends BaseSystemMLEstimatorOrModel {
   def getPredictionScript(isSingleNode:Boolean): (Script, String)
   def baseEstimator():BaseSystemMLEstimator
   def modelVariables():List[String]
-  def load(sc:JavaSparkContext, outputDir:String, sep:String="/"):Unit = {
+  // self.model.load(self.sc._jsc, weights, format, sep)
+  def load(sc:JavaSparkContext, outputDir:String, sep:String):Unit = {
   	val dmlScript = new StringBuilder
   	dmlScript.append("print(\"Loading the model from " + outputDir + "...\")\n")
 		for(varName <- modelVariables) {

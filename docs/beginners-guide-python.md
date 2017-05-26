@@ -204,7 +204,7 @@ will use `mllearn` API described in the next section.
 
 ## Invoke SystemML's algorithms
 
-SystemML also exposes a subpackage `mllearn`. This subpackage allows Python users to invoke SystemML algorithms
+SystemML also exposes a subpackage [mllearn](https://apache.github.io/incubator-systemml/python-reference#mllearn-api). This subpackage allows Python users to invoke SystemML algorithms
 using Scikit-learn or MLPipeline API.  
 
 ### Scikit-learn interface

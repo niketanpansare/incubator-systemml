@@ -316,18 +316,17 @@ class BaseSystemMLClassifier(BaseSystemMLEstimator):
                 self.labelMap[int(keys[i])] = values[i]
             # self.encode(classes) # Giving incorrect results
         
-    def load(self, weights=None, format='binary', sep='/'):
+    def load(self, weights=None, sep='/'):
         """
         Load a pretrained model. 
 
         Parameters
         ----------
         weights: directory whether learned weights are stored (default: None)
-        format: optional format (default: 'binary')
         sep: seperator to use (default: '/')
         """
         self.weights = weights
-        self.model.load(self.sc._jsc, weights, format, sep)
+        self.model.load(self.sc._jsc, weights, sep)
         self.loadLabels(weights + '/labels.txt')
         
     def save(self, outputDir, format='binary', sep='/'):
@@ -372,18 +371,17 @@ class BaseSystemMLRegressor(BaseSystemMLEstimator):
         """
         return r2_score(y, self.predict(X), multioutput='variance_weighted')
         
-    def load(self, weights=None, format='binary', sep='/'):
+    def load(self, weights=None, sep='/'):
         """
         Load a pretrained model. 
 
         Parameters
         ----------
         weights: directory whether learned weights are stored (default: None)
-        format: optional format (default: 'binary')
         sep: seperator to use (default: '/')
         """
         self.weights = weights
-        self.model.load(self.sc._jsc, weights, format, sep)
+        self.model.load(self.sc._jsc, weights, sep)
 
     def save(self, outputDir, format='binary', sep='/'):
         """
@@ -716,21 +714,20 @@ class Caffe2DML(BaseSystemMLClassifier):
         if tensorboard_log_dir is not None:
             self.estimator.setTensorBoardLogDir(tensorboard_log_dir)
 
-    def load(self, weights=None, format='binary', sep='/', ignore_weights=None):
+    def load(self, weights=None, sep='/', ignore_weights=None):
         """
         Load a pretrained model. 
 
         Parameters
         ----------
         weights: directory whether learned weights are stored (default: None)
-        format: optional format (default: 'binary')
         sep: seperator to use (default: '/')
         ignore_weights: names of layers to not read from the weights directory (list of string, default:None)
         """
         self.weights = weights
         self.estimator.setInput("$weights", str(weights))
         self.model = self.sc._jvm.org.apache.sysml.api.dl.Caffe2DMLModel(self.estimator)
-        self.model.load(self.sc._jsc, weights, format, sep)
+        self.model.load(self.sc._jsc, weights, sep)
         self.loadLabels(weights + '/labels.txt')
         if ignore_weights is not None:
             self.estimator.setWeightsToIgnore(ignore_weights)
