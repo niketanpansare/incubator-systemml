@@ -283,11 +283,14 @@ class BaseSystemMLClassifier(BaseSystemMLEstimator):
         
     def predict(self, X):
         predictions = super(BaseSystemMLClassifier, self).predict(X)
-        try:
-            return np.asarray(predictions, dtype='double')
-        except ValueError:
-            print(type(predictions))
-            return np.asarray(predictions, dtype='str')
+        if type(predictions) ==  pyspark.sql.dataframe.DataFrame:
+            return predictions
+        else:
+            try:
+                return np.asarray(predictions, dtype='double')
+            except ValueError:
+                print(type(predictions))
+                return np.asarray(predictions, dtype='str')
             
     def score(self, X, y):
         """
