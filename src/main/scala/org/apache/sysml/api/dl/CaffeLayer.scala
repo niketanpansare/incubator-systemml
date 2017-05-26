@@ -138,13 +138,13 @@ trait IsLossLayer extends CaffeLayer {
 }
 
 trait HasWeight extends CaffeLayer {
-  override def weight = "W" + id
-  override def dWeight = "dW" + id
+  override def weight = param.getName + "_weight"
+  override def dWeight = param.getName + "_dWeight"
 }
 
 trait HasBias extends CaffeLayer {
-  override def bias = "b" + id
-  override def dBias = "db" + id
+  override def bias = param.getName + "_bias"
+  override def dBias = param.getName + "_dBias"
 }
 
 class Data(val param:LayerParameter, val id:Int, val net:CaffeNetwork, val numChannels:String, val height:String, val width:String) extends CaffeLayer {

@@ -156,12 +156,12 @@ class Caffe2DML(val sc: SparkContext, val solverParam:Caffe.SolverParameter,
   }
   // Note: will update the y_mb as this will be called by Python mllearn
   def fit(X_mb: MatrixBlock, y_mb: MatrixBlock): Caffe2DMLModel = {
-    val ret = baseFit(X_mb, y_mb, sc)
-    new Caffe2DMLModel(ret, Utils.numClasses(net), sc, solver, net, lrPolicy, this)
+    mloutput = baseFit(X_mb, y_mb, sc)
+    new Caffe2DMLModel(this)
   }
   def fit(df: ScriptsUtils.SparkDataType): Caffe2DMLModel = {
-    val ret = baseFit(df, sc)
-    new Caffe2DMLModel(ret, Utils.numClasses(net), sc, solver, net, lrPolicy, this)
+    mloutput = baseFit(df, sc)
+    new Caffe2DMLModel(this)
   }
 	// --------------------------------------------------------------
   
@@ -439,23 +439,14 @@ class Caffe2DMLModel(val mloutput: MLResults,
   }
   // --------------------------------------------------------------
   
-  def save(outputDir:String, format:String="binary", sep:String="/"):Unit = {
-	  if(mloutput == null) throw new DMLRuntimeException("Cannot save as you need to train the model first using fit")
-	  val dmlScript = new StringBuilder
-	  dmlScript.append("print(\"Saving the model to " + outputDir + "...\")\n")
-	  net.getLayers.map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => dmlScript.append(write(l.weight, outputDir + sep + l.param.getName + "_weight.mtx", format)))
-	  net.getLayers.map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => dmlScript.append(write(l.bias, outputDir + sep + l.param.getName + "_bias.mtx", format)))
-	  
-	  val script = dml(dmlScript.toString)
-	  net.getLayers.map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => script.in(l.weight, mloutput.getBinaryBlockMatrix(l.weight)))
-	  net.getLayers.map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => script.in(l.bias, mloutput.getBinaryBlockMatrix(l.bias)))
-	  val ml = new MLContext(sc)
-	  ml.execute(script)
-	}
+  def modelVariables():List[String] = {
+    net.getLayers.map(net.getCaffeLayer(_)).filter(_.weight != null).map(_.weight) ++
+    net.getLayers.map(net.getCaffeLayer(_)).filter(_.bias != null).map(_.bias)
+  }
     
   // ================================================================================================
   // The below method parses the provided network and solver file and generates DML script.
-  def getPredictionScript(mloutput: MLResults, isSingleNode:Boolean): (Script, String)  = {
+  def getPredictionScript(isSingleNode:Boolean): (Script, String)  = {
     val startPredictionTime = System.nanoTime()
     
 	  reset                                  // Reset the state of DML generator for training script.
@@ -523,11 +514,13 @@ class Caffe2DMLModel(val mloutput: MLResults,
   }
   // ================================================================================================
   
+  def baseEstimator():BaseSystemMLEstimator = estimator
+  
   // Prediction
   def transform(X: MatrixBlock): MatrixBlock = {
-	  baseTransform(X, mloutput, sc, "Prob")
+	  baseTransform(X, sc, "Prob")
   }
   def transform(df: ScriptsUtils.SparkDataType): DataFrame = {
-	  baseTransform(df, mloutput, sc, "Prob")
+	  baseTransform(df, sc, "Prob")
   }
 }

@@ -304,10 +304,10 @@ class BaseSystemMLClassifier(BaseSystemMLEstimator):
             return accuracy_score(np.asarray(y, dtype='str'), np.asarray(predictions, dtype='str'))
             
     def loadLabels(self, file_path):
-        createJavaObject(sc, 'dummy')
-        utilObj = sc._jvm.org.apache.sysml.api.dl.Utils()
+        createJavaObject(self.sc, 'dummy')
+        utilObj = self.sc._jvm.org.apache.sysml.api.dl.Utils()
         if utilObj.checkIfFileExists(file_path):
-            df = self.sqlCtx.read.csv(file_path, header=False).toPandas()
+            df = self.sparkSession.sqlContext.read.csv(file_path, header=False).toPandas()
             keys = np.asarray(df._c0, dtype='int')
             values = np.asarray(df._c1, dtype='str')
             self.labelMap = {}
@@ -333,7 +333,7 @@ class BaseSystemMLClassifier(BaseSystemMLEstimator):
             else:
                 labelMapping = self.labelMap
             lStr = [ [ int(k), str(labelMapping[k]) ] for k in labelMapping ]
-            df = self.sqlCtx.createDataFrame(lStr)
+            df = self.sparkSession.sqlContext.createDataFrame(lStr)
             df.write.csv(outputDir + sep + 'labels.txt', mode='overwrite', header=False)
         else:
             raise Exception('Cannot save as you need to train the model first using fit')
@@ -708,20 +708,20 @@ class Caffe2DML(BaseSystemMLClassifier):
     >>> caffe2DML = Caffe2DML(sqlCtx, 'lenet_solver.proto').set(max_iter=500)
     >>> caffe2DML.fit(X, y)
     """
-    def __init__(self, sqlCtx, solver, input_shape, transferUsingDF=False, tensorboard_log_dir=None):
+    def __init__(self, sparkSession, solver, input_shape, transferUsingDF=False, tensorboard_log_dir=None):
         """
         Performs training/prediction for a given caffe network. 
 
         Parameters
         ----------
-        sqlCtx: PySpark SQLContext
+        sparkSession: PySpark SparkSession
         solver: caffe solver file path
         input_shape: 3-element list (number of channels, input height, input width)
         transferUsingDF: whether to pass the input dataset via PySpark DataFrame (default: False)
         tensorboard_log_dir: directory to store the event logs (default: None, we use a temporary directory)
         """
-        self.sqlCtx = sqlCtx
-        self.sc = sqlCtx._sc
+        self.sparkSession = sparkSession
+        self.sc = sparkSession._sc
         createJavaObject(self.sc, 'dummy')
         self.uid = "Caffe2DML"
         self.model = None

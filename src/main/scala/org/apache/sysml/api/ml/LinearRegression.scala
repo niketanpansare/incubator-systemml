@@ -48,7 +48,7 @@ class LinearRegression(override val uid: String, val sc: SparkContext, val solve
   def setRegParam(value: Double) = set(regParam, value)
   def setTol(value: Double) = set(tol, value)
   
-  var mloutput: MLResults = null
+
   override def copy(extra: ParamMap): Estimator[LinearRegressionModel] = {
     val that = new LinearRegression(uid, sc, solver)
     copyValues(that, extra)
@@ -85,22 +85,26 @@ class LinearRegression(override val uid: String, val sc: SparkContext, val solve
   
 }
 
-class LinearRegressionModel(override val uid: String)(val mloutput: MLResults, val sc: SparkContext) extends Model[LinearRegressionModel] with HasIcpt
+class LinearRegressionModel(override val uid: String)(estimator:LinearRegression, val sc: SparkContext) extends Model[LinearRegressionModel] with HasIcpt
     with HasRegParam with HasTol with HasMaxOuterIter with BaseSystemMLRegressorModel {
   override def copy(extra: ParamMap): LinearRegressionModel = {
-    val that = new LinearRegressionModel(uid)(mloutput, sc)
+    val that = new LinearRegressionModel(uid)(estimator, sc)
     copyValues(that, extra)
   }
   
+  def baseEstimator():BaseSystemMLEstimator = estimator
+  
   def this(estimator:LinearRegression) =  {
-  	this("model")(estimator.mloutput, estimator.sc)
+  	this("model")(estimator, estimator.sc)
   }
   
-  def getPredictionScript(mloutput: MLResults, isSingleNode:Boolean): (Script, String) =
-    PredictionUtils.getGLMPredictionScript(mloutput.getBinaryBlockMatrix("beta_out"), isSingleNode)
+  def getPredictionScript(isSingleNode:Boolean): (Script, String) =
+    PredictionUtils.getGLMPredictionScript(estimator.mloutput.getBinaryBlockMatrix("beta_out"), isSingleNode)
   
-  def transform(df: ScriptsUtils.SparkDataType): DataFrame = baseTransform(df, mloutput, sc, "means")
+  def modelVariables():List[String] = List[String]("beta_out")
   
-  def transform(X: MatrixBlock): MatrixBlock =  baseTransform(X, mloutput, sc, "means")
+  def transform(df: ScriptsUtils.SparkDataType): DataFrame = baseTransform(df, sc, "means")
+  
+  def transform(X: MatrixBlock): MatrixBlock =  baseTransform(X, sc, "means")
   
 }
