@@ -327,7 +327,7 @@ class BaseSystemMLClassifier(BaseSystemMLEstimator):
         sep: seperator to use (default: '/')
         """
         if self.model != None:
-            self.model.save(outputDir, format, sep)
+            self.model.save(self.sc._jsc, outputDir, format, sep)
             if self.le is not None:
                 labelMapping = dict(enumerate(list(self.le.classes_), 1))
             else:
