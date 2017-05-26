@@ -282,10 +282,11 @@ class BaseSystemMLClassifier(BaseSystemMLEstimator):
             return y
         
     def predict(self, X):
-        predictions = np.asarray(super(BaseSystemMLClassifier, self).predict(X))
+        predictions = super(BaseSystemMLClassifier, self).predict(X)
         try:
             return np.asarray(predictions, dtype='double')
         except ValueError:
+            print(type(predictions))
             return np.asarray(predictions, dtype='str')
             
     def score(self, X, y):

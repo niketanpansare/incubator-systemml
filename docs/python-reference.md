@@ -154,56 +154,59 @@ array([[-60.],
 ### Design Decisions:
 
 1.  Until eval() method is invoked, we create an AST (not exposed to
-    the user) that consist of unevaluated operations and data
-    required by those operations. As an anology, a spark user can
-    treat eval() method similar to calling RDD.persist() followed by
-    RDD.count().
+the user) that consist of unevaluated operations and data
+required by those operations. As an anology, a spark user can
+treat eval() method similar to calling RDD.persist() followed by
+RDD.count().
+
 2.  The AST consist of two kinds of nodes: either of type matrix or
-    of type DMLOp. Both these classes expose \_visit method, that
-    helps in traversing the AST in DFS manner.
+of type DMLOp. Both these classes expose \_visit method, that
+helps in traversing the AST in DFS manner.
+
 3.  A matrix object can either be evaluated or not. If evaluated,
-    the attribute 'data' is set to one of the supported types (for
-    example: NumPy array or DataFrame). In this case, the attribute
-    'op' is set to None. If not evaluated, the attribute 'op' which
-    refers to one of the intermediate node of AST and if of type
-    DMLOp. In this case, the attribute 'data' is set to None.
+the attribute 'data' is set to one of the supported types (for
+example: NumPy array or DataFrame). In this case, the attribute
+'op' is set to None. If not evaluated, the attribute 'op' which
+refers to one of the intermediate node of AST and if of type
+DMLOp. In this case, the attribute 'data' is set to None.
 
 5.  DMLOp has an attribute 'inputs' which contains list of matrix
-    objects or DMLOp.
+objects or DMLOp.
 
 6.  To simplify the traversal, every matrix object is considered
-    immutable and an matrix operations creates a new matrix object.
-    As an example: m1 = sml.matrix(np.ones((3,3))) creates a matrix
-    object backed by 'data=(np.ones((3,3))'. m1 = m1 \* 2 will
-    create a new matrix object which is now backed by 'op=DMLOp( ...
-    )' whose input is earlier created matrix object.
+immutable and an matrix operations creates a new matrix object.
+As an example: m1 = sml.matrix(np.ones((3,3))) creates a matrix
+object backed by 'data=(np.ones((3,3))'. m1 = m1 \* 2 will
+create a new matrix object which is now backed by 'op=DMLOp( ...)' 
+whose input is earlier created matrix object.
 
 7.  Left indexing (implemented in \_\_setitem\_\_ method) is a
-    special case, where Python expects the existing object to be
-    mutated. To ensure the above property, we make deep copy of
-    existing object and point any references to the left-indexed
-    matrix to the newly created object. Then the left-indexed matrix
-    is set to be backed by DMLOp consisting of following pydml:
-    left-indexed-matrix = new-deep-copied-matrix
-    left-indexed-matrix[index] = value
+special case, where Python expects the existing object to be
+mutated. To ensure the above property, we make deep copy of
+existing object and point any references to the left-indexed
+matrix to the newly created object. Then the left-indexed matrix
+is set to be backed by DMLOp consisting of following pydml:
+left-indexed-matrix = new-deep-copied-matrix
+left-indexed-matrix[index] = value
 
 8.  Please use m.print\_ast() and/or type m for debugging. Here is a
-    sample session:
+sample session:
 
-        >>> npm = np.ones((3,3))
-        >>> m1 = sml.matrix(npm + 3)
-        >>> m2 = sml.matrix(npm + 5)
-        >>> m3 = m1 + m2
-        >>> m3
-        mVar2 = load(" ", format="csv")
-        mVar1 = load(" ", format="csv")
-        mVar3 = mVar1 + mVar2
-        save(mVar3, " ")
-        >>> m3.print_ast()
-        - [mVar3] (op).
-          - [mVar1] (data).
-          - [mVar2] (data).    
-
+```python
+>>> npm = np.ones((3,3))
+>>> m1 = sml.matrix(npm + 3)
+>>> m2 = sml.matrix(npm + 5)
+>>> m3 = m1 + m2
+>>> m3
+mVar2 = load(" ", format="csv")
+mVar1 = load(" ", format="csv")
+mVar3 = mVar1 + mVar2
+save(mVar3, " ")
+>>> m3.print_ast()
+- [mVar3] (op).
+  - [mVar1] (data).
+  - [mVar2] (data).    
+```
 
 ## MLContext API
 
@@ -239,24 +242,68 @@ beta = ml.execute(script).get('B_out').toNumPy()
 
 ## mllearn API
 
+
+
 ### Usage
+
+In the below example, we invoke SystemML's [Logistic Regression](https://apache.github.io/incubator-systemml/algorithms-classification.html#multinomial-logistic-regression)
+algorithm on digits datasets.
 
 ```python
 # Scikit-learn way
 from sklearn import datasets, neighbors
 from systemml.mllearn import LogisticRegression
-from pyspark.sql import SQLContext
-sqlCtx = SQLContext(sc)
 digits = datasets.load_digits()
 X_digits = digits.data
-y_digits = digits.target 
+y_digits = digits.target
 n_samples = len(X_digits)
-X_train = X_digits[:.9 * n_samples]
-y_train = y_digits[:.9 * n_samples]
-X_test = X_digits[.9 * n_samples:]
-y_test = y_digits[.9 * n_samples:]
-logistic = LogisticRegression(sqlCtx)
+X_train = X_digits[:int(.9 * n_samples)]
+y_train = y_digits[:int(.9 * n_samples)]
+X_test = X_digits[int(.9 * n_samples):]
+y_test = y_digits[int(.9 * n_samples):]
+logistic = LogisticRegression(spark)
 print('LogisticRegression score: %f' % logistic.fit(X_train, y_train).score(X_test, y_test))
+```
+
+Output:
+
+```bash
+LogisticRegression score: 0.927778
+```
+
+You can also save the trained model and load it later for prediction:
+
+```python
+# Assuming logistic.fit(X_train, y_train) is already invoked
+logistic.save('logistic_model')
+new_logistic = LogisticRegression(spark)
+new_logistic.load('logistic_model')
+print('LogisticRegression score: %f' % new_logistic.score(X_test, y_test))
+```
+
+#### Passing PySpark DataFrame
+
+To train the above algorithm on larger dataset, we can load the dataset into DataFrame and pass it to the `fit` method:
+
+```python
+from sklearn import datasets
+from systemml.mllearn import LogisticRegression
+import pandas as pd
+from sklearn.metrics import accuracy_score
+import systemml as sml
+digits = datasets.load_digits()
+X_digits = digits.data
+y_digits = digits.target
+n_samples = len(X_digits)
+# Split the data into training/testing sets and convert to PySpark DataFrame
+df_train = sml.convertToLabeledDF(sqlCtx, X_digits[:int(.9 * n_samples)], y_digits[:int(.9 * n_samples)])
+X_test = spark.createDataFrame(pd.DataFrame(X_digits[int(.9 * n_samples):]))
+logistic = LogisticRegression(spark)
+logistic.fit(df_train)
+y_predicted = logistic.predict(X_test)
+y_predicted = y_predicted.select('prediction').toPandas().as_matrix().flatten()
+y_test = y_digits[int(.9 * n_samples):]
+print('LogisticRegression score: %f' % accuracy_score(y_test, y_predicted))
 ```
 
 Output:
@@ -265,178 +312,58 @@ Output:
 LogisticRegression score: 0.922222
 ```
 
-### Reference documentation
+#### MLPipeline interface
 
- *class*`systemml.mllearn.estimators.LinearRegression`(*sqlCtx*, *fit\_intercept=True*, *normalize=False*, *max\_iter=100*, *tol=1e-06*, *C=float("inf")*, *solver='newton-cg'*, *transferUsingDF=False*)(#systemml.mllearn.estimators.LinearRegression "Permalink to this definition")
-:   Bases: `systemml.mllearn.estimators.BaseSystemMLRegressor`{.xref .py
-    .py-class .docutils .literal}
+In the below example, we demonstrate how the same `LogisticRegression` class can allow SystemML to fit seamlessly into 
+large data pipelines.
 
-    Performs linear regression to model the relationship between one
-    numerical response variable and one or more explanatory (feature)
-    variables.
+```python
+# MLPipeline way
+from pyspark.ml import Pipeline
+from systemml.mllearn import LogisticRegression
+from pyspark.ml.feature import HashingTF, Tokenizer
+training = spark.createDataFrame([
+    (0, "a b c d e spark", 1.0),
+    (1, "b d", 2.0),
+    (2, "spark f g h", 1.0),
+    (3, "hadoop mapreduce", 2.0),
+    (4, "b spark who", 1.0),
+    (5, "g d a y", 2.0),
+    (6, "spark fly", 1.0),
+    (7, "was mapreduce", 2.0),
+    (8, "e spark program", 1.0),
+    (9, "a e c l", 2.0),
+    (10, "spark compile", 1.0),
+    (11, "hadoop software", 2.0)
+], ["id", "text", "label"])
+tokenizer = Tokenizer(inputCol="text", outputCol="words")
+hashingTF = HashingTF(inputCol="words", outputCol="features", numFeatures=20)
+lr = LogisticRegression(sqlCtx)
+pipeline = Pipeline(stages=[tokenizer, hashingTF, lr])
+model = pipeline.fit(training)
+test = spark.createDataFrame([
+    (12, "spark i j k"),
+    (13, "l m n"),
+    (14, "mapreduce spark"),
+    (15, "apache hadoop")], ["id", "text"])
+prediction = model.transform(test)
+prediction.show()
+```
 
-        >>> import numpy as np
-        >>> from sklearn import datasets
-        >>> from systemml.mllearn import LinearRegression
-        >>> from pyspark.sql import SQLContext
-        >>> # Load the diabetes dataset
-        >>> diabetes = datasets.load_diabetes()
-        >>> # Use only one feature
-        >>> diabetes_X = diabetes.data[:, np.newaxis, 2]
-        >>> # Split the data into training/testing sets
-        >>> diabetes_X_train = diabetes_X[:-20]
-        >>> diabetes_X_test = diabetes_X[-20:]
-        >>> # Split the targets into training/testing sets
-        >>> diabetes_y_train = diabetes.target[:-20]
-        >>> diabetes_y_test = diabetes.target[-20:]
-        >>> # Create linear regression object
-        >>> regr = LinearRegression(sqlCtx, solver='newton-cg')
-        >>> # Train the model using the training sets
-        >>> regr.fit(diabetes_X_train, diabetes_y_train)
-        >>> # The mean square error
-        >>> print("Residual sum of squares: %.2f" % np.mean((regr.predict(diabetes_X_test) - diabetes_y_test) ** 2))
+Output:
 
- *class*`systemml.mllearn.estimators.LogisticRegression`(*sqlCtx*, *penalty='l2'*, *fit\_intercept=True*, *normalize=False*,  *max\_iter=100*, *max\_inner\_iter=0*, *tol=1e-06*, *C=1.0*, *solver='newton-cg'*, *transferUsingDF=False*)(#systemml.mllearn.estimators.LogisticRegression "Permalink to this definition")
-:   Bases: `systemml.mllearn.estimators.BaseSystemMLClassifier`{.xref
-    .py .py-class .docutils .literal}
-
-    Performs both binomial and multinomial logistic regression.
-
-    Scikit-learn way
-
-        >>> from sklearn import datasets, neighbors
-        >>> from systemml.mllearn import LogisticRegression
-        >>> from pyspark.sql import SQLContext
-        >>> sqlCtx = SQLContext(sc)
-        >>> digits = datasets.load_digits()
-        >>> X_digits = digits.data
-        >>> y_digits = digits.target + 1
-        >>> n_samples = len(X_digits)
-        >>> X_train = X_digits[:.9 * n_samples]
-        >>> y_train = y_digits[:.9 * n_samples]
-        >>> X_test = X_digits[.9 * n_samples:]
-        >>> y_test = y_digits[.9 * n_samples:]
-        >>> logistic = LogisticRegression(sqlCtx)
-        >>> print('LogisticRegression score: %f' % logistic.fit(X_train, y_train).score(X_test, y_test))
-
-    MLPipeline way
-
-        >>> from pyspark.ml import Pipeline
-        >>> from systemml.mllearn import LogisticRegression
-        >>> from pyspark.ml.feature import HashingTF, Tokenizer
-        >>> from pyspark.sql import SQLContext
-        >>> sqlCtx = SQLContext(sc)
-        >>> training = sqlCtx.createDataFrame([
-        >>>     (0L, "a b c d e spark", 1.0),
-        >>>     (1L, "b d", 2.0),
-        >>>     (2L, "spark f g h", 1.0),
-        >>>     (3L, "hadoop mapreduce", 2.0),
-        >>>     (4L, "b spark who", 1.0),
-        >>>     (5L, "g d a y", 2.0),
-        >>>     (6L, "spark fly", 1.0),
-        >>>     (7L, "was mapreduce", 2.0),
-        >>>     (8L, "e spark program", 1.0),
-        >>>     (9L, "a e c l", 2.0),
-        >>>     (10L, "spark compile", 1.0),
-        >>>     (11L, "hadoop software", 2.0)
-        >>> ], ["id", "text", "label"])
-        >>> tokenizer = Tokenizer(inputCol="text", outputCol="words")
-        >>> hashingTF = HashingTF(inputCol="words", outputCol="features", numFeatures=20)
-        >>> lr = LogisticRegression(sqlCtx)
-        >>> pipeline = Pipeline(stages=[tokenizer, hashingTF, lr])
-        >>> model = pipeline.fit(training)
-        >>> test = sqlCtx.createDataFrame([
-        >>>     (12L, "spark i j k"),
-        >>>     (13L, "l m n"),
-        >>>     (14L, "mapreduce spark"),
-        >>>     (15L, "apache hadoop")], ["id", "text"])
-        >>> prediction = model.transform(test)
-        >>> prediction.show()
-
- *class*`systemml.mllearn.estimators.SVM`(*sqlCtx*, *fit\_intercept=True*, *normalize=False*, *max\_iter=100*, *tol=1e-06*, *C=1.0*, *is\_multi\_class=False*, *transferUsingDF=False*)(#systemml.mllearn.estimators.SVM "Permalink to this definition")
-:   Bases: `systemml.mllearn.estimators.BaseSystemMLClassifier`{.xref
-    .py .py-class .docutils .literal}
-
-    Performs both binary-class and multiclass SVM (Support Vector
-    Machines).
-
-        >>> from sklearn import datasets, neighbors
-        >>> from systemml.mllearn import SVM
-        >>> from pyspark.sql import SQLContext
-        >>> sqlCtx = SQLContext(sc)
-        >>> digits = datasets.load_digits()
-        >>> X_digits = digits.data
-        >>> y_digits = digits.target 
-        >>> n_samples = len(X_digits)
-        >>> X_train = X_digits[:.9 * n_samples]
-        >>> y_train = y_digits[:.9 * n_samples]
-        >>> X_test = X_digits[.9 * n_samples:]
-        >>> y_test = y_digits[.9 * n_samples:]
-        >>> svm = SVM(sqlCtx, is_multi_class=True)
-        >>> print('LogisticRegression score: %f' % svm.fit(X_train, y_train).score(X_test, y_test))
-
- *class*`systemml.mllearn.estimators.NaiveBayes`(*sqlCtx*, *laplace=1.0*, *transferUsingDF=False*)(#systemml.mllearn.estimators.NaiveBayes "Permalink to this definition")
-:   Bases: `systemml.mllearn.estimators.BaseSystemMLClassifier`{.xref
-    .py .py-class .docutils .literal}
-
-    Performs Naive Bayes.
-
-        >>> from sklearn.datasets import fetch_20newsgroups
-        >>> from sklearn.feature_extraction.text import TfidfVectorizer
-        >>> from systemml.mllearn import NaiveBayes
-        >>> from sklearn import metrics
-        >>> from pyspark.sql import SQLContext
-        >>> sqlCtx = SQLContext(sc)
-        >>> categories = ['alt.atheism', 'talk.religion.misc', 'comp.graphics', 'sci.space']
-        >>> newsgroups_train = fetch_20newsgroups(subset='train', categories=categories)
-        >>> newsgroups_test = fetch_20newsgroups(subset='test', categories=categories)
-        >>> vectorizer = TfidfVectorizer()
-        >>> # Both vectors and vectors_test are SciPy CSR matrix
-        >>> vectors = vectorizer.fit_transform(newsgroups_train.data)
-        >>> vectors_test = vectorizer.transform(newsgroups_test.data)
-        >>> nb = NaiveBayes(sqlCtx)
-        >>> nb.fit(vectors, newsgroups_train.target)
-        >>> pred = nb.predict(vectors_test)
-        >>> metrics.f1_score(newsgroups_test.target, pred, average='weighted')
+```bash
++-------+---+---------------+------------------+--------------------+--------------------+----------+
+|__INDEX| id|           text|             words|            features|         probability|prediction|
++-------+---+---------------+------------------+--------------------+--------------------+----------+
+|    1.0| 12|    spark i j k|  [spark, i, j, k]|(20,[5,6,7],[2.0,...|[0.99999999999975...|       1.0|
+|    2.0| 13|          l m n|         [l, m, n]|(20,[8,9,10],[1.0...|[1.37552128844736...|       2.0|
+|    3.0| 14|mapreduce spark|[mapreduce, spark]|(20,[5,10],[1.0,1...|[0.99860290938153...|       1.0|
+|    4.0| 15|  apache hadoop|  [apache, hadoop]|(20,[9,14],[1.0,1...|[5.41688748236143...|       2.0|
++-------+---+---------------+------------------+--------------------+--------------------+----------+
+```
 
 
-## Utility classes (used internally)
-
-### systemml.classloader 
-
- `systemml.classloader.createJavaObject`(*sc*, *obj\_type*)[](#systemml.classloader.createJavaObject "Permalink to this definition")
-:   Performs appropriate check if SystemML.jar is available and returns
-    the handle to MLContext object on JVM
-
-    sc: SparkContext
-    :   SparkContext
-
-    obj\_type: Type of object to create ('mlcontext' or 'dummy')
-
-### systemml.converters
-
- `systemml.converters.getNumCols`(*numPyArr*)[](#systemml.converters.getNumCols "Permalink to this definition")
-:   
-
- `systemml.converters.convertToMatrixBlock`(*sc*, *src*)[](#systemml.converters.convertToMatrixBlock "Permalink to this definition")
-:   
-
- `systemml.converters.convertToNumPyArr`(*sc*, *mb*)[](#systemml.converters.convertToNumPyArr "Permalink to this definition")
-:   
-
- `systemml.converters.convertToPandasDF`(*X*)[](#systemml.converters.convertToPandasDF "Permalink to this definition")
-:   
-
- `systemml.converters.convertToLabeledDF`(*sqlCtx*, *X*, *y=None*)[](#systemml.converters.convertToLabeledDF "Permalink to this definition")
-:  
-
-### Other classes from systemml.defmatrix
-
- *class*`systemml.defmatrix.DMLOp`(*inputs*, *dml=None*)[](#systemml.defmatrix.DMLOp "Permalink to this definition")
-:   Bases: `object`{.xref .py .py-class .docutils .literal}
-
-    Represents an intermediate node of Abstract syntax tree created to
-    generate the PyDML script
 
 
 ## Troubleshooting Python APIs

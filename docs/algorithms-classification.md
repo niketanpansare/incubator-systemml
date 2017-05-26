@@ -255,8 +255,7 @@ print('LogisticRegression score: %f' % logistic.fit(X_train, y_train).score(X_te
 from pyspark.ml import Pipeline
 from systemml.mllearn import LogisticRegression
 from pyspark.ml.feature import HashingTF, Tokenizer
-from pyspark.sql import SQLContext
-sqlCtx = SQLContext(sc)
+spark = SQLContext(sc)
 training = sqlCtx.createDataFrame([
     (0L, "a b c d e spark", 1.0),
     (1L, "b d", 2.0),
@@ -273,7 +272,7 @@ training = sqlCtx.createDataFrame([
 ], ["id", "text", "label"])
 tokenizer = Tokenizer(inputCol="text", outputCol="words")
 hashingTF = HashingTF(inputCol="words", outputCol="features", numFeatures=20)
-lr = LogisticRegression(sqlCtx)
+lr = LogisticRegression(spark)
 pipeline = Pipeline(stages=[tokenizer, hashingTF, lr])
 model = pipeline.fit(training)
 test = sqlCtx.createDataFrame([
