@@ -43,8 +43,36 @@ and its algorithms without the need to know DML or PyDML. We explain these APIs 
 ## matrix API
 
 The matrix class allows users to perform linear algebra operations in SystemML using a NumPy-like interface.
-This class supports several arithmetic operators (such as +, -, *, /, ^, etc) and also supports most of NumPy's universal functions (i.e. ufuncs).
+This class supports several arithmetic operators (such as +, -, *, /, ^, etc).
 
+matrix class is a python wrapper that implements basic matrix
+operators, matrix functions as well as converters to common Python
+types (for example: Numpy arrays, PySpark DataFrame and Pandas
+DataFrame).
+
+The operators supported are:
+
+1.  Arithmetic operators: +, -, *, /, //, %, \** as well as dot
+    (i.e. matrix multiplication)
+2.  Indexing in the matrix
+3.  Relational/Boolean operators: \<, \<=, \>, \>=, ==, !=, &, \|
+
+In addition, following functions are supported for matrix:
+
+1.  transpose
+2.  Aggregation functions: sum, mean, var, sd, max, min, argmin,
+    argmax, cumsum
+3.  Global statistical built-In functions: exp, log, abs, sqrt,
+    round, floor, ceil, sin, cos, tan, asin, acos, atan, sign, solve
+
+For all the above functions, we always return a two dimensional matrix, especially for aggregation functions with axis. 
+For example: Assuming m1 is a matrix of (3, n), NumPy returns a 1d vector of dimension (3,) for operation m1.sum(axis=1)
+whereas SystemML returns a 2d matrix of dimension (3, 1).
+
+Note: an evaluated matrix contains a data field computed by eval
+method as DataFrame or NumPy array.
+
+It is important to note that matrix class also supports most of NumPy's universal functions (i.e. ufuncs).
 The current version of NumPy explicitly disables overriding ufunc, but this should be enabled in next release. 
 Until then to test above code, please use:
 
@@ -123,252 +151,43 @@ array([[-60.],
 ```
 
 
-### Reference Documentation:
+### Design Decisions:
 
- *class*`systemml.defmatrix.matrix`(*data*, *op=None*)
-:   Bases: `object`
+1.  Until eval() method is invoked, we create an AST (not exposed to
+    the user) that consist of unevaluated operations and data
+    required by those operations. As an anology, a spark user can
+    treat eval() method similar to calling RDD.persist() followed by
+    RDD.count().
+2.  The AST consist of two kinds of nodes: either of type matrix or
+    of type DMLOp. Both these classes expose \_visit method, that
+    helps in traversing the AST in DFS manner.
+3.  A matrix object can either be evaluated or not. If evaluated,
+    the attribute 'data' is set to one of the supported types (for
+    example: NumPy array or DataFrame). In this case, the attribute
+    'op' is set to None. If not evaluated, the attribute 'op' which
+    refers to one of the intermediate node of AST and if of type
+    DMLOp. In this case, the attribute 'data' is set to None.
 
-    matrix class is a python wrapper that implements basic matrix
-    operators, matrix functions as well as converters to common Python
-    types (for example: Numpy arrays, PySpark DataFrame and Pandas
-    DataFrame).
+5.  DMLOp has an attribute 'inputs' which contains list of matrix
+    objects or DMLOp.
 
-    The operators supported are:
+6.  To simplify the traversal, every matrix object is considered
+    immutable and an matrix operations creates a new matrix object.
+    As an example: m1 = sml.matrix(np.ones((3,3))) creates a matrix
+    object backed by 'data=(np.ones((3,3))'. m1 = m1 \* 2 will
+    create a new matrix object which is now backed by 'op=DMLOp( ...
+    )' whose input is earlier created matrix object.
 
-    1.  Arithmetic operators: +, -, *, /, //, %, \** as well as dot
-        (i.e. matrix multiplication)
-    2.  Indexing in the matrix
-    3.  Relational/Boolean operators: \<, \<=, \>, \>=, ==, !=, &, \|
+7.  Left indexing (implemented in \_\_setitem\_\_ method) is a
+    special case, where Python expects the existing object to be
+    mutated. To ensure the above property, we make deep copy of
+    existing object and point any references to the left-indexed
+    matrix to the newly created object. Then the left-indexed matrix
+    is set to be backed by DMLOp consisting of following pydml:
+    left-indexed-matrix = new-deep-copied-matrix
+    left-indexed-matrix[index] = value
 
-    In addition, following functions are supported for matrix:
-
-    1.  transpose
-    2.  Aggregation functions: sum, mean, var, sd, max, min, argmin,
-        argmax, cumsum
-    3.  Global statistical built-In functions: exp, log, abs, sqrt,
-        round, floor, ceil, sin, cos, tan, asin, acos, atan, sign, solve
-
-    For all the above functions, we always return a two dimensional matrix, especially for aggregation functions with axis. 
-    For example: Assuming m1 is a matrix of (3, n), NumPy returns a 1d vector of dimension (3,) for operation m1.sum(axis=1)
-    whereas SystemML returns a 2d matrix of dimension (3, 1).
-    
-    Note: an evaluated matrix contains a data field computed by eval
-    method as DataFrame or NumPy array.
-
-        >>> import SystemML as sml
-        >>> import numpy as np
-        >>> sml.setSparkContext(sc)
-
-    Welcome to Apache SystemML!
-
-        >>> m1 = sml.matrix(np.ones((3,3)) + 2)
-        >>> m2 = sml.matrix(np.ones((3,3)) + 3)
-        >>> m2 = m1 * (m2 + m1)
-        >>> m4 = 1.0 - m2
-        >>> m4
-        # This matrix (mVar5) is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPy() or toDF() or toPandas() methods.
-        mVar1 = load(" ", format="csv")
-        mVar2 = load(" ", format="csv")
-        mVar3 = mVar2 + mVar1
-        mVar4 = mVar1 * mVar3
-        mVar5 = 1.0 - mVar4
-        save(mVar5, " ")
-        >>> m2.eval()
-        >>> m2
-        # This matrix (mVar4) is backed by NumPy array. To fetch the NumPy array, invoke toNumPy() method.
-        >>> m4
-        # This matrix (mVar5) is backed by below given PyDML script (which is not yet evaluated). To fetch the data of this matrix, invoke toNumPy() or toDF() or toPandas() methods.
-        mVar4 = load(" ", format="csv")
-        mVar5 = 1.0 - mVar4
-        save(mVar5, " ")
-        >>> m4.sum(axis=1).toNumPy()
-        array([[-60.],
-               [-60.],
-               [-60.]])
-
-    Design Decisions:
-
-    1.  Until eval() method is invoked, we create an AST (not exposed to
-        the user) that consist of unevaluated operations and data
-        required by those operations. As an anology, a spark user can
-        treat eval() method similar to calling RDD.persist() followed by
-        RDD.count().
-    2.  The AST consist of two kinds of nodes: either of type matrix or
-        of type DMLOp. Both these classes expose \_visit method, that
-        helps in traversing the AST in DFS manner.
-    3.  A matrix object can either be evaluated or not. If evaluated,
-        the attribute 'data' is set to one of the supported types (for
-        example: NumPy array or DataFrame). In this case, the attribute
-        'op' is set to None. If not evaluated, the attribute 'op' which
-        refers to one of the intermediate node of AST and if of type
-        DMLOp. In this case, the attribute 'data' is set to None.
-
-    5.  DMLOp has an attribute 'inputs' which contains list of matrix
-        objects or DMLOp.
-
-    6.  To simplify the traversal, every matrix object is considered
-        immutable and an matrix operations creates a new matrix object.
-        As an example: m1 = sml.matrix(np.ones((3,3))) creates a matrix
-        object backed by 'data=(np.ones((3,3))'. m1 = m1 \* 2 will
-        create a new matrix object which is now backed by 'op=DMLOp( ...
-        )' whose input is earlier created matrix object.
-
-    7.  Left indexing (implemented in \_\_setitem\_\_ method) is a
-        special case, where Python expects the existing object to be
-        mutated. To ensure the above property, we make deep copy of
-        existing object and point any references to the left-indexed
-        matrix to the newly created object. Then the left-indexed matrix
-        is set to be backed by DMLOp consisting of following pydml:
-        left-indexed-matrix = new-deep-copied-matrix
-        left-indexed-matrix[index] = value
-
-    8.  Please use m.print\_ast() and/or type m for debugging. Here is a
-        sample session:
-
-            >>> npm = np.ones((3,3))
-            >>> m1 = sml.matrix(npm + 3)
-            >>> m2 = sml.matrix(npm + 5)
-            >>> m3 = m1 + m2
-            >>> m3
-            mVar2 = load(" ", format="csv")
-            mVar1 = load(" ", format="csv")
-            mVar3 = mVar1 + mVar2
-            save(mVar3, " ")
-            >>> m3.print_ast()
-            - [mVar3] (op).
-              - [mVar1] (data).
-              - [mVar2] (data).    
-
- `abs`()
-:   
-
- `acos`()
-:   
-
- `arccos`()
-:   
-
- `arcsin`()
-:   
-
- `arctan`()
-:   
-
- `argmax`(*axis=None*)
-:   Returns the indices of the maximum values along an axis.
-
-    axis : int, optional (only axis=1, i.e. rowIndexMax is supported
-    in this version)
-
- `argmin`(*axis=None*)
-:   Returns the indices of the minimum values along an axis.
-
-    axis : int, optional (only axis=1, i.e. rowIndexMax is supported
-    in this version)
-
- `asfptype`()
-:   
-
- `asin`()
-:   
-
- `astype`(*t*)
-:   
-
- `atan`()
-:   
-
- `ceil`()
-:   
-
- `cos`()
-:   
-
- `cumsum`(*axis=None*)
-:   Returns the indices of the maximum values along an axis.
-
-    axis : int, optional (only axis=0, i.e. cumsum along the rows is
-    supported in this version)
-
- `deg2rad`()
-:   Convert angles from degrees to radians.
-
- `dot`(*other*)[](#systemml.defmatrix.matrix.dot "Permalink to this definition")
-:   Numpy way of performing matrix multiplication
-
- `eval`(*outputDF=False*)[](#systemml.defmatrix.matrix.eval "Permalink to this definition")
-:   This is a convenience function that calls the global eval method
-
- `exp`()[](#systemml.defmatrix.matrix.exp "Permalink to this definition")
-:   
-
- `exp2`()[](#systemml.defmatrix.matrix.exp2 "Permalink to this definition")
-:   
-
- `expm1`()[](#systemml.defmatrix.matrix.expm1 "Permalink to this definition")
-:   
-
- `floor`()[](#systemml.defmatrix.matrix.floor "Permalink to this definition")
-:   
-
- `get_shape`()[](#systemml.defmatrix.matrix.get_shape "Permalink to this definition")
-:   
-
- `ldexp`(*other*)[](#systemml.defmatrix.matrix.ldexp "Permalink to this definition")
-:   
-
- `log`(*y=None*)[](#systemml.defmatrix.matrix.log "Permalink to this definition")
-:   
-
- `log10`()[](#systemml.defmatrix.matrix.log10 "Permalink to this definition")
-:   
-
- `log1p`()[](#systemml.defmatrix.matrix.log1p "Permalink to this definition")
-:   
-
- `log2`()[](#systemml.defmatrix.matrix.log2 "Permalink to this definition")
-:   
-
- `logaddexp`(*other*)[](#systemml.defmatrix.matrix.logaddexp "Permalink to this definition")
-:   
-
- `logaddexp2`(*other*)[](#systemml.defmatrix.matrix.logaddexp2 "Permalink to this definition")
-:   
-
- `logical_not`()[](#systemml.defmatrix.matrix.logical_not "Permalink to this definition")
-:   
-
- `max`(*other=None*, *axis=None*)[](#systemml.defmatrix.matrix.max "Permalink to this definition")
-:   Compute the maximum value along the specified axis
-
-    other: matrix or numpy array (& other supported types) or scalar
-    axis : int, optional
-
- `mean`(*axis=None*)[](#systemml.defmatrix.matrix.mean "Permalink to this definition")
-:   Compute the arithmetic mean along the specified axis
-
-    axis : int, optional
-
- `min`(*other=None*, *axis=None*)[](#systemml.defmatrix.matrix.min "Permalink to this definition")
-:   Compute the minimum value along the specified axis
-
-    other: matrix or numpy array (& other supported types) or scalar
-    axis : int, optional
-
- `mod`(*other*)[](#systemml.defmatrix.matrix.mod "Permalink to this definition")
-:   
-
- `ndim`*= 2*[](#systemml.defmatrix.matrix.ndim "Permalink to this definition")
-:   
-
- `negative`()[](#systemml.defmatrix.matrix.negative "Permalink to this definition")
-:   
-
- `ones_like`()[](#systemml.defmatrix.matrix.ones_like "Permalink to this definition")
-:   
-
- `print_ast`()[](#systemml.defmatrix.matrix.print_ast "Permalink to this definition")
-:   Please use m.print\_ast() and/or type m for debugging. Here is a
+8.  Please use m.print\_ast() and/or type m for debugging. Here is a
     sample session:
 
         >>> npm = np.ones((3,3))
@@ -383,174 +202,7 @@ array([[-60.],
         >>> m3.print_ast()
         - [mVar3] (op).
           - [mVar1] (data).
-          - [mVar2] (data).
-
- `rad2deg`()[](#systemml.defmatrix.matrix.rad2deg "Permalink to this definition")
-:   Convert angles from radians to degrees.
-
- `reciprocal`()[](#systemml.defmatrix.matrix.reciprocal "Permalink to this definition")
-:   
-
- `remainder`(*other*)[](#systemml.defmatrix.matrix.remainder "Permalink to this definition")
-:   
-
- `round`()[](#systemml.defmatrix.matrix.round "Permalink to this definition")
-:   
-
- `script`*= None*[](#systemml.defmatrix.matrix.script "Permalink to this definition")
-:   
-
- `sd`(*axis=None*)[](#systemml.defmatrix.matrix.sd "Permalink to this definition")
-:   Compute the standard deviation along the specified axis
-
-    axis : int, optional
-
- `set_shape`(*shape*)[](#systemml.defmatrix.matrix.set_shape "Permalink to this definition")
-:   
-
- `shape`[](#systemml.defmatrix.matrix.shape "Permalink to this definition")
-:   
-
- `sign`()[](#systemml.defmatrix.matrix.sign "Permalink to this definition")
-:   
-
- `sin`()[](#systemml.defmatrix.matrix.sin "Permalink to this definition")
-:   
-
- `sqrt`()[](#systemml.defmatrix.matrix.sqrt "Permalink to this definition")
-:   
-
- `square`()[](#systemml.defmatrix.matrix.square "Permalink to this definition")
-:   
-
- `sum`(*axis=None*)[](#systemml.defmatrix.matrix.sum "Permalink to this definition")
-:   Compute the sum along the specified axis. 
-
-    axis : int, optional
-
- `systemmlVarID`*= 0*[](#systemml.defmatrix.matrix.systemmlVarID "Permalink to this definition")
-:   
-
- `tan`()[](#systemml.defmatrix.matrix.tan "Permalink to this definition")
-:   
-
- `toDF`()[](#systemml.defmatrix.matrix.toDF "Permalink to this definition")
-:   This is a convenience function that calls the global eval method
-    and then converts the matrix object into DataFrame.
-
- `toNumPy`()[](#systemml.defmatrix.matrix.toNumPy "Permalink to this definition")
-:   This is a convenience function that calls the global eval method
-    and then converts the matrix object into NumPy array.
-
- `toPandas`()[](#systemml.defmatrix.matrix.toPandas "Permalink to this definition")
-:   This is a convenience function that calls the global eval method
-    and then converts the matrix object into Pandas DataFrame.
-
- `trace`()[](#systemml.defmatrix.matrix.trace "Permalink to this definition")
-:   Return the sum of the cells of the main diagonal square matrix
-
- `transpose`()[](#systemml.defmatrix.matrix.transpose "Permalink to this definition")
-:   Transposes the matrix.
-
- `var`(*axis=None*)[](#systemml.defmatrix.matrix.var "Permalink to this definition")
-:   Compute the variance along the specified axis
-
-    axis : int, optional
-
- `zeros_like`()[](#systemml.defmatrix.matrix.zeros_like "Permalink to this definition")
-:   
-
- `systemml.defmatrix.eval`(*outputs*, *outputDF=False*, *execute=True*)[](#systemml.defmatrix.eval "Permalink to this definition")
-:   Executes the unevaluated DML script and computes the matrices
-    specified by outputs.
-
-    outputs: list of matrices or a matrix object outputDF: back the data
-    of matrix as PySpark DataFrame
-
- `systemml.defmatrix.solve`(*A*, *b*)[](#systemml.defmatrix.solve "Permalink to this definition")
-:   Computes the least squares solution for system of linear equations A
-    %\*% x = b
-
-        >>> import numpy as np
-        >>> from sklearn import datasets
-        >>> import SystemML as sml
-        >>> from pyspark.sql import SQLContext
-        >>> diabetes = datasets.load_diabetes()
-        >>> diabetes_X = diabetes.data[:, np.newaxis, 2]
-        >>> X_train = diabetes_X[:-20]
-        >>> X_test = diabetes_X[-20:]
-        >>> y_train = diabetes.target[:-20]
-        >>> y_test = diabetes.target[-20:]
-        >>> sml.setSparkContext(sc)
-        >>> X = sml.matrix(X_train)
-        >>> y = sml.matrix(y_train)
-        >>> A = X.transpose().dot(X)
-        >>> b = X.transpose().dot(y)
-        >>> beta = sml.solve(A, b).toNumPy()
-        >>> y_predicted = X_test.dot(beta)
-        >>> print('Residual sum of squares: %.2f' % np.mean((y_predicted - y_test) ** 2))
-        Residual sum of squares: 25282.12
-
- `systemml.defmatrix.set_lazy`(*isLazy*)[](#systemml.defmatrix.set_max_depth "Permalink to this definition")
-:   This method allows users to set whether the matrix operations should be executed in lazy manner.
-
-    isLazy: True if matrix operations should be evaluated in lazy manner.
-
- `systemml.defmatrix.debug_array_conversion`(*throwError*)[](#systemml.defmatrix.debug_array_conversion "Permalink to this definition")
-:   
-
- `systemml.random.sampling.normal`(*loc=0.0*, *scale=1.0*, *size=(1*, *1)*, *sparsity=1.0*)(#systemml.random.sampling.normal "Permalink to this definition")
-:   Draw random samples from a normal (Gaussian) distribution.
-
-    loc: Mean ('centre') of the distribution. scale: Standard deviation
-    (spread or 'width') of the distribution. size: Output shape (only
-    tuple of length 2, i.e. (m, n), supported). sparsity: Sparsity
-    (between 0.0 and 1.0).
-
-        >>> import systemml as sml
-        >>> import numpy as np
-        >>> sml.setSparkContext(sc)
-        >>> from systemml import random
-        >>> m1 = sml.random.normal(loc=3, scale=2, size=(3,3))
-        >>> m1.toNumPy()
-        array([[ 3.48857226,  6.17261819,  2.51167259],
-               [ 3.60506708, -1.90266305,  3.97601633],
-               [ 3.62245706,  5.9430881 ,  2.53070413]])
-
- `systemml.random.sampling.uniform`(*low=0.0*, *high=1.0*, *size=(1*, *1)*, *sparsity=1.0*)(#systemml.random.sampling.uniform "Permalink to this definition")
-:   Draw samples from a uniform distribution.
-
-    low: Lower boundary of the output interval. high: Upper boundary of
-    the output interval. size: Output shape (only tuple of length 2,
-    i.e. (m, n), supported). sparsity: Sparsity (between 0.0 and 1.0).
-
-        >>> import systemml as sml
-        >>> import numpy as np
-        >>> sml.setSparkContext(sc)
-        >>> from systemml import random
-        >>> m1 = sml.random.uniform(size=(3,3))
-        >>> m1.toNumPy()
-        array([[ 0.54511396,  0.11937437,  0.72975775],
-               [ 0.14135946,  0.01944448,  0.52544478],
-               [ 0.67582422,  0.87068849,  0.02766852]])
-
- `systemml.random.sampling.poisson`(*lam=1.0*, *size=(1*, *1)*, *sparsity=1.0*)(#systemml.random.sampling.poisson "Permalink to this definition")
-:   Draw samples from a Poisson distribution.
-
-    lam: Expectation of interval, should be \> 0. size: Output shape
-    (only tuple of length 2, i.e. (m, n), supported). sparsity: Sparsity
-    (between 0.0 and 1.0).
-
-        >>> import systemml as sml
-        >>> import numpy as np
-        >>> sml.setSparkContext(sc)
-        >>> from systemml import random
-        >>> m1 = sml.random.poisson(lam=1, size=(3,3))
-        >>> m1.toNumPy()
-        array([[ 1.,  0.,  2.],
-               [ 1.,  0.,  0.],
-               [ 0.,  0.,  0.]])
-
+          - [mVar2] (data).    
 
 
 ## MLContext API
