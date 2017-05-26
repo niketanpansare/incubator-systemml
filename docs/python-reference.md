@@ -294,8 +294,6 @@ The table below describes the parameter available for mllearn algorithms:
 | is_multi_class | Specifies whether to use binary-class or multi-class classifier (default: False) | - | - | X | - |
 | laplace | Laplace smoothing specified by the user to avoid creation of 0 probabilities (default: 1.0) | - | - | - | X |
 
-### Usage
-
 In the below example, we invoke SystemML's [Logistic Regression](https://apache.github.io/incubator-systemml/algorithms-classification.html#multinomial-logistic-regression)
 algorithm on digits datasets.
 
