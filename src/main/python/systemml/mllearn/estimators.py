@@ -283,7 +283,8 @@ class BaseSystemMLClassifier(BaseSystemMLEstimator):
         
     def predict(self, X):
         predictions = super(BaseSystemMLClassifier, self).predict(X)
-        if type(predictions) ==  pyspark.sql.dataframe.DataFrame:
+        from pyspark.sql.dataframe import DataFrame as df
+        if type(predictions) == df:
             return predictions
         else:
             try:
