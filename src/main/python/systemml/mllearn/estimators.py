@@ -305,7 +305,7 @@ class BaseSystemMLClassifier(BaseSystemMLEstimator):
             
     def loadLabels(self, file_path):
         createJavaObject(self.sc, 'dummy')
-        utilObj = self.sc._jvm.org.apache.sysml.api.dl.Utils()
+        utilObj = self.sc._jvm.org.apache.sysml.api.ml.Utils()
         if utilObj.checkIfFileExists(file_path):
             df = self.sparkSession.read.csv(file_path, header=False).toPandas()
             keys = np.asarray(df._c0, dtype='int')
@@ -694,8 +694,6 @@ class Caffe2DML(BaseSystemMLClassifier):
     --------
     
     >>> from systemml.mllearn import Caffe2DML
-    >>> from pyspark.sql import SQLContext
-    >>> sqlCtx = SQLContext(sc)
     >>> from mlxtend.data import mnist_data
     >>> import numpy as np
     >>> from sklearn.utils import shuffle
@@ -705,7 +703,7 @@ class Caffe2DML(BaseSystemMLClassifier):
     >>> import urllib
     >>> urllib.urlretrieve('https://raw.githubusercontent.com/niketanpansare/model_zoo/master/caffe/vision/lenet/mnist/lenet.proto', 'lenet.proto')
     >>> urllib.urlretrieve('https://raw.githubusercontent.com/niketanpansare/model_zoo/master/caffe/vision/lenet/mnist/lenet_solver.proto', 'lenet_solver.proto')
-    >>> caffe2DML = Caffe2DML(sqlCtx, 'lenet_solver.proto').set(max_iter=500)
+    >>> caffe2DML = Caffe2DML(spark, 'lenet_solver.proto').set(max_iter=500)
     >>> caffe2DML.fit(X, y)
     """
     def __init__(self, sparkSession, solver, input_shape, transferUsingDF=False, tensorboard_log_dir=None):
