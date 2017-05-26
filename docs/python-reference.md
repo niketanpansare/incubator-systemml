@@ -242,7 +242,57 @@ beta = ml.execute(script).get('B_out').toNumPy()
 
 ## mllearn API
 
+The below code describes how to use mllearn API for training:
 
+<div class="codetabs">
+<div data-lang="sklearn way" markdown="1">
+{% highlight python %}
+# Input: Two Python objects (X_train, y_train) of type numpy, pandas or scipy.
+model.fit(X_train, y_train)
+{% endhighlight %}
+</div>
+<div data-lang="mllib way" markdown="1">
+{% highlight python %}
+# Input: One LabeledPoint DataFrame with atleast two columns: features (of type Vector) and labels.
+model.fit(X_df)
+{% endhighlight %}
+</div>
+</div>
+
+The below code describes how to use mllearn API for prediction:
+
+<div class="codetabs">
+<div data-lang="sklearn way" markdown="1">
+{% highlight python %}
+# Input: One Python object (X_test) of type numpy, pandas or scipy.
+model.predict(X_test)
+# OR model.score(X_test, y_test)
+{% endhighlight %}
+</div>
+<div data-lang="mllib way" markdown="1">
+{% highlight python %}
+# Input: One LabeledPoint DataFrame (df_test) with atleast one column: features (of type Vector).
+model.transform(df_test)
+{% endhighlight %}
+</div>
+</div>
+
+
+The table below describes the parameter available for mllearn algorithms:
+
+| Parameters | Description of the Parameters | LogisticRegression | LinearRegression | SVM | NaiveBayes |
+|----------------|-----------------------------------------------------------------------------------------------|-----------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----|------------|
+| sparkSession | PySpark SparkSession | X | X | X | X |
+| penalty | Used to specify the norm used in the penalization (default: 'l2') | only 'l2' supported | - | - | - |
+| fit_intercept | Specifies whether to add intercept or not (default: True) | X | X | X | - |
+| normalize | This parameter is ignored when fit_intercept is set to False. (default: False) | X | X | X | - |
+| max_iter | Maximum number of iterations (default: 100) | X | X | X | - |
+| max_inner_iter | Maximum number of inner iterations, or 0 if no maximum limit provided (default: 0) | X | - | - | - |
+| tol | Tolerance used in the convergence criterion (default: 0.000001) | X | X | X | - |
+| C | 1/regularization parameter (default: 1.0). To disable regularization, please use float("inf") | X | X | X | - |
+| solver | Algorithm to use in the optimization problem. | Only 'newton-cg' solver supported | Supports either 'newton-cg' or 'direct-solve' (default: 'newton-cg'). Depending on the size and the sparsity of the feature matrix, one or the other solver may be more efficient. 'direct-solve' solver is more efficient when the number of features is relatively small (m < 1000) and input matrix X is either tall or fairly dense; otherwise 'newton-cg' solver is more efficient. | - | - |
+| is_multi_class | Specifies whether to use binary-class or multi-class classifier (default: False) | - | - | X | - |
+| laplace | Laplace smoothing specified by the user to avoid creation of 0 probabilities (default: 1.0) | - | - | - | X |
 
 ### Usage
 
