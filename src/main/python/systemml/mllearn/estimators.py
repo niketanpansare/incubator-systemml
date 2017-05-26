@@ -307,7 +307,7 @@ class BaseSystemMLClassifier(BaseSystemMLEstimator):
         createJavaObject(self.sc, 'dummy')
         utilObj = self.sc._jvm.org.apache.sysml.api.dl.Utils()
         if utilObj.checkIfFileExists(file_path):
-            df = self.sparkSession.sqlContext.read.csv(file_path, header=False).toPandas()
+            df = self.sparkSession.read.csv(file_path, header=False).toPandas()
             keys = np.asarray(df._c0, dtype='int')
             values = np.asarray(df._c1, dtype='str')
             self.labelMap = {}
@@ -333,7 +333,7 @@ class BaseSystemMLClassifier(BaseSystemMLEstimator):
             else:
                 labelMapping = self.labelMap
             lStr = [ [ int(k), str(labelMapping[k]) ] for k in labelMapping ]
-            df = self.sparkSession.sqlContext.createDataFrame(lStr)
+            df = self.sparkSession.createDataFrame(lStr)
             df.write.csv(outputDir + sep + 'labels.txt', mode='overwrite', header=False)
         else:
             raise Exception('Cannot save as you need to train the model first using fit')
