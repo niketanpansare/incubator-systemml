@@ -298,6 +298,13 @@ trait DMLGenerator extends SourceDMLGenerator with NextBatchGenerator with Visua
 	  numTabs -= 1
 	  tabDMLScript.append("}\n")
 	}
+	def forBlockPrefetch(iterVarName:String, X:String, batchSize:String)(op: => Unit) {
+	  tabDMLScript.append("for(" + iterVarName + " in " + X + ", nrow=" + batchSize + ") {\n")
+	  numTabs += 1
+	  op
+	  numTabs -= 1
+	  tabDMLScript.append("}\n")
+	}
 	def forBlock(iterVarName:String, startVal:String, endVal:String)(op: => Unit) {
 	  tabDMLScript.append("for(" + iterVarName + " in " + startVal + ":" + endVal + ") {\n")
 	  numTabs += 1

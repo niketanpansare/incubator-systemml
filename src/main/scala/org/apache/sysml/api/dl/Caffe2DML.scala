@@ -623,6 +623,14 @@ class Caffe2DMLModel(val numClasses:String, val sc: SparkContext, val solver:Caf
           assign(tabDMLScript, "Prob[beg:end,]", lossLayers(0).out)
         }
       }
+      case "minibatch_prefetching" => {
+        assign(tabDMLScript, "i", "0")
+        forBlockPrefetch("Xb", Caffe2DML.X, Caffe2DML.batchSize) {
+          assign(tabDMLScript, "i", "i + 1")
+          net.getLayers.map(layer => net.getCaffeLayer(layer).forward(tabDMLScript, true))
+          assign(tabDMLScript, "Prob[beg:end,]", lossLayers(0).out)
+        }
+      }
       case "batch" => {
         assign(tabDMLScript, "Xb", "X_full")
         net.getLayers.map(layer => net.getCaffeLayer(layer).forward(tabDMLScript, true))
