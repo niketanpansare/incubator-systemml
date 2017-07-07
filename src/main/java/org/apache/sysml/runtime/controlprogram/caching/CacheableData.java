@@ -566,6 +566,9 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		return _data;
 	}
 	
+	public static long RELEASE_TIME1 = 0;
+	public static long RELEASE_TIME2 = 0;
+	
 	/**
 	 * Releases the shared ("read-only") or exclusive ("write") lock.  Updates
 	 * size information, last-access time, metadata, etc.
@@ -603,6 +606,9 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		release(_isAcquireFromEmpty && !_requiresLocalWrite);
 		updateStatusPinned(false);
 		
+		long ta1 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		RELEASE_TIME1 += DMLScript.STATISTICS ? ta1-t0 : 0;
+		
 		if(    isCachingActive() //only if caching is enabled (otherwise keep everything in mem)
 			&& isCached(true)    //not empty and not read/modify
 			&& !isBelowCachingThreshold() ) //min size for caching
@@ -612,7 +618,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 				//evict blob
 				String filePath = getCacheFilePathAndName();
 				try {
+					long tb1 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 					LazyWriteBuffer.writeBlock(filePath, _data);
+					long tb2 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+					RELEASE_TIME1 += DMLScript.STATISTICS ? tb2-tb1 : 0;
 				}
 				catch (Exception e)
 				{
