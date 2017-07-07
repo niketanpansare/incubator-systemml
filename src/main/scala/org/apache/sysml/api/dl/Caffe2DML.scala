@@ -627,6 +627,8 @@ class Caffe2DMLModel(val numClasses:String, val sc: SparkContext, val solver:Caf
         assign(tabDMLScript, "i", "0")
         forBlockPrefetch("Xb", Caffe2DML.X, Caffe2DML.batchSize) {
           assign(tabDMLScript, "i", "i + 1")
+          assign(tabDMLScript, "beg", "((i-1) * " + Caffe2DML.batchSize + ") %% " + Caffe2DML.numImages + " + 1")
+          assign(tabDMLScript, "end", "min(beg + " +  Caffe2DML.batchSize + " - 1, " + Caffe2DML.numImages + ")")
           net.getLayers.map(layer => net.getCaffeLayer(layer).forward(tabDMLScript, true))
           assign(tabDMLScript, "Prob[beg:end,]", lossLayers(0).out)
         }
