@@ -622,7 +622,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 					long tb1 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 					LazyWriteBuffer.writeBlock(filePath, _data);
 					long tb2 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-					RELEASE_TIME1 += DMLScript.STATISTICS ? tb2-tb1 : 0;
+					RELEASE_TIME2 += DMLScript.STATISTICS ? tb2-tb1 : 0;
 				}
 				catch (Exception e)
 				{
