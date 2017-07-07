@@ -74,7 +74,8 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	protected static final Log LOG = LogFactory.getLog(CacheableData.class.getName());
     
 	// global constant configuration parameters
-	public static final long 	CACHING_THRESHOLD = 4*1024; //obj not s.t. caching if below threshold [in bytes]
+	// 1.442840576 bytes to store Prob. Setting this to 1.5 G
+	public static final long 	CACHING_THRESHOLD = 1500000000; //4*1024; //obj not s.t. caching if below threshold [in bytes]
 	public static final double 	CACHING_BUFFER_SIZE = 0.15; 
 	public static final RPolicy CACHING_BUFFER_POLICY = RPolicy.FIFO; 
 	public static final boolean CACHING_BUFFER_PAGECACHE = false; 
