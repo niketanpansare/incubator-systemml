@@ -96,6 +96,16 @@ public class IndexingOp extends Hop
 		_colLowerEqualsUpper = passed;
 	}
 	
+	private Hop cachedInput = null;
+	private Lop cachedInputLop = null;
+	private Lop constructInputLops() throws HopsException, LopsException {
+		if(cachedInput == null || cachedInput != getInput().get(0)) {
+			cachedInput = getInput().get(0);
+			cachedInputLop = getInput().get(0).constructLops();
+		}
+		return cachedInputLop;
+	}
+	
 	@Override
 	public boolean isGPUEnabled() {
 		if(!DMLScript.USE_ACCELERATOR) {
@@ -103,9 +113,8 @@ public class IndexingOp extends Hop
 		}
 		else {
 			try {
-				Lop inputLop = getInput().get(0).constructLops();
 				// only matrix indexing is supported on GPU
-				return (getDataType() == DataType.MATRIX) && inputLop.getExecType() == ExecType.GPU;
+				return (getDataType() == DataType.MATRIX) && constructInputLops().getExecType() == ExecType.GPU;
 			} catch (HopsException | LopsException e) {
 				throw new RuntimeException(e);
 			}
@@ -127,7 +136,7 @@ public class IndexingOp extends Hop
 			&& getDim1() == input.getDim1() && getDim2() == input.getDim2()
 			&& !(getDim1()==1 && getDim2()==1))
 		{
-			setLops( input.constructLops() );
+			setLops( constructInputLops() );
 		}
 		//actual lop construction, incl operator selection 
 		else
@@ -140,7 +149,7 @@ public class IndexingOp extends Hop
 					
 					Lop dummy = Data.createLiteralLop(ValueType.INT, Integer.toString(-1));
 					RangeBasedReIndex reindex = new RangeBasedReIndex(
-							input.constructLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(),
+							constructInputLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(),
 							getInput().get(3).constructLops(), getInput().get(4).constructLops(), dummy, dummy,
 							getDataType(), getValueType(), et);
 	
@@ -176,7 +185,7 @@ public class IndexingOp extends Hop
 					
 					Lop dummy = Data.createLiteralLop(ValueType.INT, Integer.toString(-1));
 					RangeBasedReIndex reindex = new RangeBasedReIndex(
-							input.constructLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(),
+							constructInputLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(),
 							getInput().get(3).constructLops(), getInput().get(4).constructLops(), dummy, dummy,
 							getDataType(), getValueType(), aggtype, et);
 				
@@ -188,7 +197,7 @@ public class IndexingOp extends Hop
 				{
 					Lop dummy = Data.createLiteralLop(ValueType.INT, Integer.toString(-1));
 					RangeBasedReIndex reindex = new RangeBasedReIndex(
-							input.constructLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(),
+							constructInputLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(),
 							getInput().get(3).constructLops(), getInput().get(4).constructLops(), dummy, dummy,
 							getDataType(), getValueType(), et);
 					
