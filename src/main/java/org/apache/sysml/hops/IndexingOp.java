@@ -102,8 +102,13 @@ public class IndexingOp extends Hop
 			return false;
 		}
 		else {
-			// only matrix indexing is supported on GPU
-			return (getDataType() == DataType.MATRIX);
+			try {
+				Lop inputLop = getInput().get(0).constructLops();
+				// only matrix indexing is supported on GPU
+				return (getDataType() == DataType.MATRIX) && inputLop.getExecType() == ExecType.GPU;
+			} catch (HopsException | LopsException e) {
+				throw new RuntimeException(e);
+			}
 		}
 	}
 
