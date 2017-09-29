@@ -43,6 +43,8 @@ import static jcuda.jcudnn.cudnnDataType.CUDNN_DATA_DOUBLE;
 import static jcuda.jcudnn.cudnnNanPropagation.CUDNN_PROPAGATE_NAN;
 import static jcuda.jcudnn.cudnnPoolingMode.CUDNN_POOLING_MAX;
 import static jcuda.jcudnn.cudnnTensorFormat.CUDNN_TENSOR_NCHW;
+import static jcuda.runtime.JCuda.cudaFree;
+import static jcuda.runtime.JCuda.cudaMalloc;
 import static jcuda.runtime.JCuda.cudaMemcpy;
 import static jcuda.runtime.JCuda.cudaMemset;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToDevice;
@@ -58,6 +60,7 @@ import jcuda.jcudnn.cudnnHandle;
 import jcuda.jcudnn.cudnnPoolingDescriptor;
 import jcuda.jcudnn.cudnnStatus;
 import jcuda.jcudnn.cudnnTensorDescriptor;
+import jcuda.runtime.JCuda;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -151,16 +154,44 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		// First check for sparse input convolution
 		if(isInSparseFormat(gCtx, image)) {
 			double overhead = isInSparseFormat(gCtx, filter) ? OptimizerUtils.estimateSizeExactSparsity(K, CRS, 1.0) : 0;
+			overhead += 2*H*Sizeof.INT + 2*W*Sizeof.INT;
+			
 			if(overhead <= intermediateMemoryBudget) {
 				Pointer filterPointer = getDensePointerForCuDNN(gCtx, filter, instName);
 				Pointer dstPointer = getDensePointerForCuDNN(gCtx, outputBlock, instName);
+				
 				long t0 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+				
+				// Allocate precomputed input array
+				Pointer rMins = new Pointer(); cudaMalloc(rMins, H*Sizeof.INT);
+				Pointer rMaxs = new Pointer(); cudaMalloc(rMaxs, H*Sizeof.INT);
+				Pointer sMins = new Pointer(); cudaMalloc(sMins, W*Sizeof.INT);
+				Pointer sMaxs = new Pointer(); cudaMalloc(sMaxs, W*Sizeof.INT);
+				
+				// Compute the above arrays
+				getCudaKernels(gCtx).launchKernel("rMinsMaxs_sMinsMaxs",
+						ExecutionConfig.getConfigForSimpleVectorOperations(H*W),
+						H, W, R, S, pad_h, pad_w, stride_h, stride_w, P, Q,
+						rMins, rMaxs, sMins, sMaxs);
+				JCuda.cudaDeviceSynchronize();
+				
+				// Invoke conv2d_sparse_dense_dense_nkpq kernel with the precomputed arrays 
 				CSRPointer inPointer = LibMatrixCuDNN.getSparsePointer(gCtx, image, instName);
-				getCudaKernels(gCtx).launchKernel("conv2d_sparse_dense_dense_nk",
-						ExecutionConfig.getConfigForSimpleVectorOperations(N*K),
+				getCudaKernels(gCtx).launchKernel("conv2d_sparse_dense_dense_nkpq",
+						ExecutionConfig.getConfigForSimpleVectorOperations(N*K*P*Q),
 						inPointer.val, inPointer.rowPtr, inPointer.colInd, filterPointer, dstPointer, 
-					    N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
+					    N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q,
+					    C*R*S, R*S, N*K*P*Q, K*P*Q, P*Q, H*W,
+					    rMins, rMaxs, sMins, sMaxs);
+				
+				cudaFree(rMins);
+				cudaFree(rMaxs);
+				cudaFree(sMins);
+				cudaFree(sMaxs);
+				
 				if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CONVOLUTION_FORWARD_SDD, System.nanoTime() - t0);
+				
+				
 				return;
 			}
 		}

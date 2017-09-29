@@ -26,12 +26,55 @@ nvcc -ptx -arch=sm_30 SystemML.cu
 #include <cfloat>
 #include <cmath>
 
+
+/**
+ * Compute temporary index values required for conv2d_sparse_dense_dense_nkpq    
+ *
+ * @param H height of each image
+ * @param W width of each image
+ * @param R height of filter
+ * @param S width of filter
+ * @param pad_h padding height
+ * @param pad_w padding width
+ * @param P output height
+ * @param Q output width
+ * @param rMins output array of size H with rMins[h] = max(0, h + pad_h - P*stride_h + 1) for every 0 <= h < H
+ * @param rMaxs output array of size H with rMaxs[h] = min(R-1, h + pad_h) for every 0 <= h < H
+ * @param sMins output array of size W with sMins[w] = max(0, w + pad_w - Q*stride_w + 1) for every 0 <= w < W
+ * @param sMaxs output array of size W with sMaxs[w] = min(S-1, w + pad_w) for every 0 <= w < W
+ */
+extern "C"
+__global__ void rMinsMaxs_sMinsMaxs(
+	int H, int W, int R, int S, int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q,
+	int* rMins, int* rMaxs, int* sMins, int* sMaxs) {
+	int hw = blockIdx.x * blockDim.x + threadIdx.x;
+	
+    if(hw < H*W) {
+    	int h = hw / W;
+    	int w = hw % W;
+    	// Constraints: for(int r = 0; r < R; r++) { if(0 <= p && p < P && (hInput - r + pad_h) % stride_h == 0) { ... } }
+		// Constraint 1: p >= 0 and p = (hInput - r + pad_h)  / stride_h
+		// Therefore,  r <= hInput + pad_h 
+		// Constraint 2: p < P and p = (hInput - r + pad_h)  / stride_h
+		// Therefore,  hInput + pad_h - P*stride_h < r
+		// max(0, hInput + pad_h - P*stride_h + 1) <= r <= min(R-1, hInput + pad_h)
+		rMins[h] = max(0, h + pad_h - P*stride_h + 1);
+		rMaxs[h] = min(R-1, h + pad_h);
+		// Constraint 3: (hInput - r + pad_h) % stride_h == 0
+		while((h + pad_h - rMins[h]) % stride_h != 0 && rMins[h] <= rMaxs[h]) rMins[h]++;
+		
+		// Similar to above 3 constraints:
+    	sMins[w] = max(0, w + pad_w - Q*stride_w + 1);
+		sMaxs[w] = min(S-1, w + pad_w);
+		while((w + pad_w - sMins[w]) % stride_w != 0 && sMins[w] <= sMaxs[w]) sMins[w]++;
+    }
+}
+
 /**
  * Performs a convolution operation where the input matrix is sparse, filter is dense and the output matrix is dense.
  * This function avoids unnecessary sparse to dense conversion of the input matrix, necessary for cudnn conv2d.
- * Parallelization: number of images (n) and number of filters (k). 
- * For every n, the corresponding makes pass over the sparse input image and performs convolution with the corresponding kth filter
- * and finally updates the output cells for corresponding n and k.
+ * Parallelization: output cells. 
+ * For every cell in the output, we makes pass over the sparse input image and performs convolution update the output cell.
  * 
  * @params inVal input val pointer
  * @params inRowPtr input row pointer
@@ -51,24 +94,33 @@ nvcc -ptx -arch=sm_30 SystemML.cu
  * @param stride_w string width
  * @param P output height
  * @param Q output width
- * @param retClen number of columns of output matrix
+ * @param CRS C*R*S
+ * @param RS R*S
+ * @param NKPQ N*K*P*Q
+ * @param KPQ K*P*Q
+ * @param PQ P*Q
+ * @param HW H*W
+ * @param rMins precomputed input array of size H with rMins[h] = max(0, h + pad_h - P*stride_h + 1) for every 0 <= h < H
+ * @param rMaxs precomputed input array of size H with rMaxs[h] = min(R-1, h + pad_h) for every 0 <= h < H
+ * @param sMins precomputed input array of size W with sMins[w] = max(0, w + pad_w - Q*stride_w + 1) for every 0 <= w < W
+ * @param sMaxs precomputed input array of size W with sMaxs[w] = min(S-1, w + pad_w) for every 0 <= w < W
  */
 extern "C"
-__global__ void conv2d_sparse_dense_dense_nk(double* inVal, int* inRowPtr, int* inColInd, 
+__global__ void conv2d_sparse_dense_dense_nkpq(double* inVal, int* inRowPtr, int* inColInd, 
 	double* filter, double* ret, 
     int N, int C, int H, int W, int K, int R, int S, 
-    int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q) {
-    int nk = blockIdx.x * blockDim.x + threadIdx.x;
-    int n = nk / K;
-    int k = nk % K;
-    if(n < N && k < K) {
-    	// To avoid unnecessary and potential recomputation
-    	int temp1 = pad_h - P*stride_h + 1;
-    	int temp2 = pad_w - Q*stride_w + 1;
-    	int CRS = C*R*S;
-    	int RS = R*S; int PQ = P*Q;
-    	int HW = H*W;
-    	
+    int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q,
+    int CRS, int RS, int NKPQ, int KPQ, int PQ, int HW,
+    int* rMins, int* rMaxs, int* sMins, int* sMaxs) {
+    int nkpq = blockIdx.x * blockDim.x + threadIdx.x;
+    if(nkpq < NKPQ) {
+    	int n = nkpq / KPQ;
+	    int kpq = nkpq % KPQ;
+	    int k = kpq / PQ;
+	    int pq = kpq % PQ;
+	    int p = pq / Q;
+	    int q = pq % Q;
+	    double retVal = 0;
     	for(int i = inRowPtr[n]; i < inRowPtr[n+1]; i++) {
     		double value = inVal[i];
     		// inColInd[i] => chw
@@ -76,38 +128,34 @@ __global__ void conv2d_sparse_dense_dense_nk(double* inVal, int* inRowPtr, int* 
     		int hw = inColInd[i] % HW;
     		int hInput = hw / W;
     		int wInput = hw % W;
-    		
-    		// Constraints: for(int r = 0; r < R; r++) { if(0 <= p && p < P && (hInput - r + pad_h) % stride_h == 0) { ... } }
-			// Constraint 1: p >= 0 and p = (hInput - r + pad_h)  / stride_h
-			// Therefore,  r <= hInput + pad_h 
-			// Constraint 2: p < P and p = (hInput - r + pad_h)  / stride_h
-			// Therefore,  hInput + pad_h - P*stride_h < r
-			// max(0, hInput + pad_h - P*stride_h + 1) <= r <= min(R-1, hInput + pad_h)
-			int rMin = max(0, hInput + temp1);
-			int rMax = min(R-1, hInput + pad_h);
-			int sMin = max(0, wInput + temp2);
-			int sMax = min(S-1, wInput + pad_w);
 			
 			// To avoid unnecessary and potential recomputation
-			int temp3 = hInput + pad_h;
-			int temp4 = wInput + pad_w;
-			int temp5 = k*CRS + cInput*RS;
+			int filterOffset = k*CRS + cInput*RS;
 			
-			// Constraint 3: (hInput - r + pad_h) % stride_h == 0
-			while((temp3 - rMin) % stride_h != 0 && rMin <= rMax) rMin++;
-			while((temp4 - sMin) % stride_w != 0 && sMin <= sMax) sMin++;	
-			
-			for(int r = rMin; r <= rMax; r += stride_h) {
-				// Only append value if h == hInput, where h = (r - pad_h) + p*stride_h and 0 <= p < P
-				// Therefore, p = (hInput - r + pad_h)  / stride_h. Use the same logic for q.
-				int p = (temp3 - r)  / stride_h;
-				int nkpOffset =  nk*PQ + p*Q;
-				for(int s = sMin; s <= sMax; s += stride_w) {
-					int q = (temp4 - s)  / stride_w;
-					ret[nkpOffset + q] += filter[temp5 + r*S + s] * value;
+			if(stride_h == 1 && stride_w == 1) {
+				// Constraints: rMins[h] <= r <= rMaxs[h] and r = hInput + pad_h - p 
+				int r = hInput + pad_h - p;
+				int s = wInput + pad_w - q;
+				if(rMins[hInput] <= r && r <= rMaxs[hInput] && sMins[wInput] <= s && s <= sMaxs[wInput]) {
+					retVal += filter[filterOffset + r*S + s] * value;
+				}
+			}
+			else {
+				// General case:
+				for(int r = rMins[hInput]; r <= rMaxs[hInput]; r += stride_h) {
+					// Only append value if h == hInput, where h = (r - pad_h) + p*stride_h and 0 <= p < P
+					// Therefore, p = (hInput - r + pad_h)  / stride_h. Use the same logic for q.
+					if(p == (hInput + pad_h - r)  / stride_h) {
+						for(int s = sMins[wInput]; s <= sMaxs[wInput]; s += stride_w) {
+							if(q == (wInput + pad_w - s)  / stride_w) {
+								retVal += filter[filterOffset + r*S + s] * value;
+							}
+						}
+					}
 				}
 			}
     	}
+    	ret[nkpq] = retVal;
     }
 }
 
