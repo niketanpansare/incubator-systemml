@@ -27,13 +27,98 @@ nvcc -ptx -arch=sm_30 SystemML.cu
 #include <cmath>
 
 /**
+ * Performs a convolution operation where the input matrix is sparse, filter is dense and the output matrix is dense.
+ * This function avoids unnecessary sparse to dense conversion of the input matrix, necessary for cudnn conv2d.
+ * Parallelization: number of images (n) and number of filters (k). 
+ * For every n, the corresponding makes pass over the sparse input image and performs convolution with the corresponding kth filter
+ * and finally updates the output cells for corresponding n and k.
+ * 
+ * @params inVal input val pointer
+ * @params inRowPtr input row pointer
+ * @params inColInd input col index pointer
+ * @params filter dense filter pointer
+ * @params ret dense output pointer
+ * @param N number of input images
+ * @param C number of channels
+ * @param H height of each image
+ * @param W width of each image
+ * @param K number of output "channels"
+ * @param R height of filter
+ * @param S width of filter
+ * @param pad_h padding height
+ * @param pad_w padding width
+ * @param stride_h stride height
+ * @param stride_w string width
+ * @param P output height
+ * @param Q output width
+ * @param retClen number of columns of output matrix
+ */
+extern "C"
+__global__ void conv2d_sparse_dense_dense_nk(double* inVal, int* inRowPtr, int* inColInd, 
+	double* filter, double* ret, 
+    int N, int C, int H, int W, int K, int R, int S, 
+    int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q) {
+    int nk = blockIdx.x * blockDim.x + threadIdx.x;
+    int n = nk / K;
+    int k = nk % K;
+    if(n < N && k < K) {
+    	// To avoid unnecessary and potential recomputation
+    	int temp1 = pad_h - P*stride_h + 1;
+    	int temp2 = pad_w - Q*stride_w + 1;
+    	int CRS = C*R*S;
+    	int RS = R*S; int PQ = P*Q;
+    	int HW = H*W;
+    	
+    	for(int i = inRowPtr[n]; i < inRowPtr[n+1]; i++) {
+    		double value = inVal[i];
+    		// inColInd[i] => chw
+    		int cInput = inColInd[i] / HW;
+    		int hw = inColInd[i] % HW;
+    		int hInput = hw / W;
+    		int wInput = hw % W;
+    		
+    		// Constraints: for(int r = 0; r < R; r++) { if(0 <= p && p < P && (hInput - r + pad_h) % stride_h == 0) { ... } }
+			// Constraint 1: p >= 0 and p = (hInput - r + pad_h)  / stride_h
+			// Therefore,  r <= hInput + pad_h 
+			// Constraint 2: p < P and p = (hInput - r + pad_h)  / stride_h
+			// Therefore,  hInput + pad_h - P*stride_h < r
+			// max(0, hInput + pad_h - P*stride_h + 1) <= r <= min(R-1, hInput + pad_h)
+			int rMin = max(0, hInput + temp1);
+			int rMax = min(R-1, hInput + pad_h);
+			int sMin = max(0, wInput + temp2);
+			int sMax = min(S-1, wInput + pad_w);
+			
+			// To avoid unnecessary and potential recomputation
+			int temp3 = hInput + pad_h;
+			int temp4 = wInput + pad_w;
+			int temp5 = k*CRS + cInput*RS;
+			
+			// Constraint 3: (hInput - r + pad_h) % stride_h == 0
+			while((temp3 - rMin) % stride_h != 0 && rMin <= rMax) rMin++;
+			while((temp4 - sMin) % stride_w != 0 && sMin <= sMax) sMin++;	
+			
+			for(int r = rMin; r <= rMax; r += stride_h) {
+				// Only append value if h == hInput, where h = (r - pad_h) + p*stride_h and 0 <= p < P
+				// Therefore, p = (hInput - r + pad_h)  / stride_h. Use the same logic for q.
+				int p = (temp3 - r)  / stride_h;
+				int nkpOffset =  nk*PQ + p*Q;
+				for(int s = sMin; s <= sMax; s += stride_w) {
+					int q = (temp4 - s)  / stride_w;
+					ret[nkpOffset + q] += filter[temp5 + r*S + s] * value;
+				}
+			}
+    	}
+    }
+}
+
+/**
  * Performs a slice operation where the input matrix is sparse and the output matrix is dense.
  * This function avoids unnecessary sparse to dense conversion of the input matrix.
  * Parallelization: rows of output matrix.
  * 
  * @params inVal input val pointer
  * @params inRowPtr input row pointer
- * @params colInd input col index pointer
+ * @params inColInd input col index pointer
  * @params ret dense output pointer
  * @param rl row lower
  * @param ru row upper
@@ -42,7 +127,7 @@ nvcc -ptx -arch=sm_30 SystemML.cu
  * @param retClen number of columns of output matrix
  */
 extern "C"
-__global__ void slice_sparse_dense_row(double* inVal, int* inRowPtr, int* colInd, double* ret, 
+__global__ void slice_sparse_dense_row(double* inVal, int* inRowPtr, int* inColInd, double* ret, 
     int rl, int ru, int cl, int cu, int retClen) {
   	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	int rowIndex = index + rl;
@@ -52,18 +137,18 @@ __global__ void slice_sparse_dense_row(double* inVal, int* inRowPtr, int* colInd
 		 * the complexity of two-step separate compilation and linking process.
 		 *  
 		 * extern "C"
-		 * __global__ void slice_sparse_dense_row_helper(double* inVal, int* inRowPtr, int* colInd, double* ret, 
+		 * __global__ void slice_sparse_dense_row_helper(double* inVal, int* inRowPtr, int* inColInd, double* ret, 
 		 *     int rl, int ru, int cl, int cu, int retClen, int start, int end, int index) {
 		 *  int i = blockIdx.x * blockDim.x + threadIdx.x + start;   
 		 * 	// Only slice if the index falls into the given range
-		 * 	if(i < end && cl <= colInd[i] && colInd[i] <= cu) {
-		 * 		ret[ index*retClen + (colInd[i] - cl) ] = inVal[i];
+		 * 	if(i < end && cl <= inColInd[i] && inColInd[i] <= cu) {
+		 * 		ret[ index*retClen + (inColInd[i] - cl) ] = inVal[i];
 		 * 	}
 		 * }
 		 *
 		 * int size = inRowPtr[rowIndex+1] - inRowPtr[rowIndex];
 		 * double numThreads = (double)min(size, MAX_NUM_THREADS_CHILD_KERNEL);
-		 * slice_sparse_dense_row_helper<<< ceil(numThreads/ MAX_NUM_THREADS_CHILD_KERNEL), MAX_NUM_THREADS_CHILD_KERNEL>>>(inVal, inRowPtr, colInd, ret, 
+		 * slice_sparse_dense_row_helper<<< ceil(numThreads/ MAX_NUM_THREADS_CHILD_KERNEL), MAX_NUM_THREADS_CHILD_KERNEL>>>(inVal, inRowPtr, inColInd, ret, 
     	 *			rl, ru, cl, cu, retClen, inRowPtr[rowIndex], inRowPtr[rowIndex+1], index);
     	 *
     	 * Two-step compilation and linking process in JCudaKernels's constructor:
@@ -72,8 +157,8 @@ __global__ void slice_sparse_dense_row(double* inVal, int* inRowPtr, int* colInd
     	// Iterate over elements of the row 'rowIndex'.
     	for(int i = inRowPtr[rowIndex]; i < inRowPtr[rowIndex+1]; i++) {
     		// Only slice if the index falls into the given range
-    		if(cl <= colInd[i] && colInd[i] <= cu) {
-    			ret[ index*retClen + (colInd[i] - cl) ] = inVal[i];
+    		if(cl <= inColInd[i] && inColInd[i] <= cu) {
+    			ret[ index*retClen + (inColInd[i] - cl) ] = inVal[i];
     		}
     	}
     }
@@ -86,7 +171,7 @@ __global__ void slice_sparse_dense_row(double* inVal, int* inRowPtr, int* colInd
  * 
  * @params inVal input val pointer
  * @params inRowPtr input row pointer
- * @params colInd input col index pointer
+ * @params inColInd input col index pointer
  * @params ret dense output pointer
  * @param rl row lower
  * @param ru row upper
@@ -95,19 +180,19 @@ __global__ void slice_sparse_dense_row(double* inVal, int* inRowPtr, int* colInd
  * @param retClen number of columns of output matrix
  */
 extern "C"
-__global__ void slice_sparse_dense_nnz(double* inVal, int* inRowPtr, int* colInd, double* ret, 
+__global__ void slice_sparse_dense_nnz(double* inVal, int* inRowPtr, int* inColInd, double* ret, 
     int rl, int ru, int cl, int cu, int retClen) {
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
     int i = tid + inRowPtr[rl];
     
     // Only slice if the index falls into the given range
-    if(i < inRowPtr[ru+1] && cl <= colInd[i] && colInd[i] <= cu) {
+    if(i < inRowPtr[ru+1] && cl <= inColInd[i] && inColInd[i] <= cu) {
     	// Find the row index for corresponding non-zero value 'i'.
     	int rowIndex = rl;
     	while(inRowPtr[rowIndex+1] <= i) {
     		rowIndex++;
     	}
-	    ret[ (rowIndex-rl)*retClen + (colInd[i] - cl) ] = inVal[i];
+	    ret[ (rowIndex-rl)*retClen + (inColInd[i] - cl) ] = inVal[i];
     }
 }
 

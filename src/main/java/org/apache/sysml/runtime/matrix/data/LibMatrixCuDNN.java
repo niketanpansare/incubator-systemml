@@ -66,6 +66,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
+import org.apache.sysml.runtime.instructions.gpu.context.CSRPointer;
 import org.apache.sysml.runtime.instructions.gpu.context.ExecutionConfig;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.utils.GPUStatistics;
@@ -146,6 +147,25 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		long CHW = C*H*W; long KPQ = K*P*Q; long CRS = C*R*S; 
 		long NCHW = N*CHW; long NKPQ = N*KPQ; long KCRS = K*CRS;
 
+		// Check for sparse convolution
+		// First check for sparse input convolution
+		if(isInSparseFormat(gCtx, image)) {
+			double overhead = isInSparseFormat(gCtx, filter) ? OptimizerUtils.estimateSizeExactSparsity(K, CRS, 1.0) : 0;
+			if(overhead <= intermediateMemoryBudget) {
+				Pointer filterPointer = getDensePointerForCuDNN(gCtx, filter, instName);
+				Pointer dstPointer = getDensePointerForCuDNN(gCtx, outputBlock, instName);
+				long t0 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+				CSRPointer inPointer = LibMatrixCuDNN.getSparsePointer(gCtx, image, instName);
+				getCudaKernels(gCtx).launchKernel("conv2d_sparse_dense_dense_nk",
+						ExecutionConfig.getConfigForSimpleVectorOperations(N*K),
+						inPointer.val, inPointer.rowPtr, inPointer.colInd, filterPointer, dstPointer, 
+					    N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
+				if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CONVOLUTION_FORWARD_SDD, System.nanoTime() - t0);
+				return;
+			}
+		}
+		
+		// Dense convolution
 		if(NCHW < maxNumDoublesOfCuDNNTensor && NKPQ < maxNumDoublesOfCuDNNTensor && KCRS < maxNumDoublesOfCuDNNTensor) {
 			// Filter and output are accounted as dense in the memory estimation for conv2d
 			double overhead = isInSparseFormat(gCtx, filter) ? OptimizerUtils.estimateSizeExactSparsity(K, CRS, 1.0) : 0;

@@ -139,6 +139,7 @@ public abstract class GPUInstruction extends Instruction {
 	public final static String MISC_TIMER_RELU_KERNEL =                    "nnrk";  // time spent in the relu kernel
 	public final static String MISC_TIMER_CUDNN_INIT =                     "nni";   // time spent in initializations for cudnn call
 	public final static String MISC_TIMER_CUDNN_CLEANUP =                  "nnc";   // time spent in cleanup for cudnn call
+	public final static String MISC_TIMER_CONVOLUTION_FORWARD_SDD =        "cfsdd"; // time spent in conv2d_sparse_dense_dense_nk kernel
 
 	protected GPUINSTRUCTION_TYPE _gputype;
 	protected Operator _optr;
