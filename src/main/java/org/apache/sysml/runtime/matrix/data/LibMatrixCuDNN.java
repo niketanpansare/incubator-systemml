@@ -147,8 +147,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		long CHW = C*H*W; long KPQ = K*P*Q; long CRS = C*R*S; 
 		long NCHW = N*CHW; long NKPQ = N*KPQ; long KCRS = K*CRS;
 
-		if(DMLScript.FORCE_ACCELERATOR ||
-				(NCHW < maxNumDoublesOfCuDNNTensor && NKPQ < maxNumDoublesOfCuDNNTensor && KCRS < maxNumDoublesOfCuDNNTensor)) {
+		if(NCHW < maxNumDoublesOfCuDNNTensor && NKPQ < maxNumDoublesOfCuDNNTensor && KCRS < maxNumDoublesOfCuDNNTensor) {
 			// Filter and output are accounted as dense in the memory estimation for conv2d
 			double overhead = isInSparseFormat(gCtx, filter) ? OptimizerUtils.estimateSizeExactSparsity(K, CRS, 1.0) : 0;
 			overhead += isInSparseFormat(gCtx, image) ? OptimizerUtils.estimateSizeExactSparsity(N, CHW, 1.0) : 0;
@@ -158,7 +157,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			
 			// Required for LibMatrixCuDNNConvolutionAlgorithm
 			long workspaceLimit = (long) (intermediateMemoryBudget-overhead);
-			int localN = (DMLScript.FORCE_ACCELERATOR || overhead <= intermediateMemoryBudget) ? N : 1;
+			int localN = overhead <= intermediateMemoryBudget ? N : 1;
 			
 			try(LibMatrixCuDNNConvolutionAlgorithm algo = 
 					LibMatrixCuDNNConvolutionAlgorithm.cudnnGetConvolutionForwardAlgorithm(gCtx, instName, 
@@ -287,15 +286,14 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		long NCHW = N*CHW; long NKPQ = N*KPQ; long KCRS = K*CRS;
 		
 		
-		if(DMLScript.FORCE_ACCELERATOR || 
-				(NCHW < maxNumDoublesOfCuDNNTensor && NKPQ < maxNumDoublesOfCuDNNTensor && KCRS < maxNumDoublesOfCuDNNTensor)) {
+		if(NCHW < maxNumDoublesOfCuDNNTensor && NKPQ < maxNumDoublesOfCuDNNTensor && KCRS < maxNumDoublesOfCuDNNTensor) {
 			Pointer dwPointer = getDensePointerForCuDNN(gCtx, outputBlock, instName);
 			double overhead = isInSparseFormat(gCtx, image) ? OptimizerUtils.estimateSizeExactSparsity(N, CHW, 1.0) : 0;
 			overhead += isInSparseFormat(gCtx, dout) ? OptimizerUtils.estimateSizeExactSparsity(N, KPQ, 1.0) : 0;
 
 			// Required for LibMatrixCuDNNConvolutionAlgorithm
 			long workspaceLimit = (long) (intermediateMemoryBudget-overhead);
-			int localN = (DMLScript.FORCE_ACCELERATOR || overhead <= intermediateMemoryBudget) ? N : 1;
+			int localN = overhead <= intermediateMemoryBudget ? N : 1;
 			
 			try(LibMatrixCuDNNConvolutionAlgorithm algo = 
 					LibMatrixCuDNNConvolutionAlgorithm.cudnnGetConvolutionBackwardFilterAlgorithm(gCtx, instName, 
@@ -394,8 +392,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		long CHW = C*H*W; long KPQ = K*P*Q; long CRS = C*R*S; 
 		long NCHW = N*CHW; long NKPQ = N*KPQ; long KCRS = K*CRS;
 
-		if(DMLScript.FORCE_ACCELERATOR ||
-				(NCHW < maxNumDoublesOfCuDNNTensor && NKPQ < maxNumDoublesOfCuDNNTensor && KCRS < maxNumDoublesOfCuDNNTensor)) {
+		if(NCHW < maxNumDoublesOfCuDNNTensor && NKPQ < maxNumDoublesOfCuDNNTensor && KCRS < maxNumDoublesOfCuDNNTensor) {
 			// Filter and output are accounted as dense in the memory estimation for conv2dBackwardData
 			double overhead = isInSparseFormat(gCtx, filter) ? OptimizerUtils.estimateSizeExactSparsity(K, CRS, 1.0) : 0;
 			overhead += isInSparseFormat(gCtx, dout) ? OptimizerUtils.estimateSizeExactSparsity(N, KPQ, 1.0) : 0;
@@ -404,7 +401,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			
 			// Required for LibMatrixCuDNNConvolutionAlgorithm
 			long workspaceLimit = (long) (intermediateMemoryBudget-overhead);
-			int localN = (DMLScript.FORCE_ACCELERATOR || overhead <= intermediateMemoryBudget) ? N : 1;
+			int localN = overhead <= intermediateMemoryBudget ? N : 1;
 			
 			try(LibMatrixCuDNNConvolutionAlgorithm algo = 
 					LibMatrixCuDNNConvolutionAlgorithm.cudnnGetConvolutionBackwardDataAlgorithm(gCtx, instName, 
@@ -487,12 +484,11 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		long CHW = C*H*W; long CPQ = C*P*Q;  
 		long NCHW = N*CHW; long NCPQ = N*CPQ; 
 
-		if(DMLScript.FORCE_ACCELERATOR || 
-				(NCHW < maxNumDoublesOfCuDNNTensor && NCPQ < maxNumDoublesOfCuDNNTensor)) {
+		if(NCHW < maxNumDoublesOfCuDNNTensor && NCPQ < maxNumDoublesOfCuDNNTensor) {
 			// Filter and output are accounted as dense in the memory estimation for conv2dBackwardData
 			long overhead = isInSparseFormat(gCtx, image) ? OptimizerUtils.estimateSizeExactSparsity(N, CHW, 1.0) : 0;
 			Pointer y = getDensePointerForCuDNN(gCtx, outputBlock, instName);
-			if(DMLScript.FORCE_ACCELERATOR || overhead <= intermediateMemoryBudget) {
+			if(overhead <= intermediateMemoryBudget) {
 				Pointer x = getDensePointerForCuDNN(gCtx, image, instName);
 				cudnnTensorDescriptor xDesc = allocateTensorDescriptor(gCtx, image, N, C, H, W);
 				cudnnMaxpooling(gCtx, instName, x, xDesc, y, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
@@ -579,13 +575,12 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		long CHW = C*H*W; long CPQ = C*P*Q;  
 		long NCHW = N*CHW; long NCPQ = N*CPQ; 
 
-		if(DMLScript.FORCE_ACCELERATOR || 
-				(NCHW < maxNumDoublesOfCuDNNTensor && NCPQ < maxNumDoublesOfCuDNNTensor)) {
+		if(NCHW < maxNumDoublesOfCuDNNTensor && NCPQ < maxNumDoublesOfCuDNNTensor) {
 			// Filter and output are accounted as dense in the memory estimation for conv2dBackwardData
 			long overhead = isInSparseFormat(gCtx, image) ? OptimizerUtils.estimateSizeExactSparsity(N, CHW, 1.0) : 0;
 			overhead += isInSparseFormat(gCtx, dout) ? OptimizerUtils.estimateSizeExactSparsity(N, CPQ, 1.0) : 0;
 			Pointer dx = getDensePointerForCuDNN(gCtx, outputBlock, instName);
-			if(DMLScript.FORCE_ACCELERATOR || overhead <= intermediateMemoryBudget) {
+			if(overhead <= intermediateMemoryBudget) {
 				Pointer x = getDensePointerForCuDNN(gCtx, image, instName);
 				Pointer dy = getDensePointerForCuDNN(gCtx, dout, instName);
 				cudnnMaxpoolingBackward(gCtx, instName, x, dy, dx, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
