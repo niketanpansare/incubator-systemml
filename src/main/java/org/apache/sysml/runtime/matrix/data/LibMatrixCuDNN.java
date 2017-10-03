@@ -43,6 +43,8 @@ import static jcuda.jcudnn.cudnnDataType.CUDNN_DATA_DOUBLE;
 import static jcuda.jcudnn.cudnnNanPropagation.CUDNN_PROPAGATE_NAN;
 import static jcuda.jcudnn.cudnnPoolingMode.CUDNN_POOLING_MAX;
 import static jcuda.jcudnn.cudnnTensorFormat.CUDNN_TENSOR_NCHW;
+import static jcuda.runtime.JCuda.cudaFree;
+import static jcuda.runtime.JCuda.cudaMalloc;
 import static jcuda.runtime.JCuda.cudaMemcpy;
 import static jcuda.runtime.JCuda.cudaMemset;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToDevice;
@@ -58,6 +60,7 @@ import jcuda.jcudnn.cudnnHandle;
 import jcuda.jcudnn.cudnnPoolingDescriptor;
 import jcuda.jcudnn.cudnnStatus;
 import jcuda.jcudnn.cudnnTensorDescriptor;
+import jcuda.runtime.JCuda;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -66,6 +69,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
+import org.apache.sysml.runtime.instructions.gpu.context.CSRPointer;
 import org.apache.sysml.runtime.instructions.gpu.context.ExecutionConfig;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.utils.GPUStatistics;
@@ -145,6 +149,33 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 
 		long CHW = C*H*W; long KPQ = K*P*Q; long CRS = C*R*S; 
 		long NCHW = N*CHW; long NKPQ = N*KPQ; long KCRS = K*CRS;
+		
+		if(isInSparseFormat(gCtx, image) && S == W && R == 2 &&  C == 1 && stride_h == 1 && stride_w == 1 && pad_h == 0 && pad_w == 0) {
+			// conv2d_sparse_dense_dense_stride1pad0C1SEqWR2_nkp
+			Pointer filterPointer = getDensePointerForCuDNN(gCtx, filter, instName);
+			Pointer dstPointer = getDensePointerForCuDNN(gCtx, outputBlock, instName);
+			
+			CSRPointer imgPointer = LibMatrixCuDNN.getSparsePointer(gCtx, image, instName);
+			
+			long t1 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+			Pointer inColIndH = new Pointer(); cudaMalloc(inColIndH, imgPointer.nnz*Sizeof.INT);
+			Pointer inColIndW = new Pointer(); cudaMalloc(inColIndW, imgPointer.nnz*Sizeof.INT);
+			if(imgPointer.nnz < 0)
+				throw new DMLRuntimeException("Expected nnz to be greater than or equal to zero, but was " + imgPointer.nnz);
+			getCudaKernels(gCtx).launchKernel("getColIndHW", 
+					ExecutionConfig.getConfigForSimpleVectorOperations(H*W),
+					imgPointer.colInd, inColIndH, inColIndW, W, imgPointer.nnz);
+			getCudaKernels(gCtx).launchKernel("conv2d_sparse_dense_dense_stride1pad0C1SEqWR2_nkp", 
+					ExecutionConfig.getConfigForMatrixOperations(N*K, P),
+					imgPointer.val, imgPointer.rowPtr, 
+					inColIndH, inColIndW, filterPointer, dstPointer,
+					N, K, P, H, W, R*S, K*P, N*K);
+			JCuda.cudaDeviceSynchronize();
+			cudaFree(inColIndH); cudaFree(inColIndW);
+			if (GPUStatistics.DISPLAY_STATISTICS)
+				GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SPARSE_CONV_FORWARD1_LIB, System.nanoTime() - t1);
+			return;
+		}
 
 		if(NCHW < maxNumDoublesOfCuDNNTensor && NKPQ < maxNumDoublesOfCuDNNTensor && KCRS < maxNumDoublesOfCuDNNTensor) {
 			// Filter and output are accounted as dense in the memory estimation for conv2d

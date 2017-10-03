@@ -26,6 +26,61 @@ nvcc -ptx -arch=sm_30 SystemML.cu
 #include <cfloat>
 #include <cmath>
 
+extern "C"
+__global__ void getColIndHW(int* inColInd, int* retColIndH, int* retColIndW, 
+	int W, int NNZ) {
+	int i = blockIdx.x * blockDim.x + threadIdx.x;
+	if(i < NNZ) {
+		int hw = inColInd[i];
+		retColIndH[hw] = hw / W;
+		retColIndW[hw] = hw % W;
+	}
+}
+
+extern "C"
+__global__ void conv2d_sparse_dense_dense_stride1pad0C1SEqWR2_nkp(double* inVal, int* inRowPtr, 
+	int* inColIndH, int* inColIndW, 
+	double* filter, double* ret,
+	int N, int K, int P, int H, int W, int RS, int KP, int NK) {
+    int nk = blockIdx.x * blockDim.x + threadIdx.x;
+    int p = blockIdx.y * blockDim.y + threadIdx.y;
+    if(nk < NK && p < P) {
+    	int n = nk / K;
+    	int k = nk % K;
+    	double retVal = 0;
+    	int startIndex = inRowPtr[n]; int endIndex = inRowPtr[n+1];
+		int HMinus1 = H-1; int filterKOffset = k*RS;
+		//------------------------------------------------------------------------
+		// when R=2:
+		if(p == 0) {
+			// for h=0, r=0 => p=h
+			for(int i = startIndex; i < endIndex && inColIndH[i] == 0; i++) {
+				retVal += filter[filterKOffset + inColIndW[i]] * inVal[i];
+			}	
+		}
+		else if(p == HMinus1) {
+			// for h=H-1, r=1 => p=h-1
+			for(int i = endIndex-1; i >= startIndex && inColIndH[i] == HMinus1; i--) {
+				retVal += filter[filterKOffset + inColIndW[i] + W] * inVal[i];
+			}
+		}
+		else {
+			// for other h, r=0 and 1 and p=h and p=h-1
+			int i = startIndex; int HPlus1 = H+1;
+			while(i < endIndex && inColIndH[i] < HMinus1) i++;
+			while(i < endIndex && inColIndH[i] < H) {
+				retVal += filter[filterKOffset + inColIndW[i]] * inVal[i];
+				i++;
+			}
+			while(i < endIndex && inColIndH[i] < HPlus1) {
+				retVal += filter[filterKOffset + inColIndW[i] + W] * inVal[i];
+				i++;
+			}
+		}
+    	ret[n*KP + k*P + p] = retVal;
+    }
+}
+
 /**
  * Performs a slice operation where the input matrix is sparse and the output matrix is dense.
  * This function avoids unnecessary sparse to dense conversion of the input matrix.
