@@ -26,6 +26,31 @@ nvcc -ptx -arch=sm_30 SystemML.cu
 #include <cfloat>
 #include <cmath>
 
+// Note: get inRowInd using cusparse<t>csr2coo()
+extern "C"
+__global__ void im2col_sparse_sparse_stride1pad0C1SEqWR2_coo(
+	double* inVal, int* inRowInd, int* inColInd,
+	double* outVal, int* outRowInd, int* outColInd,
+	int W, int S, int Q, int NCHW, int HW, int RS, int PQ, int NNZ) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if(index < NCHW) {
+	    int n = inRowInd[index];
+	    int chw = inColInd[index];
+	    double value = inVal[index];
+	    int c = chw / HW;
+		int h = (chw - c*HW)/W;
+		int w = chw % W; 
+		int outIndex =  2*index; // R = 2
+		int rMin = 0; int rMax = (h == 0) ? 0 : 1;
+		for(int r = rMin; r <= rMax; r++, outIndex++) {
+			// p = h - r; s = w; q = 0
+			outRowInd[outIndex] = c*RS + r*S + w;
+			outColInd[outIndex] = n*PQ + (h - r)*Q;
+			outVal[outIndex] = value;
+		}
+	}
+}
+
 /**
  * Performs a slice operation where the input matrix is sparse and the output matrix is dense.
  * This function avoids unnecessary sparse to dense conversion of the input matrix.

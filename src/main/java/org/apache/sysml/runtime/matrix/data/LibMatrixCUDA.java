@@ -175,7 +175,7 @@ public class LibMatrixCUDA {
 	}
 
 
-	private static cusparseHandle getCusparseHandle(GPUContext gCtx) throws DMLRuntimeException{
+	protected static cusparseHandle getCusparseHandle(GPUContext gCtx) throws DMLRuntimeException{
 		return gCtx.getCusparseHandle();
 	}
 
