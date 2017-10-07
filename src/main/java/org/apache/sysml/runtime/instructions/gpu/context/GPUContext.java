@@ -135,6 +135,11 @@ public class GPUContext {
 	 * so that an extraneous host to dev transfer can be avoided
 	 */
 	private ArrayList<GPUObject> allocatedGPUObjects = new ArrayList<>();
+	
+	/**
+	 * Keeps track of allocated memory
+	 */
+	long allocatedMemoryInBytes = 0;
 
 	protected GPUContext(int deviceNum) throws DMLRuntimeException {
 		this.deviceNum = deviceNum;
@@ -339,6 +344,7 @@ public class GPUContext {
 			ensureFreeSpace(instructionName, size);
 			A = new Pointer();
 			cudaMalloc(A, size);
+			allocatedMemoryInBytes += size;
 			if (DMLScript.STATISTICS)
 				GPUStatistics.cudaAllocTime.add(System.nanoTime() - t0);
 			if (DMLScript.STATISTICS)
@@ -421,6 +427,7 @@ public class GPUContext {
 			if (DMLScript.STATISTICS)
 				t0 = System.nanoTime();
 			cudaFree(toFree);
+			allocatedMemoryInBytes -= size;
 			jcuda.runtime.JCuda.cudaDeviceSynchronize();
 			cudaBlockSizeMap.remove(toFree);
 			if (DMLScript.STATISTICS)
@@ -620,10 +627,15 @@ public class GPUContext {
 	 * @return the available memory in bytes
 	 */
 	public long getAvailableMemory() {
-		long free[] = { 0 };
-		long total[] = { 0 };
-		cudaMemGetInfo(free, total);
-		return (long) (free[0] * GPU_MEMORY_UTILIZATION_FACTOR);
+		if(DMLScript.USE_CUDA_GET_MEM_INFO) {
+			long free[] = { 0 };
+			long total[] = { 0 };
+			cudaMemGetInfo(free, total);
+			return (long) (free[0] * GPU_MEMORY_UTILIZATION_FACTOR);
+		}
+		else {
+			return GPUContextPool.initialGPUMemBudget() - allocatedMemoryInBytes;
+		}
 	}
 
 	/**

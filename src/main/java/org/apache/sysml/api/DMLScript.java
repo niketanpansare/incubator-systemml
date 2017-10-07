@@ -177,6 +177,8 @@ public class DMLScript
 	public static boolean           SYNCHRONIZE_GPU  	= true;
 	// whether to perform eager CUDA free on rmvar
 	public static boolean           EAGER_CUDA_FREE  	= false;
+	// whether to use cudaMemGetInfo to get current available memory
+	public static boolean           USE_CUDA_GET_MEM_INFO = true;
 
 
 	public static boolean _suppressPrint2Stdout = false;  // flag that indicates whether or not to suppress any prints to stdout

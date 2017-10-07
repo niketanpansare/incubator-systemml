@@ -92,7 +92,10 @@
     
     <!-- whether to perform eager CUDA free on rmvar instruction -->
     <sysml.gpu.eager.cudaFree>false</sysml.gpu.eager.cudaFree>
+    
+    <!-- whether to use cudaMemGetInfo to get current available memory -->
+    <sysml.gpu.useCudaMemGetInfo>true</sysml.gpu.useCudaMemGetInfo>
    
-   <!-- maximum wrap length for instruction and miscellaneous timer column of statistics -->
-   <sysml.stats.maxWrapLength>30</sysml.stats.maxWrapLength>
+   	<!-- maximum wrap length for instruction and miscellaneous timer column of statistics -->
+   	<sysml.stats.maxWrapLength>30</sysml.stats.maxWrapLength>
 </root>

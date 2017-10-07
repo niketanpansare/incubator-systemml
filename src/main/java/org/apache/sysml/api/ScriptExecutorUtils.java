@@ -80,6 +80,7 @@ public class ScriptExecutorUtils {
 		DMLScript.FINEGRAINED_STATISTICS = dmlconf.getBooleanValue(DMLConfig.EXTRA_FINEGRAINED_STATS);
 		DMLScript.SYNCHRONIZE_GPU = dmlconf.getBooleanValue(DMLConfig.SYNCHRONIZE_GPU);
 		DMLScript.EAGER_CUDA_FREE = dmlconf.getBooleanValue(DMLConfig.EAGER_CUDA_FREE);
+		DMLScript.USE_CUDA_GET_MEM_INFO = dmlconf.getBooleanValue(DMLConfig.USE_CUDA_GET_MEM_INFO);
 		DMLScript.STATISTICS_MAX_WRAP_LEN = dmlconf.getIntValue(DMLConfig.STATS_MAX_WRAP_LEN);
 
 		boolean exceptionThrown = false;
