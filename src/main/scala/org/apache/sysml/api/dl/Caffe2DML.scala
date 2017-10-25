@@ -346,13 +346,13 @@ class Caffe2DML(val sc: SparkContext,
     val convLayers = layers.filter(l => l._2.isInstanceOf[Convolution]).map(l => l._2.asInstanceOf[Convolution])
     val crspq = convLayers.map(l => l.numChannels.toLong*l.kernel_h.toLong*l.kernel_w.toLong*l.outputShape._2.toLong*l.outputShape._3.toLong) 
     val kpq = convLayers.map(l => l.outputShape._1.toLong*l.outputShape._2.toLong*l.outputShape._3.toLong)
-    System.out.println("Total number of layer outputs/errors/weights/bias/gradients:" + numLayerOutput + "/" + numLayerError +
+    System.out.println("Total number of layer outputs/errors/weights/bias/gradients: " + numLayerOutput + "/" + numLayerError +
         "/" + numLayerWeights + "/" + numLayerBias + "/" + numLayerGradients)
-    System.out.println("Total memory requirements for parameters if in double precision and dense format for training (both forward and backward) / test (only forward):" + 
+    System.out.println("Total memory requirements for parameters if in double precision and dense format for train/test: " +
         OptimizerUtils.toMB(layers.map(l => getMemInBytes(l._2, batchSize, true)).sum) + "/" + 
-        OptimizerUtils.toMB(layers.map(l => getMemInBytes(l._2, batchSize, false)).sum))
-    System.out.println("(Advanced) Key network statistics to compute intermediate CP overhead " + 
-        "batchSize/maxThreads/1-thread im2col(sum, max)/1-thread reshape_col(sum, max):" + 
+        OptimizerUtils.toMB(layers.map(l => getMemInBytes(l._2, batchSize, false)).sum) + " mb.")
+    System.out.println("[Advanced] Key network statistics to compute intermediate CP overhead " + 
+        "batchSize/maxThreads/1-thread im2col(sum, max)/1-thread reshape_col(sum, max): " + 
         batchSize + "/" + OptimizerUtils.getConstrainedNumThreads(-1) + "/(" +
         OptimizerUtils.toMB(crspq.sum*Double.BYTES) + ", " + OptimizerUtils.toMB(crspq.max*Double.BYTES) + ")/(" + 
         OptimizerUtils.toMB(kpq.sum*Double.BYTES) + ", " + OptimizerUtils.toMB(kpq.max*Double.BYTES) + ").")
