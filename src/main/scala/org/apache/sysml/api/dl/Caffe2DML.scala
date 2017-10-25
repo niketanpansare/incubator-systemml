@@ -321,7 +321,7 @@ class Caffe2DML(val sc: SparkContext,
     val layers = net.getLayers .map(l => (l, net.getCaffeLayer(l)))
     val numDataLayers = layers.filter(l => l._2.isInstanceOf[Data]).length
     val batchSize = if(numDataLayers == 1) layers.filter(l => l._2.isInstanceOf[Data]).map(l => l._2.param.getDataParam.getBatchSize).get(0) else -1 
-    val header = Seq("Name", "Type", "Output", "Weight", "Bias", "Top", "Bottom", "Memory in mb (train/test)")
+    val header = Seq("Name", "Type", "Output", "Weight", "Bias", "Top", "Bottom", "Memory(train/test)")
     val entries = layers
       .map(l => {
         val layer = l._2
@@ -335,12 +335,14 @@ class Caffe2DML(val sc: SparkContext,
          OptimizerUtils.toMB(getMemInBytes(l._2, batchSize, true)) + "/" + OptimizerUtils.toMB(getMemInBytes(l._2, batchSize, false))
         )
       }) ++ List(("Total:", "", "", 
-          layers.map(l => l._2.weightShape()(0).toLong * l._2.weightShape()(1).toLong).sum, // Weight 
-          layers.map(l => l._2.biasShape()(0).toLong * l._2.biasShape()(1).toLong).sum, //Bias
+          layers.map(l => if(l._2.weightShape != null) l._2.weightShape()(0).toLong * l._2.weightShape()(1).toLong else 0).sum, // Weight 
+          layers.map(l => if(l._2.biasShape != null) l._2.biasShape()(0).toLong * l._2.biasShape()(1).toLong else 0).sum, //Bias
           "", "",  // "Top", "Bottom"
           OptimizerUtils.toMB(layers.map(l => getMemInBytes(l._2, batchSize, true)).sum) + "/" + 
           OptimizerUtils.toMB(layers.map(l => getMemInBytes(l._2, batchSize, false)).sum)))
     import sparkSession.implicits._
+    System.out.println("The memory mentioned in the below table is memory used for storing the parameters in double precision and dense format. " + 
+        "It ignores the overhead of intermediates.")
     sc.parallelize(entries).toDF(header: _*).show(net.getLayers.size)
   }
 
