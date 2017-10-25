@@ -311,8 +311,8 @@ class Caffe2DML(val sc: SparkContext,
   private def getMemInBytes(l:CaffeLayer, batchSize:Int, isTraining:Boolean):Long = {
     val numLayerOutput = l.outputShape._1.toLong * l.outputShape._2.toLong * l.outputShape._3.toLong  * batchSize
     val numLayerError = numLayerOutput
-    val numLayerWeights = if (l.weightShape != null) l.weightShape()(0).toLong * l.weightShape()(1).toLong else 0
-    val numLayerBias = if (l.biasShape != null)l.biasShape()(0).toLong * l.biasShape()(1).toLong else 0
+    val numLayerWeights = if(l.weightShape != null) l.weightShape()(0).toLong * l.weightShape()(1).toLong else 0
+    val numLayerBias = if(l.biasShape != null)l.biasShape()(0).toLong * l.biasShape()(1).toLong else 0
     val numLayerGradients = (numLayerWeights + numLayerBias) * batchSize
     if(isTraining) (numLayerOutput + numLayerError + numLayerWeights + numLayerBias + numLayerGradients)*Double.BYTES
     else (numLayerOutput + numLayerWeights + numLayerBias)*Double.BYTES
@@ -336,16 +336,26 @@ class Caffe2DML(val sc: SparkContext,
         )
       })
     import sparkSession.implicits._
-    System.out.println("The memory mentioned in the below table is memory used for storing the parameters in double precision and dense format. " + 
-        "It ignores the overhead of intermediates.")
     sc.parallelize(entries).toDF(header: _*).show(net.getLayers.size)
     
-//    ++ List(("Total:", "", "", 
-//          layers.map(l => if(l._2.weightShape != null) l._2.weightShape()(0).toLong * l._2.weightShape()(1).toLong else 0).sum, // Weight 
-//          layers.map(l => if(l._2.biasShape != null) l._2.biasShape()(0).toLong * l._2.biasShape()(1).toLong else 0).sum, //Bias
-//          "", "",  // "Top", "Bottom"
-//          OptimizerUtils.toMB(layers.map(l => getMemInBytes(l._2, batchSize, true)).sum) + "/" + 
-//          OptimizerUtils.toMB(layers.map(l => getMemInBytes(l._2, batchSize, false)).sum)))
+    val numLayerOutput = layers.map(l => l._2.outputShape._1.toLong * l._2.outputShape._2.toLong * l._2.outputShape._3.toLong).sum * batchSize
+    val numLayerError = numLayerOutput
+    val numLayerWeights = layers.map(l => if(l._2.weightShape != null) l._2.weightShape()(0).toLong * l._2.weightShape()(1).toLong else 0).sum
+    val numLayerBias = layers.map(l => if(l._2.biasShape != null) l._2.biasShape()(0).toLong * l._2.biasShape()(1).toLong else 0).sum
+    val numLayerGradients = (numLayerWeights + numLayerBias) * batchSize
+    val convLayers = layers.filter(l => l._2.isInstanceOf[Convolution]).map(l => l._2.asInstanceOf[Convolution])
+    val crspq = convLayers.map(l => l.numChannels.toLong*l.kernel_h.toLong*l.kernel_w.toLong*l.outputShape._2.toLong*l.outputShape._3.toLong) 
+    val kpq = convLayers.map(l => l.outputShape._1.toLong*l.outputShape._2.toLong*l.outputShape._3.toLong)
+    System.out.println("Total number of layer outputs/errors/weights/bias/gradients:" + numLayerOutput + "/" + numLayerError +
+        "/" + numLayerWeights + "/" + numLayerBias + "/" + numLayerGradients)
+    System.out.println("Total memory requirements for parameters if in double precision and dense format for training (both forward and backward) / test (only forward):" + 
+        OptimizerUtils.toMB(layers.map(l => getMemInBytes(l._2, batchSize, true)).sum) + "/" + 
+        OptimizerUtils.toMB(layers.map(l => getMemInBytes(l._2, batchSize, false)).sum))
+    System.out.println("(Advanced) Key network statistics to compute intermediate CP overhead " + 
+        "batchSize/maxThreads/1-thread im2col(sum, max)/1-thread reshape_col(sum, max):" + 
+        batchSize + "/" + OptimizerUtils.getConstrainedNumThreads(-1) + "/(" +
+        OptimizerUtils.toMB(crspq.sum*Double.BYTES) + ", " + OptimizerUtils.toMB(crspq.max*Double.BYTES) + ")/(" + 
+        OptimizerUtils.toMB(kpq.sum*Double.BYTES) + ", " + OptimizerUtils.toMB(kpq.max*Double.BYTES) + ").")
   }
 
   // ================================================================================================
