@@ -321,7 +321,7 @@ class Caffe2DML(val sc: SparkContext,
     val layers = net.getLayers .map(l => (l, net.getCaffeLayer(l)))
     val numDataLayers = layers.filter(l => l._2.isInstanceOf[Data]).length
     val batchSize = if(numDataLayers == 1) layers.filter(l => l._2.isInstanceOf[Data]).map(l => l._2.param.getDataParam.getBatchSize).get(0) else -1 
-    val header = Seq("Name", "Type", "Output", "Weight", "Bias", "Top", "Bottom", "Memory(train/test)")
+    val header = Seq("Name", "Type", "Output", "Weight", "Bias", "Top", "Bottom", "Memory* (train/test)")
     val entries = layers
       .map(l => {
         val layer = l._2
@@ -350,15 +350,16 @@ class Caffe2DML(val sc: SparkContext,
     if(getTrainAlgo().equals("minibatch") && getTestAlgo().equals("minibatch")) {
       System.out.println("Total number of layer outputs/errors/weights/bias/gradients: " + numLayerOutput + "/" + numLayerError +
         "/" + numLayerWeights + "/" + numLayerBias + "/" + numLayerGradients)
-      System.out.println("Total memory requirements for parameters if in double precision and dense format for train/test: " +
+      System.out.println("Total memory requirements for parameters* for train/test: " +
         OptimizerUtils.toMB(layers.map(l => getMemInBytes(l._2, batchSize, true)).sum) + "/" + 
-        OptimizerUtils.toMB(layers.map(l => getMemInBytes(l._2, batchSize, false)).sum) + " mb.")
+        OptimizerUtils.toMB(layers.map(l => getMemInBytes(l._2, batchSize, false)).sum))
       System.out.println("[Advanced] Key network statistics to compute intermediate CP overhead " + 
-        "batchSize/maxThreads/1-thread im2col(sum, max)/1-thread reshape_col(sum, max): " + 
+        "batchSize/maxThreads/1-thread im2col*(sum, max)/1-thread reshape_col*(sum, max): " + 
         batchSize + "/" + OptimizerUtils.getConstrainedNumThreads(-1) + "/(" +
         OptimizerUtils.toMB(crspq.sum*Double.BYTES) + ", " + OptimizerUtils.toMB(crspq.max*Double.BYTES) + ")/(" + 
         OptimizerUtils.toMB(kpq.sum*Double.BYTES) + ", " + OptimizerUtils.toMB(kpq.max*Double.BYTES) + ").")
     }
+    System.out.println("* => memory in megabytes assuming the parameters are in double precision and in dense format.")
   }
 
   // ================================================================================================
