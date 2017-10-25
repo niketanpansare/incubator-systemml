@@ -334,16 +334,18 @@ class Caffe2DML(val sc: SparkContext,
          layer.param.getBottomList.mkString(","), 
          OptimizerUtils.toMB(getMemInBytes(l._2, batchSize, true)) + "/" + OptimizerUtils.toMB(getMemInBytes(l._2, batchSize, false))
         )
-      }) ++ List(("Total:", "", "", 
-          layers.map(l => if(l._2.weightShape != null) l._2.weightShape()(0).toLong * l._2.weightShape()(1).toLong else 0).sum, // Weight 
-          layers.map(l => if(l._2.biasShape != null) l._2.biasShape()(0).toLong * l._2.biasShape()(1).toLong else 0).sum, //Bias
-          "", "",  // "Top", "Bottom"
-          OptimizerUtils.toMB(layers.map(l => getMemInBytes(l._2, batchSize, true)).sum) + "/" + 
-          OptimizerUtils.toMB(layers.map(l => getMemInBytes(l._2, batchSize, false)).sum)))
+      })
     import sparkSession.implicits._
     System.out.println("The memory mentioned in the below table is memory used for storing the parameters in double precision and dense format. " + 
         "It ignores the overhead of intermediates.")
     sc.parallelize(entries).toDF(header: _*).show(net.getLayers.size)
+    
+//    ++ List(("Total:", "", "", 
+//          layers.map(l => if(l._2.weightShape != null) l._2.weightShape()(0).toLong * l._2.weightShape()(1).toLong else 0).sum, // Weight 
+//          layers.map(l => if(l._2.biasShape != null) l._2.biasShape()(0).toLong * l._2.biasShape()(1).toLong else 0).sum, //Bias
+//          "", "",  // "Top", "Bottom"
+//          OptimizerUtils.toMB(layers.map(l => getMemInBytes(l._2, batchSize, true)).sum) + "/" + 
+//          OptimizerUtils.toMB(layers.map(l => getMemInBytes(l._2, batchSize, false)).sum)))
   }
 
   // ================================================================================================
