@@ -50,6 +50,8 @@ import java.util.Random
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer
+import org.apache.sysml.hops.OptimizerUtils
+import java.lang.Double
 
 /***************************************************************************************
 DESIGN OF CAFFE2DML:
@@ -308,8 +310,8 @@ class Caffe2DML(val sc: SparkContext,
 
   def summary(sparkSession: org.apache.spark.sql.SparkSession): Unit = {
     val header = Seq("Name", "Type", "Output", "Weight", "Bias", "Top", "Bottom")
-    val entries = net.getLayers
-      .map(l => (l, net.getCaffeLayer(l)))
+    val layers = net.getLayers .map(l => (l, net.getCaffeLayer(l)))
+    val entries = layers
       .map(l => {
         val layer = l._2
         (l._1,
@@ -322,6 +324,34 @@ class Caffe2DML(val sc: SparkContext,
       })
     import sparkSession.implicits._
     sc.parallelize(entries).toDF(header: _*).show(net.getLayers.size)
+    val numDataLayers = layers.filter(l => l._2.isInstanceOf[Data]).length // param.getDataParam.getBatchSize
+    if(numDataLayers == 1) {
+      val batchSize = layers.filter(l => l._2.isInstanceOf[Data]).map(l => l._2.param.getDataParam.getBatchSize).get(0)
+      val numLayerOutput = layers.map(l => l._2.outputShape._1.toLong * l._2.outputShape._2.toLong * l._2.outputShape._3.toLong).sum * batchSize
+      val numLayerError = numLayerOutput
+      val numLayerWeights = layers.map(l => l._2.weightShape()(0).toLong * l._2.weightShape()(1).toLong).sum
+      val numLayerBias = layers.map(l => l._2.biasShape()(0).toLong * l._2.biasShape()(1).toLong).sum
+      val numLayerGradients = (numLayerWeights + numLayerBias) * batchSize
+      val sb = new StringBuilder()
+      sb.append("Total number of layer outputs/errors/weights/bias/gradients:" + numLayerOutput + "/" + numLayerError +
+          "/" + numLayerWeights + "/" + numLayerBias + "/" + numLayerGradients + "\n")
+      val totalTraining = numLayerOutput + numLayerError + numLayerWeights + numLayerBias + numLayerGradients
+      val totalTest = numLayerOutput + numLayerWeights + numLayerBias
+      sb.append("Total memory requirements for parameters if in double precision and dense format for training (both forward and backward) / test (only forward):" +
+          OptimizerUtils.toMB(totalTraining*Double.BYTES) + "/" + OptimizerUtils.toMB(totalTest*Double.BYTES) + " mb.\n")
+      val convLayers = layers.filter(l => l._2.isInstanceOf[Convolution]).map(l => l._2.asInstanceOf[Convolution])
+      val crspq = convLayers.map(l => l.numChannels.toLong*l.kernel_h.toLong*l.kernel_w.toLong*l.outputShape._2.toLong*l.outputShape._3.toLong) 
+      val kpq = convLayers.map(l => l.outputShape._1.toLong*l.outputShape._2.toLong*l.outputShape._3.toLong) 
+      sb.append("(Advanced) Key network statistics to compute intermediate CP overhead " + 
+          "batchSize/maxThreads/1-thread im2col(sum, max)/1-thread reshape_col(sum, max):" + 
+          batchSize + "/" + OptimizerUtils.getConstrainedNumThreads(-1) + "/(" +
+          OptimizerUtils.toMB(crspq.sum*Double.BYTES) + ", " + OptimizerUtils.toMB(crspq.max*Double.BYTES) + ")/(" + 
+          OptimizerUtils.toMB(kpq.sum*Double.BYTES) + ", " + OptimizerUtils.toMB(kpq.max*Double.BYTES) + ").")
+      System.out.println(sb.toString())  
+    }
+    else {
+      Caffe2DML.LOG.debug("Number of data layers is " + numDataLayers)
+    }
   }
 
   // ================================================================================================
