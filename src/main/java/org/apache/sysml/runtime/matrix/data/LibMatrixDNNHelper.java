@@ -27,7 +27,6 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNNConv2dBackwardDataHelper.*;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNNConv2dBackwardFilterHelper.*;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNNConv2dHelper.*;
-import org.apache.sysml.runtime.matrix.data.LibMatrixDNNIm2ColHelper.DenseIm2colWorkerAllChannels;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNNPoolingBackwardHelper.*;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNNPoolingHelper.*;
 import org.apache.sysml.runtime.instructions.InstructionUtils;

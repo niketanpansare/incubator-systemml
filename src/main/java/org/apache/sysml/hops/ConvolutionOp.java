@@ -241,16 +241,33 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 			expectedSparsity = image.getInput().get(0).getSparsity();
 		}
 		if(!OptimizerUtils.ALLOW_OPERATOR_FUSION ||  et != ExecType.GPU || !isConv2dOp 
-				|| expectedSparsity > EXPLICIT_IM2COL_SPARSITY_THRESHOLD) return false;
+				|| expectedSparsity > EXPLICIT_IM2COL_SPARSITY_THRESHOLD) {
+			if(LOG.isDebugEnabled())
+				LOG.debug("Unable to apply explicit im2col rewrite. operator fusion:" + OptimizerUtils.ALLOW_OPERATOR_FUSION 
+						+ ", exec type:" + et + ", isConv2dOp:" + isConv2dOp + ", expectedSparsity:" + expectedSparsity);
+			return false;
+		}
 		
 		// 4. Known im2col dimensions (i.e. CRS, NPQ)  AND
 		ConvolutionOp convOp = (ConvolutionOp)(isConv2dBiasAdd ? inputs.get(0) : this); 
 		long CRS = convOp.getDim("CRS"); long NPQ = convOp.getDim("NPQ");
-		if(CRS < 0 || NPQ < 0) return false;
+		if(CRS < 0 || NPQ < 0) {
+			if(LOG.isDebugEnabled())
+				LOG.debug("Unable to apply explicit im2col rewrite. CRS:" + CRS + ", NPQ:" + NPQ);
+			return false;
+		}
 		
 		// 5. Guard so that we do not construct extremely large im2col even if the input is sparse. For example: batch prediction/validation
 		double im2colMemEst = OptimizerUtils.estimateSizeExactSparsity(CRS, NPQ, expectedSparsity);
-		return im2colMemEst < EXPLICIT_IM2COL_MEMORY_THRESHOLD;
+		if(im2colMemEst > EXPLICIT_IM2COL_MEMORY_THRESHOLD) {
+			if(LOG.isDebugEnabled())
+				LOG.debug("Unable to apply explicit im2col rewrite. im2colMemEst:" + im2colMemEst);
+			return false;
+		}
+		else {
+			LOG.debug("Eligible for explicit im2col rewrite.");
+			return true;
+		}
 	}
 	
 	public Lop constructConvolutionLops(ExecType et) throws HopsException, LopsException {
