@@ -56,7 +56,8 @@ public class GPUInstructionParser  extends InstructionParser
 		String2GPUInstructionType.put( "channel_sums",           GPUINSTRUCTION_TYPE.Convolution);
 		String2GPUInstructionType.put( "reorg_npqk",          	 GPUINSTRUCTION_TYPE.Convolution);
 		String2GPUInstructionType.put( "reorg_bias_add_npqk",    GPUINSTRUCTION_TYPE.Convolution);
-
+		String2GPUInstructionType.put( "reorg_nkpq",    GPUINSTRUCTION_TYPE.Convolution);
+		
 		// Matrix Multiply Operators
 		String2GPUInstructionType.put( "ba+*",  GPUINSTRUCTION_TYPE.AggregateBinary);
 		String2GPUInstructionType.put( "tsmm",  GPUINSTRUCTION_TYPE.MMTSJ);

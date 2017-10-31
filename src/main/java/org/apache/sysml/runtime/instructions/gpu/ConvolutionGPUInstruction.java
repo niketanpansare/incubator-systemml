@@ -191,7 +191,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 			return new ConvolutionGPUInstruction(in1, in2, in3, out, opcode, str, stride,
 					padding, input_shape, filter_shape, Double.parseDouble(parts[17]));
 		}
-		else if (opcode.equalsIgnoreCase("maxpooling") || opcode.equalsIgnoreCase("reorg_npqk")) {
+		else if (opcode.equalsIgnoreCase("maxpooling") || opcode.equalsIgnoreCase("reorg_npqk") || opcode.equalsIgnoreCase("reorg_nkpq")) {
 			InstructionUtils.checkNumFields(parts, 15);
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand out = new CPOperand(parts[14]);
@@ -393,6 +393,19 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 			
 			if(instOpcode.equalsIgnoreCase("maxpooling"))
 				LibMatrixCuDNN.maxpooling(ec.getGPUContext(0), getExtendedOpcode(), image, out, N, C, H, W,
+					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, _intermediateMemoryBudget);
+		}
+		else if (instOpcode.equalsIgnoreCase("reorg_nkpq")) {
+			MatrixObject image = getMatrixInputForGPUInstruction(ec, _input1.getName());
+
+			if(image.getNumRows() != N || image.getNumColumns() != K*P*Q) 
+				throw new DMLRuntimeException("Incorrect dimensions for image in reorg_nkpq: " + 
+						image.getNumRows() + " != " +  N + " || " + image.getNumColumns() + " != " + K*P*Q);
+			
+			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), K, N*P*Q);
+			
+			if(instOpcode.equalsIgnoreCase("reorg_nkpq"))
+				LibMatrixCuDNN.reorg_nkpq(ec.getGPUContext(0), getExtendedOpcode(), image, out, N, C, H, W,
 					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, _intermediateMemoryBudget);
 		}
 		else if (instOpcode.equalsIgnoreCase("reorg_npqk")) {

@@ -27,6 +27,26 @@ nvcc -ptx -arch=sm_30 --std c++11 SystemML.cu
 #include <cmath>
 
 template <typename T>
+__device__ void reorg_nkpq(T *A, T *C, unsigned int N, unsigned int K, unsigned int PQ, unsigned int KPQ, unsigned int NKPQ) {
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  if (index < NKPQ) {
+    int n = index / KPQ;
+    int kpq = index % KPQ;
+    int k = kpq / PQ;
+    int pq = kpq % PQ;
+    C[k*N*PQ+ n*PQ + pq] = A[index];
+  }
+}
+
+extern "C" __global__ void reorg_nkpq_d(double *A, double *C, unsigned int N, unsigned int K, unsigned int PQ, unsigned int KPQ, unsigned int NKPQ) {
+  reorg_nkpq(A, C, N, K, PQ, KPQ, NKPQ);
+}
+
+extern "C" __global__ void reorg_nkpq_f(float *A, float *C, unsigned int N, unsigned int K, unsigned int PQ, unsigned int KPQ, unsigned int NKPQ) {
+  reorg_nkpq(A, C, N, K, PQ, KPQ, NKPQ);
+}
+
+template <typename T>
 __device__ void reorg_npqk(T *A, T *C, unsigned int N, unsigned int K, unsigned int PQ, unsigned int KPQ, unsigned int NKPQ) {
   int index = blockIdx.x * blockDim.x + threadIdx.x;
   if (index < NKPQ) {

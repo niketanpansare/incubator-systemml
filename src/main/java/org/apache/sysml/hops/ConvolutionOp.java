@@ -33,8 +33,6 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.ConvolutionParameters;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-
 import java.util.ArrayList;
 
 public class ConvolutionOp extends Hop  implements MultiThreadedHop
@@ -48,7 +46,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	private static final boolean INFER_TENSOR_SHAPE_FROM_PARENT_CONV_OP = true;
 	// This guards us from cases where the user provides incorrect C,H,W parameters.
 	private static final boolean THROW_ERROR_IF_INFERRED_SHAPE_MISMATCH = true;
-	private static final double EXPLICIT_IM2COL_SPARSITY_THRESHOLD = MatrixBlock.SPARSITY_TURN_POINT;
+	private static final double EXPLICIT_IM2COL_SPARSITY_THRESHOLD = 0.2;
 	private static final double EXPLICIT_IM2COL_MEMORY_THRESHOLD = 8e+8; // 800mb in bytes
 	// -------------------------------------------------------------------------
 	
@@ -234,20 +232,18 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		// 2. For conv2d/conv2d_bias_add operation  AND
 		// 3. If sparsity is less than threshold  AND
 		boolean isConv2dBiasAdd = isConv2dBiasAddRewriteEligible(et, inputs);
-		boolean isConv2dOp = op == ConvOp.DIRECT_CONV2D || isConv2dBiasAdd;
+		boolean isIm2colBasedOp = op == ConvOp.DIRECT_CONV2D || op == ConvOp.DIRECT_CONV2D_BACKWARD_FILTER || isConv2dBiasAdd;
 		Hop image = isConv2dBiasAdd ? inputs.get(0).getInput().get(0) : inputs.get(0);
-		Hop filter = isConv2dBiasAdd ? inputs.get(0).getInput().get(1) : inputs.get(1);
 		double expectedSparsity = image.getSparsity();
 		if(image instanceof IndexingOp && expectedSparsity == 1.0) {
 			// If rix then use the sparsity of the original dataset if the sparsity of image is unknown
 			expectedSparsity = image.getInput().get(0).getSparsity();
 		}
-		if(!OptimizerUtils.ALLOW_OPERATOR_FUSION ||  et != ExecType.GPU || !isConv2dOp 
-				|| expectedSparsity > EXPLICIT_IM2COL_SPARSITY_THRESHOLD || filter.getSparsity() > MatrixBlock.SPARSITY_TURN_POINT) {
+		if(!OptimizerUtils.ALLOW_OPERATOR_FUSION ||  et != ExecType.GPU || !isIm2colBasedOp 
+				|| expectedSparsity > EXPLICIT_IM2COL_SPARSITY_THRESHOLD) {
 			if(LOG.isDebugEnabled())
 				LOG.debug("Unable to apply explicit im2col rewrite. operator fusion:" + OptimizerUtils.ALLOW_OPERATOR_FUSION 
-						+ ", exec type:" + et + ", isConv2dOp:" + isConv2dOp + ", expectedIm2colSparsity:" + expectedSparsity 
-						+ ", filterSparsity:" + filter.getSparsity());
+						+ ", exec type:" + et + ", isIm2colBasedOp:" + isIm2colBasedOp + ", expectedIm2colSparsity:" + expectedSparsity);
 			return false;
 		}
 		
@@ -306,18 +302,32 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 				inputs = inputs.get(0).getInput();
 				lopOp = OperationTypes.REORG_BIAS_ADD_NPQK;
 			}
-			else {
+			else if(op == ConvOp.DIRECT_CONV2D) {
 				lhsInputLop = inputs.get(0).constructLops();
 				lopOp = OperationTypes.REORG_NPQK;
-			} 
-			ArrayList<Hop> withoutFilter = new ArrayList<Hop>(inputs); withoutFilter.remove(1);
+			}
+			else if(op == ConvOp.DIRECT_CONV2D_BACKWARD_FILTER) {
+				lhsInputLop = inputs.get(0).constructLops();
+				lopOp = OperationTypes.REORG_NKPQ;
+			}
+			else
+				throw new HopsException("Usupported op for im2col rewrite:" + op.name());
+			ArrayList<Hop> withoutSecondMatrix = new ArrayList<Hop>(inputs); withoutSecondMatrix.remove(1);
 			long rowsInBlock = getRowsInBlock(); long colsInBlock = getColsInBlock();
 			long NPQ = convOp.getDim("NPQ");
 			Lop transIm2ColLop = constructConvolutionLopsHelper(lhsInputLop, OperationTypes.TRANS_IM2COL, ExecType.CP, null, 0, 
-					withoutFilter, NPQ,  convOp.getDim("CRS"), rowsInBlock, colsInBlock, -1);
-			Lop knpqOutput = new Binary(transIm2ColLop, inputs.get(1).constructLops(), Binary.OperationTypes.MATMULT, getDataType(), getValueType(), et, false, true);
-			knpqOutput.getOutputParameters().setDimensions(NPQ, convOp.getDim("K"), rowsInBlock, colsInBlock, -1);
-			return constructConvolutionLopsHelper(knpqOutput, lopOp, et, optionalRhsInputLop, 0, withoutFilter, convOp.getDim("N"), convOp.getDim("KPQ"), rowsInBlock, colsInBlock, -1);
+					withoutSecondMatrix, NPQ,  convOp.getDim("CRS"), rowsInBlock, colsInBlock, -1);
+			if(op == ConvOp.DIRECT_CONV2D_BACKWARD_FILTER) {
+				Lop knpq = constructConvolutionLopsHelper(inputs.get(1).constructLops(), lopOp, et, optionalRhsInputLop, 0, withoutSecondMatrix, convOp.getDim("K"), convOp.getDim("NPQ"), rowsInBlock, colsInBlock, -1);
+				Lop ret = new Binary(knpq, transIm2ColLop, Binary.OperationTypes.MATMULT, getDataType(), getValueType(), et, false, false);
+				ret.getOutputParameters().setDimensions(convOp.getDim("K"), convOp.getDim("CRS"), rowsInBlock, colsInBlock, -1);
+				return ret;
+			}
+			else {
+				Lop knpqOutput = new Binary(transIm2ColLop, inputs.get(1).constructLops(), Binary.OperationTypes.MATMULT, getDataType(), getValueType(), et, false, true);
+				knpqOutput.getOutputParameters().setDimensions(NPQ, convOp.getDim("K"), rowsInBlock, colsInBlock, -1);
+				return constructConvolutionLopsHelper(knpqOutput, lopOp, et, optionalRhsInputLop, 0, withoutSecondMatrix, convOp.getDim("N"), convOp.getDim("KPQ"), rowsInBlock, colsInBlock, -1);
+			}
 		}
 		else if(isConv2dBiasAddRewriteEligible(et, inputs)) {
 			lopOp = OperationTypes.DIRECT_CONV2D_BIAS_ADD;

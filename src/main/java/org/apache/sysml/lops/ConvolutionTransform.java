@@ -32,7 +32,9 @@ public class ConvolutionTransform extends Lop
 	public enum OperationTypes {
 		MAX_POOLING, MAX_POOLING_BACKWARD, RELU_MAX_POOLING, RELU_BACKWARD, RELU_MAX_POOLING_BACKWARD,
 		DIRECT_CONV2D, DIRECT_CONV2D_BACKWARD_FILTER, DIRECT_CONV2D_BACKWARD_DATA,
-		BIAS_ADD, DIRECT_CONV2D_BIAS_ADD, BIAS_MULTIPLY, CHANNEL_SUMS, TRANS_IM2COL, REORG_NPQK, REORG_BIAS_ADD_NPQK
+		BIAS_ADD, DIRECT_CONV2D_BIAS_ADD, BIAS_MULTIPLY, CHANNEL_SUMS, TRANS_IM2COL, 
+		REORG_NPQK, REORG_BIAS_ADD_NPQK, // NPQ x K => N x KPQ
+		REORG_NKPQ // N x KPQ => K x NPQ
 	}
 	
 	private OperationTypes operation = null;
@@ -165,6 +167,9 @@ public class ConvolutionTransform extends Lop
 		
 		case REORG_BIAS_ADD_NPQK:
 			return "reorg_bias_add_npqk";
+		
+		case REORG_NKPQ:
+			return "reorg_nkpq";
 			
 		default:
 			throw new UnsupportedOperationException(this.printErrorLocation() + "Instruction is not defined for Transform operation " + operation);
