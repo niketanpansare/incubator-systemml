@@ -232,13 +232,15 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		// 1. assigned GPU exectype. For CPU, its better to do looped im2col as CP matrix multiplication is sparsity-aware AND
 		// 2. For conv2d/conv2d_bias_add operation with known nnz  AND
 		// 3. If sparsity is less than threshold  AND
-		boolean isConv2dOp = op == ConvOp.DIRECT_CONV2D || isConv2dBiasAddRewriteEligible(et, inputs);
-		Hop image = isConv2dBiasAddRewriteEligible(et, inputs) ? inputs.get(0).getInput().get(0) : inputs.get(0);
+		boolean isConv2dBiasAdd = isConv2dBiasAddRewriteEligible(et, inputs);
+		boolean isConv2dOp = op == ConvOp.DIRECT_CONV2D || isConv2dBiasAdd;
+		Hop image = isConv2dBiasAdd ? inputs.get(0).getInput().get(0) : inputs.get(0);
 		if(!OptimizerUtils.ALLOW_OPERATOR_FUSION ||  et != ExecType.GPU || image.getNnz() < 0 || !isConv2dOp 
 				|| image.getSparsity() > EXPLICIT_IM2COL_SPARSITY_THRESHOLD) return false;
 		
 		// 4. Known im2col dimensions (i.e. CRS, NPQ)  AND
-		long CRS = getDim("CRS"); long NPQ = getDim("NPQ");
+		ConvolutionOp convOp = (ConvolutionOp)(isConv2dBiasAdd ? inputs.get(0) : this); 
+		long CRS = convOp.getDim("CRS"); long NPQ = convOp.getDim("NPQ");
 		if(CRS < 0 || NPQ < 0) return false;
 		
 		// 5. Guard so that we do not construct extremely large im2col even if the input is sparse. For example: batch prediction/validation
@@ -268,7 +270,8 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 			lopOp = OperationTypes.RELU_MAX_POOLING_BACKWARD;
 		}
 		else if(isExplicitIm2colConv2dRewriteEligible(et, inputs)) {
-			if(isConv2dBiasAddRewriteEligible(et, inputs)) {
+			boolean isConv2dBiasAdd = isConv2dBiasAddRewriteEligible(et, inputs);
+			if(isConv2dBiasAdd) {
 				// the first lop is image 
 				lhsInputLop = inputs.get(0).getInput().get(0).constructLops();
 				// the second lop is bias
@@ -283,12 +286,13 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 			} 
 			ArrayList<Hop> withoutFilter = new ArrayList<Hop>(inputs); withoutFilter.remove(1);
 			long rowsInBlock = getRowsInBlock(); long colsInBlock = getColsInBlock();
-			long NPQ = getDim("NPQ");
+			ConvolutionOp convOp = (ConvolutionOp)(isConv2dBiasAdd ? inputs.get(0) : this); 
+			long NPQ = convOp.getDim("NPQ");
 			Lop transIm2ColLop = constructConvolutionLopsHelper(lhsInputLop, OperationTypes.TRANS_IM2COL, ExecType.CP, null, 0, 
-					withoutFilter, NPQ,  getDim("CRS"), rowsInBlock, colsInBlock, -1);
+					withoutFilter, NPQ,  convOp.getDim("CRS"), rowsInBlock, colsInBlock, -1);
 			Lop knpqOutput = new Binary(transIm2ColLop, inputs.get(1).constructLops(), Binary.OperationTypes.MATMULT, getDataType(), getValueType(), et, false, true);
-			knpqOutput.getOutputParameters().setDimensions(NPQ, getDim("K"), rowsInBlock, colsInBlock, -1);
-			return constructConvolutionLopsHelper(knpqOutput, lopOp, et, optionalRhsInputLop, 0, withoutFilter, getDim("N"), getDim("KPQ"), rowsInBlock, colsInBlock, -1);
+			knpqOutput.getOutputParameters().setDimensions(NPQ, convOp.getDim("K"), rowsInBlock, colsInBlock, -1);
+			return constructConvolutionLopsHelper(knpqOutput, lopOp, et, optionalRhsInputLop, 0, withoutFilter, convOp.getDim("N"), convOp.getDim("KPQ"), rowsInBlock, colsInBlock, -1);
 		}
 		else if(isConv2dBiasAddRewriteEligible(et, inputs)) {
 			lopOp = OperationTypes.DIRECT_CONV2D_BIAS_ADD;
