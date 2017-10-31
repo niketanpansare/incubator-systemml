@@ -530,8 +530,13 @@ public class LibMatrixDNN {
 		}
 		
 		// This acts as a guard for eager optimization
-		if(output.isInSparseFormat())
+		if(output.isInSparseFormat()) {
 			output.allocateSparseRowsBlock();
+			double sparsity = Math.min(MatrixBlock.SPARSITY_TURN_POINT, (input.getNonZeros()*2.0) / (input.getNumRows()*input.getNumColumns()));
+			int estnnz = (int)Math.ceil(params.C*params.R*params.S*sparsity);
+			for(int r = 0; r < output.rlen; r++)
+				output.getSparseBlock().allocate(r, estnnz);
+		}
 		else
 			LOG.warn("The transIm2col is optimized for sparse cases."); // We can delete this later
 		

@@ -263,7 +263,7 @@ public class LibMatrixDNNIm2ColHelper {
 	 */
 	public static class SparseSparseIm2colWorkerAllChan implements Im2colWorker, Callable<Long> {
 		private final MatrixBlock input, output;
-		private final int C, S, R, P, Q, W, HW;
+		private final int S, R, P, Q, W, HW;
 		private final int stride_h, stride_w, pad_h, pad_w;
 		private final boolean trans; private final boolean isExplicitIm2col;
 		private final int _rl, _ru; 
@@ -272,7 +272,6 @@ public class LibMatrixDNNIm2ColHelper {
 			this.input = input;
 			this.output = im2ColOutBlock;
 			this.HW = params.H * params.W;
-			this.C = params.C;
 			this.W = params.W; this.R = params.R; this.S = params.S; this.P = params.P; this.Q = params.Q;
 			this.stride_h = params.stride_h; this.stride_w = params.stride_w;
 			this.pad_h = params.pad_h; this.pad_w = params.pad_w;
@@ -324,12 +323,7 @@ public class LibMatrixDNNIm2ColHelper {
 
 		@Override
 		public Long call() throws Exception {
-			double sparsity = Math.min(MatrixBlock.SPARSITY_TURN_POINT, (2*input.getNonZeros()) / (input.getNumRows()*input.getNumColumns()));
-			int estnnz = (int)Math.ceil(C*R*S*sparsity);
-			int PQ = P*Q;
 			for(int n = _rl; n < _ru; n++)  {
-				for(int pq = 0; pq < PQ; pq++)
-					output.getSparseBlock().allocate(n*PQ + pq, estnnz);
 				execute(n);
 			}
 			return 0L;
