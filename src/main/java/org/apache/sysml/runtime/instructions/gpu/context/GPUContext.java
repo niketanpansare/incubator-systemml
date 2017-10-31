@@ -448,7 +448,7 @@ public class GPUContext {
 	 * @param size            size to check
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	void ensureFreeSpace(String instructionName, long size) throws DMLRuntimeException {
+	public void ensureFreeSpace(String instructionName, long size) throws DMLRuntimeException {
 		if (size < 0)
 			throw new DMLRuntimeException("The size cannot be negative:" + size);
 		else if (size >= getAvailableMemory())
