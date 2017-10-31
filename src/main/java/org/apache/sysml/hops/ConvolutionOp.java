@@ -271,6 +271,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		}
 		else if(isExplicitIm2colConv2dRewriteEligible(et, inputs)) {
 			boolean isConv2dBiasAdd = isConv2dBiasAddRewriteEligible(et, inputs);
+			ConvolutionOp convOp = (ConvolutionOp)(isConv2dBiasAdd ? inputs.get(0) : this);
 			if(isConv2dBiasAdd) {
 				// the first lop is image 
 				lhsInputLop = inputs.get(0).getInput().get(0).constructLops();
@@ -286,7 +287,6 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 			} 
 			ArrayList<Hop> withoutFilter = new ArrayList<Hop>(inputs); withoutFilter.remove(1);
 			long rowsInBlock = getRowsInBlock(); long colsInBlock = getColsInBlock();
-			ConvolutionOp convOp = (ConvolutionOp)(isConv2dBiasAdd ? inputs.get(0) : this); 
 			long NPQ = convOp.getDim("NPQ");
 			Lop transIm2ColLop = constructConvolutionLopsHelper(lhsInputLop, OperationTypes.TRANS_IM2COL, ExecType.CP, null, 0, 
 					withoutFilter, NPQ,  convOp.getDim("CRS"), rowsInBlock, colsInBlock, -1);
