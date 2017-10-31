@@ -524,15 +524,16 @@ public class LibMatrixDNN {
 		}
 		
 		// This acts as a guard for eager optimization
-		if(!input.isInSparseFormat() || !output.isInSparseFormat())
-			throw new DMLRuntimeException("Incorrect usage: dense trans_im2col should not be called directly");
+		if(output.isInSparseFormat())
+			output.allocateSparseRowsBlock();
+		else
+			LOG.warn("The transIm2col is optimized for sparse cases."); // We can delete this later
 		
-		output.allocateSparseRowsBlock();
-		
-		execute(LibMatrixDNNHelper.getSparseTransIm2colWorkers(params), params);
+		execute(LibMatrixDNNHelper.getTransIm2colWorkers(params), params);
 		
 		// Since transIm2col, we sort the rows
-		output.sortSparseRows();
+		if(output.isInSparseFormat())
+			output.sortSparseRows();
 		
 		// post-processing: maintain nnz
 		output.recomputeNonZeros(); // as im2col workers donot compute it

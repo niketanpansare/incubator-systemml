@@ -27,6 +27,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNNConv2dBackwardDataHelper.*;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNNConv2dBackwardFilterHelper.*;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNNConv2dHelper.*;
+import org.apache.sysml.runtime.matrix.data.LibMatrixDNNIm2ColHelper.DenseIm2colWorkerAllChannels;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNNPoolingBackwardHelper.*;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNNPoolingHelper.*;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
@@ -63,13 +64,13 @@ public class LibMatrixDNNHelper {
 	}
 	
 	/**
-	 * Factory method that returns list of callable tasks for performing explicit sparse trans im2col operation
+	 * Factory method that returns list of callable tasks for performing explicit trans im2col operation
 	 * 
 	 * @param params convolution parameters
-	 * @return list of callable tasks for performing sparse trans im2col operation
+	 * @return list of callable tasks for performing trans im2col operation
 	 * @throws DMLRuntimeException if error occurs
 	 */
-	public static ArrayList<Callable<Long>> getSparseTransIm2colWorkers(ConvolutionParameters params) throws DMLRuntimeException {
+	public static ArrayList<Callable<Long>> getTransIm2colWorkers(ConvolutionParameters params) throws DMLRuntimeException {
 		ArrayList<Callable<Long>> ret = new ArrayList<>();
 		int k = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
 		int taskSize = (int)(Math.ceil((double)params.N / k));
@@ -78,7 +79,8 @@ public class LibMatrixDNNHelper {
 				ret.add(new LibMatrixDNNIm2ColHelper.SparseSparseIm2colWorkerAllChan(params.input1, params.output, 
 						params, true, true, i*taskSize, Math.min((i+1)*taskSize, params.N)));
 			else
-				throw new DMLRuntimeException("Incorrect usage: dense trans_im2col should not be called directly");
+				ret.add(new LibMatrixDNNIm2ColHelper.DenseIm2colWorkerAllChannels(params.input1.getDenseBlock(), params.output.getDenseBlock(), 
+						params, true, true, i*taskSize, Math.min((i+1)*taskSize, params.N)));
 		}
 		return ret;
 	}

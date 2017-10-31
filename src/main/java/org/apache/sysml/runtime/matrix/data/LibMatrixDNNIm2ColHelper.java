@@ -45,7 +45,7 @@ public class LibMatrixDNNIm2ColHelper {
 				if(allChannels && stride1Pad0 && !trans )
 					return new DenseIm2colWorkerStride1Pad0AllChannels(input.getDenseBlock(), out.getDenseBlock(), params);
 				else if( allChannels )
-					return new DenseIm2colWorkerAllChannels(input.getDenseBlock(), out.getDenseBlock(), params, trans);
+					return new DenseIm2colWorkerAllChannels(input.getDenseBlock(), out.getDenseBlock(), params, trans, false, -1, -1);
 				else if( stride1Pad0 )
 					return new DenseIm2colWorkerStride1Pad0(input.getDenseBlock(), out.getDenseBlock(), params);
 				else
@@ -197,12 +197,14 @@ public class LibMatrixDNNIm2ColHelper {
 	/**
 	 * Performing dense im2col (general case)
 	 */
-	private static class DenseIm2colWorkerAllChannels implements Im2colWorker {
+	static class DenseIm2colWorkerAllChannels implements Im2colWorker, Callable<Long> {
 		private final double[] inputArray, outputArray; 
 		private final int CRS, S, R, P, Q, CHW, H, W; 
 		private final int stride_h, stride_w, pad_h, pad_w;
-		private final boolean trans;
-		public DenseIm2colWorkerAllChannels(double [] inputArray, double [] outputArray, ConvolutionParameters params, boolean trans) {
+		private final boolean trans; private final boolean isExplicitIm2col;
+		private final int _rl, _ru;  
+		public DenseIm2colWorkerAllChannels(double [] inputArray, double [] outputArray, ConvolutionParameters params, 
+				boolean trans, boolean isExplicitIm2col, int rl, int ru) {
 			this.inputArray = inputArray;
 			this.outputArray = outputArray;
 			this.CRS = params.C * params.R * params.S;
@@ -211,6 +213,10 @@ public class LibMatrixDNNIm2ColHelper {
 			this.stride_h = params.stride_h; this.stride_w = params.stride_w;
 			this.pad_h = params.pad_h; this.pad_w = params.pad_w;
 			this.trans = trans;
+			this.isExplicitIm2col = isExplicitIm2col;
+			this._rl = rl; this._ru = ru;
+			if(isExplicitIm2col && (!trans || _rl < 0 || _ru < 0))
+				throw new RuntimeException("Incorrect usage: for explicit im2col " + trans + " " + _rl + " " + _ru);
 		}
 		
 		@Override
@@ -222,14 +228,14 @@ public class LibMatrixDNNIm2ColHelper {
 		public void execute(int n) {
 			//reset for selective copy
 			Arrays.fill(outputArray, 0);
-			
+			int nOutOffset = isExplicitIm2col ? n*P*Q : 0;
 			int nOffset = n * CHW;
 			for (int c = 0; c < CRS; ++c) {
 				int wOffset = c % S;
 				int hOffset = (c / S) % R;
 				int cInput = c / R / S;
 				for (int h = 0; h < P; ++h) {
-					int outOffset = trans ? c+(h*Q*CRS) : (c*P+h)*Q;
+					int outOffset = trans ? (nOutOffset + c+(h*Q*CRS)) : (c*P+h)*Q;
 					int hPadded = h * stride_h - pad_h + hOffset;
 					int inputOffset = nOffset + (cInput * H + hPadded) * W;
 					if (hPadded < 0 || hPadded >= H ) continue;
@@ -241,6 +247,14 @@ public class LibMatrixDNNIm2ColHelper {
 					}
 				}
 			}
+		}
+
+		@Override
+		public Long call() throws Exception {
+			for(int n = _rl; n < _ru; n++)  {
+				execute(n);
+			}
+			return 0L;
 		}
 	}
 	
@@ -264,7 +278,9 @@ public class LibMatrixDNNIm2ColHelper {
 			this.pad_h = params.pad_h; this.pad_w = params.pad_w;
 			this.trans = trans;
 			this.isExplicitIm2col = isExplicitIm2col;
-			_rl = rl; _ru = ru;
+			this._rl = rl; this._ru = ru;
+			if(isExplicitIm2col && (!trans || _rl < 0 || _ru < 0))
+				throw new RuntimeException("Incorrect usage: for explicit im2col " + trans + " " + _rl + " " + _ru);
 			if(!input.isInSparseFormat()) 
 				throw new RuntimeException("Incorrect operator selection. Expected dense input for SparseIm2colWorkerAllChannels");
 		}

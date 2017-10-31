@@ -230,13 +230,18 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	private boolean isExplicitIm2colConv2dRewriteEligible(ExecType et, ArrayList<Hop> inputs) throws HopsException, LopsException {
 		// Only construct im2col-based lops if
 		// 1. assigned GPU exectype. For CPU, its better to do looped im2col as CP matrix multiplication is sparsity-aware AND
-		// 2. For conv2d/conv2d_bias_add operation with known nnz  AND
+		// 2. For conv2d/conv2d_bias_add operation  AND
 		// 3. If sparsity is less than threshold  AND
 		boolean isConv2dBiasAdd = isConv2dBiasAddRewriteEligible(et, inputs);
 		boolean isConv2dOp = op == ConvOp.DIRECT_CONV2D || isConv2dBiasAdd;
 		Hop image = isConv2dBiasAdd ? inputs.get(0).getInput().get(0) : inputs.get(0);
-		if(!OptimizerUtils.ALLOW_OPERATOR_FUSION ||  et != ExecType.GPU || image.getNnz() < 0 || !isConv2dOp 
-				|| image.getSparsity() > EXPLICIT_IM2COL_SPARSITY_THRESHOLD) return false;
+		double expectedSparsity = image.getSparsity();
+		if(image instanceof IndexingOp && ((IndexingOp)image).isColLowerEqualsUpper()) {
+			// If rix then use the sparsity of the original dataset
+			expectedSparsity = image.getInput().get(0).getSparsity();
+		}
+		if(!OptimizerUtils.ALLOW_OPERATOR_FUSION ||  et != ExecType.GPU || !isConv2dOp 
+				|| expectedSparsity > EXPLICIT_IM2COL_SPARSITY_THRESHOLD) return false;
 		
 		// 4. Known im2col dimensions (i.e. CRS, NPQ)  AND
 		ConvolutionOp convOp = (ConvolutionOp)(isConv2dBiasAdd ? inputs.get(0) : this); 
@@ -244,7 +249,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		if(CRS < 0 || NPQ < 0) return false;
 		
 		// 5. Guard so that we do not construct extremely large im2col even if the input is sparse. For example: batch prediction/validation
-		double im2colMemEst = OptimizerUtils.estimateSizeExactSparsity(CRS, NPQ, image.getSparsity());
+		double im2colMemEst = OptimizerUtils.estimateSizeExactSparsity(CRS, NPQ, expectedSparsity);
 		return im2colMemEst < EXPLICIT_IM2COL_MEMORY_THRESHOLD;
 	}
 	
