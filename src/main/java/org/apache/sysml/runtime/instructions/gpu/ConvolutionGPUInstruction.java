@@ -415,9 +415,9 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 			if(image.getNumRows() != N*P*Q || image.getNumColumns() != K) 
 				throw new DMLRuntimeException("Incorrect dimensions for image in reorg_bias_add_npqk: " + 
 						image.getNumRows() + " != " +  N*P*Q + " || " + image.getNumColumns() + " != " + K);
-			if(bias.getNumRows() != K || image.getNumColumns() != 1) 
+			if(bias.getNumRows() != K || bias.getNumColumns() != 1) 
 				throw new DMLRuntimeException("Incorrect dimensions for bias in reorg_bias_add_npqk: " + 
-						image.getNumRows() + " != " +  K + " || " + image.getNumColumns() + " != 1");
+						bias.getNumRows() + " != " +  K + " || " + bias.getNumColumns() + " != 1");
 			
 			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), N, K*P*Q);
 			
