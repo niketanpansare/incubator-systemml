@@ -18,8 +18,6 @@
  */
 package org.apache.sysml.runtime.matrix.data;
 
-import static jcuda.runtime.JCuda.cudaFree;
-import static jcuda.runtime.JCuda.cudaMalloc;
 import static jcuda.runtime.JCuda.cudaMemcpy;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
@@ -164,18 +162,15 @@ public class SinglePrecisionCudaSupportFunctions implements CudaSupportFunctions
 	}
 	
 	@Override
-	public void deviceToHost(GPUContext gCtx, Pointer src, double[] dest, String instName) throws DMLRuntimeException {
+	public void deviceToHost(GPUContext gCtx, Pointer src, double[] dest, String instName, boolean isEviction) throws DMLRuntimeException {
 		long t1 = GPUStatistics.DISPLAY_STATISTICS  && instName != null? System.nanoTime() : 0;
 		LOG.debug("Potential OOM: Allocated additional space in deviceToHost");
-		if(PERFORM_CONVERSION_ON_DEVICE) {
-			// Potential recursion on allocate: deviceToHost -> allocate -> ensureFreeSpace -> evict -> copyFromDeviceToHost -> deviceToHost
-			// Hence, forcing explicit cudaMalloc and cudaFree calls. These won't be required when we make CP support float.
-			gCtx.ensureFreeSpace(instName, ((long)dest.length)*Sizeof.DOUBLE);
-			Pointer deviceDoubleData = new Pointer();
-			cudaMalloc(deviceDoubleData, ((long)dest.length)*Sizeof.DOUBLE);
+		if(PERFORM_CONVERSION_ON_DEVICE && !isEviction) {
+			// Potential recursion on eviction: deviceToHost -> allocate -> ensureFreeSpace -> evict -> copyFromDeviceToHost -> deviceToHost
+			Pointer deviceDoubleData = gCtx.allocate(((long)dest.length)*Sizeof.DOUBLE);
 			LibMatrixCUDA.float2double(gCtx, src, deviceDoubleData, dest.length);
 			cudaMemcpy(Pointer.to(dest), deviceDoubleData, ((long)dest.length)*Sizeof.DOUBLE, cudaMemcpyDeviceToHost);
-			cudaFree(deviceDoubleData);
+			gCtx.cudaFreeHelper(deviceDoubleData);
 		}
 		else {
 			// TODO: Perform conversion on GPU using double2float and float2double kernels

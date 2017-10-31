@@ -448,7 +448,7 @@ public class GPUContext {
 	 * @param size            size to check
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public void ensureFreeSpace(String instructionName, long size) throws DMLRuntimeException {
+	private void ensureFreeSpace(String instructionName, long size) throws DMLRuntimeException {
 		if (size < 0)
 			throw new DMLRuntimeException("The size cannot be negative:" + size);
 		else if (size >= getAvailableMemory())
@@ -566,7 +566,7 @@ public class GPUContext {
 								+ "). Allocated GPU objects:" + allocatedGPUObjects.toString());
 			}
 			if (toBeRemoved.dirty) {
-				toBeRemoved.copyFromDeviceToHost(instructionName);
+				toBeRemoved.copyFromDeviceToHost(instructionName, true);
 			}
 			toBeRemoved.clearData(true);
 		}
