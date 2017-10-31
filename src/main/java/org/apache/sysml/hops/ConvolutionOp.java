@@ -47,7 +47,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	private static final boolean INFER_TENSOR_SHAPE_FROM_PARENT_CONV_OP = true;
 	// This guards us from cases where the user provides incorrect C,H,W parameters.
 	private static final boolean THROW_ERROR_IF_INFERRED_SHAPE_MISMATCH = true;
-	private static final double EXPLICIT_IM2COL_SPARSITY_THRESHOLD = 0.1;
+	private static final double EXPLICIT_IM2COL_SPARSITY_THRESHOLD = 0.2;
 	private static final double EXPLICIT_IM2COL_MEMORY_THRESHOLD = 8e+8; // 800mb in bytes
 	// -------------------------------------------------------------------------
 	
