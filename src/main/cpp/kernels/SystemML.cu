@@ -46,6 +46,26 @@ extern "C" __global__ void reorg_npqk_f(float *A, float *C, unsigned int N, unsi
   reorg_npqk(A, C, N, K, PQ, KPQ, NKPQ);
 }
 
+template <typename T>
+__device__ void reorg_bias_add_npqk(T *A, T *bias, T *C, unsigned int N, unsigned int K, unsigned int PQ, unsigned int KPQ, unsigned int NKPQ) {
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  if (index < NKPQ) {
+    int npq = index / K;
+    int k = index % K;
+    int n = npq / PQ;
+    int pq = npq % PQ;
+    C[n*KPQ + k*PQ + pq] = A[index] + bias[k];
+  }
+}
+
+extern "C" __global__ void reorg_bias_add_npqk_d(double *A, double *bias, double *C, unsigned int N, unsigned int K, unsigned int PQ, unsigned int KPQ, unsigned int NKPQ) {
+  reorg_bias_add_npqk(A, bias, C, N, K, PQ, KPQ, NKPQ);
+}
+
+extern "C" __global__ void reorg_bias_add_npqk_f(float *A, float *bias, float *C, unsigned int N, unsigned int K, unsigned int PQ, unsigned int KPQ, unsigned int NKPQ) {
+  reorg_bias_add_npqk(A, bias, C, N, K, PQ, KPQ, NKPQ);
+}
+
 
 extern "C" __global__ void double2float_f(double *A, float *ret, int N) {
   int tid = blockIdx.x * blockDim.x + threadIdx.x;

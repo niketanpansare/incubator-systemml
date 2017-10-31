@@ -231,19 +231,18 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		// Only construct im2col-based lops if
 		// 1. assigned GPU exectype. For CPU, its better to do looped im2col as CP matrix multiplication is sparsity-aware AND
 		// 2. For conv2d/conv2d_bias_add operation with known nnz  AND
+		// 3. If sparsity is less than threshold  AND
 		boolean isConv2dOp = op == ConvOp.DIRECT_CONV2D || isConv2dBiasAddRewriteEligible(et, inputs);
-		if(!OptimizerUtils.ALLOW_OPERATOR_FUSION ||  et != ExecType.GPU || inputs.get(0).getNnz() < 0 || !isConv2dOp) return false;
+		Hop image = isConv2dBiasAddRewriteEligible(et, inputs) ? inputs.get(0).getInput().get(0) : inputs.get(0);
+		if(!OptimizerUtils.ALLOW_OPERATOR_FUSION ||  et != ExecType.GPU || image.getNnz() < 0 || !isConv2dOp 
+				|| image.getSparsity() > EXPLICIT_IM2COL_SPARSITY_THRESHOLD) return false;
 		
-		// 3. Known im2col dimensions (i.e. CRS, NPQ)  AND
+		// 4. Known im2col dimensions (i.e. CRS, NPQ)  AND
 		long CRS = getDim("CRS"); long NPQ = getDim("NPQ");
 		if(CRS < 0 || NPQ < 0) return false;
 		
-		// 4. If sparsity is less than threshold  AND
-		double sp = OptimizerUtils.getSparsity(CRS, NPQ, inputs.get(0).getNnz());
-		if(sp > EXPLICIT_IM2COL_SPARSITY_THRESHOLD) return false;
-		
 		// 5. Guard so that we do not construct extremely large im2col even if the input is sparse. For example: batch prediction/validation
-		double im2colMemEst = OptimizerUtils.estimateSizeExactSparsity(CRS, NPQ, sp);
+		double im2colMemEst = OptimizerUtils.estimateSizeExactSparsity(CRS, NPQ, image.getSparsity());
 		return im2colMemEst < EXPLICIT_IM2COL_MEMORY_THRESHOLD;
 	}
 	
