@@ -324,7 +324,7 @@ public class LibMatrixDNNIm2ColHelper {
 
 		@Override
 		public Long call() throws Exception {
-			double sparsity = Math.min(MatrixBlock.SPARSITY_TURN_POINT, input.getNonZeros() / (input.getNumRows()*input.getNumColumns()));
+			double sparsity = Math.min(MatrixBlock.SPARSITY_TURN_POINT, (2*input.getNonZeros()) / (input.getNumRows()*input.getNumColumns()));
 			int estnnz = (int)Math.ceil(C*R*S*sparsity);
 			int PQ = P*Q;
 			for(int n = _rl; n < _ru; n++)  {
