@@ -451,6 +451,22 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 				inputPointer, dstPointer, toInt(N), toInt(K), toInt(P*Q), toInt(K*P*Q), toInt(N*P*Q*K));
 		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_REORG_NPQK_KERNEL, System.nanoTime() - t0);
 	}
+	
+	public static void reorg_bias_add_npqk(GPUContext gCtx, String instName, MatrixObject image, MatrixObject bias,
+			MatrixObject outputBlock, int N, int C, int H, int W, int K, int R,
+			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
+			int Q, double intermediateMemoryBudget) throws DMLRuntimeException {
+		
+		Pointer inputPointer = getDensePointer(gCtx, image, instName);
+		Pointer biasPointer = getDensePointer(gCtx, bias, instName);
+		Pointer dstPointer = getDensePointer(gCtx, outputBlock, instName);
+		
+		long t0 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+		getCudaKernels(gCtx).launchKernel("reorg_bias_add_npqk",
+				ExecutionConfig.getConfigForSimpleVectorOperations(toInt(N*P*Q*K)),
+				inputPointer, biasPointer, dstPointer, toInt(N), toInt(K), toInt(P*Q), toInt(K*P*Q), toInt(N*P*Q*K));
+		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_REORG_BIAS_ADD_NPQK_KERNEL, System.nanoTime() - t0);
+	}
 
 	/**
 	 * performs maxpooling on GPU by exploiting cudnnPoolingForward(...)

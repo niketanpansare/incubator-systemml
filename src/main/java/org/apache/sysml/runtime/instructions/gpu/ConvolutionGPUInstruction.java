@@ -103,7 +103,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		
-		if( ( opcode.equalsIgnoreCase("conv2d")
+		if( ( opcode.equalsIgnoreCase("conv2d") || opcode.equalsIgnoreCase("reorg_bias_add_npqk")
 			 || opcode.equalsIgnoreCase("conv2d_backward_filter")
 			 || opcode.equalsIgnoreCase("conv2d_backward_data")) ) {
 			InstructionUtils.checkNumFields(parts, 16);
@@ -406,6 +406,23 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 			
 			if(instOpcode.equalsIgnoreCase("reorg_npqk"))
 				LibMatrixCuDNN.reorg_npqk(ec.getGPUContext(0), getExtendedOpcode(), image, out, N, C, H, W,
+					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, _intermediateMemoryBudget);
+		}
+		else if (instOpcode.equalsIgnoreCase("reorg_bias_add_npqk")) {
+			MatrixObject image = getMatrixInputForGPUInstruction(ec, _input1.getName());
+			MatrixObject bias = getMatrixInputForGPUInstruction(ec, _input2.getName());
+
+			if(image.getNumRows() != N*P*Q || image.getNumColumns() != K) 
+				throw new DMLRuntimeException("Incorrect dimensions for image in reorg_bias_add_npqk: " + 
+						image.getNumRows() + " != " +  N*P*Q + " || " + image.getNumColumns() + " != " + K);
+			if(bias.getNumRows() != K || image.getNumColumns() != 1) 
+				throw new DMLRuntimeException("Incorrect dimensions for bias in reorg_bias_add_npqk: " + 
+						image.getNumRows() + " != " +  K + " || " + image.getNumColumns() + " != 1");
+			
+			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), N, K*P*Q);
+			
+			if(instOpcode.equalsIgnoreCase("reorg_bias_add_npqk"))
+				LibMatrixCuDNN.reorg_bias_add_npqk(ec.getGPUContext(0), getExtendedOpcode(), image, bias, out, N, C, H, W,
 					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, _intermediateMemoryBudget);
 		}
 		else if (instOpcode.equalsIgnoreCase("maxpooling_backward")) {
