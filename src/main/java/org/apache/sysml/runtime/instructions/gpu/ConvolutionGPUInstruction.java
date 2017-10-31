@@ -460,7 +460,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		// release inputs/outputs
 		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
 
-		if ( !( instOpcode.equalsIgnoreCase("maxpooling") || instOpcode.equalsIgnoreCase("reorg_npqk") ) )
+		if ( !( instOpcode.equalsIgnoreCase("maxpooling") || instOpcode.equalsIgnoreCase("reorg_npqk") || instOpcode.equalsIgnoreCase("reorg_nkpq") ) )
 			ec.releaseMatrixInputForGPUInstruction(_input2.getName());
 
 		if (instOpcode.equalsIgnoreCase("conv2d_bias_add") || 
