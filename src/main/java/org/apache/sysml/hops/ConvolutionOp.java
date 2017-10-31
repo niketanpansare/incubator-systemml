@@ -48,6 +48,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	private static final boolean THROW_ERROR_IF_INFERRED_SHAPE_MISMATCH = true;
 	private static final double EXPLICIT_IM2COL_SPARSITY_THRESHOLD = 0.2;
 	private static final double EXPLICIT_IM2COL_MEMORY_THRESHOLD = 8e+8; // 800mb in bytes
+	private static final boolean EXPLICIT_IM2COL_REUSE_LOPS = true;
 	// -------------------------------------------------------------------------
 	
 	// Specifies the type of this hop
@@ -293,9 +294,11 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		else if(isExplicitIm2colConv2dRewriteEligible(et, inputs)) {
 			boolean isConv2dBiasAdd = isConv2dBiasAddRewriteEligible(et, inputs);
 			ConvolutionOp convOp = (ConvolutionOp)(isConv2dBiasAdd ? inputs.get(0) : this);
+			Hop image = null;
 			if(isConv2dBiasAdd) {
 				// the first lop is image 
-				lhsInputLop = inputs.get(0).getInput().get(0).constructLops();
+				image = inputs.get(0).getInput().get(0);
+				lhsInputLop = image.constructLops();
 				// the second lop is bias
 				optionalRhsInputLop = inputs.get(1).constructLops();
 				// Use the inputs from conv2d rather than bias_add
@@ -303,22 +306,42 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 				lopOp = OperationTypes.REORG_BIAS_ADD_NPQK;
 			}
 			else if(op == ConvOp.DIRECT_CONV2D) {
-				lhsInputLop = inputs.get(0).constructLops();
+				image = inputs.get(0);
+				lhsInputLop = image.constructLops();
 				lopOp = OperationTypes.REORG_NPQK;
 			}
 			else if(op == ConvOp.DIRECT_CONV2D_BACKWARD_FILTER) {
-				lhsInputLop = inputs.get(0).constructLops();
+				image = inputs.get(0);
+				lhsInputLop = image.constructLops();
 				lopOp = OperationTypes.REORG_NKPQ;
 			}
 			else
 				throw new HopsException("Usupported op for im2col rewrite:" + op.name());
-			ArrayList<Hop> withoutSecondMatrix = new ArrayList<Hop>(inputs); withoutSecondMatrix.remove(1);
+			
+			ArrayList<Hop> withoutSecondMatrix1 = new ArrayList<Hop>(inputs); withoutSecondMatrix1.remove(1);
+			ArrayList<Lop> childLops = constructChildLops(withoutSecondMatrix1);
+			
 			long rowsInBlock = getRowsInBlock(); long colsInBlock = getColsInBlock();
 			long NPQ = convOp.getDim("NPQ");
-			Lop transIm2ColLop = constructConvolutionLopsHelper(lhsInputLop, OperationTypes.TRANS_IM2COL, ExecType.CP, null, 0, 
-					withoutSecondMatrix, NPQ,  convOp.getDim("CRS"), rowsInBlock, colsInBlock, -1);
+			Lop transIm2ColLop = null;
+			if(EXPLICIT_IM2COL_REUSE_LOPS) {
+				// Common sub-expression elimination of im2col at Lop-level
+				for(Lop tmp : lhsInputLop.getOutputs()) {
+					if(tmp instanceof ConvolutionTransform && 
+						((ConvolutionTransform) tmp).getOperationType() == OperationTypes.TRANS_IM2COL &&
+						compareInputIm2colLops(tmp.getInputs(), lhsInputLop, childLops)) {
+						transIm2ColLop = tmp;
+						break;
+					}
+				}
+			}
+			if(transIm2ColLop == null) {
+				transIm2ColLop = constructConvolutionLopsHelper(lhsInputLop, OperationTypes.TRANS_IM2COL, ExecType.CP, null, 0, 
+						NPQ,  convOp.getDim("CRS"), rowsInBlock, colsInBlock, -1, childLops);
+			}
 			if(op == ConvOp.DIRECT_CONV2D_BACKWARD_FILTER) {
-				Lop knpq = constructConvolutionLopsHelper(inputs.get(1).constructLops(), lopOp, et, optionalRhsInputLop, 0, withoutSecondMatrix, convOp.getDim("K"), convOp.getDim("NPQ"), rowsInBlock, colsInBlock, -1);
+				Lop knpq = constructConvolutionLopsHelper(inputs.get(1).constructLops(), lopOp, et, null, 0, 
+						convOp.getDim("K"), convOp.getDim("NPQ"), rowsInBlock, colsInBlock, -1, childLops);
 				Lop ret = new Binary(knpq, transIm2ColLop, Binary.OperationTypes.MATMULT, getDataType(), getValueType(), et, false, false);
 				ret.getOutputParameters().setDimensions(convOp.getDim("K"), convOp.getDim("CRS"), rowsInBlock, colsInBlock, -1);
 				return ret;
@@ -326,7 +349,8 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 			else {
 				Lop knpqOutput = new Binary(transIm2ColLop, inputs.get(1).constructLops(), Binary.OperationTypes.MATMULT, getDataType(), getValueType(), et, false, true);
 				knpqOutput.getOutputParameters().setDimensions(NPQ, convOp.getDim("K"), rowsInBlock, colsInBlock, -1);
-				return constructConvolutionLopsHelper(knpqOutput, lopOp, et, optionalRhsInputLop, 0, withoutSecondMatrix, convOp.getDim("N"), convOp.getDim("KPQ"), rowsInBlock, colsInBlock, -1);
+				return constructConvolutionLopsHelper(knpqOutput, lopOp, et, optionalRhsInputLop, 0, 
+						convOp.getDim("N"), convOp.getDim("KPQ"), rowsInBlock, colsInBlock, -1, childLops);
 			}
 		}
 		else if(isConv2dBiasAddRewriteEligible(et, inputs)) {
@@ -349,6 +373,19 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		return constructConvolutionLopsHelper(lhsInputLop, lopOp, et, optionalRhsInputLop, intermediateMemEstimate, inputs);
 	}
 	
+	private boolean compareInputIm2colLops(ArrayList<Lop> lhsInputLops, Lop rhsFirstInputLop, ArrayList<Lop> rhsChildLops) {
+		if(lhsInputLops.size() != rhsChildLops.size() + 1) return false;
+		if(lhsInputLops.get(0) != rhsFirstInputLop) return false;
+		for(int i = 0; i < rhsChildLops.size(); i++) {
+			Lop lhsLop = lhsInputLops.get(i+1);
+			Lop rhsLop = rhsChildLops.get(0);
+			if(lhsLop != rhsLop) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
 	private double computeIntermediateMemEstimate(ExecType et, ArrayList<Hop> inputs) {
 		// Compute intermediate memory budget that can be passed to GPU operators 
 		// for better CuDNN operator selection at runtime
@@ -368,9 +405,25 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		return constructConvolutionLopsHelper(lhsInputLop, lopOp, et, optionalRhsInputLop, intermediateMemEstimate, inputs, -1, -1, -1, -1, -1);
 	}
 	
+	private ArrayList<Lop> constructChildLops(ArrayList<Hop> inputs) throws HopsException, LopsException {
+		ArrayList<Lop> ret = new ArrayList<Lop>();
+		for( int i=1; i < inputs.size(); i++ ) {
+			Lop ltmp = inputs.get(i).constructLops();
+			ret.add(ltmp);
+		}
+		return ret;
+	}
+	
 	private Lop constructConvolutionLopsHelper(Lop lhsInputLop, OperationTypes lopOp, ExecType et, 
 			Lop optionalRhsInputLop, double intermediateMemEstimate, ArrayList<Hop> inputs,
 			long rows, long cols, long rowsPerBlock, long colsPerBlock, long nnz) throws HopsException, LopsException {
+		return constructConvolutionLopsHelper(lhsInputLop, lopOp, et, optionalRhsInputLop, intermediateMemEstimate, 
+				rows, cols, rowsPerBlock, colsPerBlock, nnz, constructChildLops(inputs));
+	}
+	
+	private Lop constructConvolutionLopsHelper(Lop lhsInputLop, OperationTypes lopOp, ExecType et, 
+			Lop optionalRhsInputLop, double intermediateMemEstimate,
+			long rows, long cols, long rowsPerBlock, long colsPerBlock, long nnz, ArrayList<Lop> childLops) throws HopsException, LopsException {
 		// Contruct the lop
 		ConvolutionTransform convolutionLop = new ConvolutionTransform(lhsInputLop, lopOp, 
 				getDataType(), getValueType(), et, OptimizerUtils.getConstrainedNumThreads(_maxNumThreads), intermediateMemEstimate);
@@ -387,8 +440,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 			convolutionLop.addInput(optionalRhsInputLop);
 			optionalRhsInputLop.addOutput(convolutionLop);
 		}
-		for( int i=1; i < inputs.size(); i++ ) {
-			Lop ltmp = inputs.get(i).constructLops();
+		for(Lop ltmp : childLops) {
 			convolutionLop.addInput(ltmp);
 			ltmp.addOutput(convolutionLop);
 		}
