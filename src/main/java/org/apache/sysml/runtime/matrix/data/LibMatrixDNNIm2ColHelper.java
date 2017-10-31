@@ -19,6 +19,7 @@
 package org.apache.sysml.runtime.matrix.data;
 
 import java.util.Arrays;
+import java.util.concurrent.Callable;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -62,7 +63,7 @@ public class LibMatrixDNNIm2ColHelper {
 				for(int r = 0; r < out.rlen; r++)
 					out.getSparseBlock().allocate(r, estnnz);
 				
-				return new SparseSparseIm2colWorkerAllChan(input, out, params, trans);
+				return new SparseSparseIm2colWorkerAllChan(input, out, params, trans, false, -1, -1);
 			}
 		}
 	}
@@ -246,19 +247,24 @@ public class LibMatrixDNNIm2ColHelper {
 	/**
 	 * Performing sparse im2col for all channels for a given row n of the input matrix.
 	 */
-	private static class SparseSparseIm2colWorkerAllChan implements Im2colWorker {
+	public static class SparseSparseIm2colWorkerAllChan implements Im2colWorker, Callable<Long> {
 		private final MatrixBlock input, output;
-		private final int S, R, P, Q, W, HW;
+		private final int C, S, R, P, Q, W, HW;
 		private final int stride_h, stride_w, pad_h, pad_w;
-		private final boolean trans;
-		public SparseSparseIm2colWorkerAllChan(MatrixBlock input, MatrixBlock im2ColOutBlock, ConvolutionParameters params, boolean trans) {
+		private final boolean trans; private final boolean isExplicitIm2col;
+		private final int _rl, _ru; 
+		public SparseSparseIm2colWorkerAllChan(MatrixBlock input, MatrixBlock im2ColOutBlock, 
+				ConvolutionParameters params, boolean trans, boolean isExplicitIm2col, int rl, int ru) {
 			this.input = input;
 			this.output = im2ColOutBlock;
 			this.HW = params.H * params.W;
+			this.C = params.C;
 			this.W = params.W; this.R = params.R; this.S = params.S; this.P = params.P; this.Q = params.Q;
 			this.stride_h = params.stride_h; this.stride_w = params.stride_w;
 			this.pad_h = params.pad_h; this.pad_w = params.pad_w;
 			this.trans = trans;
+			this.isExplicitIm2col = isExplicitIm2col;
+			_rl = rl; _ru = ru;
 			if(!input.isInSparseFormat()) 
 				throw new RuntimeException("Incorrect operator selection. Expected dense input for SparseIm2colWorkerAllChannels");
 		}
@@ -270,7 +276,8 @@ public class LibMatrixDNNIm2ColHelper {
 
 		@Override
 		public void execute(int n) {
-			output.reset();
+			if(!isExplicitIm2col)
+				output.reset();
 			SparseBlock sblock = input.sparseBlock;
 			if( sblock.isEmpty(n) )
 				return;
@@ -289,13 +296,26 @@ public class LibMatrixDNNIm2ColHelper {
 				int hInput = (chw - cInput*HW)/W;
 				int wInput = chw % W; 
 				
-				appendInputValueToIm2colOutput(output, cInput, hInput, wInput, avals[j], 
-						R, S, P, Q, stride_h, stride_w, pad_h, pad_w, trans);
+				appendInputValueToIm2colOutput(output, n, cInput, hInput, wInput, avals[j], 
+						R, S, P, Q, stride_h, stride_w, pad_h, pad_w, trans, isExplicitIm2col);
 			}
 			// Since the chw are appended in sorted order, no need to sort the output rows
 			// unless in trans mode, then sorting is needed
-			if( trans )
+			// For explicit im2col, sortSparseRows is done by the caller LibMatrixDNN.transIm2col
+			if( trans && !isExplicitIm2col )
 				output.sortSparseRows();
+		}
+
+		@Override
+		public Long call() throws Exception {
+			double sparsity = Math.min(MatrixBlock.SPARSITY_TURN_POINT, (input.getNonZeros()*2.0) / (input.getNumRows()*input.getNumColumns()));
+			int estnnz = (int)Math.ceil(C*R*S*sparsity);
+			for(int n = _rl; n < _ru; n++)  {
+				for(int rs = 0; rs < R*S; rs++)
+					output.getSparseBlock().allocate(n*R*S + rs, estnnz);
+				execute(n);
+			}
+			return 0L;
 		}
 	}
 	
@@ -307,9 +327,9 @@ public class LibMatrixDNNIm2ColHelper {
 		private final MatrixBlock input, output;
 		private final int S, R, P, Q, W, HW;
 		private final int stride_h, stride_w, pad_h, pad_w; 
-		private final boolean trans;
+		private final boolean trans; private final boolean isExplicitIm2col;
 		
-		public SparseSparseIm2colWorker(MatrixBlock input, MatrixBlock im2ColOutBlock, ConvolutionParameters params, boolean trans) {
+		public SparseSparseIm2colWorker(MatrixBlock input, MatrixBlock im2ColOutBlock, ConvolutionParameters params, boolean trans, boolean isExplicitIm2col) {
 			this.input = input;
 			this.output = im2ColOutBlock;
 			this.HW = params.H*params.W;
@@ -317,6 +337,7 @@ public class LibMatrixDNNIm2ColHelper {
 			this.stride_h = params.stride_h; this.stride_w = params.stride_w;
 			this.pad_h = params.pad_h; this.pad_w = params.pad_w;
 			this.trans = trans;
+			this.isExplicitIm2col = isExplicitIm2col;
 		}
 		
 		@Override
@@ -345,8 +366,8 @@ public class LibMatrixDNNIm2ColHelper {
 					int hInput = (chw - cInput*HW)/W;
 					int wInput = chw % W; 
 					
-					appendInputValueToIm2colOutput(output, cInput, hInput, wInput, avals[j], 
-							R, S, P, Q, stride_h, stride_w, pad_h, pad_w, trans);
+					appendInputValueToIm2colOutput(output, n, cInput, hInput, wInput, avals[j], 
+							R, S, P, Q, stride_h, stride_w, pad_h, pad_w, trans, isExplicitIm2col);
 				}
 			}
 			// Since the chw are appended in sorted order, no need to sort the output rows
@@ -360,6 +381,7 @@ public class LibMatrixDNNIm2ColHelper {
 	 * Appends the value corresponding to the given [, cInput, hInput, wInput] to the appropriate im2col location of the output
 	 * 
 	 * @param output output matrix block
+	 * @param nInput input image index (zero-based)
 	 * @param cInput input channel index (zero-based)
 	 * @param hInput input height index (zero-based)
 	 * @param wInput input width index (zero-based)
@@ -372,12 +394,15 @@ public class LibMatrixDNNIm2ColHelper {
 	 * @param stride_w stride width
 	 * @param pad_h pad height
 	 * @param pad_w pad width
+	 * @param trans compute t(im2col)
+	 * @param isExplicitIm2col true if output of shape CRS x NPQ, else false
 	 */
-	private static void appendInputValueToIm2colOutput(MatrixBlock output, int cInput, int hInput, int wInput, double value, 
-			int R, int S, int P, int Q, int stride_h, int stride_w, int pad_h, int pad_w, boolean trans) {
+	private static void appendInputValueToIm2colOutput(MatrixBlock output, int nInput, int cInput, int hInput, int wInput, double value, 
+			int R, int S, int P, int Q, int stride_h, int stride_w, int pad_h, int pad_w, boolean trans, boolean isExplicitIm2col) {
 		if(value == 0) 
 			return;
 		int RS = R*S;
+		int offset = isExplicitIm2col ? nInput*P*Q : 0;
 		// For the given h,w index, insert avals[j] into respective r,s,p,q locations
 		
 		// Constraints: for(int r = 0; r < R; r++) { if(0 <= p && p < P && (hInput - r + pad_h) % stride_h == 0) { ... } }
@@ -398,7 +423,7 @@ public class LibMatrixDNNIm2ColHelper {
 			// Only append value if h == hInput, where h = (r - pad_h) + p*stride_h and 0 <= p < P
 			// Therefore, p = (hInput - r + pad_h)  / stride_h. Use the same logic for q.
 			final int p = (hInput - r + pad_h)  / stride_h;
-			final int pQ = p*Q;
+			final int pQ = offset + p*Q;
 			final int outRowIndex = cInput*RS + r*S;
 			for(int s = sMin; s <= sMax; s += stride_w) {
 				int q = (wInput - s + pad_w)  / stride_w;

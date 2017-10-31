@@ -63,6 +63,29 @@ public class LibMatrixDNNHelper {
 	}
 	
 	/**
+	 * Factory method that returns list of callable tasks for performing explicit sparse trans im2col operation
+	 * 
+	 * @param params convolution parameters
+	 * @return list of callable tasks for performing sparse trans im2col operation
+	 * @throws DMLRuntimeException if error occurs
+	 */
+	public static ArrayList<Callable<Long>> getSparseTransIm2colWorkers(ConvolutionParameters params) throws DMLRuntimeException {
+		ArrayList<Callable<Long>> ret = new ArrayList<>();
+		int k = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
+		int taskSize = (int)(Math.ceil((double)params.N / k));
+		for(int i = 0; i*taskSize < params.N; i++) {
+			if(params.input1.isInSparseFormat())
+				ret.add(new LibMatrixDNNIm2ColHelper.SparseSparseIm2colWorkerAllChan(params.input1, params.output, 
+						params, true, true, i*taskSize, Math.min((i+1)*taskSize, params.N)));
+			else
+				throw new DMLRuntimeException("Incorrect usage: dense trans_im2col should not be called directly");
+		}
+		return ret;
+	}
+	
+	
+	
+	/**
 	 * Factory method that returns list of callable tasks for performing maxpooling backward operation
 	 * 
 	 * @param params convolution parameters

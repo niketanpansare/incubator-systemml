@@ -514,6 +514,31 @@ public class LibMatrixDNN {
 		}
 	}
 	
+	public static void transIm2col(MatrixBlock input, MatrixBlock output, ConvolutionParameters params) throws DMLRuntimeException {
+		params.input1 = input;
+		params.output = output;
+		
+		if(input.getNumRows() != params.N || input.getNumColumns() != params.C*params.H*params.W ) {
+			throw new DMLRuntimeException("Incorrect input dimensions in trans_im2col:" + input.getNumRows() + " " 
+				+ input.getNumColumns() + " " + params.N + " " + params.C*params.H*params.W);
+		}
+		
+		// This acts as a guard for eager optimization
+		if(!input.isInSparseFormat() || !output.isInSparseFormat())
+			throw new DMLRuntimeException("Incorrect usage: dense trans_im2col should not be called directly");
+		
+		output.allocateSparseRowsBlock();
+		
+		execute(LibMatrixDNNHelper.getSparseTransIm2colWorkers(params), params);
+		
+		// Since transIm2col, we sort the rows
+		output.sortSparseRows();
+		
+		// post-processing: maintain nnz
+		output.recomputeNonZeros(); // as im2col workers donot compute it
+		output.examSparsity();
+	}
+	
 	public static void maxpooling(MatrixBlock input, MatrixBlock output, ConvolutionParameters params) throws DMLRuntimeException {
 		params.input1 = input;
 		params.output = output;

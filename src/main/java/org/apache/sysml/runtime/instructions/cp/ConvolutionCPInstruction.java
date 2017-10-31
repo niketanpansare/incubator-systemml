@@ -126,7 +126,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
-		if (opcode.equalsIgnoreCase("maxpooling") || opcode.equalsIgnoreCase("relu_maxpooling")) {
+		if (opcode.equalsIgnoreCase("maxpooling") || opcode.equalsIgnoreCase("relu_maxpooling") ||  opcode.equalsIgnoreCase("trans_im2col")) {
 			InstructionUtils.checkNumFields(parts, 16);
 			// stride1, stride2, padding1, padding2
 			// input_shape1, input_shape2, input_shape3, input_shape4,
@@ -440,6 +440,15 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			else {
 				outputBlock = new MatrixBlock(N, C*P*Q, false).allocateBlock();
 				LibMatrixDNN.maxpooling(matBlock, outputBlock, params);
+			}
+		}
+		else if (instOpcode.equalsIgnoreCase("trans_im2col")) {
+			if(matBlock.isEmpty()) {
+				outputBlock = new MatrixBlock(N*P*Q, C*R*S, true);
+			}
+			else {
+				outputBlock = new MatrixBlock(N*P*Q, C*R*S, matBlock.isInSparseFormat()).allocateBlock();
+				LibMatrixDNN.transIm2col(matBlock, outputBlock, params);
 			}
 		}
 		else if (instOpcode.equalsIgnoreCase("maxpooling_backward") || instOpcode.equalsIgnoreCase("relu_maxpooling_backward")) {

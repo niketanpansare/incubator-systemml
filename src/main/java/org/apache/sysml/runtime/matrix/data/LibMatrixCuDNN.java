@@ -436,6 +436,21 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			throw new DMLRuntimeException("Error in conv2d in GPUContext " + gCtx.toString() + " from Thread " + Thread.currentThread().toString(), e);
 		}	
 	}
+	
+	public static void reorg_npqk(GPUContext gCtx, String instName, MatrixObject image,
+			MatrixObject outputBlock, int N, int C, int H, int W, int K, int R,
+			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
+			int Q, double intermediateMemoryBudget) throws DMLRuntimeException {
+		
+		Pointer inputPointer = getDensePointer(gCtx, image, instName);
+		Pointer dstPointer = getDensePointer(gCtx, outputBlock, instName);
+		
+		long t0 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+		getCudaKernels(gCtx).launchKernel("reorg_npqk",
+				ExecutionConfig.getConfigForSimpleVectorOperations(toInt(N*P*Q*K)),
+				inputPointer, dstPointer, toInt(N), toInt(K), toInt(P*Q), toInt(K*P*Q), toInt(N*P*Q*K));
+		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_REORG_NPQK_KERNEL, System.nanoTime() - t0);
+	}
 
 	/**
 	 * performs maxpooling on GPU by exploiting cudnnPoolingForward(...)
@@ -678,9 +693,9 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 				LOG.trace("GPU : relu custom kernel" + ", GPUContext=" + gCtx);
 			}
 			// Invokes relu(double* A,  double* ret, int rlen, int clen)
-			if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
 			Pointer dstData = getDensePointerForCuDNN(gCtx, output, instName);
 			Pointer srcData = getDensePointerForCuDNN(gCtx, in, instName); // TODO: FIXME: Add sparse kernel support for relu
+			if (GPUStatistics.DISPLAY_STATISTICS) t0 = System.nanoTime();
 			getCudaKernels(gCtx).launchKernel("relu",
 					ExecutionConfig.getConfigForSimpleMatrixOperations(toInt(N), toInt(CHW)),
 					srcData, dstData, toInt(N), toInt(CHW));

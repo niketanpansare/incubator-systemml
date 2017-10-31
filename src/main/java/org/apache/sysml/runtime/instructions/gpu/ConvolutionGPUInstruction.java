@@ -20,17 +20,12 @@ package org.apache.sysml.runtime.instructions.gpu;
 
 import java.util.ArrayList;
 
-import jcuda.Pointer;
-
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.functionobjects.SwapIndex;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
-import org.apache.sysml.runtime.instructions.cp.ConvolutionCPInstruction;
-import org.apache.sysml.runtime.instructions.gpu.context.ExecutionConfig;
-import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCuDNN;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
@@ -196,7 +191,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 			return new ConvolutionGPUInstruction(in1, in2, in3, out, opcode, str, stride,
 					padding, input_shape, filter_shape, Double.parseDouble(parts[17]));
 		}
-		else if (opcode.equalsIgnoreCase("maxpooling")) {
+		else if (opcode.equalsIgnoreCase("maxpooling") || opcode.equalsIgnoreCase("reorg_npqk")) {
 			InstructionUtils.checkNumFields(parts, 15);
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand out = new CPOperand(parts[14]);
@@ -398,6 +393,19 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 			
 			if(instOpcode.equalsIgnoreCase("maxpooling"))
 				LibMatrixCuDNN.maxpooling(ec.getGPUContext(0), getExtendedOpcode(), image, out, N, C, H, W,
+					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, _intermediateMemoryBudget);
+		}
+		else if (instOpcode.equalsIgnoreCase("reorg_npqk")) {
+			MatrixObject image = getMatrixInputForGPUInstruction(ec, _input1.getName());
+
+			if(image.getNumRows() != N*P*Q || image.getNumColumns() != K) 
+				throw new DMLRuntimeException("Incorrect dimensions for image in reorg_npqk: " + 
+						image.getNumRows() + " != " +  N*P*Q + " || " + image.getNumColumns() + " != " + K);
+			
+			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), N, K*P*Q);
+			
+			if(instOpcode.equalsIgnoreCase("reorg_npqk"))
+				LibMatrixCuDNN.reorg_npqk(ec.getGPUContext(0), getExtendedOpcode(), image, out, N, C, H, W,
 					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, _intermediateMemoryBudget);
 		}
 		else if (instOpcode.equalsIgnoreCase("maxpooling_backward")) {
