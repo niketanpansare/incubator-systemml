@@ -33,6 +33,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.ConvolutionParameters;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 import java.util.ArrayList;
 
@@ -47,7 +48,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	private static final boolean INFER_TENSOR_SHAPE_FROM_PARENT_CONV_OP = true;
 	// This guards us from cases where the user provides incorrect C,H,W parameters.
 	private static final boolean THROW_ERROR_IF_INFERRED_SHAPE_MISMATCH = true;
-	private static final double EXPLICIT_IM2COL_SPARSITY_THRESHOLD = 0.2;
+	private static final double EXPLICIT_IM2COL_SPARSITY_THRESHOLD = MatrixBlock.SPARSITY_TURN_POINT;
 	private static final double EXPLICIT_IM2COL_MEMORY_THRESHOLD = 8e+8; // 800mb in bytes
 	// -------------------------------------------------------------------------
 	
@@ -235,16 +236,18 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		boolean isConv2dBiasAdd = isConv2dBiasAddRewriteEligible(et, inputs);
 		boolean isConv2dOp = op == ConvOp.DIRECT_CONV2D || isConv2dBiasAdd;
 		Hop image = isConv2dBiasAdd ? inputs.get(0).getInput().get(0) : inputs.get(0);
+		Hop filter = isConv2dBiasAdd ? inputs.get(0).getInput().get(1) : inputs.get(1);
 		double expectedSparsity = image.getSparsity();
 		if(image instanceof IndexingOp && expectedSparsity == 1.0) {
 			// If rix then use the sparsity of the original dataset if the sparsity of image is unknown
 			expectedSparsity = image.getInput().get(0).getSparsity();
 		}
 		if(!OptimizerUtils.ALLOW_OPERATOR_FUSION ||  et != ExecType.GPU || !isConv2dOp 
-				|| expectedSparsity > EXPLICIT_IM2COL_SPARSITY_THRESHOLD) {
+				|| expectedSparsity > EXPLICIT_IM2COL_SPARSITY_THRESHOLD || filter.getSparsity() > MatrixBlock.SPARSITY_TURN_POINT) {
 			if(LOG.isDebugEnabled())
 				LOG.debug("Unable to apply explicit im2col rewrite. operator fusion:" + OptimizerUtils.ALLOW_OPERATOR_FUSION 
-						+ ", exec type:" + et + ", isConv2dOp:" + isConv2dOp + ", expectedSparsity:" + expectedSparsity);
+						+ ", exec type:" + et + ", isConv2dOp:" + isConv2dOp + ", expectedIm2colSparsity:" + expectedSparsity 
+						+ ", filterSparsity:" + filter.getSparsity());
 			return false;
 		}
 		
