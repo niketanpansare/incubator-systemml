@@ -236,8 +236,8 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		boolean isConv2dOp = op == ConvOp.DIRECT_CONV2D || isConv2dBiasAdd;
 		Hop image = isConv2dBiasAdd ? inputs.get(0).getInput().get(0) : inputs.get(0);
 		double expectedSparsity = image.getSparsity();
-		if(image instanceof IndexingOp && ((IndexingOp)image).isColLowerEqualsUpper()) {
-			// If rix then use the sparsity of the original dataset
+		if(image instanceof IndexingOp && expectedSparsity == 1.0) {
+			// If rix then use the sparsity of the original dataset if the sparsity of image is unknown
 			expectedSparsity = image.getInput().get(0).getSparsity();
 		}
 		if(!OptimizerUtils.ALLOW_OPERATOR_FUSION ||  et != ExecType.GPU || !isConv2dOp 
