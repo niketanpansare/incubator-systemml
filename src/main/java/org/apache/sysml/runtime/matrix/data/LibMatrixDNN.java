@@ -79,6 +79,8 @@ public class LibMatrixDNN {
 	private static AtomicLong conv2dBwdDataDenseCount = new AtomicLong(0);
 	private static AtomicLong im2colSparseCount = new AtomicLong(0);
 	private static AtomicLong im2colDenseCount = new AtomicLong(0);
+	private static AtomicLong transIm2colSparseCount = new AtomicLong(0);
+	private static AtomicLong transIm2colDenseCount = new AtomicLong(0);
 	private static AtomicLong maxPoolBwdSparseCount = new AtomicLong(0);
 	private static AtomicLong maxPoolBwdDenseCount = new AtomicLong(0);
 	static AtomicLong loopedConvMatMultTime = new AtomicLong(0);
@@ -90,17 +92,19 @@ public class LibMatrixDNN {
 	
 	public static void appendStatistics(StringBuilder sb) {
 		if(DMLScript.STATISTICS && DISPLAY_STATISTICS) {
-			sb.append("LibMatrixDNN dense count (conv/bwdF/bwdD/im2col/maxBwd):\t" 
+			sb.append("LibMatrixDNN dense count (conv/bwdF/bwdD/im2col/t_im2col/maxBwd):\t" 
 					+ conv2dDenseCount.get() + "/"
 					+ conv2dBwdFilterDenseCount.get() + "/"
 					+ conv2dBwdDataDenseCount.get() + "/"
 					+ im2colDenseCount.get() + "/"
+					+ transIm2colDenseCount.get() + "/"
 					+ maxPoolBwdDenseCount.get() + ".\n");
-			sb.append("LibMatrixDNN sparse count (conv/bwdF/bwdD/im2col/maxBwd):\t" 
+			sb.append("LibMatrixDNN sparse count (conv/bwdF/bwdD/im2col/t_im2col/maxBwd):\t" 
 					+ conv2dSparseCount.get() + "/"
 					+ conv2dBwdFilterSparseCount.get() + "/"
 					+ conv2dBwdDataSparseCount.get() + "/"
 					+ im2colSparseCount.get() + "/"
+					+ transIm2colSparseCount.get() + "/"
 					+ maxPoolBwdSparseCount.get() + ".\n");
 			sb.append("LibMatrixDNN conv(im2col/matmult), bwdF (im2col/matmult), bwdD (col2im/matmult) time:\t" +
 					String.format("%.3f", loopedConvIm2ColTime.get()*1e-9) + "/" +
@@ -116,12 +120,14 @@ public class LibMatrixDNN {
 		conv2dBwdFilterDenseCount.set(0);
 		conv2dBwdDataDenseCount.set(0);
 		im2colDenseCount.set(0);
+		transIm2colDenseCount.set(0);
 		maxPoolBwdDenseCount.set(0);
 		
 		conv2dSparseCount.set(0);
 		conv2dBwdFilterSparseCount.set(0);
 		conv2dBwdDataSparseCount.set(0);
 		im2colSparseCount.set(0);
+		transIm2colSparseCount.set(0);
 		maxPoolBwdSparseCount.set(0);
 		
 		loopedConvIm2ColTime.set(0);
@@ -532,8 +538,9 @@ public class LibMatrixDNN {
 		execute(LibMatrixDNNHelper.getTransIm2colWorkers(params), params);
 		
 		// Since transIm2col, we sort the rows
-		if(output.isInSparseFormat())
+		if(output.isInSparseFormat()) {
 			output.sortSparseRows();
+		}
 		
 		// post-processing: maintain nnz
 		output.recomputeNonZeros(); // as im2col workers donot compute it
