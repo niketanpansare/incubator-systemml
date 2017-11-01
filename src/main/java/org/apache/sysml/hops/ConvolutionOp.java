@@ -24,6 +24,7 @@ import org.apache.sysml.hops.Hop.MultiThreadedHop;
 import org.apache.sysml.lops.Binary;
 import org.apache.sysml.lops.ConvolutionTransform;
 import org.apache.sysml.lops.ConvolutionTransform.OperationTypes;
+import org.apache.sysml.lops.Data;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.lops.LopsException;
@@ -33,6 +34,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.ConvolutionParameters;
+
 import java.util.ArrayList;
 
 public class ConvolutionOp extends Hop  implements MultiThreadedHop
@@ -373,13 +375,15 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		return constructConvolutionLopsHelper(lhsInputLop, lopOp, et, optionalRhsInputLop, intermediateMemEstimate, inputs);
 	}
 	
-	private boolean compareInputIm2colLops(ArrayList<Lop> lhsInputLops, Lop rhsFirstInputLop, ArrayList<Lop> rhsChildLops) {
+	private boolean compareInputIm2colLops(ArrayList<Lop> lhsInputLops, Lop rhsFirstInputLop, ArrayList<Lop> rhsChildLops) throws LopsException {
 		if(lhsInputLops.size() != rhsChildLops.size() + 1) return false;
 		if(lhsInputLops.get(0) != rhsFirstInputLop) return false;
 		for(int i = 0; i < rhsChildLops.size(); i++) {
 			Lop lhsLop = lhsInputLops.get(i+1);
 			Lop rhsLop = rhsChildLops.get(0);
-			if(lhsLop != rhsLop) {
+			boolean isEqual = (lhsLop instanceof Data) && ((Data)lhsLop).isLiteral() && 
+					(rhsLop instanceof Data) && ((Data)rhsLop).isLiteral() && ((Data)lhsLop).getLongValue() == ((Data)rhsLop).getLongValue();
+			if(!isEqual) {
 				return false;
 			}
 		}
