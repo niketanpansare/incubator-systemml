@@ -380,11 +380,13 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		if(lhsInputLops.get(0) != rhsFirstInputLop) return false;
 		for(int i = 0; i < rhsChildLops.size(); i++) {
 			Lop lhsLop = lhsInputLops.get(i+1);
-			Lop rhsLop = rhsChildLops.get(0);
-			boolean isEqual = (lhsLop instanceof Data) && ((Data)lhsLop).isLiteral() && 
-					(rhsLop instanceof Data) && ((Data)rhsLop).isLiteral() && ((Data)lhsLop).getLongValue() == ((Data)rhsLop).getLongValue();
-			if(!isEqual) {
-				return false;
+			Lop rhsLop = rhsChildLops.get(i);
+			if(lhsLop != rhsLop) {
+				boolean hasSameValue = (lhsLop instanceof Data) && ((Data)lhsLop).isLiteral() && 
+						(rhsLop instanceof Data) && ((Data)rhsLop).isLiteral() && ((Data)lhsLop).getLongValue() == ((Data)rhsLop).getLongValue();
+				if(!hasSameValue) {
+					return false;
+				}
 			}
 		}
 		return true;
