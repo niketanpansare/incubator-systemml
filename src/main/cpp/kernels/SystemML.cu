@@ -71,8 +71,8 @@ template <typename T>
 __device__ void im2row(T *inVal, int *inRowPtr, int *inColInd,
 	T *outVal, int *outInd, int* identityPermutation,
 	int pad_h, int pad_w, int stride_h, int stride_w,
-	unsigned int S, unsigned int RS, unsigned int W, unsigned int HW, 
-	unsigned int P, unsigned int Q, unsigned int PQ, unsigned int CRS, unsigned int nnzRS) {
+	int S, int RS, int W, int HW, 
+	int P, int Q, int PQ, int CRS, int nnzRS) {
 	int nnzrs = blockIdx.x * blockDim.x + threadIdx.x;
 	if(nnzrs < nnzRS) {
 		int j = nnzrs / RS;
@@ -110,8 +110,8 @@ __device__ void im2row(T *inVal, int *inRowPtr, int *inColInd,
 extern "C" __global__ void im2row_f(float *inVal, int *inRowPtr, int *inColInd,
 	float *outVal, int *outInd, int* identityPermutation, 
 	int pad_h, int pad_w, int stride_h, int stride_w,
-	unsigned int S, unsigned int RS, unsigned int W, unsigned int HW, 
-	unsigned int P, unsigned int Q, unsigned int PQ, unsigned int CRS, unsigned int nnzRS) {
+	int S, int RS, int W, int HW, 
+	int P, int Q, int PQ, int CRS, int nnzRS) {
 
 	im2row(inVal, inRowPtr, inColInd, outVal, outInd, identityPermutation,
 		pad_h, pad_w, stride_h, stride_w, S, RS, W, HW,  P, Q, PQ, CRS, nnzRS);
@@ -121,8 +121,8 @@ extern "C" __global__ void im2row_f(float *inVal, int *inRowPtr, int *inColInd,
 extern "C" __global__ void im2row_d(double *inVal, int *inRowPtr, int *inColInd,
 	double *outVal, int *outInd, int* identityPermutation,
 	int pad_h, int pad_w, int stride_h, int stride_w,
-	unsigned int S, unsigned int RS, unsigned int W, unsigned int HW, 
-	unsigned int P, unsigned int Q, unsigned int PQ, unsigned int CRS, unsigned int nnzRS) {
+	int S, int RS, int W, int HW, 
+	int P, int Q, int PQ, int CRS, int nnzRS) {
 
 	im2row(inVal, inRowPtr, inColInd, outVal, outInd, identityPermutation,
 		pad_h, pad_w, stride_h, stride_w, S, RS, W, HW,  P, Q, PQ, CRS, nnzRS);
@@ -140,7 +140,7 @@ extern "C" __global__ void im2row_d(double *inVal, int *inRowPtr, int *inColInd,
  * @param NKPQ     length of A
  */
 template <typename T>
-__device__ void reorg_npqk(T *A, T *C, unsigned int N, unsigned int K, unsigned int PQ, unsigned int KPQ, unsigned int NKPQ) {
+__device__ void reorg_npqk(T *A, T *C, int N, int K, int PQ, int KPQ, int NKPQ) {
   int index = blockIdx.x * blockDim.x + threadIdx.x;
   if (index < NKPQ) {
     int npq = index / K;
@@ -151,11 +151,11 @@ __device__ void reorg_npqk(T *A, T *C, unsigned int N, unsigned int K, unsigned 
   }
 }
 
-extern "C" __global__ void reorg_npqk_d(double *A, double *C, unsigned int N, unsigned int K, unsigned int PQ, unsigned int KPQ, unsigned int NKPQ) {
+extern "C" __global__ void reorg_npqk_d(double *A, double *C, int N, int K, int PQ, int KPQ, int NKPQ) {
   reorg_npqk(A, C, N, K, PQ, KPQ, NKPQ);
 }
 
-extern "C" __global__ void reorg_npqk_f(float *A, float *C, unsigned int N, unsigned int K, unsigned int PQ, unsigned int KPQ, unsigned int NKPQ) {
+extern "C" __global__ void reorg_npqk_f(float *A, float *C, int N, int K, int PQ, int KPQ, int NKPQ) {
   reorg_npqk(A, C, N, K, PQ, KPQ, NKPQ);
 }
 
@@ -172,7 +172,7 @@ extern "C" __global__ void reorg_npqk_f(float *A, float *C, unsigned int N, unsi
  * @param NKPQ     length of A
  */
 template <typename T>
-__device__ void reorg_bias_add_npqk(T *A, T *bias, T *C, unsigned int N, unsigned int K, unsigned int PQ, unsigned int KPQ, unsigned int NKPQ) {
+__device__ void reorg_bias_add_npqk(T *A, T *bias, T *C, int N, int K, int PQ, int KPQ, int NKPQ) {
   int index = blockIdx.x * blockDim.x + threadIdx.x;
   if (index < NKPQ) {
     int npq = index / K;
@@ -183,11 +183,11 @@ __device__ void reorg_bias_add_npqk(T *A, T *bias, T *C, unsigned int N, unsigne
   }
 }
 
-extern "C" __global__ void reorg_bias_add_npqk_d(double *A, double *bias, double *C, unsigned int N, unsigned int K, unsigned int PQ, unsigned int KPQ, unsigned int NKPQ) {
+extern "C" __global__ void reorg_bias_add_npqk_d(double *A, double *bias, double *C, int N, int K, int PQ, int KPQ, int NKPQ) {
   reorg_bias_add_npqk(A, bias, C, N, K, PQ, KPQ, NKPQ);
 }
 
-extern "C" __global__ void reorg_bias_add_npqk_f(float *A, float *bias, float *C, unsigned int N, unsigned int K, unsigned int PQ, unsigned int KPQ, unsigned int NKPQ) {
+extern "C" __global__ void reorg_bias_add_npqk_f(float *A, float *bias, float *C, int N, int K, int PQ, int KPQ, int NKPQ) {
   reorg_bias_add_npqk(A, bias, C, N, K, PQ, KPQ, NKPQ);
 }
 
