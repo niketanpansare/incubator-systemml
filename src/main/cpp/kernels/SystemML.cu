@@ -29,8 +29,9 @@ nvcc -ptx -arch=sm_30 --std c++11 SystemML.cu
 __forceinline__ __device__ void convertIndexToRowColIndex(int *inRowPtr, int *inColInd, unsigned int numCols, unsigned int size) {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	if(index < size) {
-		inRowPtr[index] = inColInd[index] / numCols;
-		inColInd[index] = inColInd[index] % numCols;
+		int tmp = inColInd[index];
+		inRowPtr[index] = tmp / numCols;
+		inColInd[index] = tmp % numCols;
 	}
 }
 
