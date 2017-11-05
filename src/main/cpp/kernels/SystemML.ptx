@@ -10,7 +10,7 @@
 .target sm_30
 .address_size 64
 
-	// .globl	_Z27convertIndexToRowColIndex_dPiS_jj
+	// .globl	convertIndexToRowColIndex_d
 .func  (.param .b64 func_retval0) __internal_trig_reduction_slowpathd
 (
 	.param .b64 __internal_trig_reduction_slowpathd_param_0,
@@ -28,11 +28,11 @@
 .const .align 8 .b8 __cudart_i2opi_d[144] = {8, 93, 141, 31, 177, 95, 251, 107, 234, 146, 82, 138, 247, 57, 7, 61, 123, 241, 229, 235, 199, 186, 39, 117, 45, 234, 95, 158, 102, 63, 70, 79, 183, 9, 203, 39, 207, 126, 54, 109, 31, 109, 10, 90, 139, 17, 47, 239, 15, 152, 5, 222, 255, 151, 248, 31, 59, 40, 249, 189, 139, 95, 132, 156, 244, 57, 83, 131, 57, 214, 145, 57, 65, 126, 95, 180, 38, 112, 156, 233, 132, 68, 187, 46, 245, 53, 130, 232, 62, 167, 41, 177, 28, 235, 29, 254, 28, 146, 209, 9, 234, 46, 73, 6, 224, 210, 77, 66, 58, 110, 36, 183, 97, 197, 187, 222, 171, 99, 81, 254, 65, 144, 67, 60, 153, 149, 98, 219, 192, 221, 52, 245, 209, 87, 39, 252, 41, 21, 68, 78, 110, 131, 249, 162};
 .const .align 8 .b8 __cudart_sin_cos_coeffs[128] = {186, 94, 120, 249, 101, 219, 229, 61, 70, 210, 176, 44, 241, 229, 90, 190, 146, 227, 172, 105, 227, 29, 199, 62, 161, 98, 219, 25, 160, 1, 42, 191, 24, 8, 17, 17, 17, 17, 129, 63, 84, 85, 85, 85, 85, 85, 197, 191, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 100, 129, 253, 32, 131, 255, 168, 189, 40, 133, 239, 193, 167, 238, 33, 62, 217, 230, 6, 142, 79, 126, 146, 190, 233, 188, 221, 25, 160, 1, 250, 62, 71, 93, 193, 22, 108, 193, 86, 191, 81, 85, 85, 85, 85, 85, 165, 63, 0, 0, 0, 0, 0, 0, 224, 191, 0, 0, 0, 0, 0, 0, 240, 63};
 
-.visible .entry _Z27convertIndexToRowColIndex_dPiS_jj(
-	.param .u64 _Z27convertIndexToRowColIndex_dPiS_jj_param_0,
-	.param .u64 _Z27convertIndexToRowColIndex_dPiS_jj_param_1,
-	.param .u32 _Z27convertIndexToRowColIndex_dPiS_jj_param_2,
-	.param .u32 _Z27convertIndexToRowColIndex_dPiS_jj_param_3
+.visible .entry convertIndexToRowColIndex_d(
+	.param .u64 convertIndexToRowColIndex_d_param_0,
+	.param .u64 convertIndexToRowColIndex_d_param_1,
+	.param .u32 convertIndexToRowColIndex_d_param_2,
+	.param .u32 convertIndexToRowColIndex_d_param_3
 )
 {
 	.reg .pred 	%p<2>;
@@ -40,10 +40,10 @@
 	.reg .b64 	%rd<8>;
 
 
-	ld.param.u64 	%rd1, [_Z27convertIndexToRowColIndex_dPiS_jj_param_0];
-	ld.param.u64 	%rd2, [_Z27convertIndexToRowColIndex_dPiS_jj_param_1];
-	ld.param.u32 	%r2, [_Z27convertIndexToRowColIndex_dPiS_jj_param_2];
-	ld.param.u32 	%r3, [_Z27convertIndexToRowColIndex_dPiS_jj_param_3];
+	ld.param.u64 	%rd1, [convertIndexToRowColIndex_d_param_0];
+	ld.param.u64 	%rd2, [convertIndexToRowColIndex_d_param_1];
+	ld.param.u32 	%r2, [convertIndexToRowColIndex_d_param_2];
+	ld.param.u32 	%r3, [convertIndexToRowColIndex_d_param_3];
 	mov.u32 	%r4, %ctaid.x;
 	mov.u32 	%r5, %ntid.x;
 	mov.u32 	%r6, %tid.x;
@@ -67,12 +67,12 @@ BB0_2:
 	ret;
 }
 
-	// .globl	_Z27convertIndexToRowColIndex_fPiS_jj
-.visible .entry _Z27convertIndexToRowColIndex_fPiS_jj(
-	.param .u64 _Z27convertIndexToRowColIndex_fPiS_jj_param_0,
-	.param .u64 _Z27convertIndexToRowColIndex_fPiS_jj_param_1,
-	.param .u32 _Z27convertIndexToRowColIndex_fPiS_jj_param_2,
-	.param .u32 _Z27convertIndexToRowColIndex_fPiS_jj_param_3
+	// .globl	convertIndexToRowColIndex_f
+.visible .entry convertIndexToRowColIndex_f(
+	.param .u64 convertIndexToRowColIndex_f_param_0,
+	.param .u64 convertIndexToRowColIndex_f_param_1,
+	.param .u32 convertIndexToRowColIndex_f_param_2,
+	.param .u32 convertIndexToRowColIndex_f_param_3
 )
 {
 	.reg .pred 	%p<2>;
@@ -80,10 +80,10 @@ BB0_2:
 	.reg .b64 	%rd<8>;
 
 
-	ld.param.u64 	%rd1, [_Z27convertIndexToRowColIndex_fPiS_jj_param_0];
-	ld.param.u64 	%rd2, [_Z27convertIndexToRowColIndex_fPiS_jj_param_1];
-	ld.param.u32 	%r2, [_Z27convertIndexToRowColIndex_fPiS_jj_param_2];
-	ld.param.u32 	%r3, [_Z27convertIndexToRowColIndex_fPiS_jj_param_3];
+	ld.param.u64 	%rd1, [convertIndexToRowColIndex_f_param_0];
+	ld.param.u64 	%rd2, [convertIndexToRowColIndex_f_param_1];
+	ld.param.u32 	%r2, [convertIndexToRowColIndex_f_param_2];
+	ld.param.u32 	%r3, [convertIndexToRowColIndex_f_param_3];
 	mov.u32 	%r4, %ctaid.x;
 	mov.u32 	%r5, %ntid.x;
 	mov.u32 	%r6, %tid.x;

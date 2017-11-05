@@ -34,11 +34,11 @@ __forceinline__ __device__ void convertIndexToRowColIndex(int *inRowPtr, int *in
 	}
 }
 
-__global__ void convertIndexToRowColIndex_d(int *inRowPtr, int *inColInd, unsigned int numCols, unsigned int size) {
+extern "C" __global__ void convertIndexToRowColIndex_d(int *inRowPtr, int *inColInd, unsigned int numCols, unsigned int size) {
 	convertIndexToRowColIndex(inRowPtr, inColInd, numCols, size);
 }
 
-__global__ void convertIndexToRowColIndex_f(int *inRowPtr, int *inColInd, unsigned int numCols, unsigned int size) {
+extern "C" __global__ void convertIndexToRowColIndex_f(int *inRowPtr, int *inColInd, unsigned int numCols, unsigned int size) {
 	convertIndexToRowColIndex(inRowPtr, inColInd, numCols, size);
 }
 
