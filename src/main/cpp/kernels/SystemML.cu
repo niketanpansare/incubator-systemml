@@ -26,7 +26,7 @@ nvcc -ptx -arch=sm_30 --std c++11 SystemML.cu
 #include <cfloat>
 #include <cmath>
 
-__forceinline__ __device__ void convertIndexToRowColIndex(int *inRowPtr, int *inColInd, unsigned int numCols, unsigned int size) {
+__forceinline__ __device__ void convertIndexToRowColIndex(int *inRowPtr, int *inColInd, int numCols, int size) {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	if(index < size) {
 		int tmp = inColInd[index];
@@ -35,11 +35,11 @@ __forceinline__ __device__ void convertIndexToRowColIndex(int *inRowPtr, int *in
 	}
 }
 
-extern "C" __global__ void convertIndexToRowColIndex_d(int *inRowPtr, int *inColInd, unsigned int numCols, unsigned int size) {
+extern "C" __global__ void convertIndexToRowColIndex_d(int *inRowPtr, int *inColInd, int numCols, int size) {
 	convertIndexToRowColIndex(inRowPtr, inColInd, numCols, size);
 }
 
-extern "C" __global__ void convertIndexToRowColIndex_f(int *inRowPtr, int *inColInd, unsigned int numCols, unsigned int size) {
+extern "C" __global__ void convertIndexToRowColIndex_f(int *inRowPtr, int *inColInd, int numCols, int size) {
 	convertIndexToRowColIndex(inRowPtr, inColInd, numCols, size);
 }
 
