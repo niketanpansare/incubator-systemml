@@ -110,43 +110,34 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		// im2row kernel outputs unsorted permutationVector, outColInd and tmp
 		// Note: during im2row kernel outColInd contains index if the matrix is stored in row-major format to avoid additional sort by row.
 		Pointer permutationVector = gCtx.allocate(nnzRS*Sizeof.INT); // has values 0 to nnzRS
-		Pointer outColInd = gCtx.allocate(nnzRS*Sizeof.INT);
 		Pointer tmp = gCtx.allocate(nnzRS*sizeOfDataType);
 		
 		// Then we allocate a temporary buffer for sorting coo: tmp -> outVal
 		Pointer pBuffer = null;
-		Pointer outVal = gCtx.allocate(nnzRS*sizeOfDataType);
 		
 		// convertIndexToRowColIndex converts "dense row-major index" outColInd => coo outRowInd and outColInd
 		Pointer outRowInd = gCtx.allocate(nnzRS*Sizeof.INT);
-		
-		// Finally, we convert coo outRowInd to csr outRowPtr
-		Pointer outRowPtr = gCtx.allocate((N*P*Q+1)*Sizeof.INT);
-		
 		
 		long t1 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
 		getCudaKernels(gCtx).launchKernel("im2row",
 				ExecutionConfig.getConfigForSimpleVectorOperations(nnzRS),
 				inputPointer.val, inputPointer.rowPtr, inputPointer.colInd,
-				tmp, outColInd, permutationVector,
+				tmp, outputPointer.colInd, permutationVector,
 				pad_h, pad_w, stride_h, stride_w, S, R*S, W, H*W, P, Q, P*Q, C*R*S, nnzRS);
 		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_IM2ROW, System.nanoTime() - t1);
 		
 		t1 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
 		int [] pBufferSizeInBytes = new int[1];
-		JCusparse.cusparseXcoosort_bufferSizeExt(getCusparseHandle(gCtx), 1, C*R*S*N*P*Q, nnzRS, outRowInd, outColInd, pBufferSizeInBytes);
+		JCusparse.cusparseXcoosort_bufferSizeExt(getCusparseHandle(gCtx), 1, C*R*S*N*P*Q, nnzRS, outRowInd, outputPointer.colInd, pBufferSizeInBytes);
 		LOG.debug("The space required for coosort:" + pBufferSizeInBytes[0] + " and intermediate budget is " + intermediateMemoryBudget);
 		pBuffer = gCtx.allocate(pBufferSizeInBytes[0]*Sizeof.CHAR);
-		JCusparse.cusparseXcoosortByColumn(getCusparseHandle(gCtx), 1, C*R*S*N*P*Q, nnzRS, outRowInd, outColInd, permutationVector, pBuffer);
-		cudaSupportFunctions.cusparsegthr(getCusparseHandle(gCtx), nnzRS, tmp, outVal, permutationVector, jcuda.jcusparse.cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO);
+		JCusparse.cusparseXcoosortByColumn(getCusparseHandle(gCtx), 1, C*R*S*N*P*Q, nnzRS, outRowInd, outputPointer.colInd, permutationVector, pBuffer);
+		cudaSupportFunctions.cusparsegthr(getCusparseHandle(gCtx), nnzRS, tmp, outputPointer.val, permutationVector, jcuda.jcusparse.cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO);
 		getCudaKernels(gCtx).launchKernel("convertIndexToRowColIndex", ExecutionConfig.getConfigForSimpleVectorOperations(nnzRS),
-				outRowInd, outColInd, toInt(C*R*S), nnzRS);
-		JCusparse.cusparseXcoo2csr(getCusparseHandle(gCtx), outRowInd, nnzRS, N*P*Q, outRowPtr, jcuda.jcusparse.cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO);
+				outRowInd, outputPointer.colInd, toInt(C*R*S), nnzRS);
+		JCusparse.cusparseXcoo2csr(getCusparseHandle(gCtx), outRowInd, nnzRS, N*P*Q, outputPointer.rowPtr, jcuda.jcusparse.cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO);
 		JCuda.cudaDeviceSynchronize();
 		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_COO2CSR, System.nanoTime() - t1);
-		
-		outputPointer.reset(outRowPtr, outColInd, outVal, nnzRS);
-		
 		
 		gCtx.cudaFreeHelper(permutationVector);
 		gCtx.cudaFreeHelper(tmp);
@@ -199,6 +190,9 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			Pointer dstPointer = getDensePointerForCuDNN(gCtx, outputBlock, instName);
 			getCudaKernels(gCtx).launchKernel("reorg_npqk", ExecutionConfig.getConfigForSimpleVectorOperations(toInt(NKPQ)),
 					tmpPointer, dstPointer, N, K, P*Q, toInt(KPQ), toInt(NKPQ));
+			
+			im2rowPointer.deallocate();
+			gCtx.cudaFreeHelper(tmpPointer);
 			
 		}
 		else if(NCHW < maxNumElementsOfCuDNNTensor && NKPQ < maxNumElementsOfCuDNNTensor && KCRS < maxNumElementsOfCuDNNTensor) {
