@@ -140,7 +140,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		JCusparse.cusparseXcoosortByColumn(getCusparseHandle(gCtx), 1, C*R*S*N*P*Q, nnzRS, outRowInd, outColInd, permutationVector, pBuffer);
 		cudaSupportFunctions.cusparsegthr(getCusparseHandle(gCtx), nnzRS, tmp, outVal, permutationVector, jcuda.jcusparse.cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO);
 		getCudaKernels(gCtx).launchKernel("convertIndexToRowColIndex", ExecutionConfig.getConfigForSimpleVectorOperations(nnzRS),
-				outRowInd, outColInd, C*R*S, nnzRS);
+				outRowInd, outColInd, toInt(C*R*S), nnzRS);
 		JCusparse.cusparseXcoo2csr(getCusparseHandle(gCtx), outRowInd, nnzRS, N*P*Q, outRowPtr, jcuda.jcusparse.cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO);
 		JCuda.cudaDeviceSynchronize();
 		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_COO2CSR, System.nanoTime() - t1);
@@ -198,7 +198,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			
 			Pointer dstPointer = getDensePointerForCuDNN(gCtx, outputBlock, instName);
 			getCudaKernels(gCtx).launchKernel("reorg_npqk", ExecutionConfig.getConfigForSimpleVectorOperations(toInt(NKPQ)),
-					tmpPointer, dstPointer, N, K, P*Q, KPQ, NKPQ);
+					tmpPointer, dstPointer, N, K, P*Q, toInt(KPQ), toInt(NKPQ));
 			
 		}
 		else if(NCHW < maxNumElementsOfCuDNNTensor && NKPQ < maxNumElementsOfCuDNNTensor && KCRS < maxNumElementsOfCuDNNTensor) {
