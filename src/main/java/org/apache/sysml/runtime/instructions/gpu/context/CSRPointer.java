@@ -111,6 +111,13 @@ public class CSRPointer {
 		colInd = new Pointer();
 		allocateMatDescrPointer();
 	}
+	
+	public void reset(Pointer rowPtr, Pointer colInd, Pointer val, long nnz) {
+		this.val = val;
+		this.rowPtr = rowPtr;
+		this.colInd = colInd;
+		this.nnz = nnz;
+	}
 
 	private static long getDataTypeSizeOf(long numElems) {
 		return numElems * ((long) LibMatrixCUDA.sizeOfDataType);

@@ -26,6 +26,162 @@ nvcc -ptx -arch=sm_30 --std c++11 SystemML.cu
 #include <cfloat>
 #include <cmath>
 
+__device__ void convertIndexToRowColIndex(int *inRowPtr, int *inColInd, unsigned int numCols, unsigned int size) {
+	int index = blockIdx.x * blockDim.x + threadIdx.x;
+	if(index < size) {
+		inRowPtr[index] = inColInd[index] / numCols;
+		inColInd[index] = inColInd[index] % numCols;
+	}
+}
+
+/**
+ * Performs t(im2col) operation. Takes a sparse csr input matrix of dimensions N x CRS represented by [inVal, inRowPtr, inColInd]
+ * and returns a sparse coo unsorted output matrix of dimensions NPQ x CRS represented by [outVal, outRowInd, outColInd]
+ *
+ * @params inVal input val pointer
+ * @params inRowPtr input row pointer
+ * @params colInd input col index pointer
+ * @params outVal output val pointer
+ * @params outInd output index pointer
+ * @params identityPermutation identity permutation
+ * @param pad_h    padding height
+ * @param pad_w    padding width
+ * @param stride_h stride height
+ * @param stride_w string width
+ * @param S        width of filter
+ * @param RS       length of filter
+ * @param W        width of each image
+ * @param HW       height*width of each image
+ * @param P        output height
+ * @param Q        output width
+ * @param PQ       output height*width
+ * @param CRS      number of columns of filter
+ * @param nnzRS    number of non-zeroes * RS
+ */
+template <typename T>
+__device__ void im2row(T *inVal, int *inRowPtr, int *inColInd,
+	T *outVal, int *outInd, int* identityPermutation,
+	int pad_h, int pad_w, int stride_h, int stride_w,
+	unsigned int S, unsigned int RS, unsigned int W, unsigned int HW, 
+	unsigned int P, unsigned int Q, unsigned int PQ, unsigned int CRS, unsigned int nnzRS) {
+	int nnzrs = blockIdx.x * blockDim.x + threadIdx.x;
+	if(nnzrs < nnzRS) {
+		int j = nnzrs / RS;
+		int rs = nnzrs % RS;
+		T inputValue = inVal[j];
+		int chw = inColInd[j];
+		__syncthreads();
+		
+		// Compute n
+		int n = 0;
+		// TODO: Replace sequential search with binary search or thrust
+		while(inRowPtr[n+1] > j) n++;
+		__syncthreads();
+		
+		int r = rs / S;
+		int s = rs % S;
+		int c =  chw / HW;
+		int hw = chw % HW;
+		int h = hw / W;
+		int w = hw % W;
+		int p = (h - r + pad_h)  / stride_h;
+		int q = (w - s + pad_w)  / stride_w;
+		T outputValue = 0;
+		if(0 <= p && p < P && (h - r + pad_h) % stride_h == 0 && 
+			0 <= q && q < Q && (w - s + pad_w) % stride_w == 0) {
+			outputValue = inputValue;
+		}
+		__syncthreads();
+		outVal[nnzrs] = outputValue;
+		outInd[nnzrs] = (n*PQ + p*Q + q)*CRS + c*RS + rs;
+		identityPermutation[nnzrs] = nnzrs;
+	}
+}
+
+extern "C" __global__ void im2row_f(float *inVal, int *inRowPtr, int *inColInd,
+	float *outVal, int *outInd, int* identityPermutation, 
+	int pad_h, int pad_w, int stride_h, int stride_w,
+	unsigned int S, unsigned int RS, unsigned int W, unsigned int HW, 
+	unsigned int P, unsigned int Q, unsigned int PQ, unsigned int CRS, unsigned int nnzRS) {
+
+	im2row(inVal, inRowPtr, inColInd, outVal, outInd, identityPermutation,
+		pad_h, pad_w, stride_h, stride_w, S, RS, W, HW,  P, Q, PQ, CRS, nnzRS);
+}
+
+
+extern "C" __global__ void im2row_d(double *inVal, int *inRowPtr, int *inColInd,
+	double *outVal, int *outInd, int* identityPermutation,
+	int pad_h, int pad_w, int stride_h, int stride_w,
+	unsigned int S, unsigned int RS, unsigned int W, unsigned int HW, 
+	unsigned int P, unsigned int Q, unsigned int PQ, unsigned int CRS, unsigned int nnzRS) {
+
+	im2row(inVal, inRowPtr, inColInd, outVal, outInd, identityPermutation,
+		pad_h, pad_w, stride_h, stride_w, S, RS, W, HW,  P, Q, PQ, CRS, nnzRS);
+}
+
+/**
+ * Performs reorg operations on dense input A of dimensions [NPQ, K]
+ * and outputs a dense output C of dimensions [N, KPQ]
+ *
+ * @params A       input pointer
+ * @params C       output pointer
+ * @param K        number of filter
+ * @param PQ       output height*width
+ * @param KPQ      number of filter*output height*width
+ * @param NKPQ     length of A
+ */
+template <typename T>
+__device__ void reorg_npqk(T *A, T *C, unsigned int N, unsigned int K, unsigned int PQ, unsigned int KPQ, unsigned int NKPQ) {
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  if (index < NKPQ) {
+    int npq = index / K;
+    int k = index % K;
+    int n = npq / PQ;
+    int pq = npq % PQ;
+    C[n*KPQ + k*PQ + pq] = A[index];
+  }
+}
+
+extern "C" __global__ void reorg_npqk_d(double *A, double *C, unsigned int N, unsigned int K, unsigned int PQ, unsigned int KPQ, unsigned int NKPQ) {
+  reorg_npqk(A, C, N, K, PQ, KPQ, NKPQ);
+}
+
+extern "C" __global__ void reorg_npqk_f(float *A, float *C, unsigned int N, unsigned int K, unsigned int PQ, unsigned int KPQ, unsigned int NKPQ) {
+  reorg_npqk(A, C, N, K, PQ, KPQ, NKPQ);
+}
+
+/**
+ * Performs reorg operations on dense input A of dimensions [NPQ, K]
+ * and outputs a dense output C of dimensions [N, KPQ] followed by C = bias_add(C, bias)
+ *
+ * @params A       input pointer
+ * @params bias    bias pointer
+ * @params C       output pointer
+ * @param K        number of filter
+ * @param PQ       output height*width
+ * @param KPQ      number of filter*output height*width
+ * @param NKPQ     length of A
+ */
+template <typename T>
+__device__ void reorg_bias_add_npqk(T *A, T *bias, T *C, unsigned int N, unsigned int K, unsigned int PQ, unsigned int KPQ, unsigned int NKPQ) {
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  if (index < NKPQ) {
+    int npq = index / K;
+    int k = index % K;
+    int n = npq / PQ;
+    int pq = npq % PQ;
+    C[n*KPQ + k*PQ + pq] = A[index] + bias[k];
+  }
+}
+
+extern "C" __global__ void reorg_bias_add_npqk_d(double *A, double *bias, double *C, unsigned int N, unsigned int K, unsigned int PQ, unsigned int KPQ, unsigned int NKPQ) {
+  reorg_bias_add_npqk(A, bias, C, N, K, PQ, KPQ, NKPQ);
+}
+
+extern "C" __global__ void reorg_bias_add_npqk_f(float *A, float *bias, float *C, unsigned int N, unsigned int K, unsigned int PQ, unsigned int KPQ, unsigned int NKPQ) {
+  reorg_bias_add_npqk(A, bias, C, N, K, PQ, KPQ, NKPQ);
+}
+
 extern "C" __global__ void double2float_f(double *A, float *ret, int N) {
   int tid = blockIdx.x * blockDim.x + threadIdx.x;
   if (tid < N) {

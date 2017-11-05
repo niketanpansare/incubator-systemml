@@ -83,5 +83,6 @@ public interface CudaSupportFunctions {
 	public int cusparsennz(cusparseHandle handle, int dirA, int m, int n, cusparseMatDescr descrA, jcuda.Pointer A, int lda, jcuda.Pointer nnzPerRowCol, jcuda.Pointer nnzTotalDevHostPtr);
 	public void deviceToHost(GPUContext gCtx, Pointer src, double [] dest, String instName) throws DMLRuntimeException;
 	public void hostToDevice(GPUContext gCtx, double [] src,  Pointer dest, String instName) throws DMLRuntimeException;
+	public int cusparsegthr(cusparseHandle handle, int nnz, Pointer y, Pointer xVal, Pointer xInd, int idxBase);
 	
 }

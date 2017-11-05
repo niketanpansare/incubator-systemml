@@ -172,4 +172,9 @@ public class DoublePrecisionCudaSupportFunctions implements CudaSupportFunctions
 		if(GPUStatistics.DISPLAY_STATISTICS && instName != null) 
 			GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_HOST_TO_DEVICE, System.nanoTime() - t1);
 	}
+	
+	@Override
+	public int cusparsegthr(cusparseHandle handle, int nnz, Pointer y, Pointer xVal, Pointer xInd, int idxBase) {
+		return JCusparse.cusparseDgthr(handle, nnz, y, xVal, xInd, idxBase);
+	}
 }
