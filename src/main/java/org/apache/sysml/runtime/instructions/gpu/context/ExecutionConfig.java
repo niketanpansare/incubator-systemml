@@ -69,8 +69,8 @@ public class ExecutionConfig {
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static ExecutionConfig getConfigForSimpleVectorOperations(int numCells) throws DMLRuntimeException {
-		if(numCells == 0)
-			throw new DMLRuntimeException("Attempting to invoke a kernel with 0 threads");
+		if(numCells <= 0)
+			throw new DMLRuntimeException("Attempting to invoke a kernel with " + numCells + " threads");
 		int deviceNumber = 0;
 		int blockDimX = getMaxBlockDim(deviceNumber);
 		int gridDimX = (int) Math.ceil((double) numCells / blockDimX);
