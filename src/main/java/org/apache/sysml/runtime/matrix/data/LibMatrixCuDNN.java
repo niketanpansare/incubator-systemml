@@ -184,10 +184,12 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			CSRPointer im2rowPointer = CSRPointer.allocateEmpty(gCtx, nnzRS, N*P*Q);
 			sparseIm2row(gCtx, instName, inputPointer, im2rowPointer, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, intermediateMemoryBudget);
 			
-			Pointer tmpPointer = gCtx.allocate(NKPQ);
+			Pointer tmpPointer = gCtx.allocate(NKPQ*sizeOfDataType);
 			LibMatrixCuMatMult.sparseDenseMatMult(gCtx, instName, tmpPointer, im2rowPointer, filterPointer, NPQ, CRS, K, CRS, NPQ, K, false, true);
 			
 			Pointer dstPointer = getDensePointerForCuDNN(gCtx, outputBlock, instName);
+			// For debugging
+			// JCuda.cudaMemcpy(tmpPointer, dstPointer, NKPQ*sizeOfDataType, jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToDevice);
 			getCudaKernels(gCtx).launchKernel("reorg_npqk", ExecutionConfig.getConfigForSimpleVectorOperations(toInt(NKPQ)),
 					tmpPointer, dstPointer, N, K, P*Q, toInt(KPQ), toInt(NKPQ));
 			
