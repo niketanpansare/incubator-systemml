@@ -131,7 +131,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		JCusparse.cusparseXcoosort_bufferSizeExt(getCusparseHandle(gCtx), 1, C*R*S*N*P*Q, nnzRS, outRowInd, outputPointer.colInd, pBufferSizeInBytes);
 		LOG.debug("The space required for coosort:" + pBufferSizeInBytes[0] + " and intermediate budget is " + intermediateMemoryBudget);
 		pBuffer = gCtx.allocate(pBufferSizeInBytes[0]*Sizeof.CHAR);
-		JCusparse.cusparseXcoosortByColumn(getCusparseHandle(gCtx), 1, C*R*S*N*P*Q, nnzRS, outRowInd, outputPointer.colInd, permutationVector, pBuffer);
+		JCusparse.cusparseXcoosortByRow(getCusparseHandle(gCtx), 1, C*R*S*N*P*Q, nnzRS, outRowInd, outputPointer.colInd, permutationVector, pBuffer);
 		cudaSupportFunctions.cusparsegthr(getCusparseHandle(gCtx), nnzRS, tmp, outputPointer.val, permutationVector, jcuda.jcusparse.cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO);
 		getCudaKernels(gCtx).launchKernel("convertIndexToRowColIndex", ExecutionConfig.getConfigForSimpleVectorOperations(nnzRS),
 				outRowInd, outputPointer.colInd, toInt(C*R*S), nnzRS);
