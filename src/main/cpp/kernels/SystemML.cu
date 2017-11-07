@@ -65,6 +65,7 @@ extern "C" __global__ void convert_dense_index_coo_index_f(int *inRowPtr, int *i
  * @param pad_w    padding width
  * @param stride_h stride height
  * @param stride_w string width
+ * @param N        number of images
  * @param S        width of filter
  * @param RS       length of filter
  * @param W        width of each image
@@ -79,7 +80,7 @@ template <typename T>
 __device__ void sparse_coo_im2row(T *inVal, int *inRowPtr, int *inColInd,
 	T *outVal, int *outInd, int* identityPermutation,
 	int pad_h, int pad_w, int stride_h, int stride_w,
-	int S, int RS, int W, int HW, 
+	int N, int S, int RS, int W, int HW, 
 	int P, int Q, int PQ, int CRS, int nnzRS) {
 	int nnzrs = blockIdx.x * blockDim.x + threadIdx.x;
 	if(nnzrs < nnzRS) {
@@ -92,7 +93,7 @@ __device__ void sparse_coo_im2row(T *inVal, int *inRowPtr, int *inColInd,
 		// Compute n
 		int n = 0;
 		// TODO: Replace sequential search with binary search or thrust
-		while(inRowPtr[n+1] > j) n++;
+		while(inRowPtr[n+1] > j && n < (N-1)) n++;
 		__syncthreads();
 		
 		int r = rs / S;
@@ -109,33 +110,31 @@ __device__ void sparse_coo_im2row(T *inVal, int *inRowPtr, int *inColInd,
 			outputValue = inputValue;
 		}
 		__syncthreads();
-		if(outputValue != 0) {
-			outVal[nnzrs] = outputValue;
-			outInd[nnzrs] = (n*PQ + p*Q + q)*CRS + c*RS + rs;
-			identityPermutation[nnzrs] = nnzrs;
-		}
+		outVal[nnzrs] = outputValue;
+		outInd[nnzrs] = (n*PQ + p*Q + q)*CRS + c*RS + rs;
+		identityPermutation[nnzrs] = nnzrs;
 	}
 }
 
 extern "C" __global__ void sparse_coo_im2row_f(float *inVal, int *inRowPtr, int *inColInd,
 	float *outVal, int *outInd, int* identityPermutation, 
 	int pad_h, int pad_w, int stride_h, int stride_w,
-	int S, int RS, int W, int HW, 
+	int N, int S, int RS, int W, int HW, 
 	int P, int Q, int PQ, int CRS, int nnzRS) {
 
 	sparse_coo_im2row(inVal, inRowPtr, inColInd, outVal, outInd, identityPermutation,
-		pad_h, pad_w, stride_h, stride_w, S, RS, W, HW,  P, Q, PQ, CRS, nnzRS);
+		pad_h, pad_w, stride_h, stride_w, N, S, RS, W, HW,  P, Q, PQ, CRS, nnzRS);
 }
 
 
 extern "C" __global__ void sparse_coo_im2row_d(double *inVal, int *inRowPtr, int *inColInd,
 	double *outVal, int *outInd, int* identityPermutation,
 	int pad_h, int pad_w, int stride_h, int stride_w,
-	int S, int RS, int W, int HW, 
+	int N, int S, int RS, int W, int HW, 
 	int P, int Q, int PQ, int CRS, int nnzRS) {
 
 	sparse_coo_im2row(inVal, inRowPtr, inColInd, outVal, outInd, identityPermutation,
-		pad_h, pad_w, stride_h, stride_w, S, RS, W, HW,  P, Q, PQ, CRS, nnzRS);
+		pad_h, pad_w, stride_h, stride_w, N, S, RS, W, HW,  P, Q, PQ, CRS, nnzRS);
 }
 
 extern "C" __global__ void double2float_f(double *A, float *ret, int N) {

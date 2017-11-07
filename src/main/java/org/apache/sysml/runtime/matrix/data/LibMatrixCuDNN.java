@@ -123,7 +123,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 				ExecutionConfig.getConfigForSimpleVectorOperations(nnzRS),
 				inputPointer.val, inputPointer.rowPtr, inputPointer.colInd,
 				tmp, outputPointer.colInd, permutationVector,
-				pad_h, pad_w, stride_h, stride_w, S, R*S, W, H*W, P, Q, P*Q, C*R*S, nnzRS);
+				pad_h, pad_w, stride_h, stride_w, N, S, R*S, W, H*W, P, Q, P*Q, C*R*S, nnzRS);
 		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_COO_SPARSE_IM2ROW, System.nanoTime() - t1);
 		
 		t1 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
