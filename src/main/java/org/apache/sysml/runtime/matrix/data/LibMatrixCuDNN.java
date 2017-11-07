@@ -210,7 +210,10 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			CSRPointer im2rowPointer = CSRPointer.allocateEmpty(gCtx, nnzRS, N*P*Q);
 			sparseCooBasedIm2row(gCtx, instName, inputPointer, im2rowPointer, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, intermediateMemoryBudget);
 			
-			LibMatrixCuMatMult.sparseDenseMatMult(gCtx, instName, dstPointer, im2rowPointer, filterPointer, NPQ, CRS, K, CRS, NPQ, K, false, true);
+			Pointer tmpPointer = gCtx.allocate(NKPQ*sizeOfDataType);
+			LibMatrixCuMatMult.sparseDenseMatMult(gCtx, instName, tmpPointer, im2rowPointer, filterPointer, NPQ, CRS, K, CRS, NPQ, K, false, true);
+			getCudaKernels(gCtx).launchKernel("reorg_npqk", ExecutionConfig.getConfigForSimpleVectorOperations(toInt(NKPQ)),
+					 tmpPointer, dstPointer, N, K, P*Q, KPQ, NKPQ);
 			
 			im2rowPointer.deallocate();
 			
