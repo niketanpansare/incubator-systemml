@@ -102,7 +102,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		biasAdd(gCtx, instName, output, bias, output);
 	}
 	
-	private static void sparseIm2row(GPUContext gCtx, String instName, CSRPointer inputPointer, CSRPointer outputPointer,
+	private static void sparseCooBasedIm2row(GPUContext gCtx, String instName, CSRPointer inputPointer, CSRPointer outputPointer,
 			int N, int C, int H, int W,
 			int K, int R, int S, int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q, double intermediateMemoryBudget) throws DMLRuntimeException {
 		int nnzRS = toInt(inputPointer.nnz*R*S);
@@ -119,12 +119,12 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		Pointer outRowInd = gCtx.allocate(nnzRS*Sizeof.INT);
 		
 		long t1 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
-		getCudaKernels(gCtx).launchKernel("im2row",
+		getCudaKernels(gCtx).launchKernel("sparse_coo_im2row",
 				ExecutionConfig.getConfigForSimpleVectorOperations(nnzRS),
 				inputPointer.val, inputPointer.rowPtr, inputPointer.colInd,
 				tmp, outputPointer.colInd, permutationVector,
 				pad_h, pad_w, stride_h, stride_w, S, R*S, W, H*W, P, Q, P*Q, C*R*S, nnzRS);
-		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_IM2ROW, System.nanoTime() - t1);
+		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_COO_SPARSE_IM2ROW, System.nanoTime() - t1);
 		
 		t1 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
 		int [] pBufferSizeInBytes = new int[1];
@@ -133,7 +133,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		pBuffer = gCtx.allocate(pBufferSizeInBytes[0]*Sizeof.CHAR);
 		JCusparse.cusparseXcoosortByRow(getCusparseHandle(gCtx), 1, C*R*S*N*P*Q, nnzRS, outRowInd, outputPointer.colInd, permutationVector, pBuffer);
 		cudaSupportFunctions.cusparsegthr(getCusparseHandle(gCtx), nnzRS, tmp, outputPointer.val, permutationVector, jcuda.jcusparse.cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO);
-		getCudaKernels(gCtx).launchKernel("convertIndexToRowColIndex", ExecutionConfig.getConfigForSimpleVectorOperations(nnzRS),
+		getCudaKernels(gCtx).launchKernel("convert_dense_index_coo_index", ExecutionConfig.getConfigForSimpleVectorOperations(nnzRS),
 				outRowInd, outputPointer.colInd, toInt(C*R*S), nnzRS);
 		JCusparse.cusparseXcoo2csr(getCusparseHandle(gCtx), outRowInd, nnzRS, N*P*Q, outputPointer.rowPtr, jcuda.jcusparse.cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO);
 		JCuda.cudaDeviceSynchronize();
@@ -179,23 +179,15 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		if(isInSparseFormat(gCtx, image)) {
 			CSRPointer inputPointer = getSparsePointer(gCtx, image, instName);
 			Pointer filterPointer = getDensePointerForCuDNN(gCtx, filter, instName);
+			Pointer dstPointer = getDensePointerForCuDNN(gCtx, outputBlock, instName);
 			int nnzRS = toInt(inputPointer.nnz*R*S);
 			
 			CSRPointer im2rowPointer = CSRPointer.allocateEmpty(gCtx, nnzRS, N*P*Q);
-			sparseIm2row(gCtx, instName, inputPointer, im2rowPointer, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, intermediateMemoryBudget);
+			sparseCooBasedIm2row(gCtx, instName, inputPointer, im2rowPointer, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, intermediateMemoryBudget);
 			
-			Pointer tmpPointer = gCtx.allocate(NKPQ*sizeOfDataType);
-			LibMatrixCuMatMult.sparseDenseMatMult(gCtx, instName, tmpPointer, im2rowPointer, filterPointer, NPQ, CRS, K, CRS, NPQ, K, false, true);
-			
-			Pointer dstPointer = getDensePointerForCuDNN(gCtx, outputBlock, instName);
-			// For debugging
-			// JCuda.cudaMemcpy(tmpPointer, dstPointer, NKPQ*sizeOfDataType, jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToDevice);
-			getCudaKernels(gCtx).launchKernel("reorg_npqk", ExecutionConfig.getConfigForSimpleVectorOperations(toInt(NKPQ)),
-					tmpPointer, dstPointer, N, K, P*Q, toInt(KPQ), toInt(NKPQ));
+			LibMatrixCuMatMult.sparseDenseMatMult(gCtx, instName, dstPointer, im2rowPointer, filterPointer, NPQ, CRS, K, CRS, NPQ, K, false, true);
 			
 			im2rowPointer.deallocate();
-			gCtx.cudaFreeHelper(tmpPointer);
-			
 		}
 		else if(NCHW < maxNumElementsOfCuDNNTensor && NKPQ < maxNumElementsOfCuDNNTensor && KCRS < maxNumElementsOfCuDNNTensor) {
 			// Filter and output are accounted as dense in the memory estimation for conv2d

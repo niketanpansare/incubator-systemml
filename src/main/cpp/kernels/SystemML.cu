@@ -26,21 +26,29 @@ nvcc -ptx -arch=sm_30 --std c++11 SystemML.cu
 #include <cfloat>
 #include <cmath>
 
-__forceinline__ __device__ void convertIndexToRowColIndex(int *inRowPtr, int *inColInd, int numCols, int size) {
+/**
+ * Converts the index represented by row-major dense index to coo index.
+ *
+ * @params inRowPtr output coo row pointer
+ * @params inColInd input dense index. This is modified in-place to coo column pointers
+ * @params numCols number of columns
+ * @params size number of nnz
+ */
+__forceinline__ __device__ void convert_dense_index_coo_index(int *inRowPtr, int *inColInd, int numCols, int nnz) {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
-	if(index < size) {
+	if(index < nnz) {
 		int tmp = inColInd[index];
 		inRowPtr[index] = tmp / numCols;
 		inColInd[index] = tmp % numCols;
 	}
 }
 
-extern "C" __global__ void convertIndexToRowColIndex_d(int *inRowPtr, int *inColInd, int numCols, int size) {
-	convertIndexToRowColIndex(inRowPtr, inColInd, numCols, size);
+extern "C" __global__ void convert_dense_index_coo_index_d(int *inRowPtr, int *inColInd, int numCols, int nnz) {
+	convert_dense_index_coo_index(inRowPtr, inColInd, numCols, nnz);
 }
 
-extern "C" __global__ void convertIndexToRowColIndex_f(int *inRowPtr, int *inColInd, int numCols, int size) {
-	convertIndexToRowColIndex(inRowPtr, inColInd, numCols, size);
+extern "C" __global__ void convert_dense_index_coo_index_f(int *inRowPtr, int *inColInd, int numCols, int nnz) {
+	convert_dense_index_coo_index(inRowPtr, inColInd, numCols, nnz);
 }
 
 /**
@@ -68,7 +76,7 @@ extern "C" __global__ void convertIndexToRowColIndex_f(int *inRowPtr, int *inCol
  * @param nnzRS    number of non-zeroes * RS
  */
 template <typename T>
-__device__ void im2row(T *inVal, int *inRowPtr, int *inColInd,
+__device__ void sparse_coo_im2row(T *inVal, int *inRowPtr, int *inColInd,
 	T *outVal, int *outInd, int* identityPermutation,
 	int pad_h, int pad_w, int stride_h, int stride_w,
 	int S, int RS, int W, int HW, 
@@ -107,88 +115,25 @@ __device__ void im2row(T *inVal, int *inRowPtr, int *inColInd,
 	}
 }
 
-extern "C" __global__ void im2row_f(float *inVal, int *inRowPtr, int *inColInd,
+extern "C" __global__ void sparse_coo_im2row_f(float *inVal, int *inRowPtr, int *inColInd,
 	float *outVal, int *outInd, int* identityPermutation, 
 	int pad_h, int pad_w, int stride_h, int stride_w,
 	int S, int RS, int W, int HW, 
 	int P, int Q, int PQ, int CRS, int nnzRS) {
 
-	im2row(inVal, inRowPtr, inColInd, outVal, outInd, identityPermutation,
+	sparse_coo_im2row(inVal, inRowPtr, inColInd, outVal, outInd, identityPermutation,
 		pad_h, pad_w, stride_h, stride_w, S, RS, W, HW,  P, Q, PQ, CRS, nnzRS);
 }
 
 
-extern "C" __global__ void im2row_d(double *inVal, int *inRowPtr, int *inColInd,
+extern "C" __global__ void sparse_coo_im2row_d(double *inVal, int *inRowPtr, int *inColInd,
 	double *outVal, int *outInd, int* identityPermutation,
 	int pad_h, int pad_w, int stride_h, int stride_w,
 	int S, int RS, int W, int HW, 
 	int P, int Q, int PQ, int CRS, int nnzRS) {
 
-	im2row(inVal, inRowPtr, inColInd, outVal, outInd, identityPermutation,
+	sparse_coo_im2row(inVal, inRowPtr, inColInd, outVal, outInd, identityPermutation,
 		pad_h, pad_w, stride_h, stride_w, S, RS, W, HW,  P, Q, PQ, CRS, nnzRS);
-}
-
-/**
- * Performs reorg operations on dense input A of dimensions [NPQ, K]
- * and outputs a dense output C of dimensions [N, KPQ]
- *
- * @params A       input pointer
- * @params C       output pointer
- * @param K        number of filter
- * @param PQ       output height*width
- * @param KPQ      number of filter*output height*width
- * @param NKPQ     length of A
- */
-template <typename T>
-__device__ void reorg_npqk(T *A, T *C, int N, int K, int PQ, int KPQ, int NKPQ) {
-  int index = blockIdx.x * blockDim.x + threadIdx.x;
-  if (index < NKPQ) {
-    int npq = index / K;
-    int k = index % K;
-    int n = npq / PQ;
-    int pq = npq % PQ;
-    C[n*KPQ + k*PQ + pq] = A[index];
-  }
-}
-
-extern "C" __global__ void reorg_npqk_d(double *A, double *C, int N, int K, int PQ, int KPQ, int NKPQ) {
-  reorg_npqk(A, C, N, K, PQ, KPQ, NKPQ);
-}
-
-extern "C" __global__ void reorg_npqk_f(float *A, float *C, int N, int K, int PQ, int KPQ, int NKPQ) {
-  reorg_npqk(A, C, N, K, PQ, KPQ, NKPQ);
-}
-
-/**
- * Performs reorg operations on dense input A of dimensions [NPQ, K]
- * and outputs a dense output C of dimensions [N, KPQ] followed by C = bias_add(C, bias)
- *
- * @params A       input pointer
- * @params bias    bias pointer
- * @params C       output pointer
- * @param K        number of filter
- * @param PQ       output height*width
- * @param KPQ      number of filter*output height*width
- * @param NKPQ     length of A
- */
-template <typename T>
-__device__ void reorg_bias_add_npqk(T *A, T *bias, T *C, int N, int K, int PQ, int KPQ, int NKPQ) {
-  int index = blockIdx.x * blockDim.x + threadIdx.x;
-  if (index < NKPQ) {
-    int npq = index / K;
-    int k = index % K;
-    int n = npq / PQ;
-    int pq = npq % PQ;
-    C[n*KPQ + k*PQ + pq] = A[index] + bias[k];
-  }
-}
-
-extern "C" __global__ void reorg_bias_add_npqk_d(double *A, double *bias, double *C, int N, int K, int PQ, int KPQ, int NKPQ) {
-  reorg_bias_add_npqk(A, bias, C, N, K, PQ, KPQ, NKPQ);
-}
-
-extern "C" __global__ void reorg_bias_add_npqk_f(float *A, float *bias, float *C, int N, int K, int PQ, int KPQ, int NKPQ) {
-  reorg_bias_add_npqk(A, bias, C, N, K, PQ, KPQ, NKPQ);
 }
 
 extern "C" __global__ void double2float_f(double *A, float *ret, int N) {
