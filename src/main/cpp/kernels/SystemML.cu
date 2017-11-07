@@ -102,8 +102,8 @@ __device__ void sparse_coo_im2row(T *inVal, int *inRowPtr, int *inColInd,
 		int hw = chw % HW;
 		int h = hw / W;
 		int w = hw % W;
-		int p = ((h - r + 2*pad_h)  / stride_h) + 1;
-		int q = ((w - s + 2*pad_w)  / stride_w) + 1;
+		int p = (h - r + pad_h)  / stride_h;
+		int q = (w - s + pad_w)  / stride_w;
 		T outputValue = 0;
 		int outputIndex = N*PQ*CRS;
 		if(0 <= p && p < P && (h - r + pad_h) % stride_h == 0 && 
