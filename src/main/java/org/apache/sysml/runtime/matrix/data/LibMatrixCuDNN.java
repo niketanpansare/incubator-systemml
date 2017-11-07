@@ -145,6 +145,27 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		gCtx.cudaFreeHelper(outRowInd);
 		
 	}
+	
+	/**
+	 * If either of the input matrix is empty, it sets the output to an empty csr matrix and returns true. 
+	 * 
+	 * @param gCtx a valid {@link GPUContext}
+	 * @param instName the invoking instruction's name for record {@link Statistics}.
+	 * @param input1 first input matrix object
+	 * @param input2 second input matrix object
+	 * @param outputBlock output matrix object
+	 * @param numRowsOutput number of rows of output matrix
+	 * @return true if the output is empty matrix
+	 * @throws DMLRuntimeException if error
+	 */
+	private static boolean isEmptyOutput(GPUContext gCtx, String instName, MatrixObject input1, MatrixObject input2, MatrixObject outputBlock, long numRowsOutput) throws DMLRuntimeException {
+		if( (isInSparseFormat(gCtx, input1) && getSparsePointer(gCtx, input1, instName).nnz == 0) ||
+			(isInSparseFormat(gCtx, input2) && getSparsePointer(gCtx, input2, instName).nnz == 0)) {
+			outputBlock.getGPUObject(gCtx).setSparseMatrixCudaPointer(CSRPointer.allocateEmpty(gCtx, 0, numRowsOutput));
+			return true;
+		}
+		return false;
+	}
 
 	/**
 	 * Performs a 2D convolution
@@ -176,8 +197,12 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		long CHW = C*H*W; long KPQ = K*P*Q; long CRS = C*R*S; 
 		long NCHW = N*CHW; long NKPQ = N*KPQ; long KCRS = K*CRS; long NPQ = N*P*Q;
 		
+		if(isEmptyOutput(gCtx, instName, image, filter, outputBlock, N))
+			return;
+		
 		if(isInSparseFormat(gCtx, image)) {
 			CSRPointer inputPointer = getSparsePointer(gCtx, image, instName);
+			
 			Pointer filterPointer = getDensePointerForCuDNN(gCtx, filter, instName);
 			Pointer dstPointer = getDensePointerForCuDNN(gCtx, outputBlock, instName);
 			int nnzRS = toInt(inputPointer.nnz*R*S);
@@ -188,6 +213,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			LibMatrixCuMatMult.sparseDenseMatMult(gCtx, instName, dstPointer, im2rowPointer, filterPointer, NPQ, CRS, K, CRS, NPQ, K, false, true);
 			
 			im2rowPointer.deallocate();
+			
 		}
 		else if(NCHW < maxNumElementsOfCuDNNTensor && NKPQ < maxNumElementsOfCuDNNTensor && KCRS < maxNumElementsOfCuDNNTensor) {
 			// Filter and output are accounted as dense in the memory estimation for conv2d
@@ -327,6 +353,8 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		long CHW = C*H*W; long KPQ = K*P*Q; long CRS = C*R*S; 
 		long NCHW = N*CHW; long NKPQ = N*KPQ; long KCRS = K*CRS;
 		
+		if(isEmptyOutput(gCtx, instName, image, dout, outputBlock, K))
+			return;
 		
 		if(NCHW < maxNumElementsOfCuDNNTensor && NKPQ < maxNumElementsOfCuDNNTensor && KCRS < maxNumElementsOfCuDNNTensor) {
 			Pointer dwPointer = getDensePointerForCuDNN(gCtx, outputBlock, instName);
@@ -433,6 +461,9 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			int Q, double intermediateMemoryBudget) throws DMLRuntimeException {
 		long CHW = C*H*W; long KPQ = K*P*Q; long CRS = C*R*S; 
 		long NCHW = N*CHW; long NKPQ = N*KPQ; long KCRS = K*CRS;
+		
+		if(isEmptyOutput(gCtx, instName, filter, dout, output, N))
+			return;
 
 		if(NCHW < maxNumElementsOfCuDNNTensor && NKPQ < maxNumElementsOfCuDNNTensor && KCRS < maxNumElementsOfCuDNNTensor) {
 			// Filter and output are accounted as dense in the memory estimation for conv2dBackwardData
