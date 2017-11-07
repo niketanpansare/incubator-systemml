@@ -109,9 +109,11 @@ __device__ void sparse_coo_im2row(T *inVal, int *inRowPtr, int *inColInd,
 			outputValue = inputValue;
 		}
 		__syncthreads();
-		outVal[nnzrs] = outputValue;
-		outInd[nnzrs] = (n*PQ + p*Q + q)*CRS + c*RS + rs;
-		identityPermutation[nnzrs] = nnzrs;
+		if(outputValue != 0) {
+			outVal[nnzrs] = outputValue;
+			outInd[nnzrs] = (n*PQ + p*Q + q)*CRS + c*RS + rs;
+			identityPermutation[nnzrs] = nnzrs;
+		}
 	}
 }
 

@@ -128,7 +128,7 @@ BB1_2:
 	.param .u32 sparse_coo_im2row_f_param_18
 )
 {
-	.reg .pred 	%p<15>;
+	.reg .pred 	%p<16>;
 	.reg .f32 	%f<6>;
 	.reg .b32 	%r<45>;
 	.reg .b64 	%rd<22>;
@@ -158,7 +158,7 @@ BB1_2:
 	mov.u32 	%r27, %tid.x;
 	mad.lo.s32 	%r1, %r25, %r26, %r27;
 	setp.ge.s32	%p3, %r1, %r24;
-	@%p3 bra 	BB2_8;
+	@%p3 bra 	BB2_9;
 
 	cvta.to.global.u64 	%rd1, %rd8;
 	cvta.to.global.u64 	%rd2, %rd4;
@@ -199,17 +199,17 @@ BB2_2:
 	setp.gt.s32	%p6, %r9, -1;
 	setp.lt.s32	%p7, %r9, %r20;
 	and.pred  	%p8, %p6, %p7;
-	mov.pred 	%p14, 0;
+	mov.pred 	%p15, 0;
 	@!%p8 bra 	BB2_5;
 	bra.uni 	BB2_4;
 
 BB2_4:
 	rem.s32 	%r37, %r8, %r14;
-	setp.eq.s32	%p14, %r37, 0;
+	setp.eq.s32	%p15, %r37, 0;
 
 BB2_5:
 	setp.gt.s32	%p9, %r11, -1;
-	and.pred  	%p10, %p14, %p9;
+	and.pred  	%p10, %p15, %p9;
 	setp.lt.s32	%p11, %r11, %r21;
 	and.pred  	%p12, %p10, %p11;
 	mov.f32 	%f5, 0f00000000;
@@ -223,6 +223,9 @@ BB2_6:
 
 BB2_7:
 	bar.sync 	0;
+	setp.eq.f32	%p14, %f5, 0f00000000;
+	@%p14 bra 	BB2_9;
+
 	cvta.to.global.u64 	%rd16, %rd6;
 	mul.wide.s32 	%rd17, %r1, 4;
 	add.s64 	%rd18, %rd16, %rd17;
@@ -238,7 +241,7 @@ BB2_7:
 	add.s64 	%rd21, %rd1, %rd17;
 	st.global.u32 	[%rd21], %r1;
 
-BB2_8:
+BB2_9:
 	ret;
 }
 
@@ -265,7 +268,7 @@ BB2_8:
 	.param .u32 sparse_coo_im2row_d_param_18
 )
 {
-	.reg .pred 	%p<15>;
+	.reg .pred 	%p<16>;
 	.reg .b32 	%r<45>;
 	.reg .f64 	%fd<6>;
 	.reg .b64 	%rd<24>;
@@ -295,7 +298,7 @@ BB2_8:
 	mov.u32 	%r27, %tid.x;
 	mad.lo.s32 	%r1, %r25, %r26, %r27;
 	setp.ge.s32	%p3, %r1, %r24;
-	@%p3 bra 	BB3_8;
+	@%p3 bra 	BB3_9;
 
 	cvta.to.global.u64 	%rd1, %rd8;
 	cvta.to.global.u64 	%rd2, %rd4;
@@ -337,17 +340,17 @@ BB3_2:
 	setp.gt.s32	%p6, %r9, -1;
 	setp.lt.s32	%p7, %r9, %r20;
 	and.pred  	%p8, %p6, %p7;
-	mov.pred 	%p14, 0;
+	mov.pred 	%p15, 0;
 	@!%p8 bra 	BB3_5;
 	bra.uni 	BB3_4;
 
 BB3_4:
 	rem.s32 	%r37, %r8, %r14;
-	setp.eq.s32	%p14, %r37, 0;
+	setp.eq.s32	%p15, %r37, 0;
 
 BB3_5:
 	setp.gt.s32	%p9, %r11, -1;
-	and.pred  	%p10, %p14, %p9;
+	and.pred  	%p10, %p15, %p9;
 	setp.lt.s32	%p11, %r11, %r21;
 	and.pred  	%p12, %p10, %p11;
 	mov.f64 	%fd5, 0d0000000000000000;
@@ -361,6 +364,9 @@ BB3_6:
 
 BB3_7:
 	bar.sync 	0;
+	setp.eq.f64	%p14, %fd5, 0d0000000000000000;
+	@%p14 bra 	BB3_9;
+
 	cvta.to.global.u64 	%rd17, %rd6;
 	mul.wide.s32 	%rd18, %r1, 8;
 	add.s64 	%rd19, %rd17, %rd18;
@@ -377,7 +383,7 @@ BB3_7:
 	add.s64 	%rd23, %rd1, %rd21;
 	st.global.u32 	[%rd23], %r1;
 
-BB3_8:
+BB3_9:
 	ret;
 }
 
