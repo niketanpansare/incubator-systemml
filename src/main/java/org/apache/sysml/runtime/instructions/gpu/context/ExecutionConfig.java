@@ -41,6 +41,7 @@ public class ExecutionConfig {
 	public CUstream stream = null;
 
 	private static HashMap<Integer, Integer> maxBlockDimForDevice = new HashMap<>();
+	private static HashMap<Integer, Integer> maxGridDimForDevice = new HashMap<>();
 
 	/**
 	 * Convenience constructor for setting the number of blocks, number of threads and the
@@ -97,11 +98,12 @@ public class ExecutionConfig {
 		this.blockDimX = blockDimX;
 	}
 
-	public ExecutionConfig(int gridDimX, int gridDimY, int blockDimX, int blockDimY) {
+	public ExecutionConfig(int gridDimX, int gridDimY, int blockDimX, int blockDimY, int sharedMemBytes) {
 		this.gridDimX = gridDimX;
 		this.gridDimY = gridDimY;
 		this.blockDimX = blockDimX;
 		this.blockDimY = blockDimY;
+		this.sharedMemBytes = sharedMemBytes;
 	}
 
 	/**
@@ -111,7 +113,7 @@ public class ExecutionConfig {
 	 * @return The maximum block dimension, in x-direction
 	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static int getMaxBlockDim(int deviceNumber) throws DMLRuntimeException {
+	public static int getMaxBlockDim(int deviceNumber) throws DMLRuntimeException {
 		//    	return 32;
 		// TODO: Use JCudaDriver.cuOccupancyMaxPotentialBlockSize to chose the block size that maximizes occupancy
 		Integer ret = maxBlockDimForDevice.get(deviceNumber);
@@ -123,6 +125,29 @@ public class ExecutionConfig {
 					.cuDeviceGetAttribute(maxBlockDimX, CUdevice_attribute.CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X, device);
 			maxBlockDimForDevice.put(deviceNumber, maxBlockDimX[0]);
 			return maxBlockDimX[0];
+		}
+		return ret;
+	}
+	
+	/**
+	 * Get the CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_X of the given device
+	 *
+	 * @param deviceNumber device number of the given device
+	 * @return The maximum grid dimension, in x-direction
+	 * @throws DMLRuntimeException if DMLRuntimeException occurs
+	 */
+	public static int getMaxGridDim(int deviceNumber) throws DMLRuntimeException {
+		//    	return 32;
+		// TODO: Use JCudaDriver.cuOccupancyMaxPotentialBlockSize to chose the block size that maximizes occupancy
+		Integer ret = maxGridDimForDevice.get(deviceNumber);
+		if (ret == null) {
+			CUdevice device = new CUdevice();
+			JCudaKernels.checkResult(jcuda.driver.JCudaDriver.cuDeviceGet(device, deviceNumber));
+			int maxGridDimX[] = { 0 };
+			jcuda.driver.JCudaDriver
+					.cuDeviceGetAttribute(maxGridDimX, CUdevice_attribute.CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_X, device);
+			maxGridDimForDevice.put(deviceNumber, maxGridDimX[0]);
+			return maxGridDimX[0];
 		}
 		return ret;
 	}

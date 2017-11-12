@@ -35,6 +35,7 @@ import static jcuda.jcudnn.cudnnTensorFormat.CUDNN_TENSOR_NCHW;
 import static jcuda.runtime.JCuda.cudaMemset;
 import jcuda.CudaException;
 import jcuda.Pointer;
+import jcuda.Sizeof;
 import jcuda.jcudnn.cudnnActivationDescriptor;
 import jcuda.jcudnn.cudnnConvolutionFwdPreference;
 import jcuda.jcudnn.cudnnHandle;
@@ -48,6 +49,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
+import org.apache.sysml.runtime.instructions.gpu.context.CSRPointer;
 import org.apache.sysml.runtime.instructions.gpu.context.ExecutionConfig;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.utils.GPUStatistics;
@@ -129,7 +131,46 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		long CHW = C*H*W; long KPQ = K*P*Q; long CRS = C*R*S; 
 		long NCHW = N*CHW; long NKPQ = N*KPQ; long KCRS = K*CRS;
 		
-		if(NCHW < maxNumElementsOfCuDNNTensor && NKPQ < maxNumElementsOfCuDNNTensor && KCRS < maxNumElementsOfCuDNNTensor) {
+		if(isEmptyOutput(gCtx, instName, image, filter, outputBlock, N))
+			return;
+		
+		boolean isImageSparse = isInSparseFormat(gCtx, image);
+		int blockDimY = nextPow2(toInt(CRS));
+		int maxBlockDim = isImageSparse ? ExecutionConfig.getMaxBlockDim(gCtx.getDeviceNum()) : 0;
+		int maxGridDim = isImageSparse ? ExecutionConfig.getMaxGridDim(gCtx.getDeviceNum()) : 0;
+		if(isImageSparse && CRS > 1 && blockDimY <= maxBlockDim && NKPQ <= maxGridDim) {
+			int blockDimX = (int) Math.ceil(maxBlockDim / blockDimY);
+			// -------------------------------------------------------------------------------------
+			// To ensure that threads in a given thread block belong to same image, i.e. all have same n
+			if(blockDimX < KPQ) {
+				// Ensure that KPQ % blockDimX == 0 so that we never have more than 1 image in a thread block
+				while(KPQ % blockDimX != 0) blockDimX--; 
+			}
+			else if(blockDimX > KPQ) {
+				// Reduce the block size to KPQ to only allow for one image at a time.
+				blockDimX = toInt(KPQ);
+			}
+			// -------------------------------------------------------------------------------------
+			
+			int gridDimX = (int) Math.ceil((double) NKPQ / blockDimX);
+			CSRPointer inputPointer = getSparsePointer(gCtx, image, instName);
+			Pointer filterPointer = getDensePointerForCuDNN(gCtx, filter, instName);
+			Pointer dstPointer = getDensePointerForCuDNN(gCtx, outputBlock, instName);
+			int nnz = toInt(inputPointer.nnz);
+			int sizeOfSharedMemoryInBytes = toInt(blockDimX*blockDimY*sizeOfDataType);
+			long t1 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+			
+			getCudaKernels(gCtx).launchKernel("sparse_conv2d",
+					new ExecutionConfig(gridDimX, 1, blockDimX, toInt(blockDimY), sizeOfSharedMemoryInBytes),
+					inputPointer.val, inputPointer.rowPtr,  inputPointer.colInd,
+					filterPointer, dstPointer, nnz, 
+					stride_h, stride_w, pad_h, pad_w, R, S, toInt(R*S), toInt(CRS),
+					N, Q, toInt(P*Q), H, W, toInt(H*W), toInt(KPQ), toInt(NKPQ));
+			if (GPUStatistics.DISPLAY_STATISTICS)
+				GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SPARSE_DENSE_CONV2D, System.nanoTime() - t1);
+			
+		}
+		else if(NCHW < maxNumElementsOfCuDNNTensor && NKPQ < maxNumElementsOfCuDNNTensor && KCRS < maxNumElementsOfCuDNNTensor) {
 			// Filter and output are accounted as dense in the memory estimation for conv2d
 			double overhead = isInSparseFormat(gCtx, filter) ? OptimizerUtils.estimateSizeExactSparsity(K, CRS, 1.0) : 0;
 			overhead += isInSparseFormat(gCtx, image) ? OptimizerUtils.estimateSizeExactSparsity(N, CHW, 1.0) : 0;
@@ -162,6 +203,27 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		else {
 			throwCuDNNDimensionError(N, CHW, K, CRS, N, KPQ);
 		}
+	}
+	
+	/**
+	 * If either of the input matrix is empty, it sets the output to an empty csr matrix and returns true. 
+	 * 
+	 * @param gCtx a valid {@link GPUContext}
+	 * @param instName the invoking instruction's name for record {@link Statistics}.
+	 * @param input1 first input matrix object
+	 * @param input2 second input matrix object
+	 * @param outputBlock output matrix object
+	 * @param numRowsOutput number of rows of output matrix
+	 * @return true if the output is empty matrix
+	 * @throws DMLRuntimeException if error
+	 */
+	private static boolean isEmptyOutput(GPUContext gCtx, String instName, MatrixObject input1, MatrixObject input2, MatrixObject outputBlock, long numRowsOutput) throws DMLRuntimeException {
+		if( (isInSparseFormat(gCtx, input1) && getSparsePointer(gCtx, input1, instName).nnz == 0) ||
+			(isInSparseFormat(gCtx, input2) && getSparsePointer(gCtx, input2, instName).nnz == 0)) {
+			outputBlock.getGPUObject(gCtx).setSparseMatrixCudaPointer(CSRPointer.allocateEmpty(gCtx, 0, numRowsOutput));
+			return true;
+		}
+		return false;
 	}
 
 
@@ -267,6 +329,8 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		long CHW = C*H*W; long KPQ = K*P*Q; long CRS = C*R*S; 
 		long NCHW = N*CHW; long NKPQ = N*KPQ; long KCRS = K*CRS;
 		
+		if(isEmptyOutput(gCtx, instName, image, dout, outputBlock, K))
+			return;
 		
 		if(NCHW < maxNumElementsOfCuDNNTensor && NKPQ < maxNumElementsOfCuDNNTensor && KCRS < maxNumElementsOfCuDNNTensor) {
 			Pointer dwPointer = getDensePointerForCuDNN(gCtx, outputBlock, instName);
@@ -373,6 +437,9 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			int Q, double intermediateMemoryBudget) throws DMLRuntimeException {
 		long CHW = C*H*W; long KPQ = K*P*Q; long CRS = C*R*S; 
 		long NCHW = N*CHW; long NKPQ = N*KPQ; long KCRS = K*CRS;
+		
+		if(isEmptyOutput(gCtx, instName, dout, filter, output, N))
+			return;
 
 		if(NCHW < maxNumElementsOfCuDNNTensor && NKPQ < maxNumElementsOfCuDNNTensor && KCRS < maxNumElementsOfCuDNNTensor) {
 			// Filter and output are accounted as dense in the memory estimation for conv2dBackwardData

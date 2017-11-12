@@ -26,6 +26,187 @@ nvcc -ptx -arch=sm_30 --std c++11 SystemML.cu
 #include <cfloat>
 #include <cmath>
 
+/**
+ * Performs an iterative binary search over arr[lower...upper] 
+ * and returns the index where the val occurs or -1 if not found.
+ *
+ * @params arr "sorted" input array
+ * @params lower lower index (inclusive)
+ * @params upper upper index (inclusive)
+ * @params val value to check 
+ */
+template <typename T>
+__device__ int binarySearch(T* arr, int lower, int upper, T val) {
+	// Since we often expect val not to be present in the arr
+	if(arr[lower] == val) return lower;
+	else if(arr[upper] == val) return upper;
+	else if(arr[lower] > val || arr[upper] < val) return -1;
+		
+	while (lower <= upper) {
+		int mid = lower + (upper-lower)/2;
+		if(arr[mid] == val) 		return mid;  
+		else if(arr[mid] < val) 	lower = mid + 1; 
+		else 						upper = mid - 1; 
+	}
+	return -1; 
+}
+
+template <typename T>
+__device__ int getMaxNumIntInSharedMemory(int numThreads) {
+	return numThreads;
+}
+
+template <>
+__device__ int getMaxNumIntInSharedMemory<double>(int numThreads) {
+	return numThreads*2;
+}
+
+template <typename T>
+__device__ void copyColIndToSharedMem(int* colInd, volatile int* sharedMem, int startOffset, int endOffset, int tid) {
+	printf("Unsupported type for copyColIndToSharedData\n");
+}
+
+template <>
+__device__ void copyColIndToSharedMem<double>(int* colInd, volatile int* sharedMem, int startOffset, int endOffset, int tid) {
+	int lIndex = 2*tid;
+	int rIndex = startOffset + 2*tid;
+	
+	if(rIndex < endOffset) {
+		sharedMem[lIndex++] = colInd[rIndex++];
+	
+		if(rIndex < endOffset) {
+			sharedMem[lIndex] = colInd[rIndex];
+		}
+	}
+}
+
+template <>
+__device__ void copyColIndToSharedMem<float>(int* colInd, volatile int* sharedMem, int startOffset, int endOffset, int tid) {
+	int rIndex = startOffset + tid;
+	if(rIndex < endOffset) {	
+		sharedMem[tid] = colInd[rIndex];
+	}
+}
+
+/**
+ * Performs convolution where input data is sparse but filter is dense.
+ * The resulting output is assumed to be dense. 
+ *
+ * @params inVal input val pointer
+ * @params inRowPtr input row pointer
+ * @params colInd input col index pointer
+ * @params filterPtr dense filter pointer
+ * @params retPtr dense output pointer
+ * @param nnz number of non-zeroes in the input
+ * @param stride_h stride height
+ * @param stride_w string width
+ * @param pad_h padding height
+ * @param pad_w padding width
+ * @param R height of filter
+ * @param S width of filter
+ * @param RS height*width of filter
+ * @param CRS channel*height*width of filter
+ * @param N number of input images
+ * @param Q output width
+ * @param PQ output height*width
+ * @param W input width
+ * @param HW input height*width
+ * @param KPQ output channel*height*width
+ * @param NKPQ output length
+ */
+template <typename T>
+__device__ void sparse_conv2d(T* inVal, int* inRowPtr, int* colInd, T* filterPtr, T* retPtr, int nnz, 
+	int stride_h, int stride_w, int pad_h, int pad_w, int R, int S, int RS, int CRS,
+	int N, int Q, int PQ, int H, int W, int HW, int KPQ, int NKPQ) {
+	// Here we us shared memory for two purpose:
+	// 1. Binary search for corresponding value in the image (see binSearchData)
+	// 2. For parallel reduction (see sdata)
+	extern __shared__ __align__(sizeof(T)) unsigned char my_sdata[];
+  	int *binSearchData = reinterpret_cast<int *>(my_sdata);
+  	
+  	// 2D blocks with numThreads in x-dimension: NKPQ 
+  	// and number of threads per thread block in y-dimension: nextPow2(CRS) 
+  	// and number of thread blocks in y-dimension: 1
+	int nkpq = blockIdx.x * blockDim.x + threadIdx.x;
+	int sIndex = threadIdx.x * blockDim.y + threadIdx.y;
+	int crs = threadIdx.y;
+	
+	// Compute other indexes based on above values
+	int n = nkpq / KPQ;
+	int kpq = nkpq % KPQ;
+	int k = kpq / PQ;
+	int c = crs / RS;
+	int rs = crs % RS;
+	int r = rs / S;
+	int s = rs % S;
+	int pq = kpq % PQ;
+	int p = pq / Q;
+	int q = pq % Q;
+  	
+  	T outVal = 0;
+  	int startOffset = inRowPtr[n];
+  	int endOffset = (n == N-1) ? nnz : inRowPtr[n+1];
+  	
+  	int h = r - pad_h + p*stride_h;
+	int w = s - pad_w + q*stride_w;
+	int searchValue = c*HW + h*W + w;
+	bool shouldSearch = nkpq < NKPQ && crs < CRS && h >= 0 && h < H && w >= 0 && w < W;
+	int chwIndex = -1;
+	int maxNumIntInSharedMemory = getMaxNumIntInSharedMemory<T>(blockDim.x*blockDim.y);
+  	
+  	for(int startSharedMemOffset = startOffset; startSharedMemOffset < endOffset; startSharedMemOffset += maxNumIntInSharedMemory) {
+  		__syncthreads(); // Synchronization before to allow for memory coalesing
+  		// Fill up the shared memory: binSearchData so as to use it later for binary search
+  		copyColIndToSharedMem<T>(colInd, binSearchData, startSharedMemOffset, endOffset, sIndex);
+	  	int numIntInSharedMemory = min(endOffset-startSharedMemOffset, maxNumIntInSharedMemory);
+	  	__syncthreads(); // Synchronization required after loading the shared data
+	  	if(chwIndex == -1 && shouldSearch) {
+		  	// First do a binary search in shared memory
+			chwIndex = binarySearch(binSearchData, 0, numIntInSharedMemory-1, searchValue);
+			chwIndex = chwIndex != -1 ? (chwIndex + startSharedMemOffset) : chwIndex;
+		}
+  	}
+  	if(chwIndex != -1 && shouldSearch) {
+		outVal = filterPtr[k*CRS + crs] * inVal[chwIndex];
+	}
+	__syncthreads(); // Synchronization required before using shared data again
+	T *sdata = reinterpret_cast<T *>(my_sdata);
+	sdata[sIndex] = outVal;
+	__syncthreads(); // Synchronization required before parallel reduction
+	
+	// Perform parallel reduction in shared memory
+	for(unsigned int stride = (blockDim.y / 2); stride > 0; stride >>= 1) {
+		if(threadIdx.y < stride) {
+			sdata[sIndex] += sdata[sIndex + stride];
+		}
+		__syncthreads();
+	}
+	
+	__syncthreads();
+	// Update the global value
+	if(nkpq < NKPQ && sIndex % blockDim.y == 0) {
+		retPtr[nkpq] = sdata[sIndex];
+	}
+	
+}
+
+extern "C" __global__ void sparse_conv2d_d(double* inVal, int *inRowPtr, 
+	int* colInd, double* filterPtr, double* retPtr, int nnz, 
+	int stride_h, int stride_w, int pad_h, int pad_w, int R, int S, int RS, int CRS,
+	int N, int Q, int PQ, int H, int W, int HW, int KPQ, int NKPQ) {
+	sparse_conv2d(inVal, inRowPtr, colInd, filterPtr, retPtr, nnz, 
+		stride_h, stride_w, pad_h, pad_w, R, S, RS, CRS, N, Q, PQ, H, W, HW, KPQ, NKPQ);
+}
+
+extern "C" __global__ void sparse_conv2d_f(float* inVal, int *inRowPtr, 
+	int* colInd, float* filterPtr, float* retPtr, int nnz, 
+	int stride_h, int stride_w, int pad_h, int pad_w, int R, int S, int RS, int CRS,
+	int N, int Q, int PQ, int H, int W, int HW, int KPQ, int NKPQ) {
+	sparse_conv2d(inVal, inRowPtr, colInd, filterPtr, retPtr, nnz, 
+		stride_h, stride_w, pad_h, pad_w, R, S, RS, CRS, N, Q, PQ, H, W, HW, KPQ, NKPQ);
+}
+
+
 extern "C" __global__ void double2float_f(double *A, float *ret, int N) {
   int tid = blockIdx.x * blockDim.x + threadIdx.x;
   if (tid < N) {
@@ -623,7 +804,6 @@ __device__ void cbind(T *A, T *B, T *C, int rowsA, int colsA, int rowsB,
   int iy = tid % maxClen;
 
   int colsC = colsA + colsB;
-  int rowsC = rowsA;
 
   // Copy an element of A into C into the appropriate location
   if (ix < rowsA && iy < colsA) {
@@ -671,7 +851,6 @@ __device__ void rbind(T *A, T *B, T *C, int rowsA, int colsA, int rowsB,
   int ix = tid / maxClen;
   int iy = tid % maxClen;
 
-  int rowsC = rowsA + rowsB;
   int colsC = colsA;
 
   // Copy an element of A into C into the appropriate location
