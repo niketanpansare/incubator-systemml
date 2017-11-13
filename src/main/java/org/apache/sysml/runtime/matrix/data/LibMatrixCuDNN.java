@@ -148,7 +148,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			Pointer outRowInd = gCtx.allocate(numNNZIm2Row*Sizeof.INT);
 			// Assumption nnz per row < 1024
 			getCudaKernels(gCtx).launchKernel("im2row_R2_WEqS_pad0_stride1",
-					new ExecutionConfig(N, 1, 1, 1024, 2048*Sizeof.INT),
+					new ExecutionConfig(N, 1024, 2048*Sizeof.INT),
 					inputPointer.val, inputPointer.rowPtr, inputPointer.colInd, im2rowPointer.val, outRowInd, im2rowPointer.colInd, N,
 					H, W, H*W, Q, P*Q, S, R*S, C*R*S, toInt(inputPointer.nnz));
 			JCusparse.cusparseXcoo2csr(getCusparseHandle(gCtx), outRowInd, numNNZIm2Row, numRowsIm2Row, im2rowPointer.rowPtr, jcuda.jcusparse.cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO);
@@ -157,10 +157,10 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			
 			Pointer filterPointer = getDensePointerForCuDNN(gCtx, filter, instName);
 			Pointer dstPointer = getDensePointerForCuDNN(gCtx, outputBlock, instName);
-			Pointer tmpPointer = dstPointer;// gCtx.allocate(NKPQ*sizeOfDataType);
+			Pointer tmpPointer = gCtx.allocate(NKPQ*sizeOfDataType);
 			LibMatrixCuMatMult.sparseDenseMatMult(gCtx, instName, tmpPointer, im2rowPointer, filterPointer, numRowsIm2Row, CRS, K, CRS, numRowsIm2Row, K, false, true);
-			// getCudaKernels(gCtx).launchKernel("reorg_npqk", ExecutionConfig.getConfigForSimpleVectorOperations(toInt(NKPQ)),
-			//		 tmpPointer, dstPointer, N, K, P*Q, KPQ, NKPQ);
+			getCudaKernels(gCtx).launchKernel("reorg_npqk", ExecutionConfig.getConfigForSimpleVectorOperations(toInt(NKPQ)),
+					 tmpPointer, dstPointer, N, K, P*Q, KPQ, NKPQ);
 			JCuda.cudaDeviceSynchronize();
 			im2rowPointer.deallocate();
 		}

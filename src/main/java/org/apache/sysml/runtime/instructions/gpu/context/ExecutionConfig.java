@@ -97,12 +97,11 @@ public class ExecutionConfig {
 		this.blockDimX = blockDimX;
 	}
 
-	public ExecutionConfig(int gridDimX, int gridDimY, int blockDimX, int blockDimY, int sharedMemBytes) {
+	public ExecutionConfig(int gridDimX, int gridDimY, int blockDimX, int blockDimY) {
 		this.gridDimX = gridDimX;
 		this.gridDimY = gridDimY;
 		this.blockDimX = blockDimX;
 		this.blockDimY = blockDimY;
-		this.sharedMemBytes = sharedMemBytes;
 	}
 
 	/**

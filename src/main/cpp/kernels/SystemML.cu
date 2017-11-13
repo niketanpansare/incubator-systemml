@@ -131,6 +131,37 @@ int H, int W, int HW, int Q, int PQ, int S, int RS, int CRS, int nnz)  {
 	im2row_R2_WEqS_pad0_stride1(inVal, inRowPtr, inColInd, outVal, outRowInd, outColInd, N, H, W, HW, Q, PQ, S, RS, CRS, nnz);
 }
 
+/**
+ * Performs reorg operations on dense input A of dimensions [NPQ, K]
+ * and outputs a dense output C of dimensions [N, KPQ]
+ *
+ * @params A       input pointer
+ * @params C       output pointer
+ * @param K        number of filter
+ * @param PQ       output height*width
+ * @param KPQ      number of filter*output height*width
+ * @param NKPQ     length of A
+ */
+template <typename T>
+__device__ void reorg_npqk(T *A, T *C, unsigned int N, unsigned int K, unsigned int PQ, unsigned int KPQ, unsigned int NKPQ) {
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  if (index < NKPQ) {
+    int npq = index / K;
+    int k = index % K;
+    int n = npq / PQ;
+    int pq = npq % PQ;
+    C[n*KPQ + k*PQ + pq] = A[index];
+  }
+}
+
+extern "C" __global__ void reorg_npqk_d(double *A, double *C, unsigned int N, unsigned int K, unsigned int PQ, unsigned int KPQ, unsigned int NKPQ) {
+  reorg_npqk(A, C, N, K, PQ, KPQ, NKPQ);
+}
+
+extern "C" __global__ void reorg_npqk_f(float *A, float *C, unsigned int N, unsigned int K, unsigned int PQ, unsigned int KPQ, unsigned int NKPQ) {
+  reorg_npqk(A, C, N, K, PQ, KPQ, NKPQ);
+}
+
 extern "C" __global__ void double2float_f(double *A, float *ret, int N) {
   int tid = blockIdx.x * blockDim.x + threadIdx.x;
   if (tid < N) {
