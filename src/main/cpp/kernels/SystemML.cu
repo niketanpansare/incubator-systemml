@@ -23,8 +23,113 @@ please compile the ptx file and commit it:
 nvcc -ptx -arch=sm_30 --std c++11 SystemML.cu
 ***********************************/
 
+#include "cub/cub.cuh"
 #include <cfloat>
 #include <cmath>
+
+#define BLOCK_THREADS 1024 
+
+/**
+ * Performs an iterative binary search over arr[lower...upper] 
+ * and returns the index where the val occurs or -1 if not found.
+ *
+ * @params arr "sorted" input array
+ * @params lower lower index (inclusive)
+ * @params upper upper index (inclusive)
+ * @params val value to check 
+ */
+template <typename T>
+__device__ int binarySearch(T* arr, int lower, int upper, T val) {
+	// Since we often expect val not to be present in the arr
+	if(arr[lower] == val) return lower;
+	else if(arr[upper] == val) return upper;
+	else if(arr[lower] > val || arr[upper] < val) return -1;
+		
+	while (lower <= upper) {
+		int mid = lower + (upper-lower)/2;
+		if(arr[mid] == val) 		return mid;  
+		else if(arr[mid] < val) 	lower = mid + 1; 
+		else 						upper = mid - 1; 
+	}
+	return -1; 
+}
+
+template <typename T>
+__device__ void im2row_R2_WEqS_pad0_stride1(T* inVal, int* inRowPtr, int* inColInd,  T* outVal, int* outRowInd, int* outColInd, int N,
+int H, int W, int HW, int Q, int PQ, int S, int RS, int CRS, int nnz)  {
+	int n = blockIdx.x; // one threadblock per image
+	int startOffset = inRowPtr[n];
+	int endOffset = (n == N-1) ? nnz : inRowPtr[n+1];
+	extern __shared__ __align__(sizeof(T)) unsigned char my_sdata[];
+  	int *sdata = reinterpret_cast<int *>(my_sdata);
+  	int nnzRow = endOffset-startOffset;
+  	
+  	int outRowIndex1, outRowIndex2, outColIndex1, outColIndex2, rowMajorIndex1, rowMajorIndex2; 
+  	T outVal1, outVal2;
+	if(n < N && threadIdx.x < nnzRow) {
+		int index = startOffset + threadIdx.x;
+		int chw = inColInd[index];
+		int c = chw / HW;
+		int hw = chw % HW;
+		int h = hw / W;
+		int w = hw % W;
+		T val = inVal[index];
+		int s = w;
+		// r = 0
+		outVal1 = (h == (H-1)) ? 0 : val;
+		outRowIndex1 = n*PQ + h*Q;
+		outColIndex1 = c*RS + s;  
+		rowMajorIndex1 = outRowIndex1*CRS + outColIndex1;
+		sdata[2*threadIdx.x] = rowMajorIndex1;
+		
+		// r = 1
+		outVal2 = (h == 0) ? 0 : val;
+		outRowIndex2 = n*PQ + (h-1)*Q;
+		outColIndex2 = c*RS + S + s;
+		rowMajorIndex2 = outRowIndex2*CRS + outColIndex2;
+		sdata[2*threadIdx.x+1] = rowMajorIndex2;	
+	}
+	else {
+		sdata[2*threadIdx.x] = INT_MAX;
+		sdata[2*threadIdx.x+1] = INT_MAX; 
+	}
+	
+	__syncthreads();
+	
+	// Sort the indexes using cub
+	using namespace cub;
+    typedef BlockRadixSort<int, BLOCK_THREADS, 2> cubBlockSort;
+    __shared__ typename cubBlockSort::TempStorage tmpStorage;
+    cubBlockSort(tmpStorage).Sort(*static_cast<int(*)[2]>(static_cast<void*>(sdata+(threadIdx.x*2))));
+	
+    __syncthreads();
+    
+    if(n < N && threadIdx.x < nnzRow) {
+    	int outOffset = 2*startOffset + binarySearch(sdata, 0, 2*nnzRow-1, rowMajorIndex1);
+    	outRowInd[outOffset] = outRowIndex1;
+    	outColInd[outOffset] = outColIndex1;
+    	outVal[outOffset] = outVal1;
+    	
+    	outOffset = 2*startOffset + binarySearch(sdata, 0, 2*nnzRow-1, rowMajorIndex2);
+    	outRowInd[outOffset] = outRowIndex2;
+    	outColInd[outOffset] = outColIndex2;
+    	outVal[outOffset] = outVal2;
+    }
+}
+
+extern "C"
+__launch_bounds__ (BLOCK_THREADS) 
+__global__ void im2row_R2_WEqS_pad0_stride1_f(float* inVal, int* inRowPtr, int* inColInd, float* outVal, int* outRowInd, int* outColInd, int N,
+int H, int W, int HW, int Q, int PQ, int S, int RS, int CRS, int nnz)  {
+	im2row_R2_WEqS_pad0_stride1(inVal, inRowPtr, inColInd, outVal, outRowInd, outColInd, N, H, W, HW, Q, PQ, S, RS, CRS, nnz);
+}
+
+extern "C"
+__launch_bounds__ (BLOCK_THREADS) 
+__global__ void im2row_R2_WEqS_pad0_stride1_d(double* inVal, int* inRowPtr, int* inColInd, double* outVal, int* outRowInd, int* outColInd, int N,
+int H, int W, int HW, int Q, int PQ, int S, int RS, int CRS, int nnz)  {
+	im2row_R2_WEqS_pad0_stride1(inVal, inRowPtr, inColInd, outVal, outRowInd, outColInd, N, H, W, HW, Q, PQ, S, RS, CRS, nnz);
+}
 
 extern "C" __global__ void double2float_f(double *A, float *ret, int N) {
   int tid = blockIdx.x * blockDim.x + threadIdx.x;

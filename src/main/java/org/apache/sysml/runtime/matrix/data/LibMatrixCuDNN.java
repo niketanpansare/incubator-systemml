@@ -35,11 +35,14 @@ import static jcuda.jcudnn.cudnnTensorFormat.CUDNN_TENSOR_NCHW;
 import static jcuda.runtime.JCuda.cudaMemset;
 import jcuda.CudaException;
 import jcuda.Pointer;
+import jcuda.Sizeof;
 import jcuda.jcudnn.cudnnActivationDescriptor;
 import jcuda.jcudnn.cudnnConvolutionFwdPreference;
 import jcuda.jcudnn.cudnnHandle;
 import jcuda.jcudnn.cudnnStatus;
 import jcuda.jcudnn.cudnnTensorDescriptor;
+import jcuda.jcusparse.JCusparse;
+import jcuda.runtime.JCuda;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -49,6 +52,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
+import org.apache.sysml.runtime.instructions.gpu.context.CSRPointer;
 import org.apache.sysml.runtime.instructions.gpu.context.ExecutionConfig;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.utils.GPUStatistics;
@@ -130,7 +134,37 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		long CHW = C*H*W; long KPQ = K*P*Q; long CRS = C*R*S; 
 		long NCHW = N*CHW; long NKPQ = N*KPQ; long KCRS = K*CRS;
 		
-		if(NCHW < maxNumElementsOfCuDNNTensor && NKPQ < maxNumElementsOfCuDNNTensor && KCRS < maxNumElementsOfCuDNNTensor) {
+		if(isEmptyOutput(gCtx, instName, image, filter, outputBlock, N))
+			return;
+		
+		boolean isImageSparse = isInSparseFormat(gCtx, image);
+		
+		if(isImageSparse && R == 2 && W == S && pad_w == 0 && pad_h == 0 && stride_h == 1 && stride_w == 1) {
+			// im2row_R2_WEqS_pad0_stride1
+			CSRPointer inputPointer = getSparsePointer(gCtx, image, instName);
+			int numRowsIm2Row = N*P*Q;
+			int numNNZIm2Row = toInt(2*inputPointer.nnz);
+			CSRPointer im2rowPointer = CSRPointer.allocateEmpty(gCtx, numNNZIm2Row, numRowsIm2Row);
+			Pointer outRowInd = gCtx.allocate(numNNZIm2Row*Sizeof.INT);
+			// Assumption nnz per row < 1024
+			getCudaKernels(gCtx).launchKernel("im2row_R2_WEqS_pad0_stride1",
+					new ExecutionConfig(N, 1, 1, 1024, 2048*Sizeof.INT),
+					inputPointer.val, inputPointer.rowPtr, inputPointer.colInd, im2rowPointer.val, outRowInd, im2rowPointer.colInd, N,
+					H, W, H*W, Q, P*Q, S, R*S, C*R*S, toInt(inputPointer.nnz));
+			JCusparse.cusparseXcoo2csr(getCusparseHandle(gCtx), outRowInd, numNNZIm2Row, numRowsIm2Row, im2rowPointer.rowPtr, jcuda.jcusparse.cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO);
+			JCuda.cudaDeviceSynchronize();
+			gCtx.cudaFreeHelper(outRowInd);
+			
+			Pointer filterPointer = getDensePointerForCuDNN(gCtx, filter, instName);
+			Pointer dstPointer = getDensePointerForCuDNN(gCtx, outputBlock, instName);
+			Pointer tmpPointer = dstPointer;// gCtx.allocate(NKPQ*sizeOfDataType);
+			LibMatrixCuMatMult.sparseDenseMatMult(gCtx, instName, tmpPointer, im2rowPointer, filterPointer, numRowsIm2Row, CRS, K, CRS, numRowsIm2Row, K, false, true);
+			// getCudaKernels(gCtx).launchKernel("reorg_npqk", ExecutionConfig.getConfigForSimpleVectorOperations(toInt(NKPQ)),
+			//		 tmpPointer, dstPointer, N, K, P*Q, KPQ, NKPQ);
+			JCuda.cudaDeviceSynchronize();
+			im2rowPointer.deallocate();
+		}
+		else if(NCHW < maxNumElementsOfCuDNNTensor && NKPQ < maxNumElementsOfCuDNNTensor && KCRS < maxNumElementsOfCuDNNTensor) {
 			// Filter and output are accounted as dense in the memory estimation for conv2d
 			double overhead = isInSparseFormat(gCtx, filter) ? OptimizerUtils.estimateSizeExactSparsity(K, CRS, 1.0) : 0;
 			overhead += isInSparseFormat(gCtx, image) ? OptimizerUtils.estimateSizeExactSparsity(N, CHW, 1.0) : 0;
@@ -163,6 +197,27 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		else {
 			throwCuDNNDimensionError(N, CHW, K, CRS, N, KPQ);
 		}
+	}
+	
+	/**
+	 * If either of the input matrix is empty, it sets the output to an empty csr matrix and returns true. 
+	 * 
+	 * @param gCtx a valid {@link GPUContext}
+	 * @param instName the invoking instruction's name for record {@link Statistics}.
+	 * @param input1 first input matrix object
+	 * @param input2 second input matrix object
+	 * @param outputBlock output matrix object
+	 * @param numRowsOutput number of rows of output matrix
+	 * @return true if the output is empty matrix
+	 * @throws DMLRuntimeException if error
+	 */
+	private static boolean isEmptyOutput(GPUContext gCtx, String instName, MatrixObject input1, MatrixObject input2, MatrixObject outputBlock, long numRowsOutput) throws DMLRuntimeException {
+		if( (isInSparseFormat(gCtx, input1) && getSparsePointer(gCtx, input1, instName).nnz == 0) ||
+			(isInSparseFormat(gCtx, input2) && getSparsePointer(gCtx, input2, instName).nnz == 0)) {
+			outputBlock.getGPUObject(gCtx).setSparseMatrixCudaPointer(CSRPointer.allocateEmpty(gCtx, 0, numRowsOutput));
+			return true;
+		}
+		return false;
 	}
 
 
