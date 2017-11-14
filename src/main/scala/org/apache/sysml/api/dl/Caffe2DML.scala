@@ -309,13 +309,14 @@ class Caffe2DML(val sc: SparkContext,
   def getTestAlgo(): String  = if (inputs.containsKey("$test_algo")) inputs.get("$test_algo") else "minibatch"
 
   private def getMemInBytes(l:CaffeLayer, batchSize:Int, isTraining:Boolean):Long = {
+    val numLayerInput =  l.bottomLayerOutputShape._1.toLong * l.bottomLayerOutputShape._2.toLong * l.bottomLayerOutputShape._3.toLong  * batchSize
     val numLayerOutput = l.outputShape._1.toLong * l.outputShape._2.toLong * l.outputShape._3.toLong  * batchSize
     val numLayerError = numLayerOutput
     val numLayerWeights = if(l.weightShape != null) l.weightShape()(0).toLong * l.weightShape()(1).toLong else 0
     val numLayerBias = if(l.biasShape != null)l.biasShape()(0).toLong * l.biasShape()(1).toLong else 0
     val numLayerGradients = (numLayerWeights + numLayerBias) * batchSize
-    if(isTraining) (numLayerOutput + numLayerError + numLayerWeights + numLayerBias + numLayerGradients)*Double.BYTES
-    else (numLayerOutput + numLayerWeights + numLayerBias)*Double.BYTES
+    if(isTraining) (numLayerInput + numLayerOutput + numLayerError + numLayerWeights + numLayerBias + numLayerGradients)*Double.BYTES
+    else (numLayerInput + numLayerOutput + numLayerWeights + numLayerBias)*Double.BYTES
   }
   def summary(sparkSession: org.apache.spark.sql.SparkSession): Unit = {
     val layers = net.getLayers .map(l => (l, net.getCaffeLayer(l)))
@@ -328,7 +329,7 @@ class Caffe2DML(val sc: SparkContext,
       Caffe2DML.LOG.warn("No data layers found and hence ignoring the memory computation.")
     }
     val batchSize = if(batchSizes.size > 0) batchSizes.get(0) else -1 
-    val header = Seq("Name", "Type", "Output", "Weight", "Bias", "Top", "Bottom", "Memory* (train/test)")
+    val header = Seq("Name", "Type", "Output", "Weight", "Bias", "Top", "Bottom", "Memory* (train/test) required for i/o, weights, errors")
     val entries = layers
       .map(l => {
         val layer = l._2
@@ -354,18 +355,6 @@ class Caffe2DML(val sc: SparkContext,
     val crspq = convLayers.map(l => l.numChannels.toLong*l.kernel_h.toLong*l.kernel_w.toLong*l.outputShape._2.toLong*l.outputShape._3.toLong) 
     val kpq = convLayers.map(l => l.outputShape._1.toLong*l.outputShape._2.toLong*l.outputShape._3.toLong)
     
-    if(getTrainAlgo().equals("minibatch") && getTestAlgo().equals("minibatch")) {
-      System.out.println("Total number of layer outputs/errors/weights/bias/gradients: " + numLayerOutput + "/" + numLayerError +
-        "/" + numLayerWeights + "/" + numLayerBias + "/" + numLayerGradients)
-      System.out.println("Total memory requirements for parameters* for train/test: " +
-        OptimizerUtils.toMB(layers.map(l => getMemInBytes(l._2, batchSize, true)).sum) + "/" + 
-        OptimizerUtils.toMB(layers.map(l => getMemInBytes(l._2, batchSize, false)).sum))
-      System.out.println("[Advanced] Key network statistics to compute intermediate CP overhead " + 
-        "batchSize/maxThreads/1-thread im2col*(sum, max)/1-thread reshape_col*(sum, max): " + 
-        batchSize + "/" + OptimizerUtils.getConstrainedNumThreads(-1) + "/(" +
-        OptimizerUtils.toMB(crspq.sum*Double.BYTES) + ", " + OptimizerUtils.toMB(crspq.max*Double.BYTES) + ")/(" + 
-        OptimizerUtils.toMB(kpq.sum*Double.BYTES) + ", " + OptimizerUtils.toMB(kpq.max*Double.BYTES) + ").")
-    }
     System.out.println("* => memory in megabytes assuming the parameters are in double precision and in dense format.")
   }
 
