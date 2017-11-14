@@ -134,6 +134,29 @@ public class CSRPointer {
 		}
 		return (int) l;
 	}
+	
+	public int getMaxNnzPerRow(String instName, int rows) throws DMLRuntimeException {
+		if(nnz == 0)
+			return 0;
+		else if(nnz < 0)
+			throw new DMLRuntimeException("Unknown number of non-zeroes");
+		
+		int maxNumThreadsPerBlock = gpuContext.getMaxThreadsPerBlock();
+		int numBlocks = (int) Math.ceil((double) LibMatrixCUDA.nextPow2(rows) / maxNumThreadsPerBlock);
+		Pointer tmp = gpuContext.allocate(numBlocks*Sizeof.INT);
+		long t1 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+		gpuContext.getKernels().launchKernel("max_nnz_per_row",
+				new ExecutionConfig(numBlocks, maxNumThreadsPerBlock, rows*Sizeof.INT),
+				rowPtr, tmp, rows, nnz);
+		int[] rPtr = new int[numBlocks];
+		cudaMemcpy(Pointer.to(rPtr), tmp, numBlocks*Sizeof.INT, cudaMemcpyDeviceToHost);
+		int ret = rPtr[0];
+		for(int i = 1; i < rPtr.length; i++) {
+			ret = Math.max(ret, rPtr[i]);
+		}
+		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_MAX_NNZ_PER_ROW, System.nanoTime() - t1);
+		return ret;
+	}
 
 	//  private void cudaFreeHelper(String instName, Pointer toFree, boolean eager) throws DMLRuntimeException {
 	//    getGPUContext().cudaFreeHelper(instName, toFree, eager);

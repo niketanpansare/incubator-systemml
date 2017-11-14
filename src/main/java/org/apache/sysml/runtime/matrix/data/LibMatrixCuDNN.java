@@ -138,19 +138,19 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			return;
 		
 		boolean isImageSparse = isInSparseFormat(gCtx, image);
+		CSRPointer sparseImagePointer = isImageSparse ? getSparsePointer(gCtx, image, instName) : null;
 		
-		if(isImageSparse && R == 2 && W == S && pad_w == 0 && pad_h == 0 && stride_h == 1 && stride_w == 1) {
-			// im2row_R2_WEqS_pad0_stride1
-			CSRPointer inputPointer = getSparsePointer(gCtx, image, instName);
+		if(isImageSparse && R == 2 && W == S && pad_w == 0 && pad_h == 0 && stride_h == 1 && stride_w == 1 && sparseImagePointer.getMaxNnzPerRow(instName, N) <= 1024) {
 			int numRowsIm2Row = N*P*Q;
-			int numNNZIm2Row = toInt(2*inputPointer.nnz);
+			int numNNZIm2Row = toInt(2*sparseImagePointer.nnz);
 			CSRPointer im2rowPointer = CSRPointer.allocateEmpty(gCtx, numNNZIm2Row, numRowsIm2Row);
 			Pointer outRowInd = gCtx.allocate(numNNZIm2Row*Sizeof.INT);
-			// Assumption nnz per row < 1024
+			long t1 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
 			getCudaKernels(gCtx).launchKernel("im2row_R2_WEqS_pad0_stride1",
 					new ExecutionConfig(N, 1024, 2048*Sizeof.INT),
-					inputPointer.val, inputPointer.rowPtr, inputPointer.colInd, im2rowPointer.val, outRowInd, im2rowPointer.colInd, N,
-					H, W, H*W, Q, P*Q, S, R*S, C*R*S, toInt(inputPointer.nnz));
+					sparseImagePointer.val, sparseImagePointer.rowPtr, sparseImagePointer.colInd, im2rowPointer.val, outRowInd, im2rowPointer.colInd, N,
+					H, W, H*W, Q, P*Q, S, R*S, C*R*S, toInt(sparseImagePointer.nnz));
+			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SPARSE_IMR2ROW_1, System.nanoTime() - t1);
 			JCusparse.cusparseXcoo2csr(getCusparseHandle(gCtx), outRowInd, numNNZIm2Row, numRowsIm2Row, im2rowPointer.rowPtr, jcuda.jcusparse.cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO);
 			JCuda.cudaDeviceSynchronize();
 			gCtx.cudaFreeHelper(outRowInd);
@@ -159,8 +159,10 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			Pointer dstPointer = getDensePointerForCuDNN(gCtx, outputBlock, instName);
 			Pointer tmpPointer = gCtx.allocate(NKPQ*sizeOfDataType);
 			LibMatrixCuMatMult.sparseDenseMatMult(gCtx, instName, tmpPointer, im2rowPointer, filterPointer, numRowsIm2Row, CRS, K, CRS, numRowsIm2Row, K, false, true);
+			t1 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
 			getCudaKernels(gCtx).launchKernel("reorg_npqk", ExecutionConfig.getConfigForSimpleVectorOperations(toInt(NKPQ)),
 					 tmpPointer, dstPointer, N, K, P*Q, KPQ, NKPQ);
+			if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_REORG_NPQK, System.nanoTime() - t1);
 			JCuda.cudaDeviceSynchronize();
 			im2rowPointer.deallocate();
 		}

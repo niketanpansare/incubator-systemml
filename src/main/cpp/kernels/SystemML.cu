@@ -162,6 +162,41 @@ extern "C" __global__ void reorg_npqk_f(float *A, float *C, unsigned int N, unsi
   reorg_npqk(A, C, N, K, PQ, KPQ, NKPQ);
 }
 
+__device__ void max_nnz_per_row(int* inRowPtr, int* ret, int numRows, int nnz) {
+	extern __shared__ int sdata[];
+	int n = blockIdx.x * blockDim.x + threadIdx.x;
+	if(n < numRows) {
+		int startOffset = inRowPtr[n];
+		int endOffset = (n == numRows-1) ? nnz : inRowPtr[n+1];
+		sdata[threadIdx.x] = endOffset-startOffset;
+	}
+	else {
+		sdata[threadIdx.x] = 0;
+	}
+	
+	__syncthreads(); // Synchronization required before parallel reduction
+	
+	// Perform parallel reduction in shared memory
+	for(unsigned int stride = (blockDim.x / 2); stride > 0; stride >>= 1) {
+		if(threadIdx.x < stride) {
+			sdata[threadIdx.x] = max(sdata[threadIdx.x], sdata[threadIdx.x + stride]);
+		}
+		__syncthreads();
+	}
+	__syncthreads();
+	if(threadIdx.x == 0) {
+		ret[blockIdx.x] = sdata[0];
+	}	
+}
+
+extern "C" __global__ void max_nnz_per_row_d(int* inRowPtr, int* ret, int numRows, int nnz) {
+	max_nnz_per_row(inRowPtr, ret, numRows, nnz);
+}
+
+extern "C" __global__ void max_nnz_per_row_f(int* inRowPtr, int* ret, int numRows, int nnz) {
+	max_nnz_per_row(inRowPtr, ret, numRows, nnz);
+}
+
 extern "C" __global__ void double2float_f(double *A, float *ret, int N) {
   int tid = blockIdx.x * blockDim.x + threadIdx.x;
   if (tid < N) {

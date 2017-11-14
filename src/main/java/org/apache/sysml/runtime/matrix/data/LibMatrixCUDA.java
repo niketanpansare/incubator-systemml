@@ -1062,7 +1062,7 @@ public class LibMatrixCUDA {
 	}
 
 
-	private static int nextPow2(int x)
+	public static int nextPow2(int x)
 	{
 		--x;
 		x |= x >> 1;
