@@ -320,7 +320,14 @@ class Caffe2DML(val sc: SparkContext,
   def summary(sparkSession: org.apache.spark.sql.SparkSession): Unit = {
     val layers = net.getLayers .map(l => (l, net.getCaffeLayer(l)))
     val numDataLayers = layers.filter(l => l._2.isInstanceOf[Data]).length
-    val batchSize = if(numDataLayers == 1) layers.filter(l => l._2.isInstanceOf[Data]).map(l => l._2.param.getDataParam.getBatchSize).get(0) else -1 
+    val batchSizes = layers.filter(l => l._2.isInstanceOf[Data]).map(l => l._2.param.getDataParam.getBatchSize).distinct
+    if(batchSizes.size > 1) {
+      Caffe2DML.LOG.warn("Multiple data layers with different batch sizes:" + batchSizes.mkString(",") + ". Using the batch size:" + batchSizes.get(0))
+    }
+    else if(batchSizes.size == 0) {
+      Caffe2DML.LOG.warn("No data layers found and hence ignoring the memory computation.")
+    }
+    val batchSize = if(batchSizes.size > 0) batchSizes.get(0) else -1 
     val header = Seq("Name", "Type", "Output", "Weight", "Bias", "Top", "Bottom", "Memory* (train/test)")
     val entries = layers
       .map(l => {
