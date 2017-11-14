@@ -329,7 +329,7 @@ class Caffe2DML(val sc: SparkContext,
       Caffe2DML.LOG.warn("No data layers found and hence ignoring the memory computation.")
     }
     val batchSize = if(batchSizes.size > 0) batchSizes.get(0) else -1 
-    val header = Seq("Name", "Type", "Output", "Weight", "Bias", "Top", "Bottom", "Memory* (train/test) required for i/o, weights, errors")
+    val header = Seq("Name", "Type", "Output", "Weight", "Bias", "Top", "Bottom", "Memory* (train/test)")
     val entries = layers
       .map(l => {
         val layer = l._2
@@ -355,7 +355,7 @@ class Caffe2DML(val sc: SparkContext,
     val crspq = convLayers.map(l => l.numChannels.toLong*l.kernel_h.toLong*l.kernel_w.toLong*l.outputShape._2.toLong*l.outputShape._3.toLong) 
     val kpq = convLayers.map(l => l.outputShape._1.toLong*l.outputShape._2.toLong*l.outputShape._3.toLong)
     
-    System.out.println("* => memory in megabytes assuming the parameters are in double precision and in dense format.")
+    System.out.println("* => memory in megabytes assuming the parameters (input, output activations, weights and backpropagation errors) are in double precision and in dense format.")
   }
 
   // ================================================================================================
