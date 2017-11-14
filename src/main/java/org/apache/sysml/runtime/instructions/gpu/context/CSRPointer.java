@@ -144,7 +144,7 @@ public class CSRPointer {
 		int maxNumThreadsPerBlock = gpuContext.getMaxThreadsPerBlock();
 		int numBlocks = (int) Math.ceil((double) LibMatrixCUDA.nextPow2(rows) / maxNumThreadsPerBlock);
 		Pointer tmp = gpuContext.allocate(numBlocks*Sizeof.INT);
-		long t1 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
+		long t1 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 		gpuContext.getKernels().launchKernel("max_nnz_per_row",
 				new ExecutionConfig(numBlocks, maxNumThreadsPerBlock, maxNumThreadsPerBlock*Sizeof.INT),
 				rowPtr, tmp, rows, nnz);
@@ -154,7 +154,7 @@ public class CSRPointer {
 		for(int i = 1; i < rPtr.length; i++) {
 			ret = Math.max(ret, rPtr[i]);
 		}
-		if (GPUStatistics.DISPLAY_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_MAX_NNZ_PER_ROW, System.nanoTime() - t1);
+		if (DMLScript.FINEGRAINED_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_MAX_NNZ_PER_ROW, System.nanoTime() - t1);
 		return ret;
 	}
 
