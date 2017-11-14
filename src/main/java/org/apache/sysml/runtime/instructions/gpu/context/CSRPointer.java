@@ -146,7 +146,7 @@ public class CSRPointer {
 		Pointer tmp = gpuContext.allocate(numBlocks*Sizeof.INT);
 		long t1 = GPUStatistics.DISPLAY_STATISTICS ? System.nanoTime() : 0;
 		gpuContext.getKernels().launchKernel("max_nnz_per_row",
-				new ExecutionConfig(numBlocks, maxNumThreadsPerBlock, rows*Sizeof.INT),
+				new ExecutionConfig(numBlocks, maxNumThreadsPerBlock, maxNumThreadsPerBlock*Sizeof.INT),
 				rowPtr, tmp, rows, nnz);
 		int[] rPtr = new int[numBlocks];
 		cudaMemcpy(Pointer.to(rPtr), tmp, numBlocks*Sizeof.INT, cudaMemcpyDeviceToHost);
