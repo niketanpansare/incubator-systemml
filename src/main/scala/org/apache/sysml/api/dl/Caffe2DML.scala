@@ -309,7 +309,7 @@ class Caffe2DML(val sc: SparkContext,
   def getTestAlgo(): String  = if (inputs.containsKey("$test_algo")) inputs.get("$test_algo") else "minibatch"
 
   private def getMemInBytes(l:CaffeLayer, batchSize:Int, isTraining:Boolean):Long = {
-    val numLayerInput =  l.bottomLayerOutputShape._1.toLong * l.bottomLayerOutputShape._2.toLong * l.bottomLayerOutputShape._3.toLong  * batchSize
+    val numLayerInput =  if(!l.isInstanceOf[Data]) l.bottomLayerOutputShape._1.toLong * l.bottomLayerOutputShape._2.toLong * l.bottomLayerOutputShape._3.toLong  * batchSize else 0
     val numLayerOutput = l.outputShape._1.toLong * l.outputShape._2.toLong * l.outputShape._3.toLong  * batchSize
     val numLayerError = numLayerOutput
     val numLayerWeights = if(l.weightShape != null) l.weightShape()(0).toLong * l.weightShape()(1).toLong else 0
