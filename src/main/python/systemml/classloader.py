@@ -70,6 +70,7 @@ def set_default_jvm_stdout(enable, parallel_flush=False):
     parallel_flush: boolean
         Should flush the stdout in parallel
     """
+    global default_jvm_stdout, default_jvm_stdout_parallel_flush
     default_jvm_stdout = enable
     default_jvm_stdout_parallel_flush = parallel_flush
     
@@ -101,6 +102,7 @@ class jvm_stdout(object):
                 print(str)
     
     def __enter__(self):
+        global _in_jvm_stdout
         if _in_jvm_stdout:
             # Allow for nested jvm_stdout    
             self.donotRedirect = True

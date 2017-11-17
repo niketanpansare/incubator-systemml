@@ -148,6 +148,7 @@ class BaseSystemMLEstimator(Estimator):
         return self
     
     def _fit_df(self):
+        global default_jvm_stdout, default_jvm_stdout_parallel_flush
         try:
             if default_jvm_stdout:
                 with jvm_stdout(parallel_flush=default_jvm_stdout_parallel_flush):
@@ -164,6 +165,7 @@ class BaseSystemMLEstimator(Estimator):
         return self
     
     def _fit_numpy(self):
+        global default_jvm_stdout, default_jvm_stdout_parallel_flush
         try:
             if type(self.y) == np.ndarray and len(self.y.shape) == 1:
                 # Since we know that mllearn always needs a column vector
@@ -292,6 +294,7 @@ class BaseSystemMLEstimator(Estimator):
         ----------
         X: NumPy ndarray, Pandas DataFrame, scipy sparse matrix or PySpark DataFrame
         """
+        global default_jvm_stdout, default_jvm_stdout_parallel_flush
         if hasattr(X, '_jdf'):
             return self.predict(X)
         elif self.transferUsingDF:
@@ -320,6 +323,7 @@ class BaseSystemMLEstimator(Estimator):
         ----------
         X: NumPy ndarray, Pandas DataFrame, scipy sparse matrix or PySpark DataFrame
         """
+        global default_jvm_stdout, default_jvm_stdout_parallel_flush
         try:
             if self.estimator is not None and self.model is not None:
                 self.estimator.copyProperties(self.model)
@@ -405,6 +409,7 @@ class BaseSystemMLClassifier(BaseSystemMLEstimator):
         eager: load the model eagerly. This flag should be only used for debugging purposes. (default: False)
         """
         self.weights = weights
+        global default_jvm_stdout, default_jvm_stdout_parallel_flush
         if default_jvm_stdout:
             with jvm_stdout(parallel_flush=default_jvm_stdout_parallel_flush):
                 self.model.load(self.sc._jsc, weights, sep, eager)
@@ -422,6 +427,7 @@ class BaseSystemMLClassifier(BaseSystemMLEstimator):
         format: optional format (default: 'binary')
         sep: seperator to use (default: '/')
         """
+        global default_jvm_stdout, default_jvm_stdout_parallel_flush
         if self.model != None:
             if default_jvm_stdout:
                 with jvm_stdout(parallel_flush=default_jvm_stdout_parallel_flush):
@@ -473,6 +479,7 @@ class BaseSystemMLRegressor(BaseSystemMLEstimator):
         eager: load the model eagerly (default: False)
         """
         self.weights = weights
+        global default_jvm_stdout, default_jvm_stdout_parallel_flush
         if default_jvm_stdout:
             with jvm_stdout(parallel_flush=default_jvm_stdout_parallel_flush):
                 self.model.load(self.sc._jsc, weights, sep, eager)
@@ -489,6 +496,7 @@ class BaseSystemMLRegressor(BaseSystemMLEstimator):
         format: optional format (default: 'binary')
         sep: seperator to use (default: '/')
         """
+        global default_jvm_stdout, default_jvm_stdout_parallel_flush
         if self.model != None:
             if default_jvm_stdout:
                 with jvm_stdout(parallel_flush=default_jvm_stdout_parallel_flush):
@@ -821,6 +829,7 @@ class Caffe2DML(BaseSystemMLClassifier):
         ignore_weights: names of layers to not read from the weights directory (list of string, default:None)
         eager: load the model eagerly (default: False)
         """
+        global default_jvm_stdout, default_jvm_stdout_parallel_flush
         self.weights = weights
         self.estimator.setInput("$weights", str(weights))
         self.model = self.sc._jvm.org.apache.sysml.api.dl.Caffe2DMLModel(self.estimator)

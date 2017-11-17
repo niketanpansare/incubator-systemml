@@ -659,6 +659,7 @@ class MLContext(object):
             raise ValueError("Expected script to be an instance of Script")
         scriptString = script.scriptString
         script_java = script.script_java
+        global default_jvm_stdout, default_jvm_stdout_parallel_flush
         if default_jvm_stdout:
             with jvm_stdout(parallel_flush=default_jvm_stdout_parallel_flush):
                 return MLResults(self._ml.execute(script_java), self._sc)
