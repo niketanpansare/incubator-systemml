@@ -114,6 +114,7 @@ class jvm_stdout(object):
             _in_jvm_stdout = True
 
     def __exit__(self, *args):
+        global _in_jvm_stdout
         if not self.donotRedirect:
             if self.parallel_flush:
                 self.stop = True
