@@ -24,6 +24,7 @@ __all__ = ['createJavaObject', 'jvm_stdout', 'default_jvm_stdout', 'default_jvm_
 import os
 import numpy as np
 import pandas as pd
+import threading, time
 
 try:
     import py4j.java_gateway
