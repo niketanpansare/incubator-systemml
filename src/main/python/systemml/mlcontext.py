@@ -43,28 +43,6 @@ except ImportError:
 from .converters import *
 from .classloader import *
 
-_loadedSystemML = False
-def _get_spark_context():
-    """
-    Internal method to get already initialized SparkContext.  Developers should always use
-    _get_spark_context() instead of SparkContext._active_spark_context to ensure SystemML loaded.
-
-    Returns
-    -------
-    sc: SparkContext
-        SparkContext
-    """
-    if SparkContext._active_spark_context is not None:
-        sc = SparkContext._active_spark_context
-        global _loadedSystemML
-        if not _loadedSystemML:
-            createJavaObject(sc, 'dummy')
-            _loadedSystemML = True
-        return sc
-    else:
-        raise Exception('Expected spark context to be created.')
-
-
 def getHopDAG(ml, script, lines=None, conf=None, apply_rewrites=True, with_subgraph=False):
     """
     Compile a DML / PyDML script.
@@ -99,7 +77,7 @@ def getHopDAG(ml, script, lines=None, conf=None, apply_rewrites=True, with_subgr
     scriptString = script.scriptString
     script_java = script.script_java
     lines = [ int(x) for x in lines ] if lines is not None else [int(-1)]
-    sc = _get_spark_context()
+    sc = get_spark_context()
     if conf is not None:
         hopDAG = sc._jvm.org.apache.sysml.api.mlcontext.MLContextUtil.getHopDAG(ml._ml, script_java, lines, conf._jconf, apply_rewrites, with_subgraph)
     else:
@@ -374,7 +352,7 @@ class Script(object):
         Optional script format, either "auto" or "url" or "file" or "resource" or "string"
     """
     def __init__(self, scriptString, scriptType="dml", isResource=False, scriptFormat="auto"):
-        self.sc = _get_spark_context()
+        self.sc = get_spark_context()
         self.scriptString = scriptString
         self.scriptType = scriptType
         self.isResource = isResource

@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-__all__ = ['createJavaObject', 'jvm_stdout', 'default_jvm_stdout', 'default_jvm_stdout_parallel_flush', 'set_default_jvm_stdout' ]
+__all__ = ['createJavaObject', 'jvm_stdout', 'default_jvm_stdout', 'default_jvm_stdout_parallel_flush', 'set_default_jvm_stdout', 'get_spark_context' ]
 
 import os
 import numpy as np
@@ -33,6 +33,27 @@ try:
 except ImportError:
     raise ImportError('Unable to import `pyspark`. Hint: Make sure you are running with PySpark.')
 
+_loadedSystemML = False
+def get_spark_context():
+    """
+    Internal method to get already initialized SparkContext.  Developers should always use
+    get_spark_context() instead of SparkContext._active_spark_context to ensure SystemML loaded.
+
+    Returns
+    -------
+    sc: SparkContext
+        SparkContext
+    """
+    if SparkContext._active_spark_context is not None:
+        sc = SparkContext._active_spark_context
+        global _loadedSystemML
+        if not _loadedSystemML:
+            createJavaObject(sc, 'dummy')
+            _loadedSystemML = True
+        return sc
+    else:
+        raise Exception('Expected spark context to be created.')
+        
 _in_jvm_stdout = False
 default_jvm_stdout = True
 default_jvm_stdout_parallel_flush = False
@@ -65,7 +86,7 @@ class jvm_stdout(object):
         Should flush the stdout in parallel
     """
     def __init__(self, parallel_flush=False):
-        self.util = _get_spark_context()._jvm.org.apache.sysml.api.ml.Utils()
+        self.util = get_spark_context()._jvm.org.apache.sysml.api.ml.Utils()
         self.parallel_flush = parallel_flush
         self.t = threading.Thread(target=self.flush_stdout)
         self.stop = False
