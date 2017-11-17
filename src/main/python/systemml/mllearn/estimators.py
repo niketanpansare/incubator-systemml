@@ -866,8 +866,13 @@ class Caffe2DML(BaseSystemMLClassifier):
         Print the summary of the network
         """
         import pyspark
+        global default_jvm_stdout, default_jvm_stdout_parallel_flush
         if type(self.sparkSession) == pyspark.sql.session.SparkSession:
-            self.estimator.summary(self.sparkSession._jsparkSession)
+            if default_jvm_stdout:
+                with jvm_stdout(parallel_flush=default_jvm_stdout_parallel_flush):
+                    self.estimator.summary(self.sparkSession._jsparkSession)
+            else:
+                self.estimator.summary(self.sparkSession._jsparkSession)
         else:
             raise TypeError('Please use spark session of type pyspark.sql.session.SparkSession in the constructor')
     
