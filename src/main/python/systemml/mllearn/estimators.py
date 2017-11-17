@@ -149,7 +149,11 @@ class BaseSystemMLEstimator(Estimator):
     
     def _fit_df(self):
         try:
-            self.model = self.estimator.fit(self.X._jdf)
+            if default_jvm_stdout:
+                with jvm_stdout(parallel_flush=default_jvm_stdout_parallel_flush):
+                    self.model = self.estimator.fit(self.X._jdf)
+            else:
+                self.model = self.estimator.fit(self.X._jdf)
         except Py4JError:
             traceback.print_exc()
     
@@ -165,7 +169,11 @@ class BaseSystemMLEstimator(Estimator):
                 # Since we know that mllearn always needs a column vector
                 self.y = np.matrix(self.y).T
             y_mb = convertToMatrixBlock(self.sc, self.y)
-            self.model = self.estimator.fit(convertToMatrixBlock(self.sc, self.X), y_mb)
+            if default_jvm_stdout:
+                with jvm_stdout(parallel_flush=default_jvm_stdout_parallel_flush):
+                    self.model = self.estimator.fit(convertToMatrixBlock(self.sc, self.X), y_mb)
+            else:
+                self.model = self.estimator.fit(convertToMatrixBlock(self.sc, self.X), y_mb)
         except Py4JError:
             traceback.print_exc()
                     
@@ -295,7 +303,11 @@ class BaseSystemMLEstimator(Estimator):
             pass
         try:
             jX = self._convertPythonXToJavaObject(X)
-            return self._convertJavaOutputToPythonObject(X, self.model.transform_probability(jX))
+            if default_jvm_stdout:
+                with jvm_stdout(parallel_flush=default_jvm_stdout_parallel_flush):
+                    return self._convertJavaOutputToPythonObject(X, self.model.transform_probability(jX))
+            else:
+                return self._convertJavaOutputToPythonObject(X, self.model.transform_probability(jX))
         except Py4JError:
             traceback.print_exc()
     
@@ -315,7 +327,11 @@ class BaseSystemMLEstimator(Estimator):
             pass
         try:
             jX = self._convertPythonXToJavaObject(X)
-            ret = self._convertJavaOutputToPythonObject(X, self.model.transform(jX))
+            if default_jvm_stdout:
+                with jvm_stdout(parallel_flush=default_jvm_stdout_parallel_flush):
+                    ret = self._convertJavaOutputToPythonObject(X, self.model.transform(jX))
+            else:
+                ret = self._convertJavaOutputToPythonObject(X, self.model.transform(jX))
             return self.decode(ret) if isinstance(X, SUPPORTED_TYPES) else ret
         except Py4JError:
             traceback.print_exc()
@@ -389,7 +405,11 @@ class BaseSystemMLClassifier(BaseSystemMLEstimator):
         eager: load the model eagerly. This flag should be only used for debugging purposes. (default: False)
         """
         self.weights = weights
-        self.model.load(self.sc._jsc, weights, sep, eager)
+        if default_jvm_stdout:
+            with jvm_stdout(parallel_flush=default_jvm_stdout_parallel_flush):
+                self.model.load(self.sc._jsc, weights, sep, eager)
+        else:
+            self.model.load(self.sc._jsc, weights, sep, eager)
         self.loadLabels(weights + '/labels.txt')
         
     def save(self, outputDir, format='binary', sep='/'):
@@ -403,7 +423,11 @@ class BaseSystemMLClassifier(BaseSystemMLEstimator):
         sep: seperator to use (default: '/')
         """
         if self.model != None:
-            self.model.save(self.sc._jsc, outputDir, format, sep)
+            if default_jvm_stdout:
+                with jvm_stdout(parallel_flush=default_jvm_stdout_parallel_flush):
+                    self.model.save(self.sc._jsc, outputDir, format, sep)
+            else:
+                self.model.save(self.sc._jsc, outputDir, format, sep)
 
             labelMapping = None
             if hasattr(self, 'le') and self.le is not None:
@@ -449,7 +473,11 @@ class BaseSystemMLRegressor(BaseSystemMLEstimator):
         eager: load the model eagerly (default: False)
         """
         self.weights = weights
-        self.model.load(self.sc._jsc, weights, sep, eager)
+        if default_jvm_stdout:
+            with jvm_stdout(parallel_flush=default_jvm_stdout_parallel_flush):
+                self.model.load(self.sc._jsc, weights, sep, eager)
+        else:
+            self.model.load(self.sc._jsc, weights, sep, eager)
 
     def save(self, outputDir, format='binary', sep='/'):
         """
@@ -462,7 +490,11 @@ class BaseSystemMLRegressor(BaseSystemMLEstimator):
         sep: seperator to use (default: '/')
         """
         if self.model != None:
-            self.model.save(outputDir, format, sep)
+            if default_jvm_stdout:
+                with jvm_stdout(parallel_flush=default_jvm_stdout_parallel_flush):
+                    self.model.save(outputDir, format, sep)
+            else:
+                self.model.save(outputDir, format, sep)
         else:
             raise Exception('Cannot save as you need to train the model first using fit')
         return self
@@ -792,7 +824,11 @@ class Caffe2DML(BaseSystemMLClassifier):
         self.weights = weights
         self.estimator.setInput("$weights", str(weights))
         self.model = self.sc._jvm.org.apache.sysml.api.dl.Caffe2DMLModel(self.estimator)
-        self.model.load(self.sc._jsc, weights, sep, eager)
+        if default_jvm_stdout:
+            with jvm_stdout(parallel_flush=default_jvm_stdout_parallel_flush):
+                self.model.load(self.sc._jsc, weights, sep, eager)
+        else:
+            self.model.load(self.sc._jsc, weights, sep, eager)
         self.loadLabels(weights + '/labels.txt')
         if ignore_weights is not None:
             self.estimator.setWeightsToIgnore(ignore_weights)

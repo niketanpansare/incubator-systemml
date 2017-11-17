@@ -22,7 +22,7 @@
 # Methods to create Script object
 script_factory_methods = [ 'dml', 'pydml', 'dmlFromResource', 'pydmlFromResource', 'dmlFromFile', 'pydmlFromFile', 'dmlFromUrl', 'pydmlFromUrl' ]
 # Utility methods
-util_methods = [ 'jvm_stdout', '_java2py',  'getHopDAG' ]
+util_methods = [ '_java2py',  'getHopDAG' ]
 __all__ = ['MLResults', 'MLContext', 'Script', 'Matrix' ] + script_factory_methods + util_methods
 
 import os
@@ -64,46 +64,6 @@ def _get_spark_context():
     else:
         raise Exception('Expected spark context to be created.')
 
-
-
-# This is useful utility class to get the output of the driver JVM from within a Jupyter notebook
-# Example usage:
-# with jvm_stdout():
-#    ml.execute(script)
-class jvm_stdout(object):
-    """
-    This is useful utility class to get the output of the driver JVM from within a Jupyter notebook
-
-    Parameters
-    ----------
-    parallel_flush: boolean
-        Should flush the stdout in parallel
-    """
-    def __init__(self, parallel_flush=False):
-        self.util = _get_spark_context()._jvm.org.apache.sysml.api.ml.Utils()
-        self.parallel_flush = parallel_flush
-        self.t = threading.Thread(target=self.flush_stdout)
-        self.stop = False
-        
-    def flush_stdout(self):
-        while not self.stop: 
-            time.sleep(1) # flush stdout every 1 second
-            str = self.util.flushStdOut()
-            if str != '':
-                str = str[:-1] if str.endswith('\n') else str
-                print(str)
-    
-    def __enter__(self):
-        self.util.startRedirectStdOut()
-        if self.parallel_flush:
-            self.t.start()
-
-    def __exit__(self, *args):
-        if self.parallel_flush:
-            self.stop = True
-            self.t.join()
-        print(self.util.stopRedirectStdOut())
-        
 
 def getHopDAG(ml, script, lines=None, conf=None, apply_rewrites=True, with_subgraph=False):
     """
@@ -721,7 +681,11 @@ class MLContext(object):
             raise ValueError("Expected script to be an instance of Script")
         scriptString = script.scriptString
         script_java = script.script_java
-        return MLResults(self._ml.execute(script_java), self._sc)
+        if default_jvm_stdout:
+            with jvm_stdout(parallel_flush=default_jvm_stdout_parallel_flush):
+                return MLResults(self._ml.execute(script_java), self._sc)
+        else:
+            return MLResults(self._ml.execute(script_java), self._sc)
 
     def setStatistics(self, statistics):
         """

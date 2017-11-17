@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-__all__ = ['createJavaObject']
+__all__ = ['createJavaObject', 'jvm_stdout', 'default_jvm_stdout', 'default_jvm_stdout_parallel_flush', 'set_default_jvm_stdout' ]
 
 import os
 import numpy as np
@@ -32,6 +32,71 @@ try:
     from pyspark.sql import SparkSession
 except ImportError:
     raise ImportError('Unable to import `pyspark`. Hint: Make sure you are running with PySpark.')
+
+_in_jvm_stdout = False
+default_jvm_stdout = True
+default_jvm_stdout_parallel_flush = False
+def set_default_jvm_stdout(enable, parallel_flush=False):
+    """
+    This is useful utility method to get the output of the driver JVM from within a Jupyter notebook
+
+    Parameters
+    ----------
+    enable: boolean
+        Should flush the stdout by default when mlcontext.execute is invoked
+        
+    parallel_flush: boolean
+        Should flush the stdout in parallel
+    """
+    default_jvm_stdout = enable
+    default_jvm_stdout_parallel_flush = parallel_flush
+    
+# This is useful utility class to get the output of the driver JVM from within a Jupyter notebook
+# Example usage:
+# with jvm_stdout():
+#    ml.execute(script)
+class jvm_stdout(object):
+    """
+    This is useful utility class to get the output of the driver JVM from within a Jupyter notebook
+
+    Parameters
+    ----------
+    parallel_flush: boolean
+        Should flush the stdout in parallel
+    """
+    def __init__(self, parallel_flush=False):
+        self.util = _get_spark_context()._jvm.org.apache.sysml.api.ml.Utils()
+        self.parallel_flush = parallel_flush
+        self.t = threading.Thread(target=self.flush_stdout)
+        self.stop = False
+        
+    def flush_stdout(self):
+        while not self.stop: 
+            time.sleep(1) # flush stdout every 1 second
+            str = self.util.flushStdOut()
+            if str != '':
+                str = str[:-1] if str.endswith('\n') else str
+                print(str)
+    
+    def __enter__(self):
+        if _in_jvm_stdout:
+            # Allow for nested jvm_stdout    
+            self.donotRedirect = True
+        else:
+            self.donotRedirect = False
+            self.util.startRedirectStdOut()
+            if self.parallel_flush:
+                self.t.start()
+            _in_jvm_stdout = True
+
+    def __exit__(self, *args):
+        if not self.donotRedirect:
+            if self.parallel_flush:
+                self.stop = True
+                self.t.join()
+            print(self.util.stopRedirectStdOut())
+            _in_jvm_stdout = False
+
 
 _initializedSparkSession = False
 def _createJavaObject(sc, obj_type):
