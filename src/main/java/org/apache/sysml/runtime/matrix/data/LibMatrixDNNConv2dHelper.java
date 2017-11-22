@@ -271,7 +271,9 @@ public class LibMatrixDNNConv2dHelper {
 	}
 	
 	/**
-	 * This operator is used only if input is sparse and filter is dense with stride = 1 and pad = 1
+	 * This operator is used only for conv1d when input is sparse and filter is dense.
+	 * 
+	 * In the current version, we only support stride = 1 and pad = 0 for conv1d as these as the most common parameters.
 	 */
 	public static class SparseInputDenseFilterConv1dStride1Pad0AllChan implements Callable<Long> 
 	{
@@ -286,15 +288,17 @@ public class LibMatrixDNNConv2dHelper {
 			}
 		}
 		
-		public static boolean isApplicable(ConvolutionParameters params) {
+		public static boolean isApplicable(ConvolutionParameters params, int numThreads) {
+			int numElemsInIntermediateMemory = numThreads*params.C*params.R*params.S*params.P*params.Q;
 			return params.W == params.S && params.input1.isInSparseFormat() && !params.input2.isInSparseFormat() &&
 					params.pad_h == 0 && params.pad_w == 0 && params.stride_h == 1 && params.stride_w == 1 &&
-					params.input2.getDenseBlock().length < 1000000; // reshape only if filter size is less than 8 MB
+					// only use this operator if memory for reshaping the filter is accounted for by the optimizer to avoid OOM
+					params.input2.getDenseBlock().length < numElemsInIntermediateMemory; 
 		}
 		
 		public static double [] getReshapedFilter(ConvolutionParameters params) {
 			double [] reshapeFilter = null;
-			// reshape only if filter size is less than 8 MB
+			// reshape only if filter size is less than already accounted intermediate memory
 			double [] filter = params.input2.denseBlock;
 			reshapeFilter = new double[filter.length];
 			// KCRS => CSKR

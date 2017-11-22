@@ -135,7 +135,7 @@ public class LibMatrixDNNHelper {
 			MatrixBlock.evalSparseFormatInMemory(in1.clen, in1.rlen, in1.nonZeros);
 		boolean applyNative = LibMatrixDNN.isEligibleForConv2dSparse(params)
 			&& !(!isEmptyDenseInput && allChannels && isTransPref);
-		boolean isSparseConv2dApplicable = SparseInputDenseFilterConv1dStride1Pad0AllChan.isApplicable(params);
+		boolean isSparseConv2dApplicable = SparseInputDenseFilterConv1dStride1Pad0AllChan.isApplicable(params, k);
 		if( applyNative )
 			Statistics.numNativeSparseConv2dCalls.increment();
 		
