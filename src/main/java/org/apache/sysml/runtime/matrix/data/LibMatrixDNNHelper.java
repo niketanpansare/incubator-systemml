@@ -146,13 +146,16 @@ public class LibMatrixDNNHelper {
 				new MatrixBlock(params.input2.clen, params.input2.rlen, false), k);
 		}
 		
+		double [] reshapeFilter = null;
 		for(int i = 0; i*taskSize < params.N; i++) {
 			//note: we prefer the java backend for sparse inputs because the native 
 			//implementation simply converts the sparse input into dense rows
 			if( applyNative ) 
 				ret.add(new SparseNativeConv2d(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
-			else if( isSparseConv2dApplicable )
-				ret.add(new SparseInputDenseFilterConv1dStride1Pad0AllChan(i*taskSize, Math.min((i+1)*taskSize, params.N), params, SparseInputDenseFilterConv1dStride1Pad0AllChan.getReshapedFilter(params)));
+			else if( isSparseConv2dApplicable ) {
+				reshapeFilter = reshapeFilter == null ? SparseInputDenseFilterConv1dStride1Pad0AllChan.getReshapedFilter(params) : reshapeFilter;
+				ret.add(new SparseInputDenseFilterConv1dStride1Pad0AllChan(i*taskSize, Math.min((i+1)*taskSize, params.N), params, reshapeFilter));
+			}
 			else if(!isEmptyDenseInput && allChannels && isTransPref)
 				ret.add(new LoopedIm2ColConv2dTransAllChan(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
 			else if(!isEmptyDenseInput && allChannels)
