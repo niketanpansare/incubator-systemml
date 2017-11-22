@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.concurrent.Callable;
 
 import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNNIm2ColHelper.Im2colWorker;
 import org.apache.sysml.utils.NativeHelper;
 
@@ -270,6 +271,98 @@ public class LibMatrixDNNConv2dHelper {
 	}
 	
 	/**
+	 * This operator is used only if input is sparse and filter is dense with stride = 1 and pad = 1
+	 */
+	public static class SparseInputDenseFilterConv1dStride1Pad0AllChan implements Callable<Long> 
+	{
+		public int _rl; public int _ru; 
+		private final ConvolutionParameters _params; double [] _reshapeFilter;
+		public SparseInputDenseFilterConv1dStride1Pad0AllChan(int rl, int ru, ConvolutionParameters params, double [] reshapeFilter) throws DMLRuntimeException {
+			_rl = rl; _ru = ru;
+			_params = params;
+			_reshapeFilter = reshapeFilter;
+			if(_params.Q != 1) {
+				throw new DMLRuntimeException("Incorrect usage: Expected output width to be 1 but instead is " + _params.Q);
+			}
+		}
+		
+		public static boolean isApplicable(ConvolutionParameters params) {
+			return params.W == params.S && params.input1.isInSparseFormat() && !params.input2.isInSparseFormat() &&
+					params.pad_h == 0 && params.pad_w == 0 && params.stride_h == 1 && params.stride_w == 1 &&
+					params.input2.getDenseBlock().length < 1000000; // reshape only if filter size is less than 8 MB
+		}
+		
+		public static double [] getReshapedFilter(ConvolutionParameters params) {
+			double [] reshapeFilter = null;
+			// reshape only if filter size is less than 8 MB
+			double [] filter = params.input2.denseBlock;
+			reshapeFilter = new double[filter.length];
+			// KCRS => CSKR
+			int K = params.K; int C = params.C;
+			int R = params.R; int S = params.S;
+			int SKR = S*K*R; int KR = K*R;
+			int i = 0;
+			for(int k = 0; k < K; k++) {
+				for(int c = 0; c < C; c++) {
+					for(int r = 0; r < R; r++) {
+						for(int s = 0; s < S; s++, i++) {
+							reshapeFilter[c*SKR + s*KR + k*R + r] = filter[i];
+						}
+					}
+				}
+			}
+			return reshapeFilter;
+		}
+
+		@Override
+		public Long call() throws Exception {
+			int KPQ = _params.K*_params.P*_params.Q;
+			int PQ = _params.P*_params.Q; int P = _params.P; int Q = _params.Q;
+			int HW = _params.H*_params.W;
+			int W = _params.W; int K = _params.K;
+			int R = _params.R;
+			int SKR = _params.S*K*R; int KR = K*R;
+			double [] output = _params.output.denseBlock;
+			for(int n = _rl; n < _ru; n++)  {
+				if( !_params.input1.getSparseBlock().isEmpty(n) ) {
+					int apos = _params.input1.getSparseBlock().pos(n);
+					int alen = _params.input1.getSparseBlock().size(n);
+					int[] aix = _params.input1.getSparseBlock().indexes(n);
+					double[] avals = _params.input1.getSparseBlock().values(n);
+					int outOffset = n*KPQ;
+					// Iterate over the sparse block
+					for(int j=apos; j<apos+alen; j++) {
+						// Note: the input is of shape [N, CHW]
+						int chw = aix[j];
+						// Get individual zero-based c,h,w indexes from zero-based 'chw'
+						int c = chw / HW;
+						int h = (chw - c*HW)/W;
+						int w = chw % W;
+						double val = avals[j];
+						
+						int rMin = Math.max(0, h-P+1);
+						int rMax = Math.min(R-1, h);
+						int filterOffset = c*SKR + w*KR;
+						for(int k = 0; k < K; k++) {
+							int filterIndex = filterOffset + k*R + rMin;
+							int outOffset1 = outOffset + k*PQ + h*Q;
+							for(int r = rMin; r <= rMax; r++) {
+								output[outOffset1 - r*Q] += val * _reshapeFilter[filterIndex++];
+							}
+						}
+					}
+				}
+				
+				// Add bias to current row if necessary, always dense
+				if(_params.bias != null)
+					LibMatrixDNNHelper.addBias(n, output, _params.bias.denseBlock, K, PQ);
+			}
+			//multi-threaded nnz maintenance of current working set
+			return _params.output.recomputeNonZeros(_rl, _ru-1);
+		}
+	}
+	
+	/**
 	 * This operator is used only if native is enabled, filter is dense and input is sparse
 	 */
 	public static class SparseNativeConv2d implements Callable<Long> 
@@ -284,6 +377,7 @@ public class LibMatrixDNNConv2dHelper {
 		@Override
 		public Long call() throws Exception {
 			int KPQ = _params.K*_params.P*_params.Q;
+			int PQ = _params.P*_params.Q; int K = _params.K;
 			double[] temp = new double[KPQ];
 			for(int n = _rl; n < _ru; n++)  {
 				if( !_params.input1.getSparseBlock().isEmpty(n) ) {
@@ -296,6 +390,10 @@ public class LibMatrixDNNConv2dHelper {
 							_params.stride_h, _params.stride_w, _params.pad_h, _params.pad_w, _params.P, _params.Q, 1);
 					System.arraycopy(temp, 0, _params.output.denseBlock, n*KPQ, KPQ);
 				}
+				
+				// Add bias to current row if necessary, always dense
+				if(_params.bias != null)
+					LibMatrixDNNHelper.addBias(n, _params.output.denseBlock, _params.bias.denseBlock, K, PQ);
 			}
 			//multi-threaded nnz maintenance of current working set
 			return _params.output.recomputeNonZeros(_rl, _ru-1);

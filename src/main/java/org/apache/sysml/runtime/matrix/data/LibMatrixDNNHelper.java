@@ -135,12 +135,13 @@ public class LibMatrixDNNHelper {
 			MatrixBlock.evalSparseFormatInMemory(in1.clen, in1.rlen, in1.nonZeros);
 		boolean applyNative = LibMatrixDNN.isEligibleForConv2dSparse(params)
 			&& !(!isEmptyDenseInput && allChannels && isTransPref);
+		boolean isSparseConv2dApplicable = SparseInputDenseFilterConv1dStride1Pad0AllChan.isApplicable(params);
 		if( applyNative )
 			Statistics.numNativeSparseConv2dCalls.increment();
 		
 		//transpose filter once for efficient sparse-dense multiplies in LoopedIm2ColConv2dTransAllChan
 		//in order to share the temporary object and its creation costs across threads
-		if( !applyNative && !isEmptyDenseInput && allChannels && isTransPref ) {
+		if( !applyNative && !isSparseConv2dApplicable && !isEmptyDenseInput && allChannels && isTransPref ) {
 			params.input2 = LibMatrixReorg.transpose(params.input2, 
 				new MatrixBlock(params.input2.clen, params.input2.rlen, false), k);
 		}
@@ -150,6 +151,8 @@ public class LibMatrixDNNHelper {
 			//implementation simply converts the sparse input into dense rows
 			if( applyNative ) 
 				ret.add(new SparseNativeConv2d(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
+			else if( isSparseConv2dApplicable )
+				ret.add(new SparseInputDenseFilterConv1dStride1Pad0AllChan(i*taskSize, Math.min((i+1)*taskSize, params.N), params, SparseInputDenseFilterConv1dStride1Pad0AllChan.getReshapedFilter(params)));
 			else if(!isEmptyDenseInput && allChannels && isTransPref)
 				ret.add(new LoopedIm2ColConv2dTransAllChan(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
 			else if(!isEmptyDenseInput && allChannels)

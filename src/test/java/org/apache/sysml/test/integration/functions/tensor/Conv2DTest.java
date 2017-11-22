@@ -43,6 +43,18 @@ public class Conv2DTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testSparseInputDenseFilterConv1dAllChan1() {
+		int numImg = 5; int imgSize = 5; int numChannels = 3; int numFilters = 2; int filterSize = 5; int stride = 1; int pad = 0;
+		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, true, false);
+	}
+	
+	@Test
+	public void testSparseInputDenseFilterConv1dAllChan2() {
+		int numImg = 3; int imgSize = 10; int numChannels = 1; int numFilters = 3; int filterSize = 5; int stride = 1; int pad = 0;
+		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, true, false);
+	}
+	
+	@Test
 	public void testConv2DDense1() {
 		int numImg = 5; int imgSize = 3; int numChannels = 3; int numFilters = 6; int filterSize = 2; int stride = 1; int pad = 0;
 		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false);
