@@ -25,20 +25,22 @@ numImg=as.integer(args[2])
 numChannels=as.integer(args[3])
 numFilters=as.integer(args[4])
 filterSize=as.integer(args[5])
-stride=as.integer(args[6])
-pad=as.integer(args[7])
+stride_h=as.integer(args[6])
+stride_w=as.integer(args[7])
+pad_h=as.integer(args[8])
+pad_w=as.integer(args[9])
 
 # Assumption: NCHW image format
 x=matrix(seq(1, numImg*numChannels*imgSize*imgSize), numImg, numChannels*imgSize*imgSize, byrow=TRUE)
 w=matrix(seq(1, numFilters*numChannels*filterSize*filterSize), numFilters, numChannels*filterSize*filterSize, byrow=TRUE)
 
-if(as.logical(args[9])) {
+if(as.logical(args[11])) {
 	zero_mask = (x - mean(x)*1.5) > 0 
 	x = x * zero_mask
 } else {
 	x = x - mean(x)
 }
-if(as.logical(args[10])) {
+if(as.logical(args[12])) {
 	zero_mask = (w - mean(w)*1.5) > 0 
 	w = w * zero_mask
 } else {
@@ -105,19 +107,19 @@ conv2d <- function(X, W, C, Hin, Win, Hf, Wf, strideh, stridew, padh, padw) {
   out
 }
 
-output = conv2d(x, w, numChannels,  imgSize, imgSize, filterSize, filterSize, stride, stride, pad, pad);
-Hout = as.integer((imgSize + 2 * pad - filterSize) / stride + 1)
-Wout = Hout
+output = conv2d(x, w, numChannels,  imgSize, imgSize, filterSize, filterSize, stride_h, stride_w, pad_h, pad_w);
+Hout = as.integer((imgSize + 2 * pad_h - filterSize) / stride_h + 1)
+Wout = as.integer((imgSize + 2 * pad_w - filterSize) / stride_w + 1)
 
 b=matrix(seq(1, numFilters), numFilters, 1, byrow=TRUE) 
 for(k in 0:(numFilters-1)) {
 	for(i in 1:nrow(output)) {
-		start = k*Hout*Hout;
-		for(j in 1:(Hout*Hout)) {
+		start = k*Hout*Wout;
+		for(j in 1:(Hout*Wout)) {
 			output[i,start+j] = output[i,start+j] + b[k+1,1]
 		}
 	}
 }
 
 
-writeMM(as(output,"CsparseMatrix"), paste(args[8], "B", sep=""))
+writeMM(as(output,"CsparseMatrix"), paste(args[10], "B", sep=""))

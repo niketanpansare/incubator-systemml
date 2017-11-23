@@ -271,91 +271,180 @@ public class LibMatrixDNNConv2dHelper {
 	}
 	
 	/**
-	 * This operator is used only for conv1d when input is sparse and filter is dense.
-	 * 
-	 * In the current version, we only support stride = 1 and pad = 0 for conv1d as these as the most common parameters.
+	 * This operator is used only for conv1d when stride_w = 1 and pad_w = 0.
 	 */
-	public static class SparseInputDenseFilterConv1dStride1Pad0AllChan implements Callable<Long> 
+	public static class Conv1dStrideW1PadW0AllChan implements Callable<Long> 
 	{
 		public int _rl; public int _ru; 
 		private final ConvolutionParameters _params; double [] _reshapeFilter;
-		public SparseInputDenseFilterConv1dStride1Pad0AllChan(int rl, int ru, ConvolutionParameters params, double [] reshapeFilter) throws DMLRuntimeException {
+		final int KPQ; final int PQ; final int P; final int Q;
+		final int C; final int H; final int W; final int HW; final int CHW;
+		final int K; final int R;
+		final int SKR; final int KR;
+		final int pad_h; final int stride_h; final int [] rMins;
+		public Conv1dStrideW1PadW0AllChan(int rl, int ru, ConvolutionParameters params, double [] reshapeFilter, int numThreads) throws DMLRuntimeException {
 			_rl = rl; _ru = ru;
 			_params = params;
 			_reshapeFilter = reshapeFilter;
 			if(_params.Q != 1) {
 				throw new DMLRuntimeException("Incorrect usage: Expected output width to be 1 but instead is " + _params.Q);
 			}
+			KPQ = _params.K*_params.P*_params.Q;
+			PQ = _params.P*_params.Q; P = _params.P; Q = _params.Q;
+			HW = _params.H*_params.W;
+			W = _params.W; K = _params.K;
+			R = _params.R;
+			SKR = _params.S*K*R; KR = K*R;
+			C = _params.C; H = _params.H;
+			CHW = _params.C*_params.H*_params.W;
+			pad_h = _params.pad_h; stride_h = _params.stride_h;
+			int numElemsInIntermediateMemory = numThreads*params.C*params.R*params.S*params.P*params.Q;
+			if((K*C*R*_params.S + numThreads*H) <= numElemsInIntermediateMemory) {
+				rMins = new int[H];
+				for(int h = 0; h < H; h++) {
+					int rMin = Math.max(0, h + pad_h - P*stride_h + 1);
+					int rMax = Math.min(R-1, h + pad_h);
+					while((h - rMin + pad_h) % stride_h != 0 && rMin <= rMax) rMin++;
+					rMins[h] = rMin;
+				}
+			} else {
+				rMins = null;
+			}
 		}
 		
 		public static boolean isApplicable(ConvolutionParameters params, int numThreads) {
 			int numElemsInIntermediateMemory = numThreads*params.C*params.R*params.S*params.P*params.Q;
-			return params.W == params.S && params.input1.isInSparseFormat() && !params.input2.isInSparseFormat() &&
-					params.pad_h == 0 && params.pad_w == 0 && params.stride_h == 1 && params.stride_w == 1 &&
+			return params.W == params.S && params.pad_w == 0 && params.stride_w == 1 &&
 					// only use this operator if memory for reshaping the filter is accounted for by the optimizer to avoid OOM
-					params.input2.getDenseBlock().length < numElemsInIntermediateMemory; 
+					params.K*params.C*params.R*params.S <= numElemsInIntermediateMemory; 
 		}
 		
+		/**
+		 * Reshape filter from shape of [K,C,R,S] to shape [C,S,K,R]
+		 * 
+		 * @param params convolution parameters
+		 * @return reshaped filter of shape [C,S,K,R]
+		 */
 		public static double [] getReshapedFilter(ConvolutionParameters params) {
 			double [] reshapeFilter = null;
 			// reshape only if filter size is less than already accounted intermediate memory
-			double [] filter = params.input2.denseBlock;
-			reshapeFilter = new double[filter.length];
 			// KCRS => CSKR
 			int K = params.K; int C = params.C;
-			int R = params.R; int S = params.S;
+			int R = params.R; int S = params.S; int RS = R*S;
+			reshapeFilter = new double[K*C*R*S];
 			int SKR = S*K*R; int KR = K*R;
-			int i = 0;
-			for(int k = 0; k < K; k++) {
-				for(int c = 0; c < C; c++) {
-					for(int r = 0; r < R; r++) {
-						for(int s = 0; s < S; s++, i++) {
-							reshapeFilter[c*SKR + s*KR + k*R + r] = filter[i];
+			if(params.input2.isInSparseFormat()) {
+				for(int k = 0; k < K; k++) {
+					if( !params.input2.getSparseBlock().isEmpty(k) ) {
+						int apos = params.input2.getSparseBlock().pos(k);
+						int alen = params.input2.getSparseBlock().size(k);
+						final int[] aix = params.input2.getSparseBlock().indexes(k);
+						final double[] avals = params.input2.getSparseBlock().values(k);
+						// Iterate over the sparse block
+						for(int j=apos; j<apos+alen; j++) {
+							// Note: the filter is of shape [K, CRS]
+							int crs = aix[j];
+							int c = crs / RS;
+							int r = (crs - c*RS)/S;
+							int s = crs % S;
+							reshapeFilter[c*SKR + s*KR + k*R + r] = avals[j];
+						}
+					}
+				}
+			}
+			else {
+				double [] filter = params.input2.denseBlock;
+				int filterIndex = 0;
+				for(int k = 0; k < K; k++) {
+					for(int c = 0; c < C; c++) {
+						for(int r = 0; r < R; r++) {
+							for(int s = 0; s < S; s++, filterIndex++) {
+								reshapeFilter[c*SKR + s*KR + k*R + r] = filter[filterIndex];
+							}
 						}
 					}
 				}
 			}
 			return reshapeFilter;
 		}
+		
+		private void applyStride1Pad0Update(double [] output, double inputVal, int c, int h, int w, int nKPQ) {
+			int rMin = (rMins == null) ? Math.max(0, h-P+1) : rMins[h];
+			int rMax = Math.min(R-1, h);
+			int filterOffset = c*SKR + w*KR;
+			for(int k = 0; k < K; k++) {
+				int filterIndex = filterOffset + k*R + rMin;
+				int outOffset1 = nKPQ + k*PQ + h*Q;
+				for(int r = rMin; r <= rMax; r++) {
+					output[outOffset1 - r*Q] += inputVal * _reshapeFilter[filterIndex++];
+				}
+			}
+		}
+		
+		private void applyOnlyStrideW1PadW0Update(double [] output, double inputVal, int c, int h, int w, int nKPQ) {
+			int rMax = Math.min(R-1, h + pad_h);
+			int rMin;
+			if(rMins == null) {
+				rMin = Math.max(0, h + pad_h - P*stride_h + 1);
+				while((h - rMin + pad_h) % stride_h != 0 && rMin <= rMax) rMin++;
+			} else {
+				rMin = rMins[h];
+			}
+			
+			int filterOffset = c*SKR + w*KR;
+			for(int k = 0; k < K; k++) {
+				int filterIndex = filterOffset + k*R;
+				int outOffset1 = nKPQ + k*PQ;
+				for(int r = rMin; r <= rMax; r += stride_h) {
+					int p = (h + pad_h - r)  / stride_h;
+					output[outOffset1 + p*Q] += inputVal * _reshapeFilter[filterIndex + r];
+				}
+			}
+		}
 
 		@Override
 		public Long call() throws Exception {
-			int KPQ = _params.K*_params.P*_params.Q;
-			int PQ = _params.P*_params.Q; int P = _params.P; int Q = _params.Q;
-			int HW = _params.H*_params.W;
-			int W = _params.W; int K = _params.K;
-			int R = _params.R;
-			int SKR = _params.S*K*R; int KR = K*R;
 			double [] output = _params.output.denseBlock;
+			boolean isStrideH1PadH0 = _params.pad_h == 0 && _params.stride_h == 1;
 			for(int n = _rl; n < _ru; n++)  {
-				if( !_params.input1.getSparseBlock().isEmpty(n) ) {
-					int apos = _params.input1.getSparseBlock().pos(n);
-					int alen = _params.input1.getSparseBlock().size(n);
-					int[] aix = _params.input1.getSparseBlock().indexes(n);
-					double[] avals = _params.input1.getSparseBlock().values(n);
-					int outOffset = n*KPQ;
-					// Iterate over the sparse block
-					for(int j=apos; j<apos+alen; j++) {
-						// Note: the input is of shape [N, CHW]
-						int chw = aix[j];
-						// Get individual zero-based c,h,w indexes from zero-based 'chw'
-						int c = chw / HW;
-						int h = (chw - c*HW)/W;
-						int w = chw % W;
-						double val = avals[j];
-						
-						int rMin = Math.max(0, h-P+1);
-						int rMax = Math.min(R-1, h);
-						int filterOffset = c*SKR + w*KR;
-						for(int k = 0; k < K; k++) {
-							int filterIndex = filterOffset + k*R + rMin;
-							int outOffset1 = outOffset + k*PQ + h*Q;
-							for(int r = rMin; r <= rMax; r++) {
-								output[outOffset1 - r*Q] += val * _reshapeFilter[filterIndex++];
+				final int nKPQ = n*KPQ;
+				if(_params.input1.isInSparseFormat()) {
+					if( !_params.input1.getSparseBlock().isEmpty(n) ) {
+						int apos = _params.input1.getSparseBlock().pos(n);
+						int alen = _params.input1.getSparseBlock().size(n);
+						final int[] aix = _params.input1.getSparseBlock().indexes(n);
+						final double[] avals = _params.input1.getSparseBlock().values(n);
+						// Iterate over the sparse block
+						for(int j=apos; j<apos+alen; j++) {
+							// Note: the input is of shape [N, CHW]
+							int chw = aix[j];
+							// Get individual zero-based c,h,w indexes from zero-based 'chw'
+							int c = chw / HW;
+							int h = (chw - c*HW)/W;
+							int w = chw % W;
+							double inputVal = avals[j];
+							if(isStrideH1PadH0)
+								applyStride1Pad0Update(output, inputVal, c, h, w, nKPQ);
+							else
+								applyOnlyStrideW1PadW0Update(output, inputVal, c, h, w, nKPQ);
+						}
+					}
+				}
+				else {
+					final double [] input = _params.input1.denseBlock;
+					int inputIndex = n*CHW; 
+					for(int c = 0; c < C; c++)  {
+						for(int h = 0; h < H; h++)  {
+							for(int w = 0; w < W; w++, inputIndex++)  {
+								if(isStrideH1PadH0)
+									applyStride1Pad0Update(output, input[inputIndex], c, h, w, nKPQ);
+								else
+									applyOnlyStrideW1PadW0Update(output, input[inputIndex], c, h, w, nKPQ);
 							}
 						}
 					}
 				}
+				
 				
 				// Add bias to current row if necessary, always dense
 				if(_params.bias != null)

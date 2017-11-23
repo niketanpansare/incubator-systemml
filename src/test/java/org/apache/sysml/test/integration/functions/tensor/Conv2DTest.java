@@ -55,6 +55,69 @@ public class Conv2DTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testDenseInputDenseFilterConv1dAllChan1() {
+		int numImg = 5; int imgSize = 5; int numChannels = 3; int numFilters = 2; int filterSize = 5; int stride = 1; int pad = 0;
+		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false);
+	}
+	
+	@Test
+	public void testDenseInputDenseFilterConv1dAllChan2() {
+		int numImg = 3; int imgSize = 10; int numChannels = 1; int numFilters = 3; int filterSize = 5; int stride = 1; int pad = 0;
+		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false);
+	}
+	
+	@Test
+	public void testDenseInputSparseFilterConv1dAllChan1() {
+		int numImg = 5; int imgSize = 5; int numChannels = 3; int numFilters = 2; int filterSize = 5; int stride = 1; int pad = 0;
+		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, true);
+	}
+	
+	@Test
+	public void testDenseInputSparseFilterConv1dAllChan2() {
+		int numImg = 3; int imgSize = 10; int numChannels = 1; int numFilters = 3; int filterSize = 5; int stride = 1; int pad = 0;
+		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, true);
+	}
+	
+	/// ---------------------------
+	
+	@Test
+	public void testSparseInputDenseFilterConv1dAllChan1a() {
+		int numImg = 5; int imgSize = 5; int numChannels = 3; int numFilters = 2; int filterSize = 5; int stride_h = 1; int pad_h = 1;
+		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride_h, 1, pad_h, 0, true, false);
+	}
+	
+	@Test
+	public void testSparseInputDenseFilterConv1dAllChan2a() {
+		int numImg = 3; int imgSize = 10; int numChannels = 1; int numFilters = 3; int filterSize = 5; int stride_h = 2; int pad_h = 1;
+		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride_h, 1, pad_h, 0, true, false);
+	}
+	
+	@Test
+	public void testDenseInputDenseFilterConv1dAllChan1a() {
+		int numImg = 5; int imgSize = 5; int numChannels = 3; int numFilters = 2; int filterSize = 5; int stride_h = 1; int pad_h = 1;
+		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride_h, 1, pad_h, 0,  false, false);
+	}
+	
+	@Test
+	public void testDenseInputDenseFilterConv1dAllChan2a() {
+		int numImg = 3; int imgSize = 10; int numChannels = 1; int numFilters = 3; int filterSize = 5; int stride_h = 2; int pad_h = 1;
+		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride_h, 1, pad_h, 0, false, false);
+	}
+	
+	@Test
+	public void testDenseInputSparseFilterConv1dAllChan1a() {
+		int numImg = 5; int imgSize = 5; int numChannels = 3; int numFilters = 2; int filterSize = 5; int stride_h = 1; int pad_h = 1;
+		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride_h, 1, pad_h, 0, false, true);
+	}
+	
+	@Test
+	public void testDenseInputSparseFilterConv1dAllChan2a() {
+		int numImg = 3; int imgSize = 10; int numChannels = 1; int numFilters = 3; int filterSize = 5; int stride_h = 1; int pad_h = 1;
+		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride_h, 1, pad_h, 0, false, true);
+	}
+	
+	
+	@Test
 	public void testConv2DDense1() {
 		int numImg = 5; int imgSize = 3; int numChannels = 3; int numFilters = 6; int filterSize = 2; int stride = 1; int pad = 0;
 		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, false, false);
@@ -254,15 +317,21 @@ public class Conv2DTest extends AutomatedTestBase
 		runConv2DTest(ExecType.SPARK, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, true, false);
 	}
 	
+	@Test
 	public void testConv2DSparse4SP() 
 	{
 		int numImg = 3; int imgSize = 10; int numChannels = 1; int numFilters = 3; int filterSize = 2; int stride = 2; int pad = 1;
 		runConv2DTest(ExecType.SPARK, imgSize, numImg, numChannels, numFilters, filterSize, stride, pad, true, true);
 	}
 	
-	public void runConv2DTest( ExecType et, int imgSize, int numImg, int numChannels, int numFilters, 
-			int filterSize, int stride, int pad, boolean sparse1, boolean sparse2) 
-	{
+	private void runConv2DTest( ExecType et, int imgSize, int numImg, int numChannels, int numFilters, 
+			int filterSize, int stride, int pad, boolean sparse1, boolean sparse2) {
+		runConv2DTest(et, imgSize, numImg, numChannels, numFilters, 
+				filterSize, stride, stride, pad, pad, sparse1, sparse2);
+	}
+	
+	private void runConv2DTest( ExecType et, int imgSize, int numImg, int numChannels, int numFilters, 
+			int filterSize, int stride_h, int stride_w, int pad_h, int pad_w, boolean sparse1, boolean sparse2) {
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( et ){
 			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
@@ -285,12 +354,12 @@ public class Conv2DTest extends AutomatedTestBase
 			programArgs = new String[]{"-explain", "recompile_runtime", "-args", 
 				String.valueOf(imgSize), String.valueOf(numImg), 
 				String.valueOf(numChannels), String.valueOf(numFilters), 
-				String.valueOf(filterSize), String.valueOf(stride), String.valueOf(pad), 
+				String.valueOf(filterSize), String.valueOf(stride_h), String.valueOf(stride_w), String.valueOf(pad_h), String.valueOf(pad_w), 
 				output("B"), sparseVal1, sparseVal2};
 			fullRScriptName = RI_HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + imgSize + " " + numImg + 
 					" " + numChannels + " " + numFilters + 
-					" " + filterSize + " " + stride + " " + pad + " " + expectedDir() +
+					" " + filterSize + " " + stride_h + " " + stride_w + " " + pad_h + " " + pad_w + " " + expectedDir() +
 					" " + sparseVal1 + " " + sparseVal2; 
 			
 			// Run DML and R scripts

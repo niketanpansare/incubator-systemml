@@ -135,7 +135,7 @@ public class LibMatrixDNNHelper {
 			MatrixBlock.evalSparseFormatInMemory(in1.clen, in1.rlen, in1.nonZeros);
 		boolean applyNative = LibMatrixDNN.isEligibleForConv2dSparse(params)
 			&& !(!isEmptyDenseInput && allChannels && isTransPref);
-		boolean isSparseConv2dApplicable = SparseInputDenseFilterConv1dStride1Pad0AllChan.isApplicable(params, k);
+		boolean isSparseConv2dApplicable = Conv1dStrideW1PadW0AllChan.isApplicable(params, k);
 		if( applyNative )
 			Statistics.numNativeSparseConv2dCalls.increment();
 		
@@ -153,8 +153,8 @@ public class LibMatrixDNNHelper {
 			if( applyNative ) 
 				ret.add(new SparseNativeConv2d(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
 			else if( isSparseConv2dApplicable ) {
-				reshapeFilter = reshapeFilter == null ? SparseInputDenseFilterConv1dStride1Pad0AllChan.getReshapedFilter(params) : reshapeFilter;
-				ret.add(new SparseInputDenseFilterConv1dStride1Pad0AllChan(i*taskSize, Math.min((i+1)*taskSize, params.N), params, reshapeFilter));
+				reshapeFilter = reshapeFilter == null ? Conv1dStrideW1PadW0AllChan.getReshapedFilter(params) : reshapeFilter;
+				ret.add(new Conv1dStrideW1PadW0AllChan(i*taskSize, Math.min((i+1)*taskSize, params.N), params, reshapeFilter, k));
 			}
 			else if(!isEmptyDenseInput && allChannels && isTransPref)
 				ret.add(new LoopedIm2ColConv2dTransAllChan(i*taskSize, Math.min((i+1)*taskSize, params.N), params));
