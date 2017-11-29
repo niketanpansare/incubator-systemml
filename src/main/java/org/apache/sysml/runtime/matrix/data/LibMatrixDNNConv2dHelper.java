@@ -270,9 +270,9 @@ public class LibMatrixDNNConv2dHelper {
 	}
 	
 	/**
-	 * This operator is used only for conv1d when stride_w = 1 and pad_w = 0 and input is sparse and filter is dense.
+	 * This operator is used only for conv1d when stride_w = 1 and pad_w = 0 and input is dense and filter is dense.
 	 */
-	public static class SparseInputDenseFilterConv1dStrideW1PadW0AllChan implements Callable<Long> 
+	public static class DenseInputDenseFilterConv1dStrideW1PadW0AllChan implements Callable<Long> 
 	{
 		public final int _rl; public final int _ru;
 		private final ConvolutionParameters _params;
@@ -280,16 +280,13 @@ public class LibMatrixDNNConv2dHelper {
 		final int P;
 		final int H; final int W; final int [] rMins; final int [] rMaxs;
 		final int pad_h;
-		public SparseInputDenseFilterConv1dStrideW1PadW0AllChan(int rl, int ru, ConvolutionParameters params, int [] rMins, int [] rMaxs) {
+		public DenseInputDenseFilterConv1dStrideW1PadW0AllChan(int rl, int ru, ConvolutionParameters params, int [] rMins, int [] rMaxs) {
 			_rl = rl; _ru = ru;
 			_params = params;
 			K = _params.K; C = _params.C;
 			R = _params.R; S = _params.S; 
 			P = _params.P;
-			H = _params.H; W = _params.W; 
-			if(!_params.input1.isInSparseFormat() || _params.input2.isInSparseFormat() ) {
-				throw new RuntimeException("Incorrect usage: only sparse input dense filter supported for this operator");
-			}
+			H = _params.H; W = _params.W;
 			this.rMins = rMins;
 			this.rMaxs = rMaxs;
 			pad_h = _params.pad_h;
@@ -317,7 +314,7 @@ public class LibMatrixDNNConv2dHelper {
 		public static boolean isApplicable(ConvolutionParameters params, int numThreads) {
 			int numElemsInIntermediateMemory = numThreads*params.C*params.R*params.S*params.P*params.Q;
 			return params.W == params.S && params.pad_w == 0 && params.stride_w == 1 &&
-				   params.input1.isInSparseFormat() && !params.input2.isInSparseFormat() &&
+				   !params.input1.isInSparseFormat() && !params.input2.isInSparseFormat() &&
 				   2*params.H <= numElemsInIntermediateMemory; 
 		}
 		
@@ -326,33 +323,19 @@ public class LibMatrixDNNConv2dHelper {
 			double [] output = _params.output.denseBlock;
 			int PQ = _params.P*_params.Q;
 			int RS = _params.R*_params.S;
+			int HW = _params.H*_params.W;
+			int CHW = _params.C*HW;
 			int CRS = C*RS;
 			int KPQ = K*PQ; int stride_h = _params.stride_h;
+			double [] input = _params.input1.denseBlock;
 			double [] filter = _params.input2.denseBlock;
 			for(int n = _rl; n < _ru; n++)  {
-				if( !_params.input1.getSparseBlock().isEmpty(n) ) {
-					final int apos = _params.input1.getSparseBlock().pos(n);
-					final int alen = _params.input1.getSparseBlock().size(n);
-					final int end = apos+alen;
-					final int[] aix = _params.input1.getSparseBlock().indexes(n);
-					final int[] wAix = new int[aix.length];
-					for(int i = 0; i < aix.length; i++)
-						wAix[i] = aix[i] % W;
-					final double[] avals = _params.input1.getSparseBlock().values(n);
-					int nextWOffset = searchLessThanOrEqual(aix, apos, end-1, 0);
-					int wOffset = apos;
-					for(int c = 0, ch = 0; c < C && wOffset < end; c++)  {
-						for(int h = 0; h < H && wOffset < end; h++, ch++)  {
-							wOffset = nextWOffset;
-							nextWOffset = searchLessThanOrEqual(aix, wOffset, end-1, (ch+1)*W);
-							int len = nextWOffset - wOffset;
-							if(len > 0) {
-								for(int k = 0; k < K; k++)  {
-									for(int r = rMins[h]; r <= rMaxs[h]; r += stride_h) {
-										int p = (h + pad_h - r)  / stride_h;
-										output[n*KPQ + k*PQ + p] += LibMatrixMult.dotProduct(avals, filter, wAix, wOffset, k*CRS + c*RS + r*S, len);
-									}
-								}
+				for(int c = 0; c < C; c++)  {
+					for(int h = 0; h < H; h++)  {
+						for(int k = 0; k < K; k++)  {
+							for(int r = rMins[h]; r <= rMaxs[h]; r += stride_h) {
+								int p = (h + pad_h - r)  / stride_h;
+								output[n*KPQ + k*PQ + p] += LibMatrixMult.dotProduct(input, filter, n*CHW + c*HW + h*W, k*CRS + c*RS + r*S, S);
 							}
 						}
 					}
@@ -363,14 +346,6 @@ public class LibMatrixDNNConv2dHelper {
 			}
 			//multi-threaded nnz maintenance of current working set
 			return _params.output.recomputeNonZeros(_rl, _ru-1);
-		}
-		
-		public static int searchLessThanOrEqual(int[] arr, int start, int end, int searchVal) {
-		    for(int i = start; i <= end; i++) {
-		        if(arr[i] >= searchVal)
-		            return i;
-		    }
-		    return end + 1;
 		}
 	}
 	
