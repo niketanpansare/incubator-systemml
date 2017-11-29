@@ -331,19 +331,18 @@ public class LibMatrixDNNConv2dHelper {
 			double [] filter = _params.input2.denseBlock;
 			for(int n = _rl; n < _ru; n++)  {
 				if( !_params.input1.getSparseBlock().isEmpty(n) ) {
-					int apos = _params.input1.getSparseBlock().pos(n);
-					int alen = _params.input1.getSparseBlock().size(n);
+					final int apos = _params.input1.getSparseBlock().pos(n);
+					final int alen = _params.input1.getSparseBlock().size(n);
+					final int end = apos+alen;
 					final int[] aix = _params.input1.getSparseBlock().indexes(n);
 					final double[] avals = _params.input1.getSparseBlock().values(n);
-					int nextWOffset = -1;
+					int nextWOffset = searchLessThanOrEqual(aix, apos, end-1, 0);
 					int wOffset = apos;
-					for(int c = 0, ch = 0; c < C; c++)  {
-						for(int h = 0; h < H; h++, ch++)  {
-							if(wOffset >= apos+alen)
-								break;
-							wOffset = nextWOffset != -1 ? nextWOffset : searchLessThanOrEqual(aix, apos, wOffset, apos+alen-1, ch*W);
-							nextWOffset = searchLessThanOrEqual(aix, apos, wOffset, apos+alen-1, (ch+1)*W);
-							int len = (nextWOffset == apos+alen-1) ? nextWOffset - wOffset + 1 : nextWOffset - wOffset;
+					for(int c = 0, ch = 0; c < C && wOffset < end; c++)  {
+						for(int h = 0; h < H && wOffset < end; h++, ch++)  {
+							wOffset = nextWOffset;
+							nextWOffset = searchLessThanOrEqual(aix, wOffset, end-1, (ch+1)*W);
+							int len = nextWOffset - wOffset;
 							if(len > 0) {
 								for(int k = 0; k < K; k++)  {
 									for(int r = rMins[h]; r <= rMaxs[h]; r += stride_h) {
@@ -363,14 +362,12 @@ public class LibMatrixDNNConv2dHelper {
 			return _params.output.recomputeNonZeros(_rl, _ru-1);
 		}
 		
-		private int searchLessThanOrEqual(int[] arr, int apos, int start, int end, int searchVal) {
-			if (start == end)
-				return arr[start] <= searchVal ? start : apos;
-			int mid = start + (end - start) / 2;
-			if (searchVal < arr[mid])
-				return searchLessThanOrEqual(arr, apos, start, mid, searchVal);
-			int ret = searchLessThanOrEqual(arr, apos, mid + 1, end, searchVal);
-			return ret == apos ? mid : ret;
+		public static int searchLessThanOrEqual(int[] arr, int start, int end, int searchVal) {
+		    for(int i = start; i <= end; i++) {
+		        if(arr[i] >= searchVal)
+		            return i;
+		    }
+		    return end + 1;
 		}
 		
 		public double sparseInputDenseFilterDotProduct( double[] inputVals, double[] filter, int[] inputAix, int wOffset, final int filterOffset, final int len ) {
