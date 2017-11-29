@@ -335,6 +335,9 @@ public class LibMatrixDNNConv2dHelper {
 					final int alen = _params.input1.getSparseBlock().size(n);
 					final int end = apos+alen;
 					final int[] aix = _params.input1.getSparseBlock().indexes(n);
+					final int[] wAix = new int[aix.length];
+					for(int i = 0; i < aix.length; i++)
+						wAix[i] = aix[i] % W;
 					final double[] avals = _params.input1.getSparseBlock().values(n);
 					int nextWOffset = searchLessThanOrEqual(aix, apos, end-1, 0);
 					int wOffset = apos;
@@ -347,7 +350,7 @@ public class LibMatrixDNNConv2dHelper {
 								for(int k = 0; k < K; k++)  {
 									for(int r = rMins[h]; r <= rMaxs[h]; r += stride_h) {
 										int p = (h + pad_h - r)  / stride_h;
-										output[n*KPQ + k*PQ + p] += sparseInputDenseFilterDotProduct(avals, filter, aix, wOffset, k*CRS + c*RS + r*S, len);
+										output[n*KPQ + k*PQ + p] += LibMatrixMult.dotProduct(avals, filter, wAix, wOffset, k*CRS + c*RS + r*S, len);
 									}
 								}
 							}
@@ -369,35 +372,6 @@ public class LibMatrixDNNConv2dHelper {
 		    }
 		    return end + 1;
 		}
-		
-		public double sparseInputDenseFilterDotProduct( double[] inputVals, double[] filter, int[] inputAix, int wOffset, final int filterOffset, final int len ) {
-			double val = 0;
-			final int bn = len%8;
-					
-			//compute rest
-			for(int i = wOffset; i < wOffset+bn; i++ )
-				val += inputVals[ i ] * filter[ filterOffset+(inputAix[i] % W) ];
-			
-			//unrolled 8-block (for better instruction-level parallelism)
-			for(int i = wOffset+bn; i < wOffset+len; i+=8 )
-			{
-				//read 64B cacheline of a
-				//read 64B of b via 'gather'
-				//compute cval' = sum(a * b) + cval
-				val += inputVals[ i+0 ] * filter[ filterOffset+(inputAix[i+0] % W) ]
-				     + inputVals[ i+1 ] * filter[ filterOffset+(inputAix[i+1] % W) ]
-				     + inputVals[ i+2 ] * filter[ filterOffset+(inputAix[i+2] % W) ]
-				     + inputVals[ i+3 ] * filter[ filterOffset+(inputAix[i+3] % W) ]
-				     + inputVals[ i+4 ] * filter[ filterOffset+(inputAix[i+4] % W) ]
-				     + inputVals[ i+5 ] * filter[ filterOffset+(inputAix[i+5] % W) ]
-				     + inputVals[ i+6 ] * filter[ filterOffset+(inputAix[i+6] % W) ]
-				     + inputVals[ i+7 ] * filter[ filterOffset+(inputAix[i+7] % W) ];
-			}
-			
-			//scalar result
-			return val; 
-		}
-		
 	}
 	
 	/**
