@@ -33,11 +33,18 @@ import static jcuda.jcudnn.cudnnActivationMode.CUDNN_ACTIVATION_RELU;
 import static jcuda.jcudnn.cudnnNanPropagation.CUDNN_PROPAGATE_NAN;
 import static jcuda.jcudnn.cudnnTensorFormat.CUDNN_TENSOR_NCHW;
 import static jcuda.runtime.JCuda.cudaMemset;
+
+import java.util.Random;
+
 import jcuda.CudaException;
 import jcuda.Pointer;
+import jcuda.jcudnn.JCudnn;
 import jcuda.jcudnn.cudnnActivationDescriptor;
 import jcuda.jcudnn.cudnnConvolutionFwdPreference;
+import jcuda.jcudnn.cudnnDropoutDescriptor;
+import jcuda.jcudnn.cudnnFilterDescriptor;
 import jcuda.jcudnn.cudnnHandle;
+import jcuda.jcudnn.cudnnRNNDescriptor;
 import jcuda.jcudnn.cudnnStatus;
 import jcuda.jcudnn.cudnnTensorDescriptor;
 
@@ -163,6 +170,113 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		else {
 			throwCuDNNDimensionError(N, CHW, K, CRS, N, KPQ);
 		}
+	}
+	
+	private static Random randSeed = new Random(); 
+	
+	public static void singleLayerRNNForward(GPUContext gCtx, String instName,
+			int seqLength, 
+			MatrixObject x, MatrixObject hx, MatrixObject cx, MatrixObject w,  
+			MatrixObject y, MatrixObject hy, MatrixObject cy) throws DMLRuntimeException {
+		int numLayers = 1; 
+		int hiddenSize=-1; 
+		boolean bidirectional = true; String rnnMode = "";
+		float dropout = 1.0f;
+		
+		
+		// Dropout descriptor
+		jcuda.jcudnn.cudnnDropoutDescriptor dropoutDesc = new cudnnDropoutDescriptor();
+		JCudnn.cudnnCreateDropoutDescriptor(dropoutDesc);
+		long [] dropOutSizeInBytes = {-1};
+		JCudnn.cudnnDropoutGetStatesSize(gCtx.getCudnnHandle(), dropOutSizeInBytes);
+		Pointer dropOutStateSpace = new Pointer();
+		if (dropOutSizeInBytes[0] != 0)
+			dropOutStateSpace = gCtx.allocate(dropOutSizeInBytes[0]);
+		JCudnn.cudnnSetDropoutDescriptor(dropoutDesc, gCtx.getCudnnHandle(), dropout, dropOutStateSpace, dropOutSizeInBytes[0], randSeed.nextLong());
+		
+		int inputMode = jcuda.jcudnn.cudnnRNNInputMode.CUDNN_LINEAR_INPUT; // alternative: CUDNN_SKIP_INPUT 
+		int directionMode = bidirectional ? jcuda.jcudnn.cudnnDirectionMode.CUDNN_BIDIRECTIONAL : jcuda.jcudnn.cudnnDirectionMode.CUDNN_UNIDIRECTIONAL;
+		int rnnModeVal = -1;
+		if(rnnMode.equalsIgnoreCase("rnn_relu")) {
+			rnnModeVal = jcuda.jcudnn.cudnnRNNMode.CUDNN_RNN_RELU;
+		}
+		else if(rnnMode.equalsIgnoreCase("rnn_tanh")) {
+			rnnModeVal = jcuda.jcudnn.cudnnRNNMode.CUDNN_RNN_TANH;
+		}
+		else if(rnnMode.equalsIgnoreCase("lstm")) {
+			rnnModeVal = jcuda.jcudnn.cudnnRNNMode.CUDNN_LSTM;
+		}
+		else if(rnnMode.equalsIgnoreCase("gru")) {
+			rnnModeVal = jcuda.jcudnn.cudnnRNNMode.CUDNN_GRU;
+		}
+		else {
+			throw new DMLRuntimeException("Unsupported rnn mode:" + rnnMode);
+		}
+		jcuda.jcudnn.cudnnRNNDescriptor rnnDesc = new cudnnRNNDescriptor();
+		JCudnn.cudnnCreateRNNDescriptor(rnnDesc);
+		JCudnn.cudnnSetRNNDescriptor(rnnDesc, hiddenSize, numLayers, dropoutDesc, inputMode, directionMode, rnnModeVal, CUDNN_DATA_TYPE);
+		
+		// unidirectional, numLayers = 1
+		// M:hiddenSize, N:miniBatch
+		// Same layout: out0_{N x M}: hx_{1, N, M}, c0_{N x M}: cxDesc_{1, N, M}
+		// W_{D+M, 4M}: 
+		
+		// Inputs:
+		// xDesc:  [seqLength, miniBatch, inputSize] ... should be array of cudnnTensorDescriptor
+		// hxDesc: [numLayers, miniBatch, direction==CUDNN_UNIDIRECTIONAL ? hiddenSize : 2*hiddenSize]
+		// cxDesc: [numLayers, miniBatch, direction==CUDNN_UNIDIRECTIONAL ? hiddenSize : 2*hiddenSize]
+		// wDesc:  [weightsSize / sizeof(dataType), 1, 1] where weightsSize is given by 'cudnnGetRNNParamsSize'.
+		// yDesc:  [seqLength, direction==CUDNN_UNIDIRECTIONAL ? hiddenSize : 2*hiddenSize, ?]
+		// hyDesc: [numLayers, miniBatch, direction==CUDNN_UNIDIRECTIONAL ? hiddenSize : 2*hiddenSize]
+		// cyDesc: [numLayers, miniBatch, direction==CUDNN_UNIDIRECTIONAL ? hiddenSize : 2*hiddenSize]
+		
+				
+		cudnnTensorDescriptor xDesc = new cudnnTensorDescriptor();
+		cudnnTensorDescriptor hxDesc = new cudnnTensorDescriptor();
+		cudnnTensorDescriptor cxDesc = new cudnnTensorDescriptor();
+		cudnnFilterDescriptor wDesc = new cudnnFilterDescriptor();
+		cudnnTensorDescriptor yDesc = new cudnnTensorDescriptor();
+		cudnnTensorDescriptor hyDesc = new cudnnTensorDescriptor();
+		cudnnTensorDescriptor cyDesc = new cudnnTensorDescriptor();
+		
+		long [] weightSizeInBytesArray = {-1};
+		JCudnn.cudnnGetRNNParamsSize(gCtx.getCudnnHandle(), rnnDesc, xDesc, weightSizeInBytesArray, CUDNN_DATA_TYPE);
+		
+		Pointer xPointer = getDensePointerForCuDNN(gCtx, x, instName);
+		Pointer cxPointer = getDensePointerForCuDNN(gCtx, cx, instName);
+		Pointer hxPointer = getDensePointerForCuDNN(gCtx, hx, instName);
+		Pointer wPointer = getDensePointerForCuDNN(gCtx, w, instName);
+		
+		
+		long sizeInBytesArray[] = {-1};
+		JCudnn.cudnnGetRNNWorkspaceSize(gCtx.getCudnnHandle(), rnnDesc, seqLength, xDesc, sizeInBytesArray);
+		Pointer workSpace = new Pointer();
+		if (sizeInBytesArray[0] != 0)
+			workSpace = gCtx.allocate(sizeInBytesArray[0]);
+		
+		long reserveSpaceSizeInBytesArray[] = {-1};
+		// Incorrect xDesc: should be array. fixed in subsequent version of jcudnn
+		JCudnn.cudnnGetRNNWorkspaceSize(gCtx.getCudnnHandle(), rnnDesc, seqLength, xDesc, reserveSpaceSizeInBytesArray);
+		Pointer reserveSpace = new Pointer();
+		if (reserveSpaceSizeInBytesArray[0] != 0)
+			reserveSpace = gCtx.allocate(reserveSpaceSizeInBytesArray[0]);
+		
+		// Outputs:
+		Pointer yPointer = getDensePointerForCuDNN(gCtx, y, instName);
+		Pointer hyPointer = getDensePointerForCuDNN(gCtx, hy, instName);
+		Pointer cyPointer = getDensePointerForCuDNN(gCtx, cy, instName);
+		
+		JCudnn.cudnnRNNForwardTraining(gCtx.getCudnnHandle(), rnnDesc, seqLength, 
+				xDesc, xPointer, 
+				hxDesc, hxPointer, 
+				cxDesc, cxPointer, 
+				wDesc, wPointer, 
+				yDesc, yPointer, 
+				hyDesc, hyPointer, 
+				cyDesc, cyPointer, 
+				workSpace, sizeInBytesArray[0], reserveSpace, reserveSpaceSizeInBytesArray[0]);
+		
+		// TODO: Free workspaces and dropouts
 	}
 
 
