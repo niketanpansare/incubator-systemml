@@ -20,6 +20,10 @@
 #
 #-------------------------------------------------------------
 
+# Assumption: pip install keras
+# 
+# This test validates SystemML's deep learning APIs (Keras2DML, Caffe2DML and nn layer) by comparing the results with that of keras.
+#
 # To run:
 #   - Python 2: `PYSPARK_PYTHON=python2 spark-submit --master local[*] --driver-memory 10g --driver-class-path SystemML.jar,systemml-*-extra.jar test_nn_numpy.py`
 #   - Python 3: `PYSPARK_PYTHON=python3 spark-submit --master local[*] --driver-memory 10g --driver-class-path SystemML.jar,systemml-*-extra.jar test_nn_numpy.py`
@@ -43,27 +47,40 @@ from pyspark.sql import SparkSession
 batch_size = 32
 input_shape = (3,64,64)
 K.set_image_data_format("channels_first")
+# K.set_image_dim_ordering("th")
 keras_tensor = np.random.rand(batch_size,input_shape[0], input_shape[1], input_shape[2])
 sysml_matrix = keras_tensor.reshape((batch_size, -1))
 tmp_dir = 'tmp_dir'
 
 spark = SparkSession.builder.getOrCreate()
 
-# Currently not integrated with JUnit test
-# ~/spark-1.6.1-scala-2.11/bin/spark-submit --master local[*] --driver-class-path SystemML.jar test.py
-class TestNNLibrary(unittest.TestCase):
-    def test_conv2d(self):
-        keras_model = Sequential()
-        keras_model.add(Conv2D(32, kernel_size=(3, 3), activation='softmax', input_shape=input_shape, padding='valid'))
-        sysml_model = Keras2DML(spark, keras_model, input_shape=input_shape, weights=tmp_dir)
-        keras_preds = keras_model.predict(keras_tensor)
-        print(str(keras_preds))
-        keras_preds = keras_preds.flatten()
-        sysml_preds = sysml_model.predict_proba(sysml_matrix)
-        print(str(sysml_preds))
-        sysml_preds = sysml_preds.flatten()
-        self.failUnless(np.allclose(keras_preds, sysml_preds))
+def are_predictions_all_close(keras_model):
+    sysml_model = Keras2DML(spark, keras_model, input_shape=input_shape, weights=tmp_dir)
+    keras_preds = keras_model.predict(keras_tensor).flatten()
+    sysml_preds = sysml_model.predict_proba(sysml_matrix).flatten()
+    #print(str(keras_preds))
+    #print(str(sysml_preds))
+    return np.allclose(keras_preds, sysml_preds)
 
-    
+class TestNNLibrary(unittest.TestCase):
+    def test_1layer_cnn_predictions(self):
+        keras_model = Sequential()
+        keras_model.add(Conv2D(32, kernel_size=(3, 3), activation='relu', input_shape=input_shape, padding='valid'))
+        keras_model.add(Flatten())
+        keras_model.add(Dense(10, activation='softmax'))
+        self.failUnless(are_predictions_all_close(keras_model))
+
+    def test_multilayer_cnn_predictions(self):
+        keras_model = Sequential()
+        keras_model.add(Conv2D(32, kernel_size=(3, 3), activation='relu', input_shape=input_shape, padding='valid'))
+        keras_model.add(MaxPooling2D(pool_size=(2, 2)))
+        keras_model.add(Conv2D(64, (3, 3), activation='relu'))
+        keras_model.add(MaxPooling2D(pool_size=(2, 2)))
+        keras_model.add(Flatten())
+        keras_model.add(Dense(256, activation='softmax'))
+        keras_model.add(Dropout(0.25))
+        keras_model.add(Dense(10, activation='softmax'))
+        self.failUnless(are_predictions_all_close(keras_model))    
+
 if __name__ == '__main__':
     unittest.main()
