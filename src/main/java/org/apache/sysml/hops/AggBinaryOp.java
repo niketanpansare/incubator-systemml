@@ -668,7 +668,8 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		if (et == ExecType.GPU) {
 			Hop h1 = getInput().get(0);
 			Hop h2 = getInput().get(1);
-			// CuSPARSE's cusparsecsrmm2 fails with only following parameters, but passes for other transpose settings:
+			// Since GPU backend is in experimental mode, rewrite optimization can be skipped.
+			// CuSPARSE's cusparsecsrmm2 fails with only following parameters, but passes for all other settings:
 			// transa=1 transb=1 m=300 n=300 k=300 ldb=300 ldc=300
 			// Hence, we disable hope rewrite optimization.
 			boolean leftTrans = false; // HopRewriteUtils.isTransposeOperation(h1);
