@@ -242,6 +242,16 @@ public abstract class GPUTests extends AutomatedTestBase {
 	 */
 	private void assertEqualMatrices(Matrix expected, Matrix actual) {
 		try {
+			// Faster way to compare two matrices
+			MLContext cpuMLC = new MLContext(spark);
+			String scriptStr = "num_mismatch = sum((abs(X - Y) / X) > " + getTHRESHOLD() + ");";
+			Script script = ScriptFactory.dmlFromString(scriptStr).in("X", expected).in("Y", actual).out("num_mismatch");
+			long num_mismatch = cpuMLC.execute(script).getLong("num_mismatch");
+			cpuMLC.close();
+			if(num_mismatch == 0)
+				return;
+			
+			// If error, print the actual incorrect values
 			MatrixBlock expectedMB = expected.toMatrixObject().acquireRead();
 			MatrixBlock actualMB = actual.toMatrixObject().acquireRead();
 
