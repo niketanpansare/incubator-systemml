@@ -24,6 +24,8 @@ import java.util.Formatter;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.spark.sql.SparkSession;
 import org.apache.sysml.api.mlcontext.MLContext;
@@ -79,9 +81,17 @@ public abstract class GPUTests extends AutomatedTestBase {
 		else if(FLOATING_POINT_PRECISION.equals("single"))  return SINGLE_PRECISION_THRESHOLD;
 		else throw new RuntimeException("Unsupported precision:" + FLOATING_POINT_PRECISION);
 	}
-
+	
+	// force junit to run only 1 GPU test at a time to avoid cascading failures.
+	Lock sequential = new ReentrantLock();
+	@Override
+	public void setUp() {
+	    sequential.lock();
+	    
+	}
 	@After
 	public void tearDown() {
+		sequential.unlock();
 		clearGPUMemory();
 		super.tearDown();
 	}
