@@ -333,21 +333,25 @@ public abstract class GPUTests extends AutomatedTestBase {
 	 */
 	protected List<Object> runOnGPU(SparkSession spark, String scriptStr, Map<String, Object> inputs,
 			List<String> outStrs) {
-		MLContext gpuMLC = new MLContext(spark);
-		gpuMLC.setConfigProperty("sysml.floating.point.precision", FLOATING_POINT_PRECISION);
-		if(IGNORE_CLEAR_MEMORY_BUG)
-			gpuMLC.setConfigProperty("sysml.gpu.eager.cudaFree", "true");
-		gpuMLC.setGPU(true);
-		gpuMLC.setForceGPU(true);
-		gpuMLC.setStatistics(true);
-		List<Object> outputs = new ArrayList<>();
-		Script script = ScriptFactory.dmlFromString(scriptStr).in(inputs).out(outStrs);
-		for (String outStr : outStrs) {
-			Object output = gpuMLC.execute(script).get(outStr);
-			outputs.add(output);
+		// Ensure that only one instance of ml.execute runs at a time to avoid incorrect memory estimates
+		// and other side effects.
+		synchronized(GPUTests.class) {
+			MLContext gpuMLC = new MLContext(spark);
+			gpuMLC.setConfigProperty("sysml.floating.point.precision", FLOATING_POINT_PRECISION);
+			if(IGNORE_CLEAR_MEMORY_BUG)
+				gpuMLC.setConfigProperty("sysml.gpu.eager.cudaFree", "true");
+			gpuMLC.setGPU(true);
+			gpuMLC.setForceGPU(true);
+			gpuMLC.setStatistics(true);
+			List<Object> outputs = new ArrayList<>();
+			Script script = ScriptFactory.dmlFromString(scriptStr).in(inputs).out(outStrs);
+			for (String outStr : outStrs) {
+				Object output = gpuMLC.execute(script).get(outStr);
+				outputs.add(output);
+			}
+			gpuMLC.close();
+			return outputs;
 		}
-		gpuMLC.close();
-		return outputs;
 	}
 
 	/**
