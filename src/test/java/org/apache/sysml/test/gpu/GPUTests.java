@@ -325,6 +325,8 @@ public abstract class GPUTests extends AutomatedTestBase {
 			List<String> outStrs) {
 		MLContext gpuMLC = new MLContext(spark);
 		gpuMLC.setConfigProperty("sysml.floating.point.precision", FLOATING_POINT_PRECISION);
+		if(IGNORE_CLEAR_MEMORY_BUG)
+			gpuMLC.setConfigProperty("sysml.gpu.eager.cudaFree", "true");
 		gpuMLC.setGPU(true);
 		gpuMLC.setForceGPU(true);
 		gpuMLC.setStatistics(true);
