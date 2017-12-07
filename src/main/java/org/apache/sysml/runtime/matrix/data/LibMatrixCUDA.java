@@ -481,13 +481,11 @@ public class LibMatrixCUDA {
 		if (ec.getGPUContext(0) != gCtx)
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
 		
-		// TODO: Since we are disabling fused reorg-matmult, we will disable it as tsmm too.
-		// This will be fixed post-1.0 release. 
-//		if(isInSparseFormat(gCtx, left)) {
-//			// For sparse TSMM, invoke matmult (TODO: possible performance improvement)
-//			LibMatrixCuMatMult.matmult(ec, gCtx, instName, left, left, outputName, isLeftTransposed, !isLeftTransposed);
-//			return;
-//		}
+		if(isInSparseFormat(gCtx, left)) {
+			// For sparse TSMM, invoke matmult (TODO: possible performance improvement)
+			LibMatrixCuMatMult.matmult(ec, gCtx, instName, left, left, outputName, isLeftTransposed, !isLeftTransposed);
+			return;
+		}
 
 		// Since CuBLAS expects inputs in column-major format,
 		// reverse the order of matrix-multiplication and take care of dimension mismatch.

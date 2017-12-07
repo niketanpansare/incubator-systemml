@@ -157,7 +157,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 			      input2.getDim1(), input2.getDim2(), mmtsj, chain, _hasLeftPMInput );
 		switch( _method ){
 			case TSMM: 
-				return true;
+				return false; // TODO: Disabling any fused transa optimization in 1.0 release. 
 			case MAPMM_CHAIN:
 				return false;
 			case PMM:
