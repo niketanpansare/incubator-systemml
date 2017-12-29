@@ -19,8 +19,9 @@
 
 package org.apache.sysml.runtime.instructions.cp;
 
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
@@ -367,6 +368,20 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		return filter.isInSparseFormat();
 	}
 	
+	private void printSparsity(double sp1, double sp2, ConvolutionParameters params) {
+		PrintWriter writer = null;
+		String line = instOpcode + "," + System.currentTimeMillis() + "," + sp1 + "," + sp2 + "," + params.toString();
+		try {
+			writer = new PrintWriter("sparsity.txt");
+			writer.println(line);
+			
+		} catch (FileNotFoundException e) { }
+		finally {
+			if(writer != null)
+				writer.close();
+		}
+		System.out.println(line);
+	}
 	
 	@Override
 	public void processInstruction(ExecutionContext ec)
@@ -411,6 +426,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		ConvolutionParameters params = new ConvolutionParameters(N, C, H, W, K, R, S, stride_h, stride_w, pad_h, pad_w, _numThreads);
 		params.enableNative = NativeHelper.isNativeLibraryLoaded();
 		if (instOpcode.equalsIgnoreCase("maxpooling") || instOpcode.equalsIgnoreCase("relu_maxpooling")) {
+			printSparsity(matBlock.getSparsity(), 0, params);
 			if(matBlock.isEmpty()) {
 				outputBlock = new MatrixBlock(N, C*P*Q, true);
 			}
@@ -423,6 +439,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		}
 		else if (instOpcode.equalsIgnoreCase("maxpooling_backward") || instOpcode.equalsIgnoreCase("relu_maxpooling_backward")) {
 			MatrixBlock dout = ec.getMatrixInput(_in2.getName(), getExtendedOpcode());
+			printSparsity(matBlock.getSparsity(), dout.getSparsity(), params);
 			if(matBlock.isEmpty() || dout.isEmpty()) {
 				outputBlock = new MatrixBlock(N, C*H*W, true);
 			}
@@ -438,6 +455,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		else if (instOpcode.equalsIgnoreCase("conv2d")) {
 			resetNumThreads(params, C*R*S, P*Q, matBlock.getNonZeros() / (matBlock.getNumRows()*matBlock.getNumColumns()));
 			MatrixBlock filter = ec.getMatrixInput(_in2.getName(), getExtendedOpcode());
+			printSparsity(matBlock.getSparsity(), filter.getSparsity(), params);
 			if(filter.isEmpty() || matBlock.isEmpty()) {
 				outputBlock = new MatrixBlock(N, K*P*Q, true);
 			}
@@ -454,6 +472,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			resetNumThreads(params, C*R*S, P*Q, matBlock.getNonZeros() / (matBlock.getNumRows()*matBlock.getNumColumns()));
 			MatrixBlock filter = ec.getMatrixInput(_in3.getName(), getExtendedOpcode());
 			MatrixBlock bias = ec.getMatrixInput(_in2.getName(), getExtendedOpcode());
+			printSparsity(matBlock.getSparsity(), filter.getSparsity(), params);
 			if(bias.getNumRows() != params.K || bias.getNumColumns() != 1) {
 				throw new DMLRuntimeException("Incorrect shape of bias matrix: [" + bias.getNumRows() + " " + bias.getNumColumns() + "]. "
 						+ "Expected: [" + params.K + ", 1]");
@@ -487,6 +506,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		}
 		else if (instOpcode.equalsIgnoreCase("conv2d_backward_filter")) {
 			MatrixBlock dout = ec.getMatrixInput(_in2.getName(), getExtendedOpcode());
+			printSparsity(matBlock.getSparsity(), dout.getSparsity(), params);
 			if(dout.isEmpty() || matBlock.isEmpty()) {
 				outputBlock = new MatrixBlock(K, C*R*S, true);
 			}
@@ -501,6 +521,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		}
 		else if (instOpcode.equalsIgnoreCase("conv2d_backward_data")) {
 			MatrixBlock dout = ec.getMatrixInput(_in2.getName(), getExtendedOpcode());
+			printSparsity(matBlock.getSparsity(), dout.getSparsity(), params);
 			if(dout.isEmpty() || matBlock.isEmpty()) {
 				outputBlock = new MatrixBlock(N, C * H * W, true);
 			}
