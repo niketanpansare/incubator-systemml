@@ -19,9 +19,16 @@
 
 package org.apache.sysml.runtime.instructions.cp;
 
+import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 import java.util.ArrayList;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
@@ -369,17 +376,12 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	}
 	
 	private void printSparsity(double sp1, double sp2, ConvolutionParameters params) {
-		PrintWriter writer = null;
 		String line = instOpcode + "," + System.currentTimeMillis() + "," + sp1 + "," + sp2 + "," + params.toString();
-		try {
-			writer = new PrintWriter("sparsity.txt");
-			writer.println(line);
-			
-		} catch (FileNotFoundException e) { }
-		finally {
-			if(writer != null)
-				writer.close();
-		}
+		
+		try (Writer writer = new BufferedWriter(new OutputStreamWriter(
+	              new FileOutputStream("sparsity.txt", true), "utf-8"))) {
+			writer.write(line);
+		} catch (IOException e) { }
 		System.out.println(line);
 	}
 	
