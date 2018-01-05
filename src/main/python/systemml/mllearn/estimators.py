@@ -215,10 +215,7 @@ class BaseSystemMLEstimator(Estimator):
         elif y is not None and isinstance(X, SUPPORTED_TYPES) and isinstance(y, SUPPORTED_TYPES):
             # Donot encode if y is a numpy matrix => useful for segmentation
             skipEncodingY = len(y.shape) == 2 and y.shape[0] != 1 and y.shape[1] != 1
-            if skipEncodingY:
-                self.model.setInput('$perform_one_hot_encoding', 'false')
-            else:
-                y = self.encode(y)
+            y = y if skipEncodingY else self.encode(y)
             if self.transferUsingDF:
                 pdfX = convertToPandasDF(X)
                 pdfY = convertToPandasDF(y)
@@ -847,7 +844,7 @@ class Caffe2DML(BaseSystemMLClassifier):
         if ignore_weights is not None:
             self.estimator.setWeightsToIgnore(ignore_weights)
             
-    def set(self, debug=None, train_algo=None, test_algo=None, parallel_batches=None, output_activations=None):
+    def set(self, debug=None, train_algo=None, test_algo=None, parallel_batches=None, output_activations=None, perform_one_hot_encoding=None):
         """
         Set input to Caffe2DML
         
@@ -858,12 +855,14 @@ class Caffe2DML(BaseSystemMLClassifier):
         test_algo: can be minibatch, batch, allreduce_parallel_batches or allreduce (default: minibatch)
         parallel_batches: number of parallel batches
         output_activations: (developer flag) directory to output activations of each layer as csv while prediction. To be used only in batch mode (default: None)
+        perform_one_hot_encoding: should perform one-hot encoding in DML using table function (default: False)
         """
         if debug is not None: self.estimator.setInput("$debug", str(debug).upper())
         if train_algo is not None: self.estimator.setInput("$train_algo", str(train_algo).lower())
         if test_algo is not None: self.estimator.setInput("$test_algo", str(test_algo).lower())
         if parallel_batches is not None: self.estimator.setInput("$parallel_batches", str(parallel_batches))
         if output_activations is not None: self.estimator.setInput("$output_activations", str(output_activations))
+        if perform_one_hot_encoding is not None: self.estimator.setInput("$perform_one_hot_encoding", str(perform_one_hot_encoding).lower())
         return self
     
     def summary(self):
