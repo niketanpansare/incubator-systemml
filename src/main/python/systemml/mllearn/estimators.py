@@ -219,7 +219,7 @@ class BaseSystemMLEstimator(Estimator):
             if self.transferUsingDF:
                 pdfX = convertToPandasDF(X)
                 pdfY = convertToPandasDF(y)
-                if getNumCols(pdfY) != 1:
+                if getNumCols(pdfY) != 1 and not skipEncodingY:
                     raise Exception('y should be a column vector')
                 if pdfX.shape[0] != pdfY.shape[0]:
                     raise Exception('Number of rows of X and y should match')
@@ -229,7 +229,7 @@ class BaseSystemMLEstimator(Estimator):
                 self.fit_df(df)
             else:
                 numColsy = getNumCols(y)
-                if numColsy != 1:
+                if numColsy != 1 and not skipEncodingY:
                     raise Exception('Expected y to be a column vector')
                 self.fit_numpy(X, y)
             if self.setOutputRawPredictionsToFalse:
