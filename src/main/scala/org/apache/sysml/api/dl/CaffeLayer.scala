@@ -935,6 +935,8 @@ class LSTM(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extend
   
   override def init(dmlScript: StringBuilder) = {
     invokeInit(dmlScript, List[String](weight, bias, out0, c0), Caffe2DML.batchSize, input_features, M)
+    // Also, initialize gradient wrt `c` to empty matrix 
+    dmlScript.append(dc0 + " = matrix(0, rows=" + Caffe2DML.batchSize + ", cols=" + M + ")\n")
   }
   
   override def forward(dmlScript: StringBuilder, isPrediction: Boolean) = {
