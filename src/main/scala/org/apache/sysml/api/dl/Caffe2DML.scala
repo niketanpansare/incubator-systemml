@@ -370,7 +370,8 @@ class Caffe2DML(val sc: SparkContext,
     assign(tabDMLScript, "debug", if (DEBUG_TRAINING) "TRUE" else "FALSE")
 
     appendHeaders(net, solver, true) // Appends DML corresponding to source and externalFunction statements.
-    readInputData(net, true)         // Read X_full and y_full
+    val performOneHotEncoding = inputs.containsKey("$perform_one_hot_encoding") && inputs.get("$perform_one_hot_encoding").toBoolean
+    readInputData(net, true, performOneHotEncoding)         // Read X_full and y_full
     // Initialize the layers and solvers. Reads weights and bias if $weights is set.
     initWeights(net, solver, inputs.containsKey("$weights"), layersToIgnore)
 
@@ -745,7 +746,8 @@ class Caffe2DMLModel(val numClasses: String, val sc: SparkContext, val solver: C
     assign(tabDMLScript, "debug", if (DEBUG_PREDICTION) "TRUE" else "FALSE")
 
     appendHeaders(net, solver, false) // Appends DML corresponding to source and externalFunction statements.
-    readInputData(net, false)         // Read X_full and y_full
+    val performOneHotEncoding = estimator.inputs.containsKey("$perform_one_hot_encoding") && estimator.inputs.get("$perform_one_hot_encoding").toBoolean
+    readInputData(net, false, performOneHotEncoding)         // Read X_full and y_full
     assign(tabDMLScript, "X", "X_full")
 
     // Initialize the layers and solvers. Reads weights and bias if readWeights is true.

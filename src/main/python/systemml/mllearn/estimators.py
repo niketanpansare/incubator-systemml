@@ -215,7 +215,10 @@ class BaseSystemMLEstimator(Estimator):
         elif y is not None and isinstance(X, SUPPORTED_TYPES) and isinstance(y, SUPPORTED_TYPES):
             # Donot encode if y is a numpy matrix => useful for segmentation
             skipEncodingY = len(y.shape) == 2 and y.shape[0] != 1 and y.shape[1] != 1
-            y = y if skipEncodingY else self.encode(y)
+            if skipEncodingY:
+                self.model.setInput('$perform_one_hot_encoding', 'false')
+            else:
+                y = self.encode(y)
             if self.transferUsingDF:
                 pdfX = convertToPandasDF(X)
                 pdfY = convertToPandasDF(y)
