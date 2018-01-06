@@ -28,6 +28,7 @@ from itertools import chain, imap
 from ..converters import *
 from ..classloader import *
 import keras
+from keras import backend as K
 
 try:
     import py4j.java_gateway
@@ -155,8 +156,6 @@ specialLayers = {
     keras.layers.BatchNormalization: _parseBatchNorm
     }
 	
-batchSize = 64
-
 def getConvParam(layer):
 	stride = (1, 1) if layer.strides is None else layer.strides
 	padding = [layer.kernel_size[0] / 2, layer.kernel_size[1] / 2] if layer.padding == 'same' else [0, 0]
@@ -181,7 +180,7 @@ def getRecurrentParam(layer):
 # TODO: Update AveragePooling2D when we add maxpooling support 
 layerParamMapping = {
     keras.layers.InputLayer: lambda l: \
-        {'data_param': {'batch_size': batchSize}},
+        {'data_param': {'batch_size': l.batch_size}},
     keras.layers.Dense: lambda l: \
         {'inner_product_param': {'num_output': l.units}},
     keras.layers.Dropout: lambda l: \
@@ -210,13 +209,15 @@ def _checkIfValid(myList, fn, errorMessage):
 	if len(unsupported_elems) != 0:
 		raise ValueError(errorMessage + str(np.array(myList)[unsupported_elems]))
 
-def convertKerasToCaffeNetwork(kerasModel, outCaffeNetworkFilePath):
+def _transformLayer(layer, batch_size):
+	if type(layer) == keras.layers.InputLayer:
+		layer.batch_size = batch_size
+	return layer
+
+def convertKerasToCaffeNetwork(kerasModel, outCaffeNetworkFilePath, batch_size):
 	_checkIfValid(kerasModel.layers, lambda layer: False if type(layer) in supportedLayers else True, 'Unsupported Layers:')
-	#unsupported_layers = np.array([False if type(layer) in supportedLayers else True for layer in kerasModel.layers])
-	#if len(np.where(unsupported_layers)[0]) != 0:
-	#	raise TypeError('Unsupported Layers:' + str(np.array(kerasModel.layers)[np.where(unsupported_layers)[0]]))
-	# Core logic: model.layers.flatMap(layer => _parseJSONObject(_parseKerasLayer(layer)))
-	jsonLayers = list(chain.from_iterable(imap(lambda layer: _parseKerasLayer(layer), kerasModel.layers)))
+	transformedLayers = list(chain.from_iterable(imap(lambda layer: _transformLayer(layer, batch_size), kerasModel.layers)))  
+	jsonLayers = list(chain.from_iterable(imap(lambda layer: _parseKerasLayer(layer), transformedLayers)))
 	parsedLayers = list(chain.from_iterable(imap(lambda layer: _parseJSONObject(layer), jsonLayers)))
 	with open(outCaffeNetworkFilePath, 'w') as f:
 		f.write(''.join(parsedLayers))
@@ -234,23 +235,31 @@ def getNumPyMatrixFromKerasWeight(param):
 
 
 defaultSolver = """
-base_lr: 0.01
-momentum: 0.9
 weight_decay: 5e-4
 lr_policy: "exp"
-gamma: 0.95
-display: 100
 solver_mode: CPU
-type: "SGD"
-max_iter: 2000
-test_iter: 10
-test_interval: 500
 """
 
-def convertKerasToCaffeSolver(kerasModel, caffeNetworkFilePath, outCaffeSolverFilePath):
+def convertKerasToCaffeSolver(kerasModel, caffeNetworkFilePath, outCaffeSolverFilePath, max_iter, test_iter, test_interval, display):
+	# TODO: Ignore loss for now
+	if not hasattr(kerasModel, 'optimizer'):
+		kerasModel.compile(loss='mae', optimizer='sgd')
+	if type(kerasModel.optimizer) == keras.optimizers.SGD:
+		solver = 'type: "Nesterov"\n' if keras.optimizers.nesterov else 'type: "SGD"\n'
+	else if type(kerasModel.optimizer) == keras.optimizers.Adagrad:
+		solver = 'type: "Adagrad"\n'
+	else:
+		raise Exception('Only sgd (with/without momentum/nesterov) and Adagrad supported.')
+	base_lr = K.eval(kerasModel.optimizer.lr) if hasattr(kerasModel.optimizer, 'lr') else 0.01
+	gamma = K.eval(kerasModel.optimizer.decay) if hasattr(kerasModel.optimizer, 'decay') else 0.0
+	momentum = K.eval(kerasModel.optimizer.momentum) if hasattr(kerasModel.optimizer, 'momentum') else 0.0
 	with open(outCaffeSolverFilePath, 'w') as f:
 		f.write('net: "' + caffeNetworkFilePath + '"\n')
 		f.write(defaultSolver)
+		f.write(solver)
+		f.write('max_iter: ' + str(max_iter) + '\ntest_iter: ' + str(test_iter) + '\ntest_interval: ' + str(test_interval) + '\n')
+		f.write('display: ' + str(display) + '\n')
+		f.write('base_lr: ' + str(base_lr) + '\ngamma: ' + str(gamma) + '\nmomentum: ' + str(momentum) + '\n')
 
 
 def getInputMatrices(layer):
