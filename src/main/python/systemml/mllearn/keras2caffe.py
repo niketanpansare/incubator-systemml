@@ -246,7 +246,7 @@ def convertKerasToCaffeSolver(kerasModel, caffeNetworkFilePath, outCaffeSolverFi
 		kerasModel.compile(loss='mae', optimizer='sgd')
 	if type(kerasModel.optimizer) == keras.optimizers.SGD:
 		solver = 'type: "Nesterov"\n' if keras.optimizers.nesterov else 'type: "SGD"\n'
-	else if type(kerasModel.optimizer) == keras.optimizers.Adagrad:
+	elif type(kerasModel.optimizer) == keras.optimizers.Adagrad:
 		solver = 'type: "Adagrad"\n'
 	else:
 		raise Exception('Only sgd (with/without momentum/nesterov) and Adagrad supported.')
