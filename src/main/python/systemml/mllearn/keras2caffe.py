@@ -245,7 +245,7 @@ def convertKerasToCaffeSolver(kerasModel, caffeNetworkFilePath, outCaffeSolverFi
 	if not hasattr(kerasModel, 'optimizer'):
 		kerasModel.compile(loss='mae', optimizer=keras.optimizers.SGD(lr=0.01, momentum=0.95, decay=5e-4, nesterov=True))
 	if type(kerasModel.optimizer) == keras.optimizers.SGD:
-		solver = 'type: "Nesterov"\n' if keras.optimizers.nesterov else 'type: "SGD"\n'
+		solver = 'type: "Nesterov"\n' if kerasModel.optimizers.nesterov else 'type: "SGD"\n'
 	elif type(kerasModel.optimizer) == keras.optimizers.Adagrad:
 		solver = 'type: "Adagrad"\n'
 	else:
