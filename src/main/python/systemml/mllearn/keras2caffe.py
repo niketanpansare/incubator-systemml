@@ -243,7 +243,7 @@ solver_mode: CPU
 def convertKerasToCaffeSolver(kerasModel, caffeNetworkFilePath, outCaffeSolverFilePath, max_iter, test_iter, test_interval, display):
 	# TODO: Ignore loss for now
 	if not hasattr(kerasModel, 'optimizer'):
-		kerasModel.compile(loss='mae', optimizer='sgd')
+		kerasModel.compile(loss='mae', optimizer=keras.optimizers.SGD(lr=0.01, momentum=0.95, decay=5e-4, nesterov=True))
 	if type(kerasModel.optimizer) == keras.optimizers.SGD:
 		solver = 'type: "Nesterov"\n' if keras.optimizers.nesterov else 'type: "SGD"\n'
 	elif type(kerasModel.optimizer) == keras.optimizers.Adagrad:
