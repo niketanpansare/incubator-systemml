@@ -212,7 +212,7 @@ def _checkIfValid(myList, fn, errorMessage):
 def _transformLayer(layer, batch_size):
 	if type(layer) == keras.layers.InputLayer:
 		layer.batch_size = batch_size
-	return layer
+	return [ layer ]
 
 def convertKerasToCaffeNetwork(kerasModel, outCaffeNetworkFilePath, batch_size):
 	_checkIfValid(kerasModel.layers, lambda layer: False if type(layer) in supportedLayers else True, 'Unsupported Layers:')
