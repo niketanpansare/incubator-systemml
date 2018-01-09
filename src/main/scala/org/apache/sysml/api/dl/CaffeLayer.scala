@@ -46,10 +46,10 @@ trait CaffeLayer extends BaseDMLGenerator {
   def validateDimensions(dmlScript: StringBuilder, mat:String, expectedNumRows:String, expectedNumCols:String):Unit = {
     if(debugLayer) {
       dmlScript.append("\nif( " + expectedNumRows + " != nrow(" + mat + ")) {\n")
-      dmlScript.append("stop(\"Incorrect number of rows for " + mat + " in " + sourceFileName + " script. Expected:\" + " + expectedNumRows + " + \" but found \" +  nrow(mat) )") 
+      dmlScript.append("stop(\"Incorrect number of rows for " + mat + " in " + sourceFileName + " script. Expected:\" + " + expectedNumRows + " + \" but found \" +  nrow(" + mat + ") )") 
       dmlScript.append("\n}\n")
       dmlScript.append("\nif( " + expectedNumCols + " != ncol(" + mat + ")) {\n")
-      dmlScript.append("stop(\"Incorrect number of columns for " + mat + " in " + sourceFileName + " script. Expected:\" + " + expectedNumCols + " + \" but found \" +  ncol(mat) )") 
+      dmlScript.append("stop(\"Incorrect number of columns for " + mat + " in " + sourceFileName + " script. Expected:\" + " + expectedNumCols + " + \" but found \" +  ncol(" + mat + ") )") 
       dmlScript.append("\n}\n")
     }
   }
