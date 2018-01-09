@@ -980,22 +980,21 @@ class LSTM(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extend
   }
   
   override def backward(dmlScript: StringBuilder, outSuffix: String) = {
-    val N:String = null // output_features.toString
     val T = timesteps()
     val D = input_features()
     if(return_sequences) {
-      validateDimensions(dmlScript, dout, N, T + "*" + M)
+      validateDimensions(dmlScript, dout, null, T + "*" + M)
     }
     else {
-      validateDimensions(dmlScript, dout, N, M)
+      validateDimensions(dmlScript, dout, null, M)
     }
-    validateDimensions(dmlScript, dc0, N, M)
-    validateDimensions(dmlScript, X, N, T + "*" + D)
-    validateDimensions(dmlScript, out0, N, M)
-    validateDimensions(dmlScript, c0, N, M)
-    validateDimensions(dmlScript, cache_out, T, N + "*" + M)
-    validateDimensions(dmlScript, cache_c, T, N + "*" + M)
-    validateDimensions(dmlScript, cache_ifog, T, N + "*4*" + M)
+    validateDimensions(dmlScript, dc0, null, M)
+    validateDimensions(dmlScript, X, null, T + "*" + D)
+    validateDimensions(dmlScript, out0, null, M)
+    validateDimensions(dmlScript, c0, null, M)
+    validateDimensions(dmlScript, cache_out, T, null)
+    validateDimensions(dmlScript, cache_c, T, null)
+    validateDimensions(dmlScript, cache_ifog, T, null)
     validateDimensions(dmlScript, weight, D + "+" + M, 4 + "*" + M)
     validateDimensions(dmlScript, bias, "1", 4 + "*" + M)
     invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dBias, dout0, dc0), dout, dc0, X, weight, bias,
