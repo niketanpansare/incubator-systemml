@@ -45,12 +45,16 @@ trait CaffeLayer extends BaseDMLGenerator {
   var debugLayer = false
   def validateDimensions(dmlScript: StringBuilder, mat:String, expectedNumRows:String, expectedNumCols:String):Unit = {
     if(debugLayer) {
-      dmlScript.append("\nif( " + expectedNumRows + " != nrow(" + mat + ")) {\n")
-      dmlScript.append("\tstop(\"Incorrect number of rows for " + mat + " in " + sourceFileName + " script. Expected:\" + " + expectedNumRows + " + \" but found \" +  nrow(" + mat + ") )") 
-      dmlScript.append("\n}\n")
-      dmlScript.append("\nif( " + expectedNumCols + " != ncol(" + mat + ")) {\n")
-      dmlScript.append("\tstop(\"Incorrect number of columns for " + mat + " in " + sourceFileName + " script. Expected:\" + " + expectedNumCols + " + \" but found \" +  ncol(" + mat + ") )") 
-      dmlScript.append("\n}\n")
+      if(expectedNumRows != null) {
+        dmlScript.append("\nif( " + expectedNumRows + " != nrow(" + mat + ")) {\n")
+        dmlScript.append("\tstop(\"Incorrect number of rows for " + mat + " in " + sourceFileName + " script. Expected:\" + " + expectedNumRows + " + \" but found \" +  nrow(" + mat + ") )") 
+        dmlScript.append("\n}\n")
+      }
+      if(expectedNumCols != null) {
+        dmlScript.append("\nif( " + expectedNumCols + " != ncol(" + mat + ")) {\n")
+        dmlScript.append("\tstop(\"Incorrect number of columns for " + mat + " in " + sourceFileName + " script. Expected:\" + " + expectedNumCols + " + \" but found \" +  ncol(" + mat + ") )") 
+        dmlScript.append("\n}\n")
+      }
     }
   }
   var computedBottomLayerOutputShape: (String, String, String) = null
@@ -864,8 +868,14 @@ class InnerProduct(val param: LayerParameter, val id: Int, val net: CaffeNetwork
    * Outputs:
    *  - out: Outputs, of shape (N, M).
    */
-  override def forward(dmlScript: StringBuilder, isPrediction: Boolean) =
+  override def forward(dmlScript: StringBuilder, isPrediction: Boolean) = {
+    val D = numFeatures
+    val M = numNeurons
+    validateDimensions(dmlScript, X, null, D)
+    validateDimensions(dmlScript, weight, D, M)
+    validateDimensions(dmlScript, bias, "1", M)
     invokeForward(dmlScript, List[String](out), X, weight, bias)
+  }
   /*
    * Computes the backward pass for a fully-connected (affine) layer
    * with M neurons.
@@ -881,8 +891,15 @@ class InnerProduct(val param: LayerParameter, val id: Int, val net: CaffeNetwork
    *  - dW: Gradient wrt `W`, of shape (D, M).
    *  - db: Gradient wrt `b`, of shape (1, M).
    */
-  override def backward(dmlScript: StringBuilder, outSuffix: String) =
+  override def backward(dmlScript: StringBuilder, outSuffix: String) = {
+    val D = numFeatures
+    val M = numNeurons
+    validateDimensions(dmlScript, dout, null, M)
+    validateDimensions(dmlScript, X, null, D)
+    validateDimensions(dmlScript, weight, D, M)
+    validateDimensions(dmlScript, bias, "1", M)
     invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dBias), dout, X, weight, bias)
+  }
   // -------------------------------------------------
   // num_output (c_o): the number of filters
   def numNeurons  = param.getInnerProductParam.getNumOutput.toString
@@ -951,36 +968,36 @@ class LSTM(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extend
   }
   
   override def forward(dmlScript: StringBuilder, isPrediction: Boolean) = {
-    val N = output_features.toString
+    val N:String = null // output_features.toString
     val T = timesteps()
     val D = input_features()
-//    validateDimensions(dmlScript, X, N, T + "*" + D)
-//    validateDimensions(dmlScript, weight, D + "+" + M, 4 + "*" + M)
-//    validateDimensions(dmlScript, bias, "1", 4 + "*" + M)
-//    validateDimensions(dmlScript, out0, N, M)
-//    validateDimensions(dmlScript, c0, N, M)
+    validateDimensions(dmlScript, X, N, T + "*" + D)
+    validateDimensions(dmlScript, out0, N, M)
+    validateDimensions(dmlScript, c0, N, M)
+    validateDimensions(dmlScript, weight, D + "+" + M, 4 + "*" + M)
+    validateDimensions(dmlScript, bias, "1", 4 + "*" + M)
     invokeForward(dmlScript, List[String](out, c, cache_out, cache_c, cache_ifog), X, weight, bias, T, D, return_sequences.toString.toUpperCase, out0, c0)
   }
   
   override def backward(dmlScript: StringBuilder, outSuffix: String) = {
-    val N = output_features.toString
+    val N:String = null // output_features.toString
     val T = timesteps()
     val D = input_features()
-//    if(return_sequences) {
-//      validateDimensions(dmlScript, dout, N, T + "*" + M)
-//    }
-//    else {
-//      validateDimensions(dmlScript, dout, N, M)
-//    }
-//    validateDimensions(dmlScript, dc0, N, M)
-//    validateDimensions(dmlScript, X, N, T + "*" + D)
-//    validateDimensions(dmlScript, weight, D + "+" + M, 4 + "*" + M)
-//    validateDimensions(dmlScript, bias, "1", 4 + "*" + M)
-//    validateDimensions(dmlScript, out0, N, M)
-//    validateDimensions(dmlScript, c0, N, M)
-//    validateDimensions(dmlScript, cache_out, T, N + "*" + M)
-//    validateDimensions(dmlScript, cache_c, T, N + "*" + M)
-//    validateDimensions(dmlScript, cache_ifog, T, N + "*4*" + M)
+    if(return_sequences) {
+      validateDimensions(dmlScript, dout, N, T + "*" + M)
+    }
+    else {
+      validateDimensions(dmlScript, dout, N, M)
+    }
+    validateDimensions(dmlScript, dc0, N, M)
+    validateDimensions(dmlScript, X, N, T + "*" + D)
+    validateDimensions(dmlScript, out0, N, M)
+    validateDimensions(dmlScript, c0, N, M)
+    validateDimensions(dmlScript, cache_out, T, N + "*" + M)
+    validateDimensions(dmlScript, cache_c, T, N + "*" + M)
+    validateDimensions(dmlScript, cache_ifog, T, N + "*4*" + M)
+    validateDimensions(dmlScript, weight, D + "+" + M, 4 + "*" + M)
+    validateDimensions(dmlScript, bias, "1", 4 + "*" + M)
     invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dBias, dout0, dc0), dout, dc0, X, weight, bias,
         T, D, return_sequences.toString.toUpperCase, out0, c0, cache_out, cache_c, cache_ifog)
   }
