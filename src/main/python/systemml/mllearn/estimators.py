@@ -915,8 +915,8 @@ class Keras2DML(Caffe2DML):
             keras_model = keras_model.model
         self.name = keras_model.name
         createJavaObject(sparkSession._sc, 'dummy')
-        convertKerasToCaffeNetwork(keras_model, self.name + ".proto", batch_size)
-        convertKerasToCaffeSolver(keras_model, self.name + ".proto", self.name + "_solver.proto", max_iter, test_iter, test_interval, display)
+        convertKerasToCaffeNetwork(keras_model, self.name + ".proto", int(batch_size))
+        convertKerasToCaffeSolver(keras_model, self.name + ".proto", self.name + "_solver.proto", int(max_iter), int(test_iter), int(test_interval), int(display))
         self.weights = tempfile.mkdtemp() if weights is None else weights
         convertKerasToSystemMLModel(sparkSession, keras_model, self.weights)
         if labels is not None and (labels.startswith('https:') or labels.startswith('http:')):
