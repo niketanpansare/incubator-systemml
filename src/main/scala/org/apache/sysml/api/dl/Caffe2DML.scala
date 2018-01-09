@@ -357,6 +357,10 @@ class Caffe2DML(val sc: SparkContext,
     
     System.out.println("* => memory in megabytes assuming the parameters (input, output activations, weights and backpropagation errors) are in double precision and in dense format.")
   }
+  
+  def setDebugFlags(isDebug:Boolean):Unit = {
+    net.getLayers.map(layer => {net.getCaffeLayer(layer).debugLayer = isDebug})
+  }
 
   // ================================================================================================
   // The below method parses the provided network and solver file and generates DML script.
@@ -368,6 +372,7 @@ class Caffe2DML(val sc: SparkContext,
     // Flags passed by user
     val DEBUG_TRAINING = if (inputs.containsKey("$debug")) inputs.get("$debug").toLowerCase.toBoolean else false
     assign(tabDMLScript, "debug", if (DEBUG_TRAINING) "TRUE" else "FALSE")
+    setDebugFlags(DEBUG_TRAINING)
 
     appendHeaders(net, solver, true) // Appends DML corresponding to source and externalFunction statements.
     val performOneHotEncoding = inputs.containsKey("$perform_one_hot_encoding") && inputs.get("$perform_one_hot_encoding").toBoolean
@@ -415,6 +420,9 @@ class Caffe2DML(val sc: SparkContext,
     val script = dml(trainingScript).in(inputs)
     net.getLayers.map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => script.out(l.weight))
     net.getLayers.map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => script.out(l.bias))
+    
+    setDebugFlags(false)
+    
     (script, "X_full", "y_full")
   }
   // ================================================================================================
@@ -744,6 +752,7 @@ class Caffe2DMLModel(val numClasses: String, val sc: SparkContext, val solver: C
 
     val DEBUG_PREDICTION = if (estimator.inputs.containsKey("$debug")) estimator.inputs.get("$debug").toLowerCase.toBoolean else false
     assign(tabDMLScript, "debug", if (DEBUG_PREDICTION) "TRUE" else "FALSE")
+    estimator.setDebugFlags(DEBUG_PREDICTION)
 
     appendHeaders(net, solver, false) // Appends DML corresponding to source and externalFunction statements.
     val performOneHotEncoding = estimator.inputs.containsKey("$perform_one_hot_encoding") && estimator.inputs.get("$perform_one_hot_encoding").toBoolean
@@ -839,6 +848,9 @@ class Caffe2DMLModel(val numClasses: String, val sc: SparkContext, val solver: C
       net.getLayers.map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => script.in(l.weight, estimator.mloutput.getMatrix(l.weight)))
       net.getLayers.map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => script.in(l.bias, estimator.mloutput.getMatrix(l.bias)))
     }
+    
+    estimator.setDebugFlags(false)
+    
     (script, "X_full")
   }
   // ================================================================================================

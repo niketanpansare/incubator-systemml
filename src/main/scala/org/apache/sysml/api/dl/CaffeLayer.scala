@@ -42,6 +42,17 @@ trait CaffeLayer extends BaseDMLGenerator {
     computedOutputShape
   }
   // -------------------------------------------------
+  var debugLayer = false
+  def validateDimensions(dmlScript: StringBuilder, mat:String, expectedNumRows:String, expectedNumCols:String):Unit = {
+    if(debugLayer) {
+      dmlScript.append("\nif( " + expectedNumRows + " != nrow(" + mat + ")) {\n")
+      dmlScript.append("stop(\"Incorrect number of rows for " + mat + " in " + sourceFileName + " script. Expected:\" + " + expectedNumRows + " + \" but found \" +  nrow(mat) )") 
+      dmlScript.append("\n}\n")
+      dmlScript.append("\nif( " + expectedNumCols + " != ncol(" + mat + ")) {\n")
+      dmlScript.append("stop(\"Incorrect number of columns for " + mat + " in " + sourceFileName + " script. Expected:\" + " + expectedNumCols + " + \" but found \" +  ncol(mat) )") 
+      dmlScript.append("\n}\n")
+    }
+  }
   var computedBottomLayerOutputShape: (String, String, String) = null
   def bottomLayerOutputShape: (String, String, String) = {
     if (computedBottomLayerOutputShape == null) {
@@ -940,12 +951,38 @@ class LSTM(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extend
   }
   
   override def forward(dmlScript: StringBuilder, isPrediction: Boolean) = {
-    invokeForward(dmlScript, List[String](out, c, cache_out, cache_c, cache_ifog), X, weight, bias, timesteps, input_features, return_sequences.toString.toUpperCase, out0, c0)
+    val N = output_features.toString
+    val T = timesteps()
+    val D = input_features()
+    validateDimensions(dmlScript, X, N, T + "*" + D)
+    validateDimensions(dmlScript, weight, D + "+" + M, 4 + "*" + M)
+    validateDimensions(dmlScript, bias, "1", 4 + "*" + M)
+    validateDimensions(dmlScript, out0, N, M)
+    validateDimensions(dmlScript, c0, N, M)
+    invokeForward(dmlScript, List[String](out, c, cache_out, cache_c, cache_ifog), X, weight, bias, T, D, return_sequences.toString.toUpperCase, out0, c0)
   }
   
   override def backward(dmlScript: StringBuilder, outSuffix: String) = {
+    val N = output_features.toString
+    val T = timesteps()
+    val D = input_features()
+    if(return_sequences) {
+      validateDimensions(dmlScript, dout, N, T + "*" + M)
+    }
+    else {
+      validateDimensions(dmlScript, dout, N, M)
+    }
+    validateDimensions(dmlScript, dc0, N, M)
+    validateDimensions(dmlScript, X, N, T + "*" + D)
+    validateDimensions(dmlScript, weight, D + "+" + M, 4 + "*" + M)
+    validateDimensions(dmlScript, bias, "1", 4 + "*" + M)
+    validateDimensions(dmlScript, out0, N, M)
+    validateDimensions(dmlScript, c0, N, M)
+    validateDimensions(dmlScript, cache_out, T, N + "*" + M)
+    validateDimensions(dmlScript, cache_c, T, N + "*" + M)
+    validateDimensions(dmlScript, cache_ifog, T, N + "*4*" + M)
     invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dBias, dout0, dc0), dout, dc0, X, weight, bias,
-        timesteps, input_features, return_sequences.toString.toUpperCase, out0, c0, cache_out, cache_c, cache_ifog)
+        T, D, return_sequences.toString.toUpperCase, out0, c0, cache_out, cache_c, cache_ifog)
   }
   
   val cache_out = "cache_out_" + id
