@@ -977,6 +977,8 @@ class LSTM(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extend
     validateDimensions(dmlScript, weight, D + "+" + M, 4 + "*" + M)
     validateDimensions(dmlScript, bias, "1", 4 + "*" + M)
     invokeForward(dmlScript, List[String](out, c, cache_out, cache_c, cache_ifog), X, weight, bias, T, D, return_sequences.toString.toUpperCase, out0, c0)
+    // This validates whether the output is of correct dimensions
+    validateDimensions(dmlScript, out, null, int_mult(outputShape._1, outputShape._2, outputShape._3))
   }
   
   override def backward(dmlScript: StringBuilder, outSuffix: String) = {
