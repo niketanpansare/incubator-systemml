@@ -954,11 +954,11 @@ class LSTM(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extend
     val N = output_features.toString
     val T = timesteps()
     val D = input_features()
-    validateDimensions(dmlScript, X, N, T + "*" + D)
-    validateDimensions(dmlScript, weight, D + "+" + M, 4 + "*" + M)
-    validateDimensions(dmlScript, bias, "1", 4 + "*" + M)
-    validateDimensions(dmlScript, out0, N, M)
-    validateDimensions(dmlScript, c0, N, M)
+//    validateDimensions(dmlScript, X, N, T + "*" + D)
+//    validateDimensions(dmlScript, weight, D + "+" + M, 4 + "*" + M)
+//    validateDimensions(dmlScript, bias, "1", 4 + "*" + M)
+//    validateDimensions(dmlScript, out0, N, M)
+//    validateDimensions(dmlScript, c0, N, M)
     invokeForward(dmlScript, List[String](out, c, cache_out, cache_c, cache_ifog), X, weight, bias, T, D, return_sequences.toString.toUpperCase, out0, c0)
   }
   
@@ -966,21 +966,21 @@ class LSTM(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extend
     val N = output_features.toString
     val T = timesteps()
     val D = input_features()
-    if(return_sequences) {
-      validateDimensions(dmlScript, dout, N, T + "*" + M)
-    }
-    else {
-      validateDimensions(dmlScript, dout, N, M)
-    }
-    validateDimensions(dmlScript, dc0, N, M)
-    validateDimensions(dmlScript, X, N, T + "*" + D)
-    validateDimensions(dmlScript, weight, D + "+" + M, 4 + "*" + M)
-    validateDimensions(dmlScript, bias, "1", 4 + "*" + M)
-    validateDimensions(dmlScript, out0, N, M)
-    validateDimensions(dmlScript, c0, N, M)
-    validateDimensions(dmlScript, cache_out, T, N + "*" + M)
-    validateDimensions(dmlScript, cache_c, T, N + "*" + M)
-    validateDimensions(dmlScript, cache_ifog, T, N + "*4*" + M)
+//    if(return_sequences) {
+//      validateDimensions(dmlScript, dout, N, T + "*" + M)
+//    }
+//    else {
+//      validateDimensions(dmlScript, dout, N, M)
+//    }
+//    validateDimensions(dmlScript, dc0, N, M)
+//    validateDimensions(dmlScript, X, N, T + "*" + D)
+//    validateDimensions(dmlScript, weight, D + "+" + M, 4 + "*" + M)
+//    validateDimensions(dmlScript, bias, "1", 4 + "*" + M)
+//    validateDimensions(dmlScript, out0, N, M)
+//    validateDimensions(dmlScript, c0, N, M)
+//    validateDimensions(dmlScript, cache_out, T, N + "*" + M)
+//    validateDimensions(dmlScript, cache_c, T, N + "*" + M)
+//    validateDimensions(dmlScript, cache_ifog, T, N + "*4*" + M)
     invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dBias, dout0, dc0), dout, dc0, X, weight, bias,
         T, D, return_sequences.toString.toUpperCase, out0, c0, cache_out, cache_c, cache_ifog)
   }
