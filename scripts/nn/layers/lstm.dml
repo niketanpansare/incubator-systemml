@@ -76,6 +76,9 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b, int T, 
     out0 = out0[1:N,]
     c0 = c0[1:N,]
   }
+  if(N > N1) {
+  
+  }
   out_prev = out0
   c_prev = c0
   c = c_prev
@@ -168,10 +171,11 @@ backward = function(matrix[double] dout, matrix[double] dc,
   N = nrow(X)
   M = as.integer(ncol(W)/4)
   N1 = nrow(out0)
-  if(N < N1) {
-    # Allow for smaller out0 for last batch
-    out0 = out0[1:N,]
-    c0 = c0[1:N,]
+  if(N != N1) {
+    # Allow for smaller out0 for last batch 
+    # out0 = out0[1:N,]
+    # c0 = c0[1:N,]
+    stop("Unsupported operation: The batch size of previous iteration " + N1 + " is different than the batch size of current iteration " + N)
   }
   dX = matrix(0, rows=N, cols=T*D)
   dW = matrix(0, rows=D+M, cols=4*M)
