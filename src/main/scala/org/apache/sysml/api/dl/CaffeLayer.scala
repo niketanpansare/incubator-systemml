@@ -43,11 +43,11 @@ trait CaffeLayer extends BaseDMLGenerator {
   }
   // -------------------------------------------------
   var debugLayer = false
-  def validateDimensions(dmlScript: StringBuilder, mat:String, expectedNumRows:String, expectedNumCols:String):Unit = {
+  def validateDimensions(dmlScript: StringBuilder, mat:String, expectedNumRows:String, expectedNumCols:String, optionalString:String=""):Unit = {
     if(debugLayer) {
       if(expectedNumRows != null) {
         dmlScript.append("\nif( " + expectedNumRows + " != nrow(" + mat + ")) {\n")
-        dmlScript.append("\tstop(\"Incorrect number of rows for " + mat + " in " + sourceFileName + " script. Expected:\" + " + expectedNumRows + " + \" but found \" +  nrow(" + mat + ") )") 
+        dmlScript.append("\tstop(\"Incorrect number of rows for " + mat + " in " + sourceFileName + "(" + optionalString + ") script. Expected:\" + " + expectedNumRows + " + \" but found \" +  nrow(" + mat + ") )") 
         dmlScript.append("\n}\n")
       }
       if(expectedNumCols != null) {
@@ -872,7 +872,7 @@ class InnerProduct(val param: LayerParameter, val id: Int, val net: CaffeNetwork
     val D = numFeatures
     val M = numNeurons
     validateDimensions(dmlScript, X, null, D)
-    validateDimensions(dmlScript, weight, D, M)
+    validateDimensions(dmlScript, weight, D, M, "forward")
     validateDimensions(dmlScript, bias, "1", M)
     invokeForward(dmlScript, List[String](out), X, weight, bias)
   }
@@ -896,7 +896,7 @@ class InnerProduct(val param: LayerParameter, val id: Int, val net: CaffeNetwork
     val M = numNeurons
     validateDimensions(dmlScript, dout, null, M)
     validateDimensions(dmlScript, X, null, D)
-    validateDimensions(dmlScript, weight, D, M)
+    validateDimensions(dmlScript, weight, D, M, "backward")
     validateDimensions(dmlScript, bias, "1", M)
     invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dBias), dout, X, weight, bias)
   }
