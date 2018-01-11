@@ -239,8 +239,11 @@ def convertKerasToCaffeNetwork(kerasModel, outCaffeNetworkFilePath, batch_size):
 			f.write('\n')
 			lastLayer.activation = lastLayerActivation
 		lastLayerActivation = str(keras.activations.serialize(lastLayerActivation))
+		bottomLayers = _getBottomLayers(lastLayer)
+		if len(bottomLayers) != 1:
+			raise Exception('Only one bottom layer expected for the loss layer')
 		if lastLayerActivation == 'softmax' and kerasModel.loss == 'categorical_crossentropy':
-			f.write(lossLayerStr('SoftmaxWithLoss', _getBottomLayers(lastLayer)))
+			f.write(lossLayerStr('SoftmaxWithLoss', bottomLayers[0].name))
 		else:
 			raise Exception('Unsupported loss layer ' + str(kerasModel.loss) + ' and activation ' + lastLayerActivation)
 		
