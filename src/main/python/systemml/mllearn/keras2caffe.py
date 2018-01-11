@@ -257,14 +257,12 @@ def convertKerasToCaffeSolver(kerasModel, caffeNetworkFilePath, outCaffeSolverFi
 		f.write(defaultSolver)
 		f.write(solver)
 		f.write('lr_policy: "' + lr_policy + '"\n')
-		f.write('weight_decay: "' + str(weight_decay) + '"\n')
 		f.write('regularization_type: "' + str(regularization_type) + '"\n')
+		f.write('weight_decay: ' + str(weight_decay) + '\n')
 		f.write('max_iter: ' + str(max_iter) + '\ntest_iter: ' + str(test_iter) + '\ntest_interval: ' + str(test_interval) + '\n')
 		f.write('display: ' + str(display) + '\n')
 		f.write('base_lr: ' + str(base_lr) + '\n')
 		f.write('gamma: ' + str(gamma) + '\n')
-		f.write('regularization_type: ' + regularization_type + '\n')
-		f.write('weight_decay: ' + str(weight_decay) + '\n')
 		if type(kerasModel.optimizer) == keras.optimizers.SGD:
 			momentum = K.eval(kerasModel.optimizer.momentum) if hasattr(kerasModel.optimizer, 'momentum') else 0.0
 			f.write('momentum: ' + str(momentum) + '\n')
