@@ -395,7 +395,7 @@ class Caffe2DML(val sc: SparkContext,
     // ----------------------------------------------------------------------------
     // Main logic
     forBlock("iter", "1", "max_iter") {
-      performTrainingIter(lossLayers, shouldValidate)
+      performTrainingIter(lossLayers, shouldValidate, performOneHotEncoding)
       if (getTrainAlgo.toLowerCase.equals("batch")) {
         assign(tabDMLScript, "e", "iter")
         tabDMLScript.append("# Learning rate\n")
@@ -427,7 +427,7 @@ class Caffe2DML(val sc: SparkContext,
   }
   // ================================================================================================
 
-  private def performTrainingIter(lossLayers: List[IsLossLayer], shouldValidate: Boolean): Unit =
+  private def performTrainingIter(lossLayers: List[IsLossLayer], shouldValidate: Boolean, performOneHotEncoding:Boolean): Unit =
     getTrainAlgo.toLowerCase match {
       case "minibatch" =>
         getTrainingBatch(tabDMLScript)
@@ -435,14 +435,14 @@ class Caffe2DML(val sc: SparkContext,
         // Perform forward, backward and update on minibatch
         forward; backward; update
         // -------------------------------------------------------
-        displayLoss(lossLayers(0), shouldValidate)
+        displayLoss(lossLayers(0), shouldValidate, performOneHotEncoding)
         performSnapshot
       case "batch" => {
         // -------------------------------------------------------
         // Perform forward, backward and update on entire dataset
         forward; backward; update
         // -------------------------------------------------------
-        displayLoss(lossLayers(0), shouldValidate)
+        displayLoss(lossLayers(0), shouldValidate, performOneHotEncoding)
         performSnapshot
       }
       case "allreduce_parallel_batches" => {
@@ -478,7 +478,7 @@ class Caffe2DML(val sc: SparkContext,
           // -------------------------------------------------------
           assign(tabDMLScript, "Xb", "X_group_batch")
           assign(tabDMLScript, "yb", "y_group_batch")
-          displayLoss(lossLayers(0), shouldValidate)
+          displayLoss(lossLayers(0), shouldValidate, performOneHotEncoding)
           performSnapshot
         }
       }
@@ -505,7 +505,7 @@ class Caffe2DML(val sc: SparkContext,
         // -------------------------------------------------------
         assign(tabDMLScript, "Xb", "X_group_batch")
         assign(tabDMLScript, "yb", "y_group_batch")
-        displayLoss(lossLayers(0), shouldValidate)
+        displayLoss(lossLayers(0), shouldValidate, performOneHotEncoding)
         performSnapshot
       }
       case _ => throw new DMLRuntimeException("Unsupported train algo:" + getTrainAlgo)
@@ -546,7 +546,7 @@ class Caffe2DML(val sc: SparkContext,
     }
 
   // Append the DML to display training and validation loss
-  private def displayLoss(lossLayer: IsLossLayer, shouldValidate: Boolean): Unit = {
+  private def displayLoss(lossLayer: IsLossLayer, shouldValidate: Boolean, performOneHotEncoding:Boolean): Unit = {
     if (solverParam.getDisplay > 0) {
       // Append the DML to compute training loss
       if (!getTrainAlgo.toLowerCase.startsWith("allreduce")) {
@@ -559,7 +559,9 @@ class Caffe2DML(val sc: SparkContext,
           tabDMLScript.append(
             print(dmlConcat(asDMLString("Iter:"), "iter", asDMLString(", training loss:"), "training_loss", asDMLString(", training accuracy:"), "training_accuracy"))
           )
-          printClassificationReport
+          if(performOneHotEncoding) {
+            printClassificationReport
+          }
         }
       } else {
         Caffe2DML.LOG.info("Training loss is not printed for train_algo=" + getTrainAlgo)
