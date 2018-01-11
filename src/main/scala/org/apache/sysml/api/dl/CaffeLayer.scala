@@ -45,14 +45,15 @@ trait CaffeLayer extends BaseDMLGenerator {
   var debugLayer = false
   def validateDimensions(dmlScript: StringBuilder, mat:String, expectedNumRows:String, expectedNumCols:String, optionalString:String=""):Unit = {
     if(debugLayer) {
+      val msg = " in " + sourceFileName + "(" + optionalString + ") script."
       if(expectedNumRows != null) {
         dmlScript.append("\nif( " + expectedNumRows + " != nrow(" + mat + ")) {\n")
-        dmlScript.append("\tstop(\"Incorrect number of rows for " + mat + " in " + sourceFileName + "(" + optionalString + ") script. Expected:\" + " + expectedNumRows + " + \" but found \" +  nrow(" + mat + ") )") 
+        dmlScript.append("\tstop(\"Incorrect number of rows for " + mat + msg + " Expected:\" + " + expectedNumRows + " + \" but found \" +  nrow(" + mat + ") )") 
         dmlScript.append("\n}\n")
       }
       if(expectedNumCols != null) {
         dmlScript.append("\nif( " + expectedNumCols + " != ncol(" + mat + ")) {\n")
-        dmlScript.append("\tstop(\"Incorrect number of columns for " + mat + " in " + sourceFileName + " script. Expected:\" + " + expectedNumCols + " + \" but found \" +  ncol(" + mat + ") )") 
+        dmlScript.append("\tstop(\"Incorrect number of columns for " + mat + msg + " Expected:\" + " + expectedNumCols + " + \" but found \" +  ncol(" + mat + ") )") 
         dmlScript.append("\n}\n")
       }
     }

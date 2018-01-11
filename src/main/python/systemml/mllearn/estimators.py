@@ -888,7 +888,7 @@ class Keras2DML(Caffe2DML):
 
     """
 
-    def __init__(self, sparkSession, keras_model, input_shape, transferUsingDF=False, weights=None, labels=None, batch_size=64, max_iter=2000, test_iter=10, test_interval=500, display=100):
+    def __init__(self, sparkSession, keras_model, input_shape, transferUsingDF=False, weights=None, labels=None, batch_size=64, max_iter=2000, test_iter=10, test_interval=500, display=100, lr_policy="step", weight_decay=5e-4, regularization_type="L2"):
         """
         Performs training/prediction for a given keras model.
 
@@ -905,6 +905,9 @@ class Keras2DML(Caffe2DML):
         test_iter: test_iter for caffe solver (default: 10)
         test_interval: test_interval for caffe solver (default: 500)
         display: display for caffe solver (default: 100)
+        lr_policy: learning rate policy for caffe solver (default: "step")
+        weight_decay: regularation strength (default: 5e-4)
+        regularization_type: regularization type (default: "L2")
         """
         from .keras2caffe import *
         import tempfile
@@ -916,7 +919,7 @@ class Keras2DML(Caffe2DML):
         self.name = keras_model.name
         createJavaObject(sparkSession._sc, 'dummy')
         convertKerasToCaffeNetwork(keras_model, self.name + ".proto", int(batch_size))
-        convertKerasToCaffeSolver(keras_model, self.name + ".proto", self.name + "_solver.proto", int(max_iter), int(test_iter), int(test_interval), int(display))
+        convertKerasToCaffeSolver(keras_model, self.name + ".proto", self.name + "_solver.proto", int(max_iter), int(test_iter), int(test_interval), int(display), lr_policy, weight_decay, regularization_type)
         self.weights = tempfile.mkdtemp() if weights is None else weights
         convertKerasToSystemMLModel(sparkSession, keras_model, self.weights)
         if labels is not None and (labels.startswith('https:') or labels.startswith('http:')):

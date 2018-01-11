@@ -235,12 +235,10 @@ def getNumPyMatrixFromKerasWeight(param):
 
 
 defaultSolver = """
-weight_decay: 5e-4
-lr_policy: "exp"
 solver_mode: CPU
 """
 
-def convertKerasToCaffeSolver(kerasModel, caffeNetworkFilePath, outCaffeSolverFilePath, max_iter, test_iter, test_interval, display):
+def convertKerasToCaffeSolver(kerasModel, caffeNetworkFilePath, outCaffeSolverFilePath, max_iter, test_iter, test_interval, display, lr_policy, weight_decay, regularization_type):
 	# TODO: Ignore loss for now
 	if not hasattr(kerasModel, 'optimizer'):
 		kerasModel.compile(loss='mae', optimizer=keras.optimizers.SGD(lr=0.01, momentum=0.95, decay=5e-4, nesterov=True))
@@ -248,18 +246,40 @@ def convertKerasToCaffeSolver(kerasModel, caffeNetworkFilePath, outCaffeSolverFi
 		solver = 'type: "Nesterov"\n' if kerasModel.optimizer.nesterov else 'type: "SGD"\n'
 	elif type(kerasModel.optimizer) == keras.optimizers.Adagrad:
 		solver = 'type: "Adagrad"\n'
+	elif type(kerasModel.optimizer) == keras.optimizers.Adam:
+		solver = 'type: "Adam"\n'
 	else:
-		raise Exception('Only sgd (with/without momentum/nesterov) and Adagrad supported.')
+		raise Exception('Only sgd (with/without momentum/nesterov), Adam and Adagrad supported.')
 	base_lr = K.eval(kerasModel.optimizer.lr) if hasattr(kerasModel.optimizer, 'lr') else 0.01
 	gamma = K.eval(kerasModel.optimizer.decay) if hasattr(kerasModel.optimizer, 'decay') else 0.0
-	momentum = K.eval(kerasModel.optimizer.momentum) if hasattr(kerasModel.optimizer, 'momentum') else 0.0
 	with open(outCaffeSolverFilePath, 'w') as f:
 		f.write('net: "' + caffeNetworkFilePath + '"\n')
 		f.write(defaultSolver)
 		f.write(solver)
+		f.write('lr_policy: "' + lr_policy + '"\n')
+		f.write('weight_decay: "' + str(weight_decay) + '"\n')
+		f.write('regularization_type: "' + str(regularization_type) + '"\n')
 		f.write('max_iter: ' + str(max_iter) + '\ntest_iter: ' + str(test_iter) + '\ntest_interval: ' + str(test_interval) + '\n')
 		f.write('display: ' + str(display) + '\n')
-		f.write('base_lr: ' + str(base_lr) + '\ngamma: ' + str(gamma) + '\nmomentum: ' + str(momentum) + '\n')
+		f.write('base_lr: ' + str(base_lr) + '\n')
+		f.write('gamma: ' + str(gamma) + '\n')
+		f.write('regularization_type: ' + regularization_type + '\n')
+		f.write('weight_decay: ' + str(weight_decay) + '\n')
+		if type(kerasModel.optimizer) == keras.optimizers.SGD:
+			momentum = K.eval(kerasModel.optimizer.momentum) if hasattr(kerasModel.optimizer, 'momentum') else 0.0
+			f.write('momentum: ' + str(momentum) + '\n')
+		elif type(kerasModel.optimizer) == keras.optimizers.Adam:
+			momentum = K.eval(kerasModel.optimizer.beta_1) if hasattr(kerasModel.optimizer, 'beta_1') else 0.9
+			momentum2 = K.eval(kerasModel.optimizer.beta_2) if hasattr(kerasModel.optimizer, 'beta_2') else 0.999
+			delta = K.eval(kerasModel.optimizer.epsilon) if hasattr(kerasModel.optimizer, 'epsilon') else 1e-8
+			f.write('momentum: ' + str(momentum) + '\n')
+			f.write('momentum2: ' + str(momentum2) + '\n')
+			f.write('delta: ' + str(delta) + '\n')
+		elif type(kerasModel.optimizer) == keras.optimizers.Adagrad:
+			delta = K.eval(kerasModel.optimizer.epsilon) if hasattr(kerasModel.optimizer, 'epsilon') else 1e-8
+			f.write('delta: ' + str(delta) + '\n')
+		else:
+			raise Exception('Only sgd (with/without momentum/nesterov), Adam and Adagrad supported.')
 
 
 def getInputMatrices(layer):
