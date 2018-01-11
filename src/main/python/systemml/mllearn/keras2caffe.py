@@ -29,6 +29,7 @@ from ..converters import *
 from ..classloader import *
 import keras
 from keras import backend as K
+from keras.layers import Activation
 
 try:
     import py4j.java_gateway
@@ -214,13 +215,35 @@ def _transformLayer(layer, batch_size):
 		layer.batch_size = batch_size
 	return [ layer ]
 
+def _parseKerasLayers(kerasLayers, batch_size):
+	transformedLayers = list(chain.from_iterable(imap(lambda layer: _transformLayer(layer, batch_size), kerasLayers)))  
+	jsonLayers = list(chain.from_iterable(imap(lambda layer: _parseKerasLayer(layer), transformedLayers)))
+	return list(chain.from_iterable(imap(lambda layer: _parseJSONObject(layer), jsonLayers)))
+	
+def lossLayerStr(layerType, bottomLayer):
+	return 'layer {\n  name: "loss"\n  type: "' + layerType + '"\n  bottom: "' + bottomLayer + '"\n  bottom: "label"\n  top: "loss"\n}\n'
+	
 def convertKerasToCaffeNetwork(kerasModel, outCaffeNetworkFilePath, batch_size):
 	_checkIfValid(kerasModel.layers, lambda layer: False if type(layer) in supportedLayers else True, 'Unsupported Layers:')
-	transformedLayers = list(chain.from_iterable(imap(lambda layer: _transformLayer(layer, batch_size), kerasModel.layers)))  
-	jsonLayers = list(chain.from_iterable(imap(lambda layer: _parseKerasLayer(layer), transformedLayers)))
-	parsedLayers = list(chain.from_iterable(imap(lambda layer: _parseJSONObject(layer), jsonLayers)))
 	with open(outCaffeNetworkFilePath, 'w') as f:
-		f.write(''.join(parsedLayers))
+		# Write the parsed layers for all but the last layer
+		if len(kerasModel.layers) > 1:
+			f.write(''.join(_parseKerasLayers(kerasModel.layers[:-1], batch_size)))
+			f.write('\n')
+		# Now process the last layer
+		lastLayer = kerasModel.layers[-1]
+		lastLayerActivation = lastLayer.activation
+		if type(lastLayer) != keras.layers.Activation:
+			lastLayer.activation = keras.activations.linear
+			f.write(''.join(_parseKerasLayers([lastLayer], batch_size)))
+			f.write('\n')
+			lastLayer.activation = lastLayerActivation
+		lastLayerActivation = str(keras.activations.serialize(lastLayerActivation))
+		if lastLayerActivation == 'softmax' and kerasModel.loss == 'categorical_crossentropy':
+			f.write(lossLayerStr('SoftmaxWithLoss', _getBottomLayers(lastLayer)))
+		else:
+			raise Exception('Unsupported loss layer ' + str(kerasModel.loss) + ' and activation ' + lastLayerActivation)
+		
 
 
 def getNumPyMatrixFromKerasWeight(param):
@@ -239,9 +262,6 @@ solver_mode: CPU
 """
 
 def convertKerasToCaffeSolver(kerasModel, caffeNetworkFilePath, outCaffeSolverFilePath, max_iter, test_iter, test_interval, display, lr_policy, weight_decay, regularization_type):
-	# TODO: Ignore loss for now
-	if not hasattr(kerasModel, 'optimizer'):
-		kerasModel.compile(loss='mae', optimizer=keras.optimizers.SGD(lr=0.01, momentum=0.95, decay=5e-4, nesterov=True))
 	if type(kerasModel.optimizer) == keras.optimizers.SGD:
 		solver = 'type: "Nesterov"\n' if kerasModel.optimizer.nesterov else 'type: "SGD"\n'
 	elif type(kerasModel.optimizer) == keras.optimizers.Adagrad:
