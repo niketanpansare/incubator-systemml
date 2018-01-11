@@ -548,27 +548,25 @@ class Concat(val param: LayerParameter, val id: Int, val net: CaffeNetwork) exte
 
 // L2 loss function.
 class EuclideanLoss(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extends CaffeLayer with IsLossLayer {
-  override def sourceFileName: String = if (!isSegmentationProblem()) "l2_loss" else throw new DMLRuntimeException("Segmentation is not supported for EuclideanLoss in Caffe2DML yet")
+  override def sourceFileName: String = "l2_loss"
   override def weightShape(): Array[Int] = null
   override def biasShape(): Array[Int]   = null
   
-  override def forward(dmlScript: StringBuilder, isPrediction: Boolean) =
-    invokeForward(dmlScript, List[String](out), scores, "yb")
+  override def forward(dmlScript: StringBuilder, isPrediction: Boolean) = 
+    assign(dmlScript, out, scores)
   
-  override def backward(dmlScript: StringBuilder,outSuffix: String): Unit = 
+  override def backward(dmlScript: StringBuilder,outSuffix: String): Unit =  {
+      invokeForward(dmlScript, List[String](out), scores, "yb")
       invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id + outSuffix), scores, "yb")
-  
-  override def computeLoss(dmlScript: StringBuilder,numTabs: Int): Unit =
-    if (!isSegmentationProblem()) {
-      val tabBuilder = new StringBuilder
-      for (i <- 0 until numTabs) tabBuilder.append("\t")
-      val tabs = tabBuilder.toString
-      dmlScript.append("tmp_loss = l2_loss::forward(" + commaSep(out, "yb") + ")\n")
-      dmlScript.append(tabs).append("loss = loss + tmp_loss\n")
-      dmlScript.append(tabs).append("accuracy = -1\n")
-    } else {
-      throw new RuntimeException("Computation of loss for SoftmaxWithLoss is not implemented for segmentation problem")
-    }
+  }
+  override def computeLoss(dmlScript: StringBuilder,numTabs: Int): Unit = {
+    val tabBuilder = new StringBuilder
+    for (i <- 0 until numTabs) tabBuilder.append("\t")
+    val tabs = tabBuilder.toString
+    invokeForward(dmlScript, List[String]("tmp_loss"), scores, "yb")
+    dmlScript.append(tabs).append("loss = loss + tmp_loss\n")
+    dmlScript.append(tabs).append("accuracy = -1\n")
+  }
 }
 
 class SoftmaxWithLoss(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extends CaffeLayer with IsLossLayer {
