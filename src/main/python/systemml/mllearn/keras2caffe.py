@@ -279,6 +279,12 @@ defaultSolver = """
 solver_mode: CPU
 """
 
+def evaluateValue(val):
+	if type(val) == int or type(val) == float:
+		return float(val)
+	else:
+		return K.eval(val)
+	
 def convertKerasToCaffeSolver(kerasModel, caffeNetworkFilePath, outCaffeSolverFilePath, max_iter, test_iter, test_interval, display, lr_policy, weight_decay, regularization_type):
 	if type(kerasModel.optimizer) == keras.optimizers.SGD:
 		solver = 'type: "Nesterov"\n' if kerasModel.optimizer.nesterov else 'type: "SGD"\n'
@@ -288,8 +294,8 @@ def convertKerasToCaffeSolver(kerasModel, caffeNetworkFilePath, outCaffeSolverFi
 		solver = 'type: "Adam"\n'
 	else:
 		raise Exception('Only sgd (with/without momentum/nesterov), Adam and Adagrad supported.')
-	base_lr = K.eval(kerasModel.optimizer.lr) if hasattr(kerasModel.optimizer, 'lr') else 0.01
-	gamma = K.eval(kerasModel.optimizer.decay) if hasattr(kerasModel.optimizer, 'decay') else 0.0
+	base_lr = evaluateValue(kerasModel.optimizer.lr) if hasattr(kerasModel.optimizer, 'lr') else 0.01
+	gamma = evaluateValue(kerasModel.optimizer.decay) if hasattr(kerasModel.optimizer, 'decay') else 0.0
 	with open(outCaffeSolverFilePath, 'w') as f:
 		f.write('net: "' + caffeNetworkFilePath + '"\n')
 		f.write(defaultSolver)
@@ -302,17 +308,17 @@ def convertKerasToCaffeSolver(kerasModel, caffeNetworkFilePath, outCaffeSolverFi
 		f.write('base_lr: ' + str(base_lr) + '\n')
 		f.write('gamma: ' + str(gamma) + '\n')
 		if type(kerasModel.optimizer) == keras.optimizers.SGD:
-			momentum = K.eval(kerasModel.optimizer.momentum) if hasattr(kerasModel.optimizer, 'momentum') else 0.0
+			momentum = evaluateValue(kerasModel.optimizer.momentum) if hasattr(kerasModel.optimizer, 'momentum') else 0.0
 			f.write('momentum: ' + str(momentum) + '\n')
 		elif type(kerasModel.optimizer) == keras.optimizers.Adam:
-			momentum = K.eval(kerasModel.optimizer.beta_1) if hasattr(kerasModel.optimizer, 'beta_1') else 0.9
-			momentum2 = K.eval(kerasModel.optimizer.beta_2) if hasattr(kerasModel.optimizer, 'beta_2') else 0.999
-			delta = K.eval(kerasModel.optimizer.epsilon) if hasattr(kerasModel.optimizer, 'epsilon') else 1e-8
+			momentum = evaluateValue(kerasModel.optimizer.beta_1) if hasattr(kerasModel.optimizer, 'beta_1') else 0.9
+			momentum2 = evaluateValue(kerasModel.optimizer.beta_2) if hasattr(kerasModel.optimizer, 'beta_2') else 0.999
+			delta = evaluateValue(kerasModel.optimizer.epsilon) if hasattr(kerasModel.optimizer, 'epsilon') else 1e-8
 			f.write('momentum: ' + str(momentum) + '\n')
 			f.write('momentum2: ' + str(momentum2) + '\n')
 			f.write('delta: ' + str(delta) + '\n')
 		elif type(kerasModel.optimizer) == keras.optimizers.Adagrad:
-			delta = K.eval(kerasModel.optimizer.epsilon) if hasattr(kerasModel.optimizer, 'epsilon') else 1e-8
+			delta = evaluateValue(kerasModel.optimizer.epsilon) if hasattr(kerasModel.optimizer, 'epsilon') else 1e-8
 			f.write('delta: ' + str(delta) + '\n')
 		else:
 			raise Exception('Only sgd (with/without momentum/nesterov), Adam and Adagrad supported.')
