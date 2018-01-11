@@ -67,7 +67,7 @@ trait CaffeSolver {
       val hasDecayMult = layer.param.getParamList != null && layer.param.getParamList.size >= 1 && layer.param.getParamList.get(0).hasDecayMult
       val newLambda = if(hasDecayMult) layer.param.getParamList.get(0).getDecayMult * lambda else lambda
       
-      dmlScript.append("\t").append(layer.dWeight + "_reg = " + regularizationSource + " :: backward(" + layer.weight + ", " + newLambda + ")\n")
+      dmlScript.append("\t").append(layer.dWeight + "_reg = " + regularizationSource + "::backward(" + layer.weight + ", " + newLambda + ")\n")
       dmlScript.append("\t").append(layer.dWeight + " = " + layer.dWeight + " + " + layer.dWeight + "_reg\n")
     }
   }
