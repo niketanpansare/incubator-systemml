@@ -215,41 +215,53 @@ def _transformLayer(layer, batch_size):
 		layer.batch_size = batch_size
 	return [ layer ]
 
-def _parseKerasLayers(kerasLayers, batch_size):
-	transformedLayers = list(chain.from_iterable(imap(lambda layer: _transformLayer(layer, batch_size), kerasLayers)))  
-	jsonLayers = list(chain.from_iterable(imap(lambda layer: _parseKerasLayer(layer), transformedLayers)))
-	return list(chain.from_iterable(imap(lambda layer: _parseJSONObject(layer), jsonLayers)))
+def _appendKerasLayers(fileHandle, kerasLayers, batch_size):
+	if len(kerasLayers) >= 1:
+		transformedLayers = list(chain.from_iterable(imap(lambda layer: _transformLayer(layer, batch_size), kerasLayers)))  
+		jsonLayers = list(chain.from_iterable(imap(lambda layer: _parseKerasLayer(layer), transformedLayers)))
+		parsedLayers = list(chain.from_iterable(imap(lambda layer: _parseJSONObject(layer), jsonLayers)))
+		fileHandle.write(''.join(parsedLayers))
+		fileHandle.write('\n')
 	
 def lossLayerStr(layerType, bottomLayer):
 	return 'layer {\n  name: "loss"\n  type: "' + layerType + '"\n  bottom: "' + bottomLayer + '"\n  bottom: "label"\n  top: "loss"\n}\n'
+	
+def _appendKerasLayerWithoutActivation(fileHandle, layer, batch_size):
+	if type(layer) != keras.layers.Activation:
+		lastLayerActivation = layer.activation
+		layer.activation = keras.activations.linear
+		_appendKerasLayers(fileHandle, [layer], batch_size)
+		layer.activation = lastLayerActivation
+
+def _getExactlyOneBottomLayer(layer):
+	bottomLayers = _getBottomLayers(layer)
+	if len(bottomLayers) != 1:
+		raise Exception('Expected only one bottom layer for ' + str(layer.name) + ', but found ' + str(bottomLayers))
+	return bottomLayers[0]
+
+def _isMeanSquaredError(loss):
+	return loss == 'mean_squared_error' or loss == 'mse' or loss == 'MSE' 
 	
 def convertKerasToCaffeNetwork(kerasModel, outCaffeNetworkFilePath, batch_size):
 	_checkIfValid(kerasModel.layers, lambda layer: False if type(layer) in supportedLayers else True, 'Unsupported Layers:')
 	with open(outCaffeNetworkFilePath, 'w') as f:
 		# Write the parsed layers for all but the last layer
-		if len(kerasModel.layers) > 1:
-			f.write(''.join(_parseKerasLayers(kerasModel.layers[:-1], batch_size)))
-			f.write('\n')
-		# Now process the last layer
+		_appendKerasLayers(f, kerasModel.layers[:-1], batch_size)
+		# Now process the last layer with loss
 		lastLayer = kerasModel.layers[-1]
-		lastLayerActivation = lastLayer.activation
-		bottomLayer = lastLayer.name
-		if type(lastLayer) != keras.layers.Activation:
-			lastLayer.activation = keras.activations.linear
-			f.write(''.join(_parseKerasLayers([lastLayer], batch_size)))
-			f.write('\n')
-			lastLayer.activation = lastLayerActivation
-		else:
-			bottomLayers = _getBottomLayers(lastLayer)
-			if len(bottomLayers) != 1:
-				raise Exception('Only one bottom layer expected for the loss layer, but found ' + str(bottomLayers))
-			bottomLayer = bottomLayers[0]
-		lastLayerActivation = str(keras.activations.serialize(lastLayerActivation))
-		if lastLayerActivation == 'softmax' and kerasModel.loss == 'categorical_crossentropy':
-			f.write(lossLayerStr('SoftmaxWithLoss', bottomLayer))
+		if _isMeanSquaredError(kerasModel.loss):
+			_appendKerasLayers(f, [ lastLayer ], batch_size)
+			f.write(lossLayerStr('EuclideanLoss', lastLayer.name))
+		elif kerasModel.loss == 'categorical_crossentropy':
+			_appendKerasLayerWithoutActivation(f, lastLayer, batch_size)
+			bottomLayer = _getExactlyOneBottomLayer(lastLayer) if type(lastLayer) == keras.layers.Activation else lastLayer.name  
+			lastLayerActivation = str(keras.activations.serialize(lastLayer.activation))
+			if lastLayerActivation == 'softmax' and kerasModel.loss == 'categorical_crossentropy':
+				f.write(lossLayerStr('SoftmaxWithLoss', bottomLayer))
+			else:
+				raise Exception('Unsupported loss layer ' + str(kerasModel.loss) + ' (where last layer activation ' + lastLayerActivation + ').')
 		else:
 			raise Exception('Unsupported loss layer ' + str(kerasModel.loss) + ' (where last layer activation ' + lastLayerActivation + ').')
-		
 
 
 def getNumPyMatrixFromKerasWeight(param):

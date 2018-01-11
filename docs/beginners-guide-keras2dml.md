@@ -53,11 +53,11 @@ from systemml.mllearn import Keras2DML
 import keras
 from keras.applications.resnet50 import preprocess_input, decode_predictions, ResNet50
 
-model = ResNet50(weights='imagenet',include_top=True,pooling='None',input_shape=(224,224,3))
-model.compile(optimizer='sgd', loss= 'categorical_crossentropy')
+keras_model = ResNet50(weights='imagenet',include_top=True,pooling='None',input_shape=(224,224,3))
+keras_model.compile(optimizer='sgd', loss= 'categorical_crossentropy')
 
-resnet = Keras2DML(spark,model,input_shape=(3,224,224))
-resnet.summary()
+sysml_model = Keras2DML(spark, keras_model,input_shape=(3,224,224))
+sysml_model.summary()
 ```
 
 # Frequently asked questions
@@ -78,10 +78,29 @@ resnet.summary()
 | If type of the optimizer is `keras.optimizers.Adam`    |                                                                | `beta_1, beta_2, epsilon`. The parameter `amsgrad` is not supported.                    | `momentum, momentum2, delta`                     |
 | If type of the optimizer is `keras.optimizers.Adagrad` |                                                                | `epsilon`                                                                               | `delta`                                          |
 
-#### What optimizer does Keras2DML uses by default ?
+#### How do I specify the batch size and the number of epochs ?
 
-If the user does not `compile` the keras model, then we use `keras.optimizers.SGD(lr=0.01, momentum=0.95, decay=5e-4, nesterov=True)`
-as the optimizer. 
+Since Keras2DML is a mllearn API, it doesnot accept the batch size and number of epochs as the parameter in the `fit` method.
+Instead, these parameters are passed via `batch_size` and `max_iter` parameters in the Keras2DML constructor.
+For example, the equivalent Python code for `keras_model.fit(features, labels, epochs=10, batch_size=64)` is as follows:
+
+```python
+from systemml.mllearn import Keras2DML
+epochs = 10
+batch_size = 64
+num_samples = features.shape[0]
+max_iter = int(epochs*math.ceil(num_samples/batch_size))
+sysml_model = Keras2DML(spark, keras_model, batch_size=batch_size, max_iter=max_iter, ...)
+sysml_model.fit(features, labels)
+``` 
+
+#### What optimizer and loss does Keras2DML use by default if `keras_model` is not compiled ?
+
+If the user does not `compile` the keras model, then we use cross entropy loss and SGD optimizer with nesterov momentum:
+
+```python 
+keras_model.compile(loss='categorical_crossentropy', optimizer=keras.optimizers.SGD(lr=0.01, momentum=0.95, decay=5e-4, nesterov=True))
+```
 
 #### What is the learning rate schedule used ?
 
