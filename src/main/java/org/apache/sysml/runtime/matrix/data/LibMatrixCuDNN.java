@@ -64,6 +64,10 @@ import static jcuda.jcudnn.cudnnSoftmaxMode.CUDNN_SOFTMAX_MODE_CHANNEL;
  */
 public class LibMatrixCuDNN extends LibMatrixCUDA {
 
+	// Currently we only use nnz information from the sparse matrix which is pre-computed
+	// TODO: experiment how often does dense matrix is empty where recomputing nnz before calling CuDNN will help
+	private static final boolean RECOMPUTE_DENSE_NNZ = false;
+	
 	protected static int CONVOLUTION_PREFERENCE = cudnnConvolutionFwdPreference.CUDNN_CONVOLUTION_FWD_NO_WORKSPACE;
 	private static final Log LOG = LogFactory.getLog(LibMatrixCuDNN.class.getName());
 
@@ -157,7 +161,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		}
 		return im2colPointer;
 	}
-
+	
 	/**
 	 * Performs a 2D convolution
 	 * 
@@ -190,24 +194,27 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		long NPQ = N*P*Q;
 		
 		boolean isSparseFilter = isInSparseFormat(gCtx, filter);
+		long filterNnz = getNnz(gCtx, instName, filter, RECOMPUTE_DENSE_NNZ);
+		if(filterNnz == 0) {
+			return; // since filter is empty
+		}
 		boolean isSparseImage = isInSparseFormat(gCtx, image);
+		long imageNnz = getNnz(gCtx, instName, image, RECOMPUTE_DENSE_NNZ);
+		if(imageNnz == 0) {
+			return; // since image is empty
+		}
 		Pointer dstPointer = getDensePointerForCuDNN(gCtx, outputBlock, instName);
 		
 		if(NCHW < maxNumElementsOfCuDNNTensor && NKPQ < maxNumElementsOfCuDNNTensor && KCRS < maxNumElementsOfCuDNNTensor) {
 			if(isSparseFilter && 
 				(OptimizerUtils.estimateSizeExactSparsity(CRS, NPQ, 1.0) + OptimizerUtils.estimateSizeExactSparsity(K, NPQ, 1.0)) < intermediateMemoryBudget) {
 				// Sparse filter conv2d
-				CSRPointer filterPointer = filter.getGPUObject(gCtx).getJcudaSparseMatrixPtr();
-				if(filterPointer.nnz == 0) 
-					return; // because filter is empty
-				
 				// Perform dense im2col
 				Pointer im2colPointer = denseIm2col(gCtx, instName, image, isSparseImage,
 						N, C, H, W, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
-				if(im2colPointer == null)
-					return; // because input is empty
 				
 				// Perform matrix multiplication
+				CSRPointer filterPointer = filter.getGPUObject(gCtx).getJcudaSparseMatrixPtr();
 				Pointer matmultOutputPointer = gCtx.allocate(instName, NKPQ*sizeOfDataType);
 				LibMatrixCuMatMult.sparseDenseMatMult(gCtx, instName, matmultOutputPointer, filterPointer, im2colPointer, K, CRS, CRS, NPQ, K, NPQ, false, false);
 				gCtx.cudaFreeHelper(instName, im2colPointer);
@@ -400,11 +407,21 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		long CHW = C*H*W; long KPQ = K*P*Q; long CRS = C*R*S; 
 		long NCHW = N*CHW; long NKPQ = N*KPQ; long KCRS = K*CRS;
 		
+		boolean isSparseDout = isInSparseFormat(gCtx, dout);
+		long doutNnz = getNnz(gCtx, instName, dout, RECOMPUTE_DENSE_NNZ);
+		if(doutNnz == 0) {
+			return; // since dout is empty
+		}
+		boolean isSparseImage = isInSparseFormat(gCtx, image);
+		long imageNnz = getNnz(gCtx, instName, image, RECOMPUTE_DENSE_NNZ);
+		if(imageNnz == 0) {
+			return; // since image is empty
+		}
 		
 		if(NCHW < maxNumElementsOfCuDNNTensor && NKPQ < maxNumElementsOfCuDNNTensor && KCRS < maxNumElementsOfCuDNNTensor) {
 			Pointer dwPointer = getDensePointerForCuDNN(gCtx, outputBlock, instName);
-			double overhead = isInSparseFormat(gCtx, image) ? OptimizerUtils.estimateSizeExactSparsity(N, CHW, 1.0) : 0;
-			overhead += isInSparseFormat(gCtx, dout) ? OptimizerUtils.estimateSizeExactSparsity(N, KPQ, 1.0) : 0;
+			double overhead = isSparseImage ? OptimizerUtils.estimateSizeExactSparsity(N, CHW, 1.0) : 0;
+			overhead += isSparseDout ? OptimizerUtils.estimateSizeExactSparsity(N, KPQ, 1.0) : 0;
 
 			// Required for LibMatrixCuDNNConvolutionAlgorithm
 			long workspaceLimit = (long) (intermediateMemoryBudget-overhead);
@@ -507,10 +524,21 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		long CHW = C*H*W; long KPQ = K*P*Q; long CRS = C*R*S; 
 		long NCHW = N*CHW; long NKPQ = N*KPQ; long KCRS = K*CRS;
 
+		boolean isSparseFilter = isInSparseFormat(gCtx, filter);
+		long filterNnz = getNnz(gCtx, instName, filter, RECOMPUTE_DENSE_NNZ);
+		if(filterNnz == 0) {
+			return; // since filter is empty
+		}
+		boolean isSparseDout = isInSparseFormat(gCtx, dout);
+		long doutNnz = getNnz(gCtx, instName, dout, RECOMPUTE_DENSE_NNZ);
+		if(doutNnz == 0) {
+			return; // since dout is empty
+		}
+		
 		if(NCHW < maxNumElementsOfCuDNNTensor && NKPQ < maxNumElementsOfCuDNNTensor && KCRS < maxNumElementsOfCuDNNTensor) {
 			// Filter and output are accounted as dense in the memory estimation for conv2dBackwardData
-			double overhead = isInSparseFormat(gCtx, filter) ? OptimizerUtils.estimateSizeExactSparsity(K, CRS, 1.0) : 0;
-			overhead += isInSparseFormat(gCtx, dout) ? OptimizerUtils.estimateSizeExactSparsity(N, KPQ, 1.0) : 0;
+			double overhead = isSparseFilter ? OptimizerUtils.estimateSizeExactSparsity(K, CRS, 1.0) : 0;
+			overhead += isSparseDout ? OptimizerUtils.estimateSizeExactSparsity(N, KPQ, 1.0) : 0;
 			Pointer filterPointer = getDensePointerForCuDNN(gCtx, filter, instName);
 			Pointer dstPointer = getDensePointerForCuDNN(gCtx, output, instName);
 			
