@@ -50,6 +50,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
+import org.apache.sysml.runtime.instructions.gpu.context.CSRPointer;
 import org.apache.sysml.runtime.instructions.gpu.context.ExecutionConfig;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.utils.GPUStatistics;
@@ -103,6 +104,44 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		biasAdd(gCtx, instName, output, bias, output);
 	}
 	
+	private static double getSparseFilterConv2dMemoryBudget(boolean isSparseImage, long CRS, long NPQ, long N, long CHW, long K) {
+		double overhead = OptimizerUtils.estimateSizeExactSparsity(CRS, NPQ, 1.0) + OptimizerUtils.estimateSizeExactSparsity(K, NPQ, 1.0);
+		overhead += isSparseImage ? OptimizerUtils.estimateSizeExactSparsity(N, CHW, 1.0) : 0;
+		return overhead;
+	}
+	
+	/**
+	 * Performs dense im2col operation on GPU
+	 * 
+	 * @param gCtx a valid {@link GPUContext}
+	 * @param instName the invoking instruction's name for record {@link Statistics}.
+	 * @param imagePointer pointer to the input image
+	 * @param N        number of input images
+	 * @param C        number of channels
+	 * @param H        height of each image
+	 * @param W        width of each image
+	 * @param R        height of filter
+	 * @param S        width of filter
+	 * @param pad_h    padding height
+	 * @param pad_w    padding width
+	 * @param stride_h stride height
+	 * @param stride_w string width
+	 * @param P        output height
+	 * @param Q        output width
+	 * @return output im2col pointer (the caller is expected to free this pointer)
+	 * @throws DMLRuntimeException if error
+	 */
+	private static Pointer denseIm2col(GPUContext gCtx, String instName, Pointer imagePointer, long N, long C, long H, long W,
+			int R, int S, int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q) throws DMLRuntimeException {
+		Pointer im2colPointer = gCtx.allocate(instName, C*R*S*N*P*Q*sizeOfDataType);
+		long t1 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
+		getCudaKernels(gCtx).launchKernel("im2col", ExecutionConfig.getConfigForSimpleVectorOperations(toInt(N*C*H*W)), 
+				imagePointer, im2colPointer, 
+				N*C*H*W, C*H*W, H*W, W, R, S, P, Q, P*Q, R*S, N*P*Q, stride_h, stride_w, pad_h, pad_w);
+		if (DMLScript.FINEGRAINED_STATISTICS)
+			GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DENSE_IM2COL_KERNEL, System.nanoTime() - t1);
+		return im2colPointer;
+	}
 
 	/**
 	 * Performs a 2D convolution
@@ -133,32 +172,60 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 
 		long CHW = C*H*W; long KPQ = K*P*Q; long CRS = C*R*S; 
 		long NCHW = N*CHW; long NKPQ = N*KPQ; long KCRS = K*CRS;
+		long NPQ = N*P*Q;
+		
+		boolean isSparseFilter = isInSparseFormat(gCtx, filter);
+		boolean isSparseImage = isInSparseFormat(gCtx, image);
 		
 		if(NCHW < maxNumElementsOfCuDNNTensor && NKPQ < maxNumElementsOfCuDNNTensor && KCRS < maxNumElementsOfCuDNNTensor) {
-			// Filter and output are accounted as dense in the memory estimation for conv2d
-			double overhead = isInSparseFormat(gCtx, filter) ? OptimizerUtils.estimateSizeExactSparsity(K, CRS, 1.0) : 0;
-			overhead += isInSparseFormat(gCtx, image) ? OptimizerUtils.estimateSizeExactSparsity(N, CHW, 1.0) : 0;
+			if(isSparseFilter && getSparseFilterConv2dMemoryBudget(isSparseImage, CRS, NPQ, N, CHW, K) < intermediateMemoryBudget) {
+				// Sparse filter conv2d
+				// Perform dense im2col
+				Pointer im2colPointer = denseIm2col(gCtx, instName, getDensePointerForCuDNN(gCtx, image, instName), 
+						N, C, H, W, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
+				
+				// Perform matrix multiplication
+				CSRPointer filterPointer = filter.getGPUObject(gCtx).getJcudaSparseMatrixPtr();
+				Pointer matmultOutputPointer = gCtx.allocate(instName, NKPQ*sizeOfDataType);
+				LibMatrixCuMatMult.sparseDenseMatMult(gCtx, instName, matmultOutputPointer, filterPointer, im2colPointer, K, CRS, CRS, NPQ, K, NPQ, false, false);
+				gCtx.cudaFreeHelper(instName, im2colPointer);
+				
+				// Perform reorg_knpq a reorg operation of matmultOutputPointer matrix with dimensions [K, NPQ]
+				// and return a matrix dstPointer with dimensions [N, KPQ]
+				Pointer dstPointer = getDensePointerForCuDNN(gCtx, outputBlock, instName);
+				long t1 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
+				getCudaKernels(gCtx).launchKernel("reorg_knpq", ExecutionConfig.getConfigForSimpleVectorOperations(toInt(NKPQ)), 
+						matmultOutputPointer, dstPointer, NKPQ, NPQ, KPQ, P*Q);
+				if (DMLScript.FINEGRAINED_STATISTICS)
+					GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DENSE_REORG_KNPQ_KERNEL, System.nanoTime() - t1);
+				gCtx.cudaFreeHelper(instName, matmultOutputPointer);
+			}
+			else {
+				// Filter and output are accounted as dense in the memory estimation for conv2d
+				double overhead = isSparseFilter ? OptimizerUtils.estimateSizeExactSparsity(K, CRS, 1.0) : 0;
+				overhead += isSparseImage ? OptimizerUtils.estimateSizeExactSparsity(N, CHW, 1.0) : 0;
 
-			Pointer filterPointer = getDensePointerForCuDNN(gCtx, filter, instName);
-			Pointer dstPointer = getDensePointerForCuDNN(gCtx, outputBlock, instName);
-			
-			// Required for LibMatrixCuDNNConvolutionAlgorithm
-			long workspaceLimit = (long) (intermediateMemoryBudget-overhead);
-			int localN = overhead <= intermediateMemoryBudget ? N : 1;
-			
-			try(LibMatrixCuDNNConvolutionAlgorithm algo = 
-					LibMatrixCuDNNConvolutionAlgorithm.cudnnGetConvolutionForwardAlgorithm(gCtx, instName, 
-					localN, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, workspaceLimit)) {
-				if(localN == N) {
-					// Perform all-input all-channel conv2d
-					Pointer imagePointer = getDensePointerForCuDNN(gCtx, image, instName);
-					cudnnConv2d(gCtx, instName, imagePointer, filterPointer, dstPointer, algo);
-				}
-				else {
-					try(LibMatrixCuDNNInputRowFetcher imgFetcher = new LibMatrixCuDNNInputRowFetcher(gCtx, instName, image)) {
-						for(int n = 0; n < N; n++) {
-							// Perform one-input all-channel conv2d
-							cudnnConv2d(gCtx, instName, imgFetcher.getNthRow(n), filterPointer, dstPointer.withByteOffset(n*KPQ*sizeOfDataType), algo);
+				Pointer filterPointer = getDensePointerForCuDNN(gCtx, filter, instName);
+				Pointer dstPointer = getDensePointerForCuDNN(gCtx, outputBlock, instName);
+				
+				// Required for LibMatrixCuDNNConvolutionAlgorithm
+				long workspaceLimit = (long) (intermediateMemoryBudget-overhead);
+				int localN = overhead <= intermediateMemoryBudget ? N : 1;
+				
+				try(LibMatrixCuDNNConvolutionAlgorithm algo = 
+						LibMatrixCuDNNConvolutionAlgorithm.cudnnGetConvolutionForwardAlgorithm(gCtx, instName, 
+						localN, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, workspaceLimit)) {
+					if(localN == N) {
+						// Perform all-input all-channel conv2d
+						Pointer imagePointer = getDensePointerForCuDNN(gCtx, image, instName);
+						cudnnConv2d(gCtx, instName, imagePointer, filterPointer, dstPointer, algo);
+					}
+					else {
+						try(LibMatrixCuDNNInputRowFetcher imgFetcher = new LibMatrixCuDNNInputRowFetcher(gCtx, instName, image)) {
+							for(int n = 0; n < N; n++) {
+								// Perform one-input all-channel conv2d
+								cudnnConv2d(gCtx, instName, imgFetcher.getNthRow(n), filterPointer, dstPointer.withByteOffset(n*KPQ*sizeOfDataType), algo);
+							}
 						}
 					}
 				}
