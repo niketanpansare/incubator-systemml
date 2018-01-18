@@ -199,18 +199,22 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 				// Perform dense im2col
 				Pointer im2colPointer = denseIm2col(gCtx, instName, image, isSparseImage,
 						N, C, H, W, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
+				if(im2colPointer == null)
+					return; // because input is empty
 				
 				// Perform matrix multiplication
 				CSRPointer filterPointer = filter.getGPUObject(gCtx).getJcudaSparseMatrixPtr();
 				
 				// Empty input image or filter
-				if(im2colPointer == null || filterPointer.nnz == 0) {
+				if(filterPointer.nnz == 0) {
+					gCtx.cudaFreeHelper(instName, im2colPointer);
 					return;
 				}
-				
-				Pointer matmultOutputPointer = gCtx.allocate(instName, NKPQ*sizeOfDataType);
-				LibMatrixCuMatMult.sparseDenseMatMult(gCtx, instName, matmultOutputPointer, filterPointer, im2colPointer, K, CRS, CRS, NPQ, K, NPQ, false, false);
-				gCtx.cudaFreeHelper(instName, im2colPointer);
+				else {
+					Pointer matmultOutputPointer = gCtx.allocate(instName, NKPQ*sizeOfDataType);
+					LibMatrixCuMatMult.sparseDenseMatMult(gCtx, instName, matmultOutputPointer, filterPointer, im2colPointer, K, CRS, CRS, NPQ, K, NPQ, false, false);
+					gCtx.cudaFreeHelper(instName, im2colPointer);
+				}
 				
 				// Perform reorg_knpq a reorg operation of matmultOutputPointer matrix with dimensions [K, NPQ]
 				// and return a matrix dstPointer with dimensions [N, KPQ]
