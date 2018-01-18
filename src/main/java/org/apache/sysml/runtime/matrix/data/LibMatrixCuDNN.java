@@ -123,12 +123,12 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @param stride_w string width
 	 * @param P        output height
 	 * @param Q        output width
-	 * @return output im2col pointer (the caller is expected to free this pointer)
+	 * @return output im2col pointer (the caller is expected to free this pointer) or null if image is an empty matrix
 	 * @throws DMLRuntimeException if error
 	 */
 	private static Pointer denseIm2col(GPUContext gCtx, String instName, MatrixObject image, boolean isSparseImage, long N, long C, long H, long W,
 			int R, int S, int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q) throws DMLRuntimeException {
-		Pointer im2colPointer = gCtx.allocate(instName, C*R*S*N*P*Q*sizeOfDataType);
+		Pointer im2colPointer = null;
 		long t1 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 		if(isSparseImage) {
 			CSRPointer inPointer = getSparsePointer(gCtx, image, instName);
@@ -136,14 +136,18 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 				throw new DMLRuntimeException("Unknown number of nonzeroes in denseIm2col");
 			}
 			else if(inPointer.nnz > 0) {
+				im2colPointer = gCtx.allocate(instName, C*R*S*N*P*Q*sizeOfDataType);
 				getCudaKernels(gCtx).launchKernel("sparse_dense_im2col", ExecutionConfig.getConfigForSimpleVectorOperations(toInt(inPointer.nnz)), 
 						inPointer.val, inPointer.rowPtr, inPointer.colInd, im2colPointer, inPointer.nnz, N, 
 						C*H*W, H*W, W, R, S, P, Q, P*Q, R*S, N*P*Q, stride_h, stride_w, pad_h, pad_w);
 				if (DMLScript.FINEGRAINED_STATISTICS)
 					GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SPARSE_IM2COL_KERNEL, System.nanoTime() - t1);
 			}
+			else
+				return null;
 		}
 		else {
+			im2colPointer = gCtx.allocate(instName, C*R*S*N*P*Q*sizeOfDataType);
 			Pointer imagePointer = getDensePointerForCuDNN(gCtx, image, instName);
 			getCudaKernels(gCtx).launchKernel("dense_dense_im2col", ExecutionConfig.getConfigForSimpleVectorOperations(toInt(N*C*H*W)), 
 					imagePointer, im2colPointer, N*C*H*W, 
@@ -198,6 +202,12 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 				
 				// Perform matrix multiplication
 				CSRPointer filterPointer = filter.getGPUObject(gCtx).getJcudaSparseMatrixPtr();
+				
+				// Empty input image or filter
+				if(im2colPointer == null || filterPointer.nnz == 0) {
+					return;
+				}
+				
 				Pointer matmultOutputPointer = gCtx.allocate(instName, NKPQ*sizeOfDataType);
 				LibMatrixCuMatMult.sparseDenseMatMult(gCtx, instName, matmultOutputPointer, filterPointer, im2colPointer, K, CRS, CRS, NPQ, K, NPQ, false, false);
 				gCtx.cudaFreeHelper(instName, im2colPointer);
