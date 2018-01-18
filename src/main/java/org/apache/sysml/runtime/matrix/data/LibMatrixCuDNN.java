@@ -132,11 +132,16 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		long t1 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 		if(isSparseImage) {
 			CSRPointer inPointer = getSparsePointer(gCtx, image, instName);
-			getCudaKernels(gCtx).launchKernel("sparse_dense_im2col", ExecutionConfig.getConfigForSimpleVectorOperations(toInt(inPointer.nnz)), 
-					inPointer.val, inPointer.rowPtr, inPointer.colInd, im2colPointer, inPointer.nnz, N, 
-					C*H*W, H*W, W, R, S, P, Q, P*Q, R*S, N*P*Q, stride_h, stride_w, pad_h, pad_w);
-			if (DMLScript.FINEGRAINED_STATISTICS)
-				GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SPARSE_IM2COL_KERNEL, System.nanoTime() - t1);
+			if(inPointer.nnz < 0) {
+				throw new DMLRuntimeException("Unknown number of nonzeroes in denseIm2col");
+			}
+			else if(inPointer.nnz > 0) {
+				getCudaKernels(gCtx).launchKernel("sparse_dense_im2col", ExecutionConfig.getConfigForSimpleVectorOperations(toInt(inPointer.nnz)), 
+						inPointer.val, inPointer.rowPtr, inPointer.colInd, im2colPointer, inPointer.nnz, N, 
+						C*H*W, H*W, W, R, S, P, Q, P*Q, R*S, N*P*Q, stride_h, stride_w, pad_h, pad_w);
+				if (DMLScript.FINEGRAINED_STATISTICS)
+					GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SPARSE_IM2COL_KERNEL, System.nanoTime() - t1);
+			}
 		}
 		else {
 			Pointer imagePointer = getDensePointerForCuDNN(gCtx, image, instName);
