@@ -191,6 +191,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		
 		boolean isSparseFilter = isInSparseFormat(gCtx, filter);
 		boolean isSparseImage = isInSparseFormat(gCtx, image);
+		Pointer dstPointer = getDensePointerForCuDNN(gCtx, outputBlock, instName);
 		
 		if(NCHW < maxNumElementsOfCuDNNTensor && NKPQ < maxNumElementsOfCuDNNTensor && KCRS < maxNumElementsOfCuDNNTensor) {
 			if(isSparseFilter && 
@@ -204,21 +205,19 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 				
 				// Perform matrix multiplication
 				CSRPointer filterPointer = filter.getGPUObject(gCtx).getJcudaSparseMatrixPtr();
-				
-				// Empty input image or filter
+				Pointer matmultOutputPointer = null;
 				if(filterPointer.nnz == 0) {
 					gCtx.cudaFreeHelper(instName, im2colPointer);
-					return;
+					return; // because filter is empty
 				}
 				else {
-					Pointer matmultOutputPointer = gCtx.allocate(instName, NKPQ*sizeOfDataType);
+					matmultOutputPointer = gCtx.allocate(instName, NKPQ*sizeOfDataType);
 					LibMatrixCuMatMult.sparseDenseMatMult(gCtx, instName, matmultOutputPointer, filterPointer, im2colPointer, K, CRS, CRS, NPQ, K, NPQ, false, false);
 					gCtx.cudaFreeHelper(instName, im2colPointer);
 				}
 				
 				// Perform reorg_knpq a reorg operation of matmultOutputPointer matrix with dimensions [K, NPQ]
 				// and return a matrix dstPointer with dimensions [N, KPQ]
-				Pointer dstPointer = getDensePointerForCuDNN(gCtx, outputBlock, instName);
 				long t1 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 				getCudaKernels(gCtx).launchKernel("reorg_knpq", ExecutionConfig.getConfigForSimpleVectorOperations(toInt(NKPQ)), 
 						matmultOutputPointer, dstPointer, NKPQ, NPQ, KPQ, P*Q);
@@ -232,7 +231,6 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 				overhead += isSparseImage ? OptimizerUtils.estimateSizeExactSparsity(N, CHW, 1.0) : 0;
 
 				Pointer filterPointer = getDensePointerForCuDNN(gCtx, filter, instName);
-				Pointer dstPointer = getDensePointerForCuDNN(gCtx, outputBlock, instName);
 				
 				// Required for LibMatrixCuDNNConvolutionAlgorithm
 				long workspaceLimit = (long) (intermediateMemoryBudget-overhead);
