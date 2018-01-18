@@ -104,18 +104,13 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		biasAdd(gCtx, instName, output, bias, output);
 	}
 	
-	private static double getSparseFilterConv2dMemoryBudget(boolean isSparseImage, long CRS, long NPQ, long N, long CHW, long K) {
-		double overhead = OptimizerUtils.estimateSizeExactSparsity(CRS, NPQ, 1.0) + OptimizerUtils.estimateSizeExactSparsity(K, NPQ, 1.0);
-		overhead += isSparseImage ? OptimizerUtils.estimateSizeExactSparsity(N, CHW, 1.0) : 0;
-		return overhead;
-	}
-	
 	/**
-	 * Performs dense im2col operation on GPU
+	 * Performs im2col operation on GPU
 	 * 
 	 * @param gCtx a valid {@link GPUContext}
 	 * @param instName the invoking instruction's name for record {@link Statistics}.
-	 * @param imagePointer pointer to the input image
+	 * @param image input matrix object
+	 * @param isSparseImage is input image sparse
 	 * @param N        number of input images
 	 * @param C        number of channels
 	 * @param H        height of each image
@@ -131,15 +126,26 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @return output im2col pointer (the caller is expected to free this pointer)
 	 * @throws DMLRuntimeException if error
 	 */
-	private static Pointer denseIm2col(GPUContext gCtx, String instName, Pointer imagePointer, long N, long C, long H, long W,
+	private static Pointer denseIm2col(GPUContext gCtx, String instName, MatrixObject image, boolean isSparseImage, long N, long C, long H, long W,
 			int R, int S, int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q) throws DMLRuntimeException {
 		Pointer im2colPointer = gCtx.allocate(instName, C*R*S*N*P*Q*sizeOfDataType);
 		long t1 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
-		getCudaKernels(gCtx).launchKernel("im2col", ExecutionConfig.getConfigForSimpleVectorOperations(toInt(N*C*H*W)), 
-				imagePointer, im2colPointer, 
-				N*C*H*W, C*H*W, H*W, W, R, S, P, Q, P*Q, R*S, N*P*Q, stride_h, stride_w, pad_h, pad_w);
-		if (DMLScript.FINEGRAINED_STATISTICS)
-			GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DENSE_IM2COL_KERNEL, System.nanoTime() - t1);
+		if(isSparseImage) {
+			CSRPointer inPointer = getSparsePointer(gCtx, image, instName);
+			getCudaKernels(gCtx).launchKernel("sparse_dense_im2col", ExecutionConfig.getConfigForSimpleVectorOperations(toInt(inPointer.nnz)), 
+					inPointer.val, inPointer.rowPtr, inPointer.colInd, im2colPointer, inPointer.nnz, N, 
+					C*H*W, H*W, W, R, S, P, Q, P*Q, R*S, N*P*Q, stride_h, stride_w, pad_h, pad_w);
+			if (DMLScript.FINEGRAINED_STATISTICS)
+				GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SPARSE_IM2COL_KERNEL, System.nanoTime() - t1);
+		}
+		else {
+			Pointer imagePointer = getDensePointerForCuDNN(gCtx, image, instName);
+			getCudaKernels(gCtx).launchKernel("dense_dense_im2col", ExecutionConfig.getConfigForSimpleVectorOperations(toInt(N*C*H*W)), 
+					imagePointer, im2colPointer, N*C*H*W, 
+					C*H*W, H*W, W, R, S, P, Q, P*Q, R*S, N*P*Q, stride_h, stride_w, pad_h, pad_w);
+			if (DMLScript.FINEGRAINED_STATISTICS)
+				GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DENSE_IM2COL_KERNEL, System.nanoTime() - t1);
+		}
 		return im2colPointer;
 	}
 
@@ -178,10 +184,11 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		boolean isSparseImage = isInSparseFormat(gCtx, image);
 		
 		if(NCHW < maxNumElementsOfCuDNNTensor && NKPQ < maxNumElementsOfCuDNNTensor && KCRS < maxNumElementsOfCuDNNTensor) {
-			if(isSparseFilter && getSparseFilterConv2dMemoryBudget(isSparseImage, CRS, NPQ, N, CHW, K) < intermediateMemoryBudget) {
+			if(isSparseFilter && 
+				(OptimizerUtils.estimateSizeExactSparsity(CRS, NPQ, 1.0) + OptimizerUtils.estimateSizeExactSparsity(K, NPQ, 1.0)) < intermediateMemoryBudget) {
 				// Sparse filter conv2d
 				// Perform dense im2col
-				Pointer im2colPointer = denseIm2col(gCtx, instName, getDensePointerForCuDNN(gCtx, image, instName), 
+				Pointer im2colPointer = denseIm2col(gCtx, instName, image, isSparseImage,
 						N, C, H, W, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
 				
 				// Perform matrix multiplication
