@@ -152,6 +152,39 @@ object Caffe2DML {
   }
   def throwUsageError(): Unit =
     throw new RuntimeException("Incorrect usage: train_script OUTPUT_DML_FILE SOLVER_FILE INPUT_CHANNELS INPUT_HEIGHT INPUT_WIDTH");
+  
+  // Supported algorithms
+  val ALL_REDUCE_ALGORITHM = "allreduce"
+  val ALL_REDUCE_PARALLEL_BATCHES_ALGORITHM = "allreduce_parallel_batches"
+  val BATCH_ALGORITHM = "batch"
+  val MINIBATCH_ALGORITHM = "minibatch"
+  val KRIZHEVSKY_ALGORITHM = "krizhevsky"
+  
+  private def splitByFirstFullyConnectedLayer(allLayers:List[CaffeLayer]):Tuple2[List[CaffeLayer], List[CaffeLayer]] = {
+    val affineLayers = allLayers.filter(_.isInstanceOf[InnerProduct])
+    if(affineLayers.size == 0) {
+      throw new DMLRuntimeException("Expected atleast one affine layer but found none.")
+    }
+    // Using the terminology given in the paper https://arxiv.org/pdf/1404.5997.pdf
+    var convolutionalDataParallelLayers:ArrayList[CaffeLayer] = new ArrayList[CaffeLayer]
+    var fullyConnectedModelParallelLayers:ArrayList[CaffeLayer] = new ArrayList[CaffeLayer]
+    var foundFirstAffineLayer = false
+    for(layer <- allLayers) {
+      if(foundFirstAffineLayer) {
+        fullyConnectedModelParallelLayers.add(layer)
+      }
+      else {
+        if(layer == affineLayers.get(0)) {
+          foundFirstAffineLayer = true
+          fullyConnectedModelParallelLayers.add(layer)
+        }
+        else {
+          convolutionalDataParallelLayers.add(layer)
+        }
+      }
+    }
+    return new Tuple2(convolutionalDataParallelLayers.toList, fullyConnectedModelParallelLayers.toList)
+  }
 }
 
 class Caffe2DML(val sc: SparkContext,
@@ -305,7 +338,9 @@ class Caffe2DML(val sc: SparkContext,
 
   // TODO: throw error or warning if user tries to set solver_mode == GPU instead of using setGPU method
 
-  def containsParfor():Boolean = getTrainAlgo.toLowerCase.startsWith("allreduce") || getTestAlgo.toLowerCase.startsWith("allreduce")
+  def trainAlgoContainsParfor():Boolean = getTrainAlgo.toLowerCase.startsWith(Caffe2DML.ALL_REDUCE_ALGORITHM) || getTrainAlgo.toLowerCase.equals(Caffe2DML.KRIZHEVSKY_ALGORITHM)
+  def testAlgoContainsParfor():Boolean = getTestAlgo.toLowerCase.startsWith(Caffe2DML.ALL_REDUCE_ALGORITHM) || getTestAlgo.toLowerCase.equals(Caffe2DML.KRIZHEVSKY_ALGORITHM)
+  def containsParfor():Boolean = trainAlgoContainsParfor || testAlgoContainsParfor
   def getTrainAlgo(): String = if (inputs.containsKey("$train_algo")) inputs.get("$train_algo") else "minibatch"
   def getTestAlgo(): String  = if (inputs.containsKey("$test_algo")) inputs.get("$test_algo") else "minibatch"
 
@@ -431,7 +466,7 @@ class Caffe2DML(val sc: SparkContext,
 
   private def performTrainingIter(lossLayers: List[IsLossLayer], shouldValidate: Boolean, performOneHotEncoding:Boolean): Unit =
     getTrainAlgo.toLowerCase match {
-      case "minibatch" =>
+      case Caffe2DML.MINIBATCH_ALGORITHM =>
         getTrainingBatch(tabDMLScript)
         // -------------------------------------------------------
         // Perform forward, backward and update on minibatch
@@ -439,7 +474,7 @@ class Caffe2DML(val sc: SparkContext,
         // -------------------------------------------------------
         displayLoss(lossLayers(0), shouldValidate, performOneHotEncoding)
         performSnapshot
-      case "batch" => {
+      case Caffe2DML.BATCH_ALGORITHM => {
         // -------------------------------------------------------
         // Perform forward, backward and update on entire dataset
         forward; backward; update
@@ -447,7 +482,36 @@ class Caffe2DML(val sc: SparkContext,
         displayLoss(lossLayers(0), shouldValidate, performOneHotEncoding)
         performSnapshot
       }
-      case "allreduce_parallel_batches" => {
+      case Caffe2DML.KRIZHEVSKY_ALGORITHM => {
+        val layers = Caffe2DML.splitByFirstFullyConnectedLayer(net.getLayers.map(layer => net.getCaffeLayer(layer)))
+        if (!inputs.containsKey("$parallel_batches")) {
+          // -------------------------------------------------------
+          // Perform forward, backward and update on minibatch in parallel
+          assign(tabDMLScript, "beg", "((iter-1) * " + Caffe2DML.batchSize + ") %% " + Caffe2DML.numImages + " + 1")
+          assign(tabDMLScript, "end", " min(beg +  " + Caffe2DML.batchSize + " - 1, " + Caffe2DML.numImages + ")")
+          assign(tabDMLScript, "X_group_batch", Caffe2DML.X + "[beg:end,]")
+          assign(tabDMLScript, "y_group_batch", Caffe2DML.y + "[beg:end,]")
+          assign(tabDMLScript, "X_group_batch_size", nrow("X_group_batch"))
+          tabDMLScript.append("local_batch_size = nrow(y_group_batch)\n")
+          val localBatchSize = "local_batch_size"
+          initializeGradients(localBatchSize)
+          parForBlock("j", "1", localBatchSize) {
+            assign(tabDMLScript, "Xb", "X_group_batch[j,]")
+            assign(tabDMLScript, "yb", "y_group_batch[j,]")
+            layers._1.map(layer => layer.forward(tabDMLScript, false, "_group_batch"))
+            layers._1.reverse.map(layer => layer.backward(tabDMLScript, ""))
+            flattenGradients(layers._1)
+          }
+          aggregateAggGradients(layers._1)
+          update
+          // -------------------------------------------------------
+          assign(tabDMLScript, "Xb", "X_group_batch")
+          assign(tabDMLScript, "yb", "y_group_batch")
+          displayLoss(lossLayers(0), shouldValidate, performOneHotEncoding)
+          performSnapshot
+        }
+      }
+      case Caffe2DML.ALL_REDUCE_PARALLEL_BATCHES_ALGORITHM => {
         // This setting uses the batch size provided by the user
         if (!inputs.containsKey("$parallel_batches")) {
           throw new RuntimeException("The parameter parallel_batches is required for allreduce_parallel_batches")
@@ -457,6 +521,7 @@ class Caffe2DML(val sc: SparkContext,
         assign(tabDMLScript, "parallel_batches", "$parallel_batches")
         assign(tabDMLScript, "group_batch_size", "parallel_batches*" + Caffe2DML.batchSize)
         assign(tabDMLScript, "groups", "as.integer(ceil(" + Caffe2DML.numImages + "/group_batch_size))")
+        val allLayers = net.getLayers.map(layer => net.getCaffeLayer(layer))
         // Grab groups of mini-batches
         forBlock("g", "1", "groups") {
           // Get next group of mini-batches
@@ -473,9 +538,9 @@ class Caffe2DML(val sc: SparkContext,
             assign(tabDMLScript, "Xb", "X_group_batch[beg:end,]")
             assign(tabDMLScript, "yb", "y_group_batch[beg:end,]")
             forward; backward
-            flattenGradients
+            flattenGradients(allLayers)
           }
-          aggregateAggGradients
+          aggregateAggGradients(allLayers)
           update
           // -------------------------------------------------------
           assign(tabDMLScript, "Xb", "X_group_batch")
@@ -484,7 +549,7 @@ class Caffe2DML(val sc: SparkContext,
           performSnapshot
         }
       }
-      case "allreduce" => {
+      case Caffe2DML.ALL_REDUCE_ALGORITHM => {
         // This is distributed synchronous gradient descent
         // -------------------------------------------------------
         // Perform forward, backward and update on minibatch in parallel
@@ -496,13 +561,14 @@ class Caffe2DML(val sc: SparkContext,
         tabDMLScript.append("local_batch_size = nrow(y_group_batch)\n")
         val localBatchSize = "local_batch_size"
         initializeGradients(localBatchSize)
+        val allLayers = net.getLayers.map(layer => net.getCaffeLayer(layer))
         parForBlock("j", "1", localBatchSize) {
           assign(tabDMLScript, "Xb", "X_group_batch[j,]")
           assign(tabDMLScript, "yb", "y_group_batch[j,]")
           forward; backward
-          flattenGradients
+          flattenGradients(allLayers)
         }
-        aggregateAggGradients
+        aggregateAggGradients(allLayers)
         update
         // -------------------------------------------------------
         assign(tabDMLScript, "Xb", "X_group_batch")
@@ -546,12 +612,12 @@ class Caffe2DML(val sc: SparkContext,
       assign(tabDMLScript, Caffe2DML.y, "y_full")
       tabDMLScript.append(Caffe2DML.numImages).append(" = nrow(" + Caffe2DML.y + ")\n")
     }
-
+  
   // Append the DML to display training and validation loss
   private def displayLoss(lossLayer: IsLossLayer, shouldValidate: Boolean, performOneHotEncoding:Boolean): Unit = {
     if (solverParam.getDisplay > 0) {
       // Append the DML to compute training loss
-      if (!getTrainAlgo.toLowerCase.startsWith("allreduce")) {
+      if (!trainAlgoContainsParfor) {
         // Compute training loss for allreduce
         tabDMLScript.append("# Compute training loss & accuracy\n")
         ifBlock("iter  %% " + solverParam.getDisplay + " == 0") {
@@ -569,8 +635,7 @@ class Caffe2DML(val sc: SparkContext,
         Caffe2DML.LOG.info("Training loss is not printed for train_algo=" + getTrainAlgo)
       }
       if (shouldValidate) {
-        if (getTrainAlgo.toLowerCase.startsWith("allreduce") &&
-            getTestAlgo.toLowerCase.startsWith("allreduce")) {
+        if (trainAlgoContainsParfor && testAlgoContainsParfor) {
           Caffe2DML.LOG.warn("The setting: train_algo=" + getTrainAlgo + " and test_algo=" + getTestAlgo + " is not recommended. Consider changing test_algo=minibatch")
         }
         // Append the DML to compute validation loss
@@ -579,7 +644,7 @@ class Caffe2DML(val sc: SparkContext,
         ifBlock("iter  %% " + solverParam.getTestInterval + " == 0") {
           assign(tabDMLScript, "loss", "0"); assign(tabDMLScript, "accuracy", "0")
           getTestAlgo.toLowerCase match {
-            case "minibatch" => {
+            case Caffe2DML.MINIBATCH_ALGORITHM => {
               assign(tabDMLScript, "validation_loss", "0")
               assign(tabDMLScript, "validation_accuracy", "0")
               forBlock("iVal", "1", "num_iters_per_epoch") {
@@ -590,14 +655,16 @@ class Caffe2DML(val sc: SparkContext,
               }
               tabDMLScript.append("validation_accuracy = validation_accuracy / num_iters_per_epoch\n")
             }
-            case "batch" => {
+            case Caffe2DML.KRIZHEVSKY_ALGORITHM => {
+              throw new DMLRuntimeException("The algorithm " + Caffe2DML.KRIZHEVSKY_ALGORITHM + " is not yet supported as test_algo.")
+            }
+            case Caffe2DML.BATCH_ALGORITHM => {
               assign(tabDMLScript, "Xb", Caffe2DML.XVal); assign(tabDMLScript, "yb", Caffe2DML.yVal)
-              net.getLayers.map(layer => net.getCaffeLayer(layer).forward(tabDMLScript, false))
+              net.getLayers.map(layer => net.getCaffeLayer(layer).forward(tabDMLScript, false, ""))
               lossLayer.computeLoss(dmlScript, numTabs)
               assign(tabDMLScript, "validation_loss", "loss"); assign(tabDMLScript, "validation_accuracy", "accuracy")
-
             }
-            case "allreduce_parallel_batches" => {
+            case Caffe2DML.ALL_REDUCE_PARALLEL_BATCHES_ALGORITHM => {
               // This setting uses the batch size provided by the user
               if (!inputs.containsKey("$parallel_batches")) {
                 throw new RuntimeException("The parameter parallel_batches is required for allreduce_parallel_batches")
@@ -623,7 +690,7 @@ class Caffe2DML(val sc: SparkContext,
                   assign(tabDMLScript, "end_val", "min(nrow(y_group_batch_val), beg_val + " + Caffe2DML.batchSize + " - 1)")
                   assign(tabDMLScript, "Xb", "X_group_batch_val[beg_val:end_val,]")
                   assign(tabDMLScript, "yb", "y_group_batch_val[beg_val:end_val,]")
-                  net.getLayers.map(layer => net.getCaffeLayer(layer).forward(tabDMLScript, false))
+                  net.getLayers.map(layer => net.getCaffeLayer(layer).forward(tabDMLScript, false, ""))
                   lossLayer.computeLoss(dmlScript, numTabs)
                   assign(tabDMLScript, "group_validation_loss[iVal,1]", "loss")
                   assign(tabDMLScript, "group_validation_accuracy[iVal,1]", "accuracy")
@@ -633,7 +700,7 @@ class Caffe2DML(val sc: SparkContext,
               }
               assign(tabDMLScript, "validation_accuracy", "validation_accuracy/groups_val")
             }
-            case "allreduce" => {
+            case Caffe2DML.ALL_REDUCE_ALGORITHM => {
               // This setting doesnot use the batch size for validation and allows the parfor optimizer to select plan
               // by minimizing the memory requirement (i.e. batch size = 1)
               assign(tabDMLScript, "group_validation_loss", matrix("0", Caffe2DML.numValidationImages, "1"))
@@ -641,7 +708,7 @@ class Caffe2DML(val sc: SparkContext,
               parForBlock("iVal", "1", Caffe2DML.numValidationImages) {
                 assign(tabDMLScript, "Xb", Caffe2DML.XVal + "[iVal,]")
                 assign(tabDMLScript, "yb", Caffe2DML.yVal + "[iVal,]")
-                net.getLayers.map(layer => net.getCaffeLayer(layer).forward(tabDMLScript, false))
+                net.getLayers.map(layer => net.getCaffeLayer(layer).forward(tabDMLScript, false, ""))
                 lossLayer.computeLoss(dmlScript, numTabs)
                 assign(tabDMLScript, "group_validation_loss[iVal,1]", "loss")
                 assign(tabDMLScript, "group_validation_accuracy[iVal,1]", "accuracy")
@@ -649,7 +716,6 @@ class Caffe2DML(val sc: SparkContext,
               assign(tabDMLScript, "validation_loss", "sum(group_validation_loss)")
               assign(tabDMLScript, "validation_accuracy", "mean(group_validation_accuracy)")
             }
-
             case _ => throw new DMLRuntimeException("Unsupported test algo:" + getTestAlgo)
           }
           tabDMLScript.append(
@@ -673,7 +739,7 @@ class Caffe2DML(val sc: SparkContext,
 
   private def forward(): Unit = {
     tabDMLScript.append("# Perform forward pass\n")
-    net.getLayers.map(layer => net.getCaffeLayer(layer).forward(tabDMLScript, false))
+    net.getLayers.map(layer => net.getCaffeLayer(layer).forward(tabDMLScript, false, ""))
   }
   private def backward(): Unit = {
     tabDMLScript.append("# Perform backward pass\n")
@@ -692,22 +758,20 @@ class Caffe2DML(val sc: SparkContext,
         if (l.shouldUpdateBias) assign(tabDMLScript, l.dBias + "_agg", matrix("0", parallel_batches, multiply(nrow(l.bias), ncol(l.bias))))
       })
   }
-  private def flattenGradients(): Unit = {
+  private def flattenGradients(layers:List[CaffeLayer]): Unit = {
     tabDMLScript.append("# Flatten and store gradients for this parallel execution\n")
     // Note: We multiply by a weighting to allow for proper gradient averaging during the
     // aggregation even with uneven batch sizes.
     assign(tabDMLScript, "weighting", "nrow(Xb)/X_group_batch_size")
-    net.getLayers
-      .map(layer => net.getCaffeLayer(layer))
+    layers
       .map(l => {
         if (l.shouldUpdateWeight) assign(tabDMLScript, l.dWeight + "_agg[j,]", matrix(l.dWeight, "1", multiply(nrow(l.weight), ncol(l.weight))) + " * weighting")
         if (l.shouldUpdateWeight) assign(tabDMLScript, l.dBias + "_agg[j,]", matrix(l.dBias, "1", multiply(nrow(l.bias), ncol(l.bias))) + " * weighting")
       })
   }
-  private def aggregateAggGradients(): Unit = {
+  private def aggregateAggGradients(layers:List[CaffeLayer]): Unit = {
     tabDMLScript.append("# Aggregate the gradients\n")
-    net.getLayers
-      .map(layer => net.getCaffeLayer(layer))
+    layers
       .map(l => {
         if (l.shouldUpdateWeight) assign(tabDMLScript, l.dWeight, matrix(colSums(l.dWeight + "_agg"), nrow(l.weight), ncol(l.weight)))
         if (l.shouldUpdateWeight) assign(tabDMLScript, l.dBias, matrix(colSums(l.dBias + "_agg"), nrow(l.bias), ncol(l.bias)))
@@ -776,20 +840,20 @@ class Caffe2DMLModel(val numClasses: String, val sc: SparkContext, val solver: C
     val lastLayerShape = estimator.getOutputShapeOfLastLayer
     assign(tabDMLScript, "Prob", matrix("1", Caffe2DML.numImages, (lastLayerShape._1 * lastLayerShape._2 * lastLayerShape._3).toString))
     estimator.getTestAlgo.toLowerCase match {
-      case "minibatch" => {
+      case Caffe2DML.MINIBATCH_ALGORITHM => {
         ceilDivide(tabDMLScript(), "num_iters", Caffe2DML.numImages, Caffe2DML.batchSize)
         forBlock("iter", "1", "num_iters") {
           getTestBatch(tabDMLScript)
-          net.getLayers.map(layer => net.getCaffeLayer(layer).forward(tabDMLScript, true))
+          net.getLayers.map(layer => net.getCaffeLayer(layer).forward(tabDMLScript, true, ""))
           assign(tabDMLScript, "Prob[beg:end,]", lossLayers(0).out)
         }
       }
-      case "batch" => {
+      case Caffe2DML.BATCH_ALGORITHM => {
         assign(tabDMLScript, "Xb", "X_full")
-        net.getLayers.map(layer => net.getCaffeLayer(layer).forward(tabDMLScript, true))
+        net.getLayers.map(layer => net.getCaffeLayer(layer).forward(tabDMLScript, true, ""))
         assign(tabDMLScript, "Prob", lossLayers(0).out)
       }
-      case "allreduce_parallel_batches" => {
+      case Caffe2DML.ALL_REDUCE_PARALLEL_BATCHES_ALGORITHM => {
         // This setting uses the batch size provided by the user
         if (!estimator.inputs.containsKey("$parallel_batches")) {
           throw new RuntimeException("The parameter parallel_batches is required for allreduce_parallel_batches")
@@ -809,17 +873,20 @@ class Caffe2DMLModel(val numClasses: String, val sc: SparkContext, val solver: C
             assign(tabDMLScript, "beg", "((j-1) * " + Caffe2DML.batchSize + ") %% nrow(X_group_batch) + 1")
             assign(tabDMLScript, "end", "min(nrow(X_group_batch), beg + " + Caffe2DML.batchSize + " - 1)")
             assign(tabDMLScript, "Xb", "X_group_batch[beg:end,]")
-            net.getLayers.map(layer => net.getCaffeLayer(layer).forward(tabDMLScript, true))
+            net.getLayers.map(layer => net.getCaffeLayer(layer).forward(tabDMLScript, true, ""))
             assign(tabDMLScript, "Prob[beg:end,]", lossLayers(0).out)
           }
         }
       }
-      case "allreduce" => {
+      case Caffe2DML.KRIZHEVSKY_ALGORITHM => {
+        throw new DMLRuntimeException("The algorithm " + Caffe2DML.KRIZHEVSKY_ALGORITHM + " is not yet supported as test_algo.")
+      }
+      case Caffe2DML.ALL_REDUCE_ALGORITHM => {
         // This setting doesnot use the batch size for scoring and allows the parfor optimizer to select the best plan
         // by minimizing the memory requirement (i.e. batch size = 1)
         parForBlock("iter", "1", Caffe2DML.numImages) {
           assign(tabDMLScript, "Xb", "X_full[iter,]")
-          net.getLayers.map(layer => net.getCaffeLayer(layer).forward(tabDMLScript, true))
+          net.getLayers.map(layer => net.getCaffeLayer(layer).forward(tabDMLScript, true, ""))
           assign(tabDMLScript, "Prob[iter,]", lossLayers(0).out)
         }
       }
