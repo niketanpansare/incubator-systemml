@@ -361,7 +361,7 @@ class Caffe2DML(val sc: SparkContext,
           assign(tabDMLScript, "parallel_batches", "$parallel_batches")
           assign(tabDMLScript, "allreduce_start_index", "((iter-1) * " + Caffe2DML.batchSize + ") %% " + Caffe2DML.numImages + " + 1; ")
           ifBlock("(allreduce_start_index + parallel_batches*" + Caffe2DML.batchSize + " - 1) > " + Caffe2DML.numImages) {
-            assign(tabDMLScript, "allreduce_start_index", "1")    
+            assign(tabDMLScript, "allreduce_start_index", "1")
           }
           initializeGradients("parallel_batches")
           parForBlock("j", "1", "parallel_batches") {
