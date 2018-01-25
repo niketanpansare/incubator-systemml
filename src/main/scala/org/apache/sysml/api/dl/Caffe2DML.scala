@@ -613,7 +613,7 @@ class Caffe2DML(val sc: SparkContext,
     tabDMLScript.append("# Flatten and store gradients for this parallel execution\n")
     // Note: We multiply by a weighting to allow for proper gradient averaging during the
     // aggregation even with uneven batch sizes.
-    assign(tabDMLScript, "weighting", "nrow(Xb)/X_group_batch_size")
+    assign(tabDMLScript, "weighting", "1/parallel_batches") // "nrow(Xb)/X_group_batch_size")
     net.getLayers
       .map(layer => net.getCaffeLayer(layer))
       .map(l => {
