@@ -470,6 +470,7 @@ class Caffe2DML(val sc: SparkContext,
             assign(tabDMLScript, "end", "allreduce_start_index + " + Caffe2DML.batchSize + " - 1")
             rightIndexing(tabDMLScript, "Xb", Caffe2DML.X, "beg", "end")
             rightIndexing(tabDMLScript, "yb", Caffe2DML.y, "beg", "end")
+            forward
           }
           assign(tabDMLScript, "loss", "0"); assign(tabDMLScript, "accuracy", "0")
           lossLayer.computeLoss(dmlScript, numTabs)
