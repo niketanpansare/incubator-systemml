@@ -402,7 +402,7 @@ class Caffe2DML(val sc: SparkContext,
           update
           displayValidationLoss(lossLayers(0), performOneHotEncoding)
           if(solverParam.getDisplay > 0 && shouldValidate) {
-            val iterMatrix = matrix("seq(iter, iter+parallel_batches)", "parallel_batches", "1")
+            val iterMatrix = matrix("seq(iter, iter+parallel_batches-1)", "parallel_batches", "1")
             ifBlock(sum(iterMatrix + " %% " + solverParam.getTestInterval + " == 0") + " > 0") {
               displayValidationLoss(lossLayers(0), performOneHotEncoding)
             }
