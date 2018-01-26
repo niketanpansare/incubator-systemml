@@ -152,6 +152,7 @@ object Caffe2DML {
   def throwUsageError(): Unit =
     throw new RuntimeException("Incorrect usage: train_script OUTPUT_DML_FILE SOLVER_FILE INPUT_CHANNELS INPUT_HEIGHT INPUT_WIDTH");
   
+  val rand = new Random
   // Supported Algorithms:
   val MINIBATCH_ALGORITHM = "minibatch"
   val BATCH_ALGORITHM = "batch"
