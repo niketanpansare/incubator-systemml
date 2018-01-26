@@ -87,7 +87,7 @@ trait CaffeLayer extends BaseDMLGenerator {
     computedDout
   }
   def dX(bottomLayerID: Int) = "dOut" + id + "_" + bottomLayerID
-  def getIgnoreVarName(varNameHint:String):String = "ignore" + varNameHint + "_" + id + "_" + Caffe2DML.rand.nextLong
+  def getIgnoreVarName(varNameHint:String):String = "ignore" + varNameHint + "_" + id + "_" + Math.abs(Caffe2DML.rand.nextLong)
   // --------------------------------------------------------------------------------------
   // No need to override these methods in subclasses, instead classes that have weights and biases
   // should implement HasWeight and HasBias traits.
