@@ -544,7 +544,7 @@ class Caffe2DML(val sc: SparkContext,
         assign(tabDMLScript, "group_validation_loss", matrix("0", "max_validation_iter", "1"))
         assign(tabDMLScript, "group_validation_accuracy", matrix("0", "max_validation_iter", "1"))
         parForBlock("iVal", "1", "max_validation_iter", "1", getParforParameters()) {
-          assign(tabDMLScript, "validation_beg", "(iVal-1) * " + Caffe2DML.batchSize)
+          assign(tabDMLScript, "validation_beg", "(iVal-1) * " + Caffe2DML.batchSize + " + 1")
           assign(tabDMLScript, "validation_end", min(Caffe2DML.numValidationImages, "validation_beg + " + Caffe2DML.batchSize))
           assign(tabDMLScript, "Xb", Caffe2DML.XVal + "[validation_beg:validation_end,]")
           assign(tabDMLScript, "yb", Caffe2DML.yVal + "[validation_beg:validation_end,]")
