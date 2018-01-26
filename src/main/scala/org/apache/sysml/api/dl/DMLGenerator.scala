@@ -124,6 +124,7 @@ trait BaseDMLGenerator {
     ret.toString
   }
   def matrix(init: String, rows: String, cols: String): String = "matrix(" + init + ", rows=" + rows + ", cols=" + cols + ")"
+  def sum(m: String): String                                   = "sum(" + m + ")"
   def nrow(m: String): String                                  = "nrow(" + m + ")"
   def ceil(m: String): String                                  = "ceil(" + m + ")"
   def floor(m: String): String                                 = "floor(" + m + ")"
@@ -216,6 +217,13 @@ trait DMLGenerator extends SourceDMLGenerator with NextBatchGenerator {
   }
   def whileBlock(cond: String)(op: => Unit) {
     tabDMLScript.append("while(" + cond + ") {\n")
+    numTabs += 1
+    op
+    numTabs -= 1
+    tabDMLScript.append("}\n")
+  }
+  def forBlock(iterVarName: String, startVal: String, endVal: String, step:String)(op: => Unit) {
+    tabDMLScript.append("for(" + iterVarName + " in seq(" + startVal + "," + endVal + "," + step + ")) {\n")
     numTabs += 1
     op
     numTabs -= 1
