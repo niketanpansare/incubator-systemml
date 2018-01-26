@@ -293,6 +293,9 @@ class Caffe2DML(val sc: SparkContext,
     net.getLayers.map(layer => {net.getCaffeLayer(layer).debugLayer = isDebug})
     net.getLayers.map(layer => {net.getCaffeLayer(layer).caffe2dmlObj = this})
   }
+  
+  // Comma is included
+  def getParforParameters():String = if (inputs.containsKey("$parfor_parameters")) inputs.get("$parfor_parameters") else ""
 
   // ================================================================================================
   // The below method parses the provided network and solver file and generates DML script.
@@ -387,7 +390,7 @@ class Caffe2DML(val sc: SparkContext,
             assign(tabDMLScript, "allreduce_start_index", "1")
           }
           initializeGradients("parallel_batches")
-          parForBlock("j", "1", "parallel_batches") {
+          parForBlock("j", "1", "parallel_batches", getParforParameters()) {
             // Get a mini-batch in this group
             assign(tabDMLScript, "beg", "allreduce_start_index + (j-1)*" + Caffe2DML.batchSize)
             assign(tabDMLScript, "end", "allreduce_start_index + j*" + Caffe2DML.batchSize + " - 1")
@@ -421,7 +424,7 @@ class Caffe2DML(val sc: SparkContext,
           assign(tabDMLScript, "end", "min(beg + " + Caffe2DML.batchSize + " - 1, " + Caffe2DML.numImages + ")")
           assign(tabDMLScript, "X_group_batch_size", "end - beg + 1")
           initializeGradients("X_group_batch_size")
-          parForBlock("j", "beg", "end") {
+          parForBlock("j", "beg", "end", getParforParameters()) {
             assign(tabDMLScript, "Xb", Caffe2DML.X + "[j,]")
             assign(tabDMLScript, "yb", Caffe2DML.y + "[j,]")
             forward; backward
@@ -552,7 +555,7 @@ class Caffe2DML(val sc: SparkContext,
           assign(tabDMLScript, "group_validation_loss", matrix("0", "parallel_batches_val", "1"))
           assign(tabDMLScript, "group_validation_accuracy", matrix("0", "parallel_batches_val", "1"))
           //  Run graph on each mini-batch in this group in parallel (ideally on multiple GPUs)
-          parForBlock("iVal", "1", "parallel_batches_val") {
+          parForBlock("iVal", "1", "parallel_batches_val", getParforParameters()) {
             assign(tabDMLScript, "beg_val", "((iVal-1) * " + Caffe2DML.batchSize + ") %% nrow(y_group_batch_val) + 1")
             assign(tabDMLScript, "end_val", "min(nrow(y_group_batch_val), beg_val + " + Caffe2DML.batchSize + " - 1)")
             assign(tabDMLScript, "Xb", "X_group_batch_val[beg_val:end_val,]")
@@ -572,7 +575,7 @@ class Caffe2DML(val sc: SparkContext,
         // by minimizing the memory requirement (i.e. batch size = 1)
         assign(tabDMLScript, "group_validation_loss", matrix("0", Caffe2DML.numValidationImages, "1"))
         assign(tabDMLScript, "group_validation_accuracy", matrix("0", Caffe2DML.numValidationImages, "1"))
-        parForBlock("iVal", "1", Caffe2DML.numValidationImages) {
+        parForBlock("iVal", "1", Caffe2DML.numValidationImages, getParforParameters()) {
           assign(tabDMLScript, "Xb", Caffe2DML.XVal + "[iVal,]")
           assign(tabDMLScript, "yb", Caffe2DML.yVal + "[iVal,]")
           net.getLayers.map(layer => net.getCaffeLayer(layer).forward(tabDMLScript, false))
@@ -739,7 +742,7 @@ class Caffe2DMLModel(val numClasses: String, val sc: SparkContext, val solver: C
           assignBatch(tabDMLScript, "X_group_batch", "X_full", null, null, "group_", Caffe2DML.numImages, "g", "group_batch_size")
           assign(tabDMLScript, "X_group_batch_size", nrow("X_group_batch"))
           //  Run graph on each mini-batch in this group in parallel (ideally on multiple GPUs)
-          parForBlock("j", "1", "parallel_batches") {
+          parForBlock("j", "1", "parallel_batches", estimator.getParforParameters()) {
             assignBatch(tabDMLScript, "Xb", "X_group_batch", null, null, "", "X_group_batch_size", "j", Caffe2DML.batchSize)
             net.getLayers.map(layer => net.getCaffeLayer(layer).forward(tabDMLScript, true))
             assign(tabDMLScript, "Prob[beg:end,]", lossLayers(0).out)
@@ -749,7 +752,7 @@ class Caffe2DMLModel(val numClasses: String, val sc: SparkContext, val solver: C
       case Caffe2DML.ALLREDUCE_ALGORITHM => {
         // This setting doesnot use the batch size for scoring and allows the parfor optimizer to select the best plan
         // by minimizing the memory requirement (i.e. batch size = 1)
-        parForBlock("iter", "1", Caffe2DML.numImages) {
+        parForBlock("iter", "1", Caffe2DML.numImages, estimator.getParforParameters()) {
           assign(tabDMLScript, "Xb", "X_full[iter,]")
           net.getLayers.map(layer => net.getCaffeLayer(layer).forward(tabDMLScript, true))
           assign(tabDMLScript, "Prob[iter,]", lossLayers(0).out)
