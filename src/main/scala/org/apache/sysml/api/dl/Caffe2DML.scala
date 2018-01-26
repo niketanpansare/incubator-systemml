@@ -319,6 +319,9 @@ class Caffe2DML(val sc: SparkContext,
     assign(tabDMLScript, "lr", solverParam.getBaseLr.toString)    
     val lossLayers = getLossLayers(net)
     ceilDivide(tabDMLScript, "num_batches_per_epoch", Caffe2DML.numImages, Caffe2DML.batchSize)
+    if(solverParam.getDisplay > 0 && !getTrainAlgo.toLowerCase.equals(Caffe2DML.MINIBATCH_ALGORITHM)) {
+      tabDMLScript.append(print(dmlConcat(asDMLString("Iterations (for training loss/accuracy) refers to the number of batches processed where batch size="), Caffe2DML.batchSize)))
+    }
     // ----------------------------------------------------------------------------
     // Main logic
     getTrainAlgo.toLowerCase match {
@@ -494,7 +497,7 @@ class Caffe2DML(val sc: SparkContext,
     lossLayer.computeLoss(dmlScript, numTabs)
     assign(tabDMLScript, "training_loss", "loss"); assign(tabDMLScript, "training_accuracy", "accuracy")
     tabDMLScript.append(
-      print(dmlConcat(asDMLString("Iter (number of batches processed):"), "iter", asDMLString(", training loss:"), "training_loss", asDMLString(", training accuracy:"), "training_accuracy"))
+      print(dmlConcat(asDMLString("Iter:"), "iter", asDMLString(", training loss:"), "training_loss", asDMLString(", training accuracy:"), "training_accuracy"))
     )
     if(performOneHotEncoding && DEBUG_TRAINING && !trainAlgoContainsParfor) {
       printClassificationReport
