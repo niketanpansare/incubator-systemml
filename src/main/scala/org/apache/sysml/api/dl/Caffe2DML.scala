@@ -400,7 +400,6 @@ class Caffe2DML(val sc: SparkContext,
           }
           aggregateAggGradients
           update
-          displayValidationLoss(lossLayers(0), performOneHotEncoding)
           if(solverParam.getDisplay > 0 && shouldValidate) {
             val iterMatrix = matrix("seq(iter, iter+parallel_batches-1)", "parallel_batches", "1")
             ifBlock(sum(iterMatrix + " %% " + solverParam.getTestInterval + " == 0") + " > 0") {
@@ -497,7 +496,7 @@ class Caffe2DML(val sc: SparkContext,
     tabDMLScript.append(
       print(dmlConcat(asDMLString("Iter (number of batches processed):"), "iter", asDMLString(", training loss:"), "training_loss", asDMLString(", training accuracy:"), "training_accuracy"))
     )
-    if(performOneHotEncoding && DEBUG_TRAINING) {
+    if(performOneHotEncoding && DEBUG_TRAINING && !trainAlgoContainsParfor) {
       printClassificationReport
     }
   }
