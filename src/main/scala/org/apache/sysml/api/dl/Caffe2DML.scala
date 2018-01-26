@@ -514,13 +514,13 @@ class Caffe2DML(val sc: SparkContext,
       case Caffe2DML.MINIBATCH_ALGORITHM => {
         assign(tabDMLScript, "validation_loss", "0")
         assign(tabDMLScript, "validation_accuracy", "0")
-        forBlock("iVal", "1", "num_iters_per_epoch") {
+        forBlock("iVal", "1", "num_batches_per_epoch") {
           getValidationBatch(tabDMLScript)
           forward; lossLayer.computeLoss(dmlScript, numTabs)
           tabDMLScript.append("validation_loss = validation_loss + loss\n")
           tabDMLScript.append("validation_accuracy = validation_accuracy + accuracy\n")
         }
-        tabDMLScript.append("validation_accuracy = validation_accuracy / num_iters_per_epoch\n")
+        tabDMLScript.append("validation_accuracy = validation_accuracy / num_batches_per_epoch\n")
       }
       case Caffe2DML.BATCH_ALGORITHM => {
         assign(tabDMLScript, "Xb", Caffe2DML.XVal); assign(tabDMLScript, "yb", Caffe2DML.yVal)
