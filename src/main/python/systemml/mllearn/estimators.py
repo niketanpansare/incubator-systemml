@@ -867,7 +867,7 @@ class Caffe2DML(BaseSystemMLClassifier):
         if parfor_parameters is not None:
             if isinstance(parfor_parameters, dict):
                 # Convert dictionary to comma-separated list
-                parfor_parameters = ''.join([ ',' + str(k) + '=' + str(v) for k, v in parfor_parameters.items()]) if len(parfor_parameters) > 0 else ''
+                parfor_parameters = ''.join([ ', ' + str(k) + '=' + str(v) for k, v in parfor_parameters.items()]) if len(parfor_parameters) > 0 else ''
                 self.estimator.setInput("$parfor_parameters", parfor_parameters)
             else:
                 raise TypeError("parfor_parameters should be a dictionary") 

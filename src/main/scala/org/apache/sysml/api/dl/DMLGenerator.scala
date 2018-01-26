@@ -237,8 +237,7 @@ trait DMLGenerator extends SourceDMLGenerator with NextBatchGenerator {
     tabDMLScript.append("}\n")
   }
   def parForBlock(iterVarName: String, startVal: String, endVal: String, parforParameters:String)(op: => Unit) {
-    val parforParameters1 = if(parforParameters.isEmpty()) "" else " " + parforParameters 
-    tabDMLScript.append("parfor(" + iterVarName + " in " + startVal + ":" + endVal + parforParameters1 + ") {\n")
+    tabDMLScript.append("parfor(" + iterVarName + " in " + startVal + ":" + endVal + parforParameters + ") {\n")
     numTabs += 1
     op
     numTabs -= 1
