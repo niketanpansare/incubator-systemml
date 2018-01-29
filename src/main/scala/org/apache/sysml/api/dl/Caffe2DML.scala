@@ -628,12 +628,15 @@ class Caffe2DML(val sc: SparkContext,
   }
   private def flattenGradients(): Unit = {
     if(Caffe2DML.USE_PLUS_EQ) {
+      // Note: We multiply by a weighting to allow for proper gradient averaging during the
+      // aggregation even with uneven batch sizes.
+      assign(tabDMLScript, "weighting", "1/parallel_batches") // "nrow(Xb)/X_group_batch_size")
       net.getLayers
         .map(layer => net.getCaffeLayer(layer))
         .map(l => {
-          if (l.shouldUpdateWeight) assignPlusEq(tabDMLScript, l.dWeight + "_agg", l.dWeight)
-          if (l.shouldUpdateExtraWeight) assignPlusEq(tabDMLScript, l.dExtraWeight + "_agg", l.dExtraWeight)
-          if (l.shouldUpdateWeight) assignPlusEq(tabDMLScript, l.dBias + "_agg", l.dBias)
+          if (l.shouldUpdateWeight) assignPlusEq(tabDMLScript, l.dWeight + "_agg", l.dWeight + "*weighting")
+          if (l.shouldUpdateExtraWeight) assignPlusEq(tabDMLScript, l.dExtraWeight + "_agg", l.dExtraWeight + "*weighting")
+          if (l.shouldUpdateWeight) assignPlusEq(tabDMLScript, l.dBias + "_agg", l.dBias + "*weighting")
         })
     }
     else {
@@ -656,9 +659,9 @@ class Caffe2DML(val sc: SparkContext,
       net.getLayers
         .map(layer => net.getCaffeLayer(layer))
         .map(l => {
-          if (l.shouldUpdateWeight) assignPlusEq(tabDMLScript, l.dWeight, l.dWeight + "_agg")
-          if (l.shouldUpdateExtraWeight) assignPlusEq(tabDMLScript, l.dExtraWeight, l.dExtraWeight + "_agg")
-          if (l.shouldUpdateWeight) assignPlusEq(tabDMLScript, l.dBias, l.dBias + "_agg")
+          if (l.shouldUpdateWeight) assign(tabDMLScript, l.dWeight, l.dWeight + "_agg")
+          if (l.shouldUpdateExtraWeight) assign(tabDMLScript, l.dExtraWeight, l.dExtraWeight + "_agg")
+          if (l.shouldUpdateWeight) assign(tabDMLScript, l.dBias, l.dBias + "_agg")
         })
     }
     else {
