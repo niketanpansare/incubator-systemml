@@ -118,6 +118,7 @@ To shield from network files that violates this restriction, Caffe2DML performs 
 object Caffe2DML {
   val LOG = LogFactory.getLog(classOf[Caffe2DML].getName())
   // ------------------------------------------------------------------------
+  val USE_PLUS_EQ = true
   def layerDir = "nn/layers/"
   def optimDir = "nn/optim/"
 
@@ -606,36 +607,70 @@ class Caffe2DML(val sc: SparkContext,
   }
   private def initializeGradients(parallel_batches: String): Unit = {
     tabDMLScript.append("# Data structure to store gradients computed in parallel\n")
-    net.getLayers
-      .map(layer => net.getCaffeLayer(layer))
-      .map(l => {
-        if (l.shouldUpdateWeight) assign(tabDMLScript, l.dWeight + "_agg", matrix("0", parallel_batches, multiply(nrow(l.weight), ncol(l.weight))))
-        if (l.shouldUpdateExtraWeight) assign(tabDMLScript, l.dExtraWeight + "_agg", matrix("0", parallel_batches, multiply(nrow(l.extraWeight), ncol(l.extraWeight))))
-        if (l.shouldUpdateBias) assign(tabDMLScript, l.dBias + "_agg", matrix("0", parallel_batches, multiply(nrow(l.bias), ncol(l.bias))))
-      })
+    if(Caffe2DML.USE_PLUS_EQ) {
+      net.getLayers
+        .map(layer => net.getCaffeLayer(layer))
+        .map(l => {
+          if (l.shouldUpdateWeight) assign(tabDMLScript, l.dWeight + "_agg", matrix("0", nrow(l.weight), ncol(l.weight)))
+          if (l.shouldUpdateExtraWeight) assign(tabDMLScript, l.dExtraWeight + "_agg", matrix("0", nrow(l.extraWeight), ncol(l.extraWeight)))
+          if (l.shouldUpdateBias) assign(tabDMLScript, l.dBias + "_agg", matrix("0", nrow(l.bias), ncol(l.bias)))
+        })
+    }
+    else {
+      net.getLayers
+        .map(layer => net.getCaffeLayer(layer))
+        .map(l => {
+          if (l.shouldUpdateWeight) assign(tabDMLScript, l.dWeight + "_agg", matrix("0", parallel_batches, multiply(nrow(l.weight), ncol(l.weight))))
+          if (l.shouldUpdateExtraWeight) assign(tabDMLScript, l.dExtraWeight + "_agg", matrix("0", parallel_batches, multiply(nrow(l.extraWeight), ncol(l.extraWeight))))
+          if (l.shouldUpdateBias) assign(tabDMLScript, l.dBias + "_agg", matrix("0", parallel_batches, multiply(nrow(l.bias), ncol(l.bias))))
+        })
+    }
   }
   private def flattenGradients(): Unit = {
-    tabDMLScript.append("# Flatten and store gradients for this parallel execution\n")
-    // Note: We multiply by a weighting to allow for proper gradient averaging during the
-    // aggregation even with uneven batch sizes.
-    assign(tabDMLScript, "weighting", "1/parallel_batches") // "nrow(Xb)/X_group_batch_size")
-    net.getLayers
-      .map(layer => net.getCaffeLayer(layer))
-      .map(l => {
-        if (l.shouldUpdateWeight) assign(tabDMLScript, l.dWeight + "_agg[j,]", matrix(l.dWeight, "1", multiply(nrow(l.weight), ncol(l.weight))) + " * weighting")
-        if (l.shouldUpdateExtraWeight) assign(tabDMLScript, l.dExtraWeight + "_agg[j,]", matrix(l.dExtraWeight, "1", multiply(nrow(l.extraWeight), ncol(l.extraWeight))) + " * weighting")
-        if (l.shouldUpdateWeight) assign(tabDMLScript, l.dBias + "_agg[j,]", matrix(l.dBias, "1", multiply(nrow(l.bias), ncol(l.bias))) + " * weighting")
-      })
+    if(Caffe2DML.USE_PLUS_EQ) {
+      net.getLayers
+        .map(layer => net.getCaffeLayer(layer))
+        .map(l => {
+          if (l.shouldUpdateWeight) assignPlusEq(tabDMLScript, l.dWeight + "_agg", l.dWeight)
+          if (l.shouldUpdateExtraWeight) assignPlusEq(tabDMLScript, l.dExtraWeight + "_agg", l.dExtraWeight)
+          if (l.shouldUpdateWeight) assignPlusEq(tabDMLScript, l.dBias + "_agg", l.dBias)
+        })
+    }
+    else {
+      tabDMLScript.append("# Flatten and store gradients for this parallel execution\n")
+      // Note: We multiply by a weighting to allow for proper gradient averaging during the
+      // aggregation even with uneven batch sizes.
+      assign(tabDMLScript, "weighting", "1/parallel_batches") // "nrow(Xb)/X_group_batch_size")
+      net.getLayers
+        .map(layer => net.getCaffeLayer(layer))
+        .map(l => {
+          if (l.shouldUpdateWeight) assign(tabDMLScript, l.dWeight + "_agg[j,]", matrix(l.dWeight, "1", multiply(nrow(l.weight), ncol(l.weight))) + " * weighting")
+          if (l.shouldUpdateExtraWeight) assign(tabDMLScript, l.dExtraWeight + "_agg[j,]", matrix(l.dExtraWeight, "1", multiply(nrow(l.extraWeight), ncol(l.extraWeight))) + " * weighting")
+          if (l.shouldUpdateWeight) assign(tabDMLScript, l.dBias + "_agg[j,]", matrix(l.dBias, "1", multiply(nrow(l.bias), ncol(l.bias))) + " * weighting")
+        })
+    }
   }
+  
   private def aggregateAggGradients(): Unit = {
-    tabDMLScript.append("# Aggregate the gradients\n")
-    net.getLayers
-      .map(layer => net.getCaffeLayer(layer))
-      .map(l => {
-        if (l.shouldUpdateWeight) assign(tabDMLScript, l.dWeight, matrix(colSums(l.dWeight + "_agg"), nrow(l.weight), ncol(l.weight)))
-        if (l.shouldUpdateExtraWeight) assign(tabDMLScript, l.dExtraWeight, matrix(colSums(l.dExtraWeight + "_agg"), nrow(l.extraWeight), ncol(l.extraWeight)))
-        if (l.shouldUpdateWeight) assign(tabDMLScript, l.dBias, matrix(colSums(l.dBias + "_agg"), nrow(l.bias), ncol(l.bias)))
-      })
+    if(Caffe2DML.USE_PLUS_EQ) {
+      net.getLayers
+        .map(layer => net.getCaffeLayer(layer))
+        .map(l => {
+          if (l.shouldUpdateWeight) assignPlusEq(tabDMLScript, l.dWeight, l.dWeight + "_agg")
+          if (l.shouldUpdateExtraWeight) assignPlusEq(tabDMLScript, l.dExtraWeight, l.dExtraWeight + "_agg")
+          if (l.shouldUpdateWeight) assignPlusEq(tabDMLScript, l.dBias, l.dBias + "_agg")
+        })
+    }
+    else {
+      tabDMLScript.append("# Aggregate the gradients\n")
+      net.getLayers
+        .map(layer => net.getCaffeLayer(layer))
+        .map(l => {
+          if (l.shouldUpdateWeight) assign(tabDMLScript, l.dWeight, matrix(colSums(l.dWeight + "_agg"), nrow(l.weight), ncol(l.weight)))
+          if (l.shouldUpdateExtraWeight) assign(tabDMLScript, l.dExtraWeight, matrix(colSums(l.dExtraWeight + "_agg"), nrow(l.extraWeight), ncol(l.extraWeight)))
+          if (l.shouldUpdateWeight) assign(tabDMLScript, l.dBias, matrix(colSums(l.dBias + "_agg"), nrow(l.bias), ncol(l.bias)))
+        })
+    }
   }
   // -------------------------------------------------------------------------------------------
 }

@@ -57,6 +57,8 @@ trait BaseDMLGenerator {
   def asDMLString(str: String): String                                               = "\"" + str + "\""
   def assign(dmlScript: StringBuilder, lhsVar: String, rhsVar: String): Unit =
     dmlScript.append(lhsVar).append(" = ").append(rhsVar).append("\n")
+  def assignPlusEq(dmlScript: StringBuilder, lhsVar: String, rhsVar: String): Unit =
+    dmlScript.append(lhsVar).append(" += ").append(rhsVar).append("\n")
   def sum(dmlScript: StringBuilder, variables: List[String]): StringBuilder = {
     if (variables.length > 1) dmlScript.append("(")
     dmlScript.append(variables(0))
