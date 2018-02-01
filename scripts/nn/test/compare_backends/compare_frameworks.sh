@@ -41,7 +41,7 @@ do
 			model='lenet'
 			data='mnist'
 			batch_size=64
-			$SPARK_HOME/bin/spark-submit --driver-memory 20g compare_frameworks.py --model=$model --data=$data --epochs=$epochs --batch_size=$batch_size --num_gpus=$num_gpus --framework=$framework &> logs/'log_'$model'_'$data'_'$epochs'_'$batch_size'_'$num_gpus'_'$framework'.txt'
+			$SPARK_HOME/bin/spark-submit --driver-memory 50g compare_frameworks.py --model=$model --data=$data --epochs=$epochs --batch_size=$batch_size --num_gpus=$num_gpus --framework=$framework &> logs/'log_'$model'_'$data'_'$epochs'_'$batch_size'_'$num_gpus'_'$framework'.txt'
 		done
 	done
 done

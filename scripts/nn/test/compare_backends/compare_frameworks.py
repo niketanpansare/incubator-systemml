@@ -22,6 +22,10 @@
 
 # To check usage, use -h option.
 
+
+import time
+start = time.time()
+data_loading = 0.0
 import os, argparse, sys
 
 parser=argparse.ArgumentParser()
@@ -57,7 +61,6 @@ from keras.layers import Input, Dense, Conv2D, MaxPooling2D, Dropout,Flatten
 from keras import backend as K
 from keras.models import Model
 from keras.utils import np_utils
-import time
 import tensorflow as tf
 from keras.backend.tensorflow_backend import set_session
 
@@ -107,7 +110,10 @@ def get_keras_model():
 	#	keras_model = keras_model.model
 	return keras_model
 
+t0 = time.time()
 X, y = get_data() 
+data_loading = data_loading + time.time() - t0
+
 #X = X.astype(np.float64)
 epochs = int(config['epochs'])
 batch_size = int(config['batch_size'])
@@ -121,8 +127,9 @@ def get_framework_model(framework):
 		from systemml.mllearn import Keras2DML
 		sysml_model = Keras2DML(spark, keras_model, input_shape=input_shapes[config['data']], batch_size=batch_size, max_iter=max_iter, test_iter=0, display=display)
 		sysml_model.setConfigProperty("sysml.native.blas", "openblas")
-		sysml_model.setStatistics(True)
-		#sysml_model.setConfigProperty("sysml.stats.finegrained", "true")
+		sysml_model.setStatistics(True).setStatisticsMaxHeavyHitters(100)
+		sysml_model.setConfigProperty("sysml.gpu.sync.postProcess", "false")
+		sysml_model.setConfigProperty("sysml.stats.finegrained", "true")
 		#sysml_model.setConfigProperty("sysml.gpu.eager.cudaFree", "true")
 		sysml_model.setConfigProperty("sysml.floating.point.precision", "single")
 		#sysml_model.setConfigProperty("sysml.codegen.enabled", "true").setConfigProperty("sysml.codegen.plancache", "true")
@@ -149,10 +156,15 @@ def get_framework_data(framework):
 
 
 framework = config['framework']
+t0 = time.time()
 framework_model = get_framework_model(framework)
+t1 = time.time()
 framework_X, framework_y = get_framework_data(framework)
+t2 = time.time()
+data_loading = data_loading + t2 - t1
+model_loading = t1 - t0 
+
 print("Starting fit for the framework:" + framework)
-start = time.time()
 if framework == 'systemml':
 	framework_model.fit(framework_X, framework_y)
 elif framework == 'keras':
@@ -162,5 +174,5 @@ else:
 	raise ValueError('Unsupported framework:' + str(framework))
 end = time.time()
 with open('time.txt', 'a') as f:
-	f.write(config['framework'] + ',' + config['model'] + ',' + config['data'] + ',' + str(config['epochs']) + ',' + str(config['batch_size']) + ',' + str(config['num_gpus']) + ',' + str(end-start) + '\n')
+	f.write(config['framework'] + ',' + config['model'] + ',' + config['data'] + ',' + str(config['epochs']) + ',' + str(config['batch_size']) + ',' + str(config['num_gpus']) + ',' + str(end-start) + ',' + str(data_loading) + ',' + str(model_loading) + '\n')
 
