@@ -174,5 +174,5 @@ else:
 	raise ValueError('Unsupported framework:' + str(framework))
 end = time.time()
 with open('time.txt', 'a') as f:
-	f.write(config['framework'] + ',' + config['model'] + ',' + config['data'] + ',' + str(config['epochs']) + ',' + str(config['batch_size']) + ',' + str(config['num_gpus']) + ',' + str(end-start) + ',' + str(data_loading) + ',' + str(model_loading) + '\n')
+	f.write(config['framework'] + ',' + config['model'] + ',' + config['data'] + ',' + str(config['epochs']) + ',' + str(config['batch_size']) + ',' + str(config['num_gpus']) + ',' + str(end-start) + ',' + str(data_loading) + ',' + str(model_loading) + ',' + str(t2-end) '\n')
 
