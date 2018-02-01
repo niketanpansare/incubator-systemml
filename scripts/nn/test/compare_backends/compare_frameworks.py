@@ -36,7 +36,8 @@ args=parser.parse_args()
 config = {'model':args.model, 'data':args.data, 'epochs':args.epochs, 'batch_size':args.batch_size, 'num_gpus':args.num_gpus, 'framework':args.framework, 'display':100}
 num_gpus = int(config['num_gpus'])
 
-if num_gpus == 0:
+if config['framework'] == 'systemml' or num_gpus == 0:
+	# When framework is systemml, force any tensorflow allocation to happen on CPU to avoid GPU OOM
 	os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 	os.environ['CUDA_VISIBLE_DEVICES'] = ''
 elif num_gpus == 1:
@@ -58,6 +59,15 @@ from keras.models import Model
 from keras.utils import np_utils
 import time
 import tensorflow as tf
+from keras.backend.tensorflow_backend import set_session
+
+# For fair comparison
+if config['framework'] == 'keras':
+	tf_config = tf.ConfigProto()
+	#tf_config.gpu_options.per_process_gpu_memory_fraction = 0.3
+	tf_config.gpu_options.allow_growth = True
+	set_session(tf.Session(config=tf_config))
+
 #K.set_floatx('float64')
 def get_data():
 	if config['data'] == 'mnist':
@@ -110,8 +120,10 @@ def get_framework_model(framework):
 	if framework == 'systemml':
 		from systemml.mllearn import Keras2DML
 		sysml_model = Keras2DML(spark, keras_model, input_shape=input_shapes[config['data']], batch_size=batch_size, max_iter=max_iter, test_iter=0, display=display)
-		#sysml_model.setConfigProperty("sysml.native.blas", "openblas")
+		sysml_model.setConfigProperty("sysml.native.blas", "openblas")
 		sysml_model.setStatistics(True)
+		#sysml_model.setConfigProperty("sysml.stats.finegrained", "true")
+		#sysml_model.setConfigProperty("sysml.gpu.eager.cudaFree", "true")
 		sysml_model.setConfigProperty("sysml.floating.point.precision", "single")
 		#sysml_model.setConfigProperty("sysml.codegen.enabled", "true").setConfigProperty("sysml.codegen.plancache", "true")
 		if num_gpus >= 1:
