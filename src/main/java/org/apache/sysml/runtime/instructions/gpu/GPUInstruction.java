@@ -19,6 +19,8 @@
 
 package org.apache.sysml.runtime.instructions.gpu;
 
+import static jcuda.jcurand.JCurand.curandSetPseudoRandomGeneratorSeed;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
@@ -34,6 +36,7 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.utils.GPUStatistics;
 import org.apache.sysml.utils.Statistics;
 
+@SuppressWarnings("unused")
 public abstract class GPUInstruction extends Instruction {
 	public enum GPUINSTRUCTION_TYPE {
 		AggregateUnary,
@@ -89,6 +92,11 @@ public abstract class GPUInstruction extends Instruction {
 	public final static String MISC_TIMER_ORMQR =       "ormqr";    // time spent in ormqr
 	public final static String MISC_TIMER_TRSM =        "trsm";     // time spent in cublas Dtrsm
 
+	// RAND instructions
+	public final static String MISC_TIMER_RAND_SET_SEED =        "rseed";     // time spent in curandSetPseudoRandomGeneratorSeed
+	public final static String MISC_TIMER_RAND_GEN_UNIFORM =     "rgunif";     // time spent in cuGenerateUniform
+	public final static String MISC_TIMER_RAND_GEN_UNIFORM_KERNEL = "rgunifk";     // time spent in uniform_rand kernel
+	
 	// Transpose
 	public final static String MISC_TIMER_SPARSE_DGEAM_LIB =    "sdgeaml";  // time spent in sparse transpose (and other ops of type a*op(A) + b*op(B))
 	public final static String MISC_TIMER_DENSE_DGEAM_LIB =     "ddgeaml";  // time spent in dense transpose (and other ops of type a*op(A) + b*op(B))

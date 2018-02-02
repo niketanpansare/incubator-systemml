@@ -600,14 +600,23 @@ public class LibMatrixCUDA {
 			return;
 		}
 		else {
+			long t0=0, t1=0, t2=0;
 			Pointer outputPtr = getDensePointer(gCtx, out1, instName);
 			curandGenerator generator = gCtx.getCurandGenerator();
+			if (DMLScript.FINEGRAINED_STATISTICS) t0 = System.nanoTime();
 			curandSetPseudoRandomGeneratorSeed(generator, seed);
+			if (DMLScript.FINEGRAINED_STATISTICS) t1 = System.nanoTime();
 			cudaSupportFunctions.cuGenerateUniform(generator, outputPtr, numOutRows*numOutCols);
+			if (DMLScript.FINEGRAINED_STATISTICS) t2 = System.nanoTime();
 			if(!(minValue == 0 && maxValue == 1 && sparsity == 1)) {
 				getCudaKernels(gCtx).launchKernel("uniform_rand",
 						ExecutionConfig.getConfigForSimpleVectorOperations(toInt(numOutRows*numOutCols)),
 						outputPtr, minValue, maxValue, sparsity, toInt(numOutRows*numOutCols));
+				if (DMLScript.FINEGRAINED_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_RAND_GEN_UNIFORM_KERNEL, System.nanoTime() - t2);
+			}
+			if (DMLScript.FINEGRAINED_STATISTICS) {
+				GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_RAND_SET_SEED, t1 - t0);
+				GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_RAND_GEN_UNIFORM, t2 - t1);
 			}
 		}
 	}
