@@ -125,11 +125,11 @@ def get_framework_model(framework):
 	keras_model = get_keras_model()
 	if framework == 'systemml':
 		from systemml.mllearn import Keras2DML
-		sysml_model = Keras2DML(spark, keras_model, input_shape=input_shapes[config['data']], batch_size=batch_size, max_iter=max_iter, test_iter=0, display=display)
+		sysml_model = Keras2DML(spark, keras_model, input_shape=input_shapes[config['data']], batch_size=batch_size, max_iter=max_iter, test_iter=0, display=display, load_keras_weights=False)
 		sysml_model.setConfigProperty("sysml.native.blas", "openblas")
 		sysml_model.setStatistics(True).setStatisticsMaxHeavyHitters(100)
 		sysml_model.setConfigProperty("sysml.gpu.sync.postProcess", "false")
-		sysml_model.setConfigProperty("sysml.stats.finegrained", "true")
+		#sysml_model.setConfigProperty("sysml.stats.finegrained", "true")
 		#sysml_model.setConfigProperty("sysml.gpu.eager.cudaFree", "true")
 		sysml_model.setConfigProperty("sysml.floating.point.precision", "single")
 		#sysml_model.setConfigProperty("sysml.codegen.enabled", "true").setConfigProperty("sysml.codegen.plancache", "true")
