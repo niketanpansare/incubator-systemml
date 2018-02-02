@@ -47,7 +47,8 @@ public abstract class GPUInstruction extends Instruction {
 		BuiltinUnary,
 		BuiltinBinary,
 		Builtin,
-		MatrixIndexing
+		MatrixIndexing,
+		Rand
 	}
 	
 	private static final Log LOG = LogFactory.getLog(GPUInstruction.class.getName());

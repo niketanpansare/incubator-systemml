@@ -64,6 +64,10 @@ import jcuda.jcusolver.cusolverDnHandle;
 import jcuda.jcusparse.cusparseHandle;
 import jcuda.runtime.JCuda;
 import jcuda.runtime.cudaDeviceProp;
+import jcuda.jcurand.curandGenerator;
+import static jcuda.jcurand.JCurand.curandCreateGenerator;
+import static jcuda.jcurand.JCurand.curandDestroyGenerator;
+import static jcuda.jcurand.curandRngType.CURAND_RNG_PSEUDO_DEFAULT;
 
 /**
  * Represents a context per GPU accessible through the same JVM.
@@ -107,6 +111,10 @@ public class GPUContext {
 	 * to launch custom CUDA kernel, specific to the active GPU for this GPUContext
 	 */
 	private JCudaKernels kernels;
+	/**
+	 * Random number generator
+	 */
+	private curandGenerator curandGenerator;
 
 	// Invoke cudaMemGetInfo to get available memory information. Useful if GPU is shared among multiple application.
 	public double GPU_MEMORY_UTILIZATION_FACTOR = ConfigurationManager.getDMLConfig()
@@ -204,32 +212,9 @@ public class GPUContext {
 	private void initializeCudaLibraryHandles() throws DMLRuntimeException {
 		deleteCudaLibraryHandles();
 
-		if (cudnnHandle == null) {
-			cudnnHandle = new cudnnHandle();
-			cudnnCreate(cudnnHandle);
-		}
-
-		if (cublasHandle == null) {
-			cublasHandle = new cublasHandle();
-			cublasCreate(cublasHandle);
-		}
 		// For cublas v2, cublasSetPointerMode tells Cublas whether to expect scalar arguments on device or on host
 		// This applies to arguments like "alpha" in Dgemm, and "y" in Ddot.
 		// cublasSetPointerMode(LibMatrixCUDA.cublasHandle, cublasPointerMode.CUBLAS_POINTER_MODE_DEVICE);
-
-		if (cusparseHandle == null) {
-			cusparseHandle = new cusparseHandle();
-			cusparseCreate(cusparseHandle);
-		}
-
-		if (cusolverDnHandle == null) {
-			cusolverDnHandle = new cusolverDnHandle();
-			cusolverDnCreate(cusolverDnHandle);
-		}
-		
-		if (kernels == null) {
-			kernels = new JCudaKernels();
-		}
 	}
 
 	/**
@@ -785,6 +770,15 @@ public class GPUContext {
 	 * @return cudnnHandle for current thread
 	 */
 	public cudnnHandle getCudnnHandle() {
+		// Double-checked locking
+		if (cudnnHandle == null) {
+			synchronized(GPUContext.class) {
+				if (cudnnHandle == null) {
+					cudnnHandle = new cudnnHandle();
+					cudnnCreate(cudnnHandle);
+				}
+			}
+		}
 		return cudnnHandle;
 	}
 
@@ -794,6 +788,15 @@ public class GPUContext {
 	 * @return cublasHandle for current thread
 	 */
 	public cublasHandle getCublasHandle() {
+		// Double-checked locking
+		if (cublasHandle == null) {
+			synchronized(GPUContext.class) {
+				if (cublasHandle == null) {
+					cublasHandle = new cublasHandle();
+					cublasCreate(cublasHandle);
+				}
+			}
+		}
 		return cublasHandle;
 	}
 
@@ -803,6 +806,14 @@ public class GPUContext {
 	 * @return cusparseHandle for current thread
 	 */
 	public cusparseHandle getCusparseHandle() {
+		if (cusparseHandle == null) {
+			synchronized(GPUContext.class) {
+				if (cusparseHandle == null) {
+					cusparseHandle = new cusparseHandle();
+					cusparseCreate(cusparseHandle);
+				}
+			}
+		}
 		return cusparseHandle;
 	}
 
@@ -812,6 +823,14 @@ public class GPUContext {
 	 * @return cusolverDnHandle for current thread
 	 */
 	public cusolverDnHandle getCusolverDnHandle() {
+		if (cusolverDnHandle == null) {
+			synchronized(GPUContext.class) {
+				if (cusolverDnHandle == null) {
+					cusolverDnHandle = new cusolverDnHandle();
+					cusolverDnCreate(cusolverDnHandle);
+				}
+			}
+		}
 		return cusolverDnHandle;
 	}
 
@@ -819,10 +838,36 @@ public class GPUContext {
 	 * Returns utility class used to launch custom CUDA kernel, specific to the active GPU for this GPUContext.
 	 *
 	 * @return {@link JCudaKernels} for current thread
+	 * @throws DMLRuntimeException if error
 	 */
-	public JCudaKernels getKernels() {
+	public JCudaKernels getKernels() throws DMLRuntimeException {
+		if (kernels == null) {
+			synchronized(GPUContext.class) {
+				if (kernels == null) {
+					kernels = new JCudaKernels();
+				}
+			}
+		}
 		return kernels;
 	}
+	
+	/**
+	 * Returns a random number generator
+	 * 
+	 * @return the random number generator for the current thread
+	 */
+	public curandGenerator getCurandGenerator() {
+		if(curandGenerator == null) {
+			synchronized(GPUContext.class) {
+				if(curandGenerator == null) {
+					curandGenerator = new curandGenerator();
+					curandCreateGenerator(curandGenerator, CURAND_RNG_PSEUDO_DEFAULT);
+				}
+			}
+		}
+		return curandGenerator;
+	}
+
 
 	/**
 	 * Destroys this GPUContext object.
@@ -853,11 +898,15 @@ public class GPUContext {
 
 		if (cusolverDnHandle != null)
 			cusolverDnDestroy(cusolverDnHandle);
+		
+		if(curandGenerator != null)
+			curandDestroyGenerator(curandGenerator);
 
 		cudnnHandle = null;
 		cublasHandle = null;
 		cusparseHandle = null;
 		cusolverDnHandle = null;
+		curandGenerator = null;
 	}
 
 	/**

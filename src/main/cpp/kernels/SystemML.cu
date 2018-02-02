@@ -1535,7 +1535,7 @@ extern "C" __global__ void reduce_col_mean_f(float *g_idata, float *g_odata,
  * Do an exp over all the elements of a matrix
  * @param A the input matrix (of length = size)
  * @param C the pre-allocated output matrix (of length = size)
- * @param siz the length of the input and output matrices
+ * @param size the length of the input and output matrices
  */
 template <typename T>
 __device__ void matrix_exp(T *A, T *C, unsigned int size) {
@@ -1558,7 +1558,7 @@ extern "C" __global__ void matrix_exp_f(float *A, float *C, unsigned int size) {
  * Do an sqrt over all the elements of a matrix
  * @param A the input matrix (of length = size)
  * @param C the pre-allocated output matrix (of length = size)
- * @param siz the length of the input and output matrices
+ * @param size the length of the input and output matrices
  */
 template <typename T>
 __device__ void matrix_sqrt(T *A, T *C, unsigned int size) {
@@ -1582,7 +1582,7 @@ extern "C" __global__ void matrix_sqrt_f(float *A, float *C,
  * Do an round over all the elements of a matrix
  * @param A the input matrix (of length = size)
  * @param C the pre-allocated output matrix (of length = size)
- * @param siz the length of the input and output matrices
+ * @param size the length of the input and output matrices
  */
 template <typename T>
 __device__ void matrix_round(T *A, T *C, unsigned int size) {
@@ -1606,7 +1606,7 @@ extern "C" __global__ void matrix_round_f(float *A, float *C,
  * Do an abs over all the elements of a matrix
  * @param A the input matrix (of length = size)
  * @param C the pre-allocated output matrix (of length = size)
- * @param siz the length of the input and output matrices
+ * @param size the length of the input and output matrices
  */
 template <typename T>
 __device__ void matrix_abs(T *A, T *C, unsigned int size) {
@@ -1629,7 +1629,7 @@ extern "C" __global__ void matrix_abs_f(float *A, float *C, unsigned int size) {
  * Do an log over all the elements of a matrix
  * @param A the input matrix (of length = size)
  * @param C the pre-allocated output matrix (of length = size)
- * @param siz the length of the input and output matrices
+ * @param size the length of the input and output matrices
  */
 template <typename T>
 __device__ void matrix_log(T *A, T *C, unsigned int size) {
@@ -1652,7 +1652,7 @@ extern "C" __global__ void matrix_log_f(float *A, float *C, unsigned int size) {
  * Do an floor over all the elements of a matrix
  * @param A the input matrix (of length = size)
  * @param C the pre-allocated output matrix (of length = size)
- * @param siz the length of the input and output matrices
+ * @param size the length of the input and output matrices
  */
 template <typename T>
 __device__ void matrix_floor(T *A, T *C, unsigned int size) {
@@ -1676,7 +1676,7 @@ extern "C" __global__ void matrix_floor_f(float *A, float *C,
  * Do an ceil over all the elements of a matrix
  * @param A the input matrix (of length = size)
  * @param C the pre-allocated output matrix (of length = size)
- * @param siz the length of the input and output matrices
+ * @param size the length of the input and output matrices
  */
 template <typename T>
 __device__ void matrix_ceil(T *A, T *C, unsigned int size) {
@@ -1700,7 +1700,7 @@ extern "C" __global__ void matrix_ceil_f(float *A, float *C,
  * Do an sin over all the elements of a matrix
  * @param A the input matrix (of length = size)
  * @param C the pre-allocated output matrix (of length = size)
- * @param siz the length of the input and output matrices
+ * @param size the length of the input and output matrices
  */
 template <typename T>
 __device__ void matrix_sin(T *A, T *C, unsigned int size) {
@@ -1723,7 +1723,7 @@ extern "C" __global__ void matrix_sin_f(float *A, float *C, unsigned int size) {
  * Do an sinh over all the elements of a matrix
  * @param A the input matrix (of length = size)
  * @param C the pre-allocated output matrix (of length = size)
- * @param siz the length of the input and output matrices
+ * @param size the length of the input and output matrices
  */
 template <typename T>
 __device__ void matrix_sinh(T *A, T *C, unsigned int size) {
@@ -1747,7 +1747,7 @@ extern "C" __global__ void matrix_sinh_f(float *A, float *C,
  * Do an cos over all the elements of a matrix
  * @param A the input matrix (of length = size)
  * @param C the pre-allocated output matrix (of length = size)
- * @param siz the length of the input and output matrices
+ * @param size the length of the input and output matrices
  */
 template <typename T>
 __device__ void matrix_cos(T *A, T *C, unsigned int size) {
@@ -1770,7 +1770,7 @@ extern "C" __global__ void matrix_cos_f(float *A, float *C, unsigned int size) {
  * Do an cosh over all the elements of a matrix
  * @param A the input matrix (of length = size)
  * @param C the pre-allocated output matrix (of length = size)
- * @param siz the length of the input and output matrices
+ * @param size the length of the input and output matrices
  */
 template <typename T>
 __device__ void matrix_cosh(T *A, T *C, unsigned int size) {
@@ -1794,7 +1794,7 @@ extern "C" __global__ void matrix_cosh_f(float *A, float *C,
  * Do an tan over all the elements of a matrix
  * @param A the input matrix (of length = size)
  * @param C the pre-allocated output matrix (of length = size)
- * @param siz the length of the input and output matrices
+ * @param size the length of the input and output matrices
  */
 template <typename T>
 __device__ void matrix_tan(T *A, T *C, unsigned int size) {
@@ -1817,7 +1817,7 @@ extern "C" __global__ void matrix_tan_f(float *A, float *C, unsigned int size) {
  * Do an tanh over all the elements of a matrix
  * @param A the input matrix (of length = size)
  * @param C the pre-allocated output matrix (of length = size)
- * @param siz the length of the input and output matrices
+ * @param size the length of the input and output matrices
  */
 template <typename T>
 __device__ void matrix_tanh(T *A, T *C, unsigned int size) {
@@ -1841,7 +1841,7 @@ extern "C" __global__ void matrix_tanh_f(float *A, float *C,
  * Do an asin over all the elements of a matrix
  * @param A the input matrix (of length = size)
  * @param C the pre-allocated output matrix (of length = size)
- * @param siz the length of the input and output matrices
+ * @param size the length of the input and output matrices
  */
 template <typename T>
 __device__ void matrix_asin(T *A, T *C, unsigned int size) {
@@ -1865,7 +1865,7 @@ extern "C" __global__ void matrix_asin_f(float *A, float *C,
  * Do an acos over all the elements of a matrix
  * @param A the input matrix (of length = size)
  * @param C the pre-allocated output matrix (of length = size)
- * @param siz the length of the input and output matrices
+ * @param size the length of the input and output matrices
  */
 template <typename T>
 __device__ void matrix_acos(T *A, T *C, unsigned int size) {
@@ -1889,7 +1889,7 @@ extern "C" __global__ void matrix_acos_f(float *A, float *C,
  * Do an atan over all the elements of a matrix
  * @param A the input matrix (of length = size)
  * @param C the pre-allocated output matrix (of length = size)
- * @param siz the length of the input and output matrices
+ * @param size the length of the input and output matrices
  */
 template <typename T>
 __device__ void matrix_atan(T *A, T *C, unsigned int size) {
@@ -1914,7 +1914,7 @@ extern "C" __global__ void matrix_atan_f(float *A, float *C,
  * Assign -1, 0 or 1 depending on the element being negative, 0 or positive
  * @param A the input matrix (of length = size)
  * @param C the pre-allocated output matrix (of length = size)
- * @param siz the length of the input and output matrices
+ * @param size the length of the input and output matrices
  */
 template <typename T>
 __device__ void matrix_sign(T *A, T *C, unsigned int size) {
@@ -1942,7 +1942,7 @@ extern "C" __global__ void matrix_sign_f(float *A, float *C,
  * Do an sigmoid over all the elements of a matrix
  * @param A the input matrix (of length = size)
  * @param C the pre-allocated output matrix (of length = size)
- * @param siz the length of the input and output matrices
+ * @param size the length of the input and output matrices
  */
 template <typename T>
 __device__ void matrix_sigmoid(T *A, T *C, unsigned int size) {
@@ -1960,4 +1960,38 @@ extern "C" __global__ void matrix_sigmoid_d(double *A, double *C,
 extern "C" __global__ void matrix_sigmoid_f(float *A, float *C,
                                          unsigned int size) {
   matrix_sigmoid(A, C, size);
+}
+
+/**
+ * Given a matrix A ~ Uniform(0,1) with sparsity 1.0,
+ * outputs the matrix A ~ Uniform(minVal, maxVal) with sparsity sp.
+ *
+ * @param A the input matrix between 0 and 1 (of length = size)
+ * @param minVal minimum value
+ * @param maxVal maximum value
+ * @param sparsity input sparsity
+ * @param size the length of the input and output matrices
+ */
+template <typename T>
+__device__ void uniform_rand(T *A, double minVal, double maxVal, double sp, unsigned int size) {
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  if (index < size) {
+    if(minVal == maxVal) {
+    	A[index] = (A[index] <= sp) ? minVal : 0;
+    }
+    else if(sp == 1) {
+    	A[index] = minVal + (maxVal - minVal)*A[index];
+    }
+    else {
+    	A[index] = (A[index] <= sp) ? (minVal + (maxVal - minVal)*A[index]/sp) : 0;
+    }
+  }
+}
+
+extern "C" __global__ void uniform_rand_d(double *A, double minVal, double maxVal, double sp, unsigned int size) {
+  uniform_rand(A, minVal, maxVal, sp, size);
+}
+
+extern "C" __global__ void uniform_rand_f(float *A, double minVal, double maxVal, double sp, unsigned int size) {
+  uniform_rand(A, minVal, maxVal, sp, size);
 }

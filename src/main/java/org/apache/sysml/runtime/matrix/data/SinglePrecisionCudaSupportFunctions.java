@@ -34,11 +34,13 @@ import jcuda.Pointer;
 import jcuda.Sizeof;
 import jcuda.jcublas.JCublas2;
 import jcuda.jcublas.cublasHandle;
+import jcuda.jcurand.curandGenerator;
 import jcuda.jcusolver.JCusolverDn;
 import jcuda.jcusolver.cusolverDnHandle;
 import jcuda.jcusparse.JCusparse;
 import jcuda.jcusparse.cusparseHandle;
 import jcuda.jcusparse.cusparseMatDescr;
+import static jcuda.jcurand.JCurand.curandGenerateUniform;
 
 public class SinglePrecisionCudaSupportFunctions implements CudaSupportFunctions {
 	
@@ -213,5 +215,10 @@ public class SinglePrecisionCudaSupportFunctions implements CudaSupportFunctions
 		
 		if(DMLScript.FINEGRAINED_STATISTICS && instName != null) 
 			GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_HOST_TO_DEVICE, System.nanoTime() - t1);
+	}
+
+	@Override
+	public int cuGenerateUniform(curandGenerator generator, Pointer outputPtr, long num) {
+		return curandGenerateUniform(generator, outputPtr, num);
 	}
 }

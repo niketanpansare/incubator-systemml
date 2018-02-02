@@ -12106,12 +12106,161 @@ BB97_5:
 	ret;
 }
 
+	// .globl	uniform_rand_d
+.visible .entry uniform_rand_d(
+	.param .u64 uniform_rand_d_param_0,
+	.param .f64 uniform_rand_d_param_1,
+	.param .f64 uniform_rand_d_param_2,
+	.param .f64 uniform_rand_d_param_3,
+	.param .u32 uniform_rand_d_param_4
+)
+{
+	.reg .pred 	%p<6>;
+	.reg .b32 	%r<6>;
+	.reg .f64 	%fd<17>;
+	.reg .b64 	%rd<5>;
+
+
+	ld.param.u64 	%rd2, [uniform_rand_d_param_0];
+	ld.param.f64 	%fd4, [uniform_rand_d_param_1];
+	ld.param.f64 	%fd5, [uniform_rand_d_param_2];
+	ld.param.f64 	%fd6, [uniform_rand_d_param_3];
+	ld.param.u32 	%r2, [uniform_rand_d_param_4];
+	mov.u32 	%r3, %ctaid.x;
+	mov.u32 	%r4, %ntid.x;
+	mov.u32 	%r5, %tid.x;
+	mad.lo.s32 	%r1, %r4, %r3, %r5;
+	setp.ge.u32	%p1, %r1, %r2;
+	@%p1 bra 	BB98_8;
+
+	cvta.to.global.u64 	%rd3, %rd2;
+	mul.wide.s32 	%rd4, %r1, 8;
+	add.s64 	%rd1, %rd3, %rd4;
+	setp.eq.f64	%p2, %fd4, %fd5;
+	@%p2 bra 	BB98_7;
+	bra.uni 	BB98_2;
+
+BB98_7:
+	ld.global.f64 	%fd14, [%rd1];
+	setp.le.f64	%p5, %fd14, %fd6;
+	selp.f64	%fd15, %fd4, 0d0000000000000000, %p5;
+	st.global.f64 	[%rd1], %fd15;
+	bra.uni 	BB98_8;
+
+BB98_2:
+	setp.eq.f64	%p3, %fd6, 0d3FF0000000000000;
+	@%p3 bra 	BB98_6;
+	bra.uni 	BB98_3;
+
+BB98_6:
+	sub.f64 	%fd11, %fd5, %fd4;
+	ld.global.f64 	%fd12, [%rd1];
+	fma.rn.f64 	%fd13, %fd11, %fd12, %fd4;
+	st.global.f64 	[%rd1], %fd13;
+	bra.uni 	BB98_8;
+
+BB98_3:
+	ld.global.f64 	%fd1, [%rd1];
+	setp.gtu.f64	%p4, %fd1, %fd6;
+	mov.f64 	%fd16, 0d0000000000000000;
+	@%p4 bra 	BB98_5;
+
+	sub.f64 	%fd8, %fd5, %fd4;
+	mul.f64 	%fd9, %fd8, %fd1;
+	div.rn.f64 	%fd10, %fd9, %fd6;
+	add.f64 	%fd16, %fd10, %fd4;
+
+BB98_5:
+	st.global.f64 	[%rd1], %fd16;
+
+BB98_8:
+	ret;
+}
+
+	// .globl	uniform_rand_f
+.visible .entry uniform_rand_f(
+	.param .u64 uniform_rand_f_param_0,
+	.param .f64 uniform_rand_f_param_1,
+	.param .f64 uniform_rand_f_param_2,
+	.param .f64 uniform_rand_f_param_3,
+	.param .u32 uniform_rand_f_param_4
+)
+{
+	.reg .pred 	%p<6>;
+	.reg .f32 	%f<11>;
+	.reg .b32 	%r<6>;
+	.reg .f64 	%fd<13>;
+	.reg .b64 	%rd<5>;
+
+
+	ld.param.u64 	%rd2, [uniform_rand_f_param_0];
+	ld.param.f64 	%fd2, [uniform_rand_f_param_1];
+	ld.param.f64 	%fd3, [uniform_rand_f_param_2];
+	ld.param.f64 	%fd4, [uniform_rand_f_param_3];
+	ld.param.u32 	%r2, [uniform_rand_f_param_4];
+	mov.u32 	%r3, %ctaid.x;
+	mov.u32 	%r4, %ntid.x;
+	mov.u32 	%r5, %tid.x;
+	mad.lo.s32 	%r1, %r4, %r3, %r5;
+	setp.ge.u32	%p1, %r1, %r2;
+	@%p1 bra 	BB99_8;
+
+	cvta.to.global.u64 	%rd3, %rd2;
+	mul.wide.s32 	%rd4, %r1, 4;
+	add.s64 	%rd1, %rd3, %rd4;
+	setp.eq.f64	%p2, %fd2, %fd3;
+	@%p2 bra 	BB99_7;
+	bra.uni 	BB99_2;
+
+BB99_7:
+	ld.global.f32 	%f7, [%rd1];
+	cvt.f64.f32	%fd12, %f7;
+	setp.le.f64	%p5, %fd12, %fd4;
+	cvt.rn.f32.f64	%f8, %fd2;
+	selp.f32	%f9, %f8, 0f00000000, %p5;
+	st.global.f32 	[%rd1], %f9;
+	bra.uni 	BB99_8;
+
+BB99_2:
+	setp.eq.f64	%p3, %fd4, 0d3FF0000000000000;
+	@%p3 bra 	BB99_6;
+	bra.uni 	BB99_3;
+
+BB99_6:
+	sub.f64 	%fd9, %fd3, %fd2;
+	ld.global.f32 	%f5, [%rd1];
+	cvt.f64.f32	%fd10, %f5;
+	fma.rn.f64 	%fd11, %fd9, %fd10, %fd2;
+	cvt.rn.f32.f64	%f6, %fd11;
+	st.global.f32 	[%rd1], %f6;
+	bra.uni 	BB99_8;
+
+BB99_3:
+	ld.global.f32 	%f4, [%rd1];
+	cvt.f64.f32	%fd1, %f4;
+	setp.gtu.f64	%p4, %fd1, %fd4;
+	mov.f32 	%f10, 0f00000000;
+	@%p4 bra 	BB99_5;
+
+	sub.f64 	%fd5, %fd3, %fd2;
+	mul.f64 	%fd6, %fd5, %fd1;
+	div.rn.f64 	%fd7, %fd6, %fd4;
+	add.f64 	%fd8, %fd7, %fd2;
+	cvt.rn.f32.f64	%f10, %fd8;
+
+BB99_5:
+	st.global.f32 	[%rd1], %f10;
+
+BB99_8:
+	ret;
+}
+
 .func  (.param .b64 func_retval0) __internal_trig_reduction_slowpathd(
 	.param .b64 __internal_trig_reduction_slowpathd_param_0,
 	.param .b64 __internal_trig_reduction_slowpathd_param_1
 )
 {
-	.local .align 8 .b8 	__local_depot98[40];
+	.local .align 8 .b8 	__local_depot100[40];
 	.reg .b64 	%SP;
 	.reg .b64 	%SPL;
 	.reg .pred 	%p<9>;
@@ -12120,7 +12269,7 @@ BB97_5:
 	.reg .b64 	%rd<101>;
 
 
-	mov.u64 	%rd100, __local_depot98;
+	mov.u64 	%rd100, __local_depot100;
 	cvta.local.u64 	%SP, %rd100;
 	ld.param.f64 	%fd4, [__internal_trig_reduction_slowpathd_param_0];
 	ld.param.u64 	%rd37, [__internal_trig_reduction_slowpathd_param_1];
@@ -12134,7 +12283,7 @@ BB97_5:
 	shr.u32 	%r3, %r1, 20;
 	bfe.u32 	%r4, %r1, 20, 11;
 	setp.eq.s32	%p1, %r4, 2047;
-	@%p1 bra 	BB98_13;
+	@%p1 bra 	BB100_13;
 
 	add.s32 	%r16, %r4, -1024;
 	shr.u32 	%r17, %r16, 6;
@@ -12147,7 +12296,7 @@ BB97_5:
 	setp.gt.s32	%p2, %r5, %r6;
 	mov.u64 	%rd94, 0;
 	mov.u64 	%rd93, %rd1;
-	@%p2 bra 	BB98_4;
+	@%p2 bra 	BB100_4;
 
 	mov.b64 	 %rd41, %fd4;
 	shl.b64 	%rd42, %rd41, 11;
@@ -12166,7 +12315,7 @@ BB97_5:
 	mov.u64 	%rd91, %rd1;
 	mov.u32 	%r39, %r7;
 
-BB98_3:
+BB100_3:
 	.pragma "nounroll";
 	mov.u32 	%r8, %r39;
 	mov.u64 	%rd7, %rd91;
@@ -12201,15 +12350,15 @@ BB98_3:
 	setp.lt.s32	%p3, %r9, %r6;
 	mov.u64 	%rd91, %rd13;
 	mov.u32 	%r39, %r9;
-	@%p3 bra 	BB98_3;
+	@%p3 bra 	BB100_3;
 
-BB98_4:
+BB100_4:
 	st.local.u64 	[%rd93], %rd94;
 	ld.local.u64 	%rd95, [%rd1+16];
 	ld.local.u64 	%rd96, [%rd1+24];
 	and.b32  	%r10, %r3, 63;
 	setp.eq.s32	%p4, %r10, 0;
-	@%p4 bra 	BB98_6;
+	@%p4 bra 	BB100_6;
 
 	mov.u32 	%r27, 64;
 	sub.s32 	%r28, %r27, %r10;
@@ -12221,7 +12370,7 @@ BB98_4:
 	shr.u64 	%rd56, %rd55, %r28;
 	or.b64  	%rd95, %rd56, %rd54;
 
-BB98_6:
+BB100_6:
 	cvta.to.local.u64 	%rd57, %rd37;
 	shr.u64 	%rd58, %rd96, 62;
 	cvt.u32.u64	%r29, %rd58;
@@ -12238,7 +12387,7 @@ BB98_6:
 	selp.b32	%r34, %r33, %r32, %p5;
 	st.local.u32 	[%rd57], %r34;
 	setp.eq.s32	%p6, %r31, 0;
-	@%p6 bra 	BB98_8;
+	@%p6 bra 	BB100_8;
 
 	mov.u64 	%rd65, 0;
 	// inline asm
@@ -12258,10 +12407,10 @@ BB98_6:
 	// inline asm
 	xor.b32  	%r40, %r40, -2147483648;
 
-BB98_8:
+BB100_8:
 	clz.b64 	%r41, %rd98;
 	setp.eq.s32	%p7, %r41, 0;
-	@%p7 bra 	BB98_10;
+	@%p7 bra 	BB100_10;
 
 	shl.b64 	%rd68, %rd98, %r41;
 	mov.u32 	%r35, 64;
@@ -12269,7 +12418,7 @@ BB98_8:
 	shr.u64 	%rd69, %rd97, %r36;
 	or.b64  	%rd98, %rd69, %rd68;
 
-BB98_10:
+BB100_10:
 	mov.u64 	%rd73, -3958705157555305931;
 	// inline asm
 	{
@@ -12290,7 +12439,7 @@ BB98_10:
 	}
 	// inline asm
 	setp.lt.s64	%p8, %rd99, 1;
-	@%p8 bra 	BB98_12;
+	@%p8 bra 	BB100_12;
 
 	// inline asm
 	{
@@ -12309,7 +12458,7 @@ BB98_10:
 	// inline asm
 	add.s32 	%r41, %r41, 1;
 
-BB98_12:
+BB100_12:
 	cvt.u64.u32	%rd80, %r40;
 	shl.b64 	%rd81, %rd80, 32;
 	mov.u32 	%r37, 1022;
@@ -12324,7 +12473,7 @@ BB98_12:
 	or.b64  	%rd89, %rd88, %rd81;
 	mov.b64 	 %fd4, %rd89;
 
-BB98_13:
+BB100_13:
 	st.param.f64	[func_retval0+0], %fd4;
 	ret;
 }
@@ -12352,7 +12501,7 @@ BB98_13:
 	}
 	shr.u32 	%r50, %r49, 20;
 	setp.ne.s32	%p1, %r50, 0;
-	@%p1 bra 	BB99_2;
+	@%p1 bra 	BB101_2;
 
 	mul.f64 	%fd14, %fd12, 0d4350000000000000;
 	{
@@ -12366,13 +12515,13 @@ BB98_13:
 	shr.u32 	%r16, %r49, 20;
 	add.s32 	%r50, %r16, -54;
 
-BB99_2:
+BB101_2:
 	add.s32 	%r51, %r50, -1023;
 	and.b32  	%r17, %r49, -2146435073;
 	or.b32  	%r18, %r17, 1072693248;
 	mov.b64 	%fd132, {%r48, %r18};
 	setp.lt.u32	%p2, %r18, 1073127583;
-	@%p2 bra 	BB99_4;
+	@%p2 bra 	BB101_4;
 
 	{
 	.reg .b32 %temp; 
@@ -12386,7 +12535,7 @@ BB99_2:
 	mov.b64 	%fd132, {%r19, %r21};
 	add.s32 	%r51, %r50, -1022;
 
-BB99_4:
+BB101_4:
 	add.f64 	%fd16, %fd132, 0d3FF0000000000000;
 	// inline asm
 	rcp.approx.ftz.f64 %fd15,%fd16;
@@ -12551,13 +12700,13 @@ BB99_4:
 	mov.b32 	 %f2, %r35;
 	abs.f32 	%f1, %f2;
 	setp.lt.f32	%p4, %f1, 0f4086232B;
-	@%p4 bra 	BB99_7;
+	@%p4 bra 	BB101_7;
 
 	setp.lt.f64	%p5, %fd4, 0d0000000000000000;
 	add.f64 	%fd129, %fd4, 0d7FF0000000000000;
 	selp.f64	%fd133, 0d0000000000000000, %fd129, %p5;
 	setp.geu.f32	%p6, %f1, 0f40874800;
-	@%p6 bra 	BB99_7;
+	@%p6 bra 	BB101_7;
 
 	shr.u32 	%r36, %r13, 31;
 	add.s32 	%r37, %r13, %r36;
@@ -12572,7 +12721,7 @@ BB99_4:
 	mov.b64 	%fd131, {%r44, %r43};
 	mul.f64 	%fd133, %fd130, %fd131;
 
-BB99_7:
+BB101_7:
 	{
 	.reg .b32 %temp; 
 	mov.b64 	{%temp, %r45}, %fd133;
@@ -12585,13 +12734,13 @@ BB99_7:
 	}
 	setp.ne.s32	%p8, %r47, 0;
 	or.pred  	%p9, %p8, %p7;
-	@!%p9 bra 	BB99_9;
-	bra.uni 	BB99_8;
+	@!%p9 bra 	BB101_9;
+	bra.uni 	BB101_8;
 
-BB99_8:
+BB101_8:
 	fma.rn.f64 	%fd133, %fd133, %fd5, %fd133;
 
-BB99_9:
+BB101_9:
 	st.param.f64	[func_retval0+0], %fd133;
 	ret;
 }

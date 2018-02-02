@@ -21,6 +21,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 
 import jcuda.jcublas.cublasHandle;
+import jcuda.jcurand.curandGenerator;
 import jcuda.jcusolver.cusolverDnHandle;
 import jcuda.jcusparse.cusparseHandle;
 import jcuda.jcusparse.cusparseMatDescr;
@@ -83,5 +84,5 @@ public interface CudaSupportFunctions {
 	public int cusparsennz(cusparseHandle handle, int dirA, int m, int n, cusparseMatDescr descrA, jcuda.Pointer A, int lda, jcuda.Pointer nnzPerRowCol, jcuda.Pointer nnzTotalDevHostPtr);
 	public void deviceToHost(GPUContext gCtx, Pointer src, double [] dest, String instName, boolean isEviction) throws DMLRuntimeException;
 	public void hostToDevice(GPUContext gCtx, double [] src,  Pointer dest, String instName) throws DMLRuntimeException;
-	
+	public int cuGenerateUniform(curandGenerator generator, Pointer outputPtr, long num);
 }

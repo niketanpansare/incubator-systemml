@@ -20,6 +20,7 @@ package org.apache.sysml.runtime.instructions;
 
 import java.util.HashMap;
 
+import org.apache.sysml.lops.DataGen;
 import org.apache.sysml.lops.RightIndex;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.gpu.AggregateBinaryGPUInstruction;
@@ -27,6 +28,7 @@ import org.apache.sysml.runtime.instructions.gpu.ArithmeticBinaryGPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.BuiltinBinaryGPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.BuiltinUnaryGPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.ConvolutionGPUInstruction;
+import org.apache.sysml.runtime.instructions.gpu.DataGenGPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.MatrixIndexingGPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.MatrixMatrixAxpyGPUInstruction;
@@ -100,6 +102,9 @@ public class GPUInstructionParser  extends InstructionParser
 		String2GPUInstructionType.put( "sign",  GPUINSTRUCTION_TYPE.BuiltinUnary);
 		String2GPUInstructionType.put( "sigmoid", GPUINSTRUCTION_TYPE.BuiltinUnary);
 		String2GPUInstructionType.put( "softmax", GPUINSTRUCTION_TYPE.BuiltinUnary);
+		
+		// Data generator functions
+		String2GPUInstructionType.put( DataGen.RAND_OPCODE, GPUINSTRUCTION_TYPE.Rand);
 
 		// Binary Builtin functions
 		String2GPUInstructionType.put( "solve", GPUINSTRUCTION_TYPE.BuiltinBinary);
@@ -201,6 +206,9 @@ public class GPUInstructionParser  extends InstructionParser
 
 			case MatrixIndexing:
 				return MatrixIndexingGPUInstruction.parseInstruction(str);
+			
+			case Rand:
+				return DataGenGPUInstruction.parseInstruction(str);
 				
 			default: 
 				throw new DMLRuntimeException("Invalid GPU Instruction Type: " + gputype );

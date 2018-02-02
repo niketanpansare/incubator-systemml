@@ -87,9 +87,11 @@ import jcuda.jcublas.cublasFillMode;
 import jcuda.jcublas.cublasHandle;
 import jcuda.jcublas.cublasOperation;
 import jcuda.jcublas.cublasSideMode;
+import jcuda.jcurand.curandGenerator;
 import jcuda.jcusparse.cusparseAction;
 import jcuda.jcusparse.cusparseHandle;
 import jcuda.jcusparse.cusparseIndexBase;
+import static jcuda.jcurand.JCurand.curandSetPseudoRandomGeneratorSeed;
 
 /**
  * All CUDA kernels and library calls are redirected through this class
@@ -574,6 +576,26 @@ public class LibMatrixCUDA {
 	//******** End of TRANSPOSE SELF MATRIX MULTIPLY Functions ***********/
 	//********************************************************************/
 
+	
+	public static void randomUniform(ExecutionContext ec, GPUContext gCtx, String instName, 
+			MatrixObject in1, String output, long numOutRows, long numOutCols, double minValue, double maxValue, double sparsity, long seed) throws DMLRuntimeException {
+		MatrixObject out1 = getDenseMatrixOutputForGPUInstruction(ec, instName, output, numOutRows, numOutCols);
+		if(sparsity == 0) {
+			// Empty matrix
+			return;
+		}
+		else {
+			Pointer outputPtr = getDensePointer(gCtx, out1, instName);
+			curandGenerator generator = gCtx.getCurandGenerator();
+			curandSetPseudoRandomGeneratorSeed(generator, seed);
+			cudaSupportFunctions.cuGenerateUniform(generator, outputPtr, numOutRows*numOutCols);
+			if(!(minValue == 0 && maxValue == 1 && sparsity == 1)) {
+				getCudaKernels(gCtx).launchKernel("uniform_rand",
+						ExecutionConfig.getConfigForSimpleVectorOperations(toInt(numOutRows*numOutCols)),
+						outputPtr, minValue, maxValue, sparsity, toInt(numOutRows*numOutCols));
+			}
+		}
+	}
 
 	//********************************************************************/
 	//****************  UNARY AGGREGATE Functions ************************/

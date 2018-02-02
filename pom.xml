@@ -1235,6 +1235,12 @@
 			<scope>${jcuda.scope}</scope>
 		</dependency>
 		<dependency>
+            <groupId>org.jcuda</groupId>
+            <artifactId>jcurand</artifactId>
+            <version>${jcuda.version}</version>
+			<scope>${jcuda.scope}</scope>
+        </dependency>
+		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcusparse</artifactId>
 			<version>${jcuda.version}</version>

@@ -146,7 +146,11 @@ public class DataGenOp extends Hop implements MultiThreadedHop
 	
 	@Override
 	public boolean isGPUEnabled() {
-		return false;
+		if(!DMLScript.USE_ACCELERATOR)
+			return false;
+		Hop pdf = _op==DataGenMethod.RAND && _paramIndexMap.containsKey(DataExpression.RAND_PDF) ? getInput(DataExpression.RAND_PDF) : null;
+		boolean pdfUniform = (pdf != null) && (pdf instanceof LiteralOp) && DataExpression.RAND_PDF_UNIFORM.equals(((LiteralOp)pdf).getStringValue());
+		return pdfUniform;
 	}
 	
 	@Override
@@ -204,7 +208,7 @@ public class DataGenOp extends Hop implements MultiThreadedHop
 	{		
 		double ret = 0;
 		
-		if ( _op == DataGenMethod.RAND && _sparsity != -1 ) {
+		if ( !isGPUEnabled() &&  _op == DataGenMethod.RAND && _sparsity != -1 ) {
 			if( hasConstantValue(0.0) ) { //if empty block
 				ret = OptimizerUtils.estimateSizeEmptyBlock(dim1, dim2);
 			}
