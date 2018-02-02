@@ -24,7 +24,6 @@ import org.apache.sysml.hops.Hop.DataGenMethod;
 import org.apache.sysml.lops.DataGen;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
@@ -36,7 +35,6 @@ import org.apache.sysml.utils.GPUStatistics;
 public class DataGenGPUInstruction extends GPUInstruction {
 	
 	private DataGenMethod method = DataGenMethod.INVALID;
-	private CPOperand input1 = null;
 	private CPOperand output = null;
 
 	private final CPOperand rows, cols;
@@ -49,18 +47,14 @@ public class DataGenGPUInstruction extends GPUInstruction {
 			String probabilityDensityFunction, String pdfParams, String opcode, String istr) {
 		super(op, opcode, istr);
 		this.method = mthd;
-		this.input1 = in;
 		this.output = out;
 		this.rows = rows;
 		this.cols = cols;
-//		this.rowsInBlock = rpb;
-//		this.colsInBlock = cpb;
 		this.minValue = minValue;
 		this.maxValue = maxValue;
 		this.sparsity = sparsity;
 		this.seed = seed;
 		this.pdfStr = probabilityDensityFunction;
-//		this.pdfParams = pdfParams;
 	}
 	
 	public static DataGenGPUInstruction parseInstruction(String str) throws DMLRuntimeException {
@@ -118,17 +112,15 @@ public class DataGenGPUInstruction extends GPUInstruction {
 			if( lSeed == DataGenOp.UNSPECIFIED_SEED ) 
 				lSeed = DataGenOp.generateRandomSeed();
 			
-			MatrixObject in1 = getMatrixInputForGPUInstruction(ec, input1.getName());
 			ec.setMetaData(output.getName(), lrows, lcols);
 			RandomMatrixGenerator.PDF pdf = RandomMatrixGenerator.PDF.valueOf(pdfStr.toUpperCase());
 			switch (pdf) {
 				case UNIFORM:
-					LibMatrixCUDA.randomUniform(ec, ec.getGPUContext(0), getExtendedOpcode(), in1, output.getName(), lrows, lcols, minValue, maxValue, sparsity, lSeed);
+					LibMatrixCUDA.randomUniform(ec, ec.getGPUContext(0), getExtendedOpcode(), output.getName(), lrows, lcols, minValue, maxValue, sparsity, lSeed);
 					break;
 				default:
 					throw new DMLRuntimeException("Unsupported pdf:" + pdfStr); 
 			}
-			ec.releaseMatrixInputForGPUInstruction(input1.getName());
 			ec.releaseMatrixOutputForGPUInstruction(output.getName());
 		}
 		else {

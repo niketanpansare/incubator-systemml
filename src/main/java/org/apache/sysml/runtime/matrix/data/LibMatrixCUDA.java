@@ -576,9 +576,24 @@ public class LibMatrixCUDA {
 	//******** End of TRANSPOSE SELF MATRIX MULTIPLY Functions ***********/
 	//********************************************************************/
 
-	
+	/**
+	 * Generate a random matrix sampled from Uniform(minValue, maxValue) with the specified sparsity and seed.
+	 * Note: the output is allocated in the dense format.
+	 * 
+	 * @param ec       Instance of {@link ExecutionContext}, from which the output variable will be allocated
+	 * @param gCtx     a valid {@link GPUContext}
+	 * @param instName name of the invoking instruction to record{@link Statistics}.
+	 * @param output   output matrix/scalar name
+	 * @param numOutRows number of output rows
+	 * @param numOutCols number of output columns
+	 * @param minValue minimum value
+	 * @param maxValue maximum value
+	 * @param sparsity sparsity of output matrix
+	 * @param seed seed to use for random number generator
+	 * @throws DMLRuntimeException if error
+	 */
 	public static void randomUniform(ExecutionContext ec, GPUContext gCtx, String instName, 
-			MatrixObject in1, String output, long numOutRows, long numOutCols, double minValue, double maxValue, double sparsity, long seed) throws DMLRuntimeException {
+			String output, long numOutRows, long numOutCols, double minValue, double maxValue, double sparsity, long seed) throws DMLRuntimeException {
 		MatrixObject out1 = getDenseMatrixOutputForGPUInstruction(ec, instName, output, numOutRows, numOutCols);
 		if(sparsity == 0) {
 			// Empty matrix
