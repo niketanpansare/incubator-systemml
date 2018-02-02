@@ -55,6 +55,7 @@
 			<includes>
 				<include>org.jcuda:jcuda:jar:${jcuda.version}</include>
 				<include>org.jcuda:jcublas:jar:${jcuda.version}</include>
+				<include>org.jcuda:jcurand:jar:${jcuda.version}</include>
 				<include>org.jcuda:jcusparse:jar:${jcuda.version}</include>
 				<include>org.jcuda:jcusolver:jar:${jcuda.version}</include>
 				<include>org.jcuda:jcudnn:jar:${jcuda.version}</include>
@@ -62,6 +63,7 @@
 				<!-- windows specific jcuda jars -->
 				<include>org.jcuda:jcuda-natives:jar:windows-x86_64:${jcuda.version}</include>
 				<include>org.jcuda:jcublas-natives:jar:windows-x86_64:${jcuda.version}</include>
+				<include>org.jcuda:jcurand-natives:jar:windows-x86_64:${jcuda.version}</include>
 				<include>org.jcuda:jcusparse-natives:jar:windows-x86_64:${jcuda.version}</include>
 				<include>org.jcuda:jcusolver-natives:jar:windows-x86_64:${jcuda.version}</include>
 				<include>org.jcuda:jcudnn-natives:jar:windows-x86_64:${jcuda.version}</include>
@@ -69,6 +71,7 @@
 				<!-- linux x86_64 specific jcuda jars -->
 				<include>org.jcuda:jcuda-natives:jar:linux-x86_64:${jcuda.version}</include>
 				<include>org.jcuda:jcublas-natives:jar:linux-x86_64:${jcuda.version}</include>
+				<include>org.jcuda:jcurand-natives:jar:linux-x86_64:${jcuda.version}</include>
 				<include>org.jcuda:jcusparse-natives:jar:linux-x86_64:${jcuda.version}</include>
 				<include>org.jcuda:jcusolver-natives:jar:linux-x86_64:${jcuda.version}</include>
 				<include>org.jcuda:jcudnn-natives:jar:linux-x86_64:${jcuda.version}</include>
@@ -76,6 +79,7 @@
 				<!-- linux ppc_64le specific jcuda jars -->
 				<include>org.jcuda:jcuda-natives:jar:linux-ppc_64:${jcuda.version}</include>
 				<include>org.jcuda:jcublas-natives:jar:linux-ppc_64:${jcuda.version}</include>
+				<include>org.jcuda:jcurand-natives:jar:linux-ppc_64:${jcuda.version}</include>
 				<include>org.jcuda:jcusparse-natives:jar:linux-ppc_64:${jcuda.version}</include>
 				<include>org.jcuda:jcusolver-natives:jar:linux-ppc_64:${jcuda.version}</include>
 				<include>org.jcuda:jcudnn-natives:jar:linux-ppc_64:${jcuda.version}</include>
