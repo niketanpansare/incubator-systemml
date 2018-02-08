@@ -439,6 +439,8 @@ class Concat(val param: LayerParameter, val id: Int, val net: CaffeNetwork) exte
   // This is useful because we do not support multi-input cbind and rbind in DML.
   def _getMultiFn(fn: String): String = {
     if (_childLayers == null) _childLayers = net.getBottomLayers(param.getName).map(l => net.getCaffeLayer(l)).toList
+    if(_childLayers.length < 2)
+        throw new DMLRuntimeException("Incorrect usage of Concat layer. Expected atleast 2 bottom layers, but found " + _childLayers.length)
     var tmp = fn + "(" + _childLayers(0).out + ", " + _childLayers(1).out + ")"
     for (i <- 2 until _childLayers.size) {
       tmp = fn + "(" + tmp + ", " + _childLayers(i).out + ")"
