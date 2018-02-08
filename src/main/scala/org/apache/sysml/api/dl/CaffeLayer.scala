@@ -494,20 +494,20 @@ class Concat(val param: LayerParameter, val id: Int, val net: CaffeNetwork) exte
       else " = " + dOutVar + "[," + indexString + " ]; "
 
     // concat_start_index = concat_end_index + 1
-    // concat_end_index = concat_start_index + $$ - 1
+    // concat_end_index = concat_start_index + ## - 1
     val initializeIndexString = "concat_start_index" + outSuffix + " = concat_end_index" + outSuffix + " + 1; concat_end_index" + outSuffix +
-    " = concat_start_index" + outSuffix + " + $$ - 1; "
+    " = concat_start_index" + outSuffix + " + ## - 1; "
     if (param.getConcatParam.getAxis == 0) {
       bottomLayers.map(l => {
         dmlScript
-          .append(initializeIndexString.replaceAll("$$", nrow(l.out)))
+          .append(initializeIndexString.replaceAll("##", nrow(l.out)))
           // X1 = Z[concat_start_index:concat_end_index,]
           .append(dX(l.id) + outSuffix + doutVarAssignment)
       })
     } else {
       bottomLayers.map(l => {
         dmlScript
-          .append(initializeIndexString.replaceAll("$$", int_mult(l.outputShape._1, l.outputShape._2, l.outputShape._3)))
+          .append(initializeIndexString.replaceAll("##", int_mult(l.outputShape._1, l.outputShape._2, l.outputShape._3)))
           // X1 = Z[concat_start_index:concat_end_index,]
           .append(dX(l.id) + outSuffix + doutVarAssignment)
       })
