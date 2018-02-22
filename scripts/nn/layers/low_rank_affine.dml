@@ -99,7 +99,7 @@ multiplicative_backward = function(matrix[double] dout, matrix[double] X,
    */
   dX = dout %*% t(V) %*% t(U)
   
-  Z = X %*% dout - U %*% V
+  Z = U %*% V - t(X) %*% dout
   dV = (t(U) %*% Z) / (t(U) %*% U %*% V)
   dU = (Z %*% t(V)) / (U %*% V %*% t(V))
   
