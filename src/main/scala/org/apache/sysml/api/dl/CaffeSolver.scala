@@ -342,10 +342,10 @@ class Nesterov(regularizationType:String = "L2", lambda: Double = 5e-04, momentu
   def update(dmlScript: StringBuilder, layer: CaffeLayer): Unit = {
     val fn            = if (Caffe2DML.USE_NESTEROV_UDF) "update_nesterov" else "sgd_nesterov::update"
     val fnWithMultiplicativeUpdate = if (Caffe2DML.USE_NESTEROV_UDF) {
-      if(applyMultiplicativeWeightUpdate) throw new DMLRuntimeException("Unsupported multiplicative update when USE_NESTEROV_UDF is set to true")
+      if(applyMultiplicativeWeightUpdate && layer.applyMultiplicativeWeightUpdate) throw new DMLRuntimeException("Unsupported multiplicative update when USE_NESTEROV_UDF is set to true")
       "update_nesterov" 
     } else {
-      if(applyMultiplicativeWeightUpdate) "sgd_nesterov::multiplicative_update"
+      if(applyMultiplicativeWeightUpdate && layer.applyMultiplicativeWeightUpdate) "sgd_nesterov::multiplicative_update"
       else "sgd_nesterov::update"
     }
     val lastParameter = if (Caffe2DML.USE_NESTEROV_UDF) (", " + lambda) else ""
