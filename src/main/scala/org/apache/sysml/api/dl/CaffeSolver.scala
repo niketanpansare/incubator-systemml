@@ -26,6 +26,7 @@ trait CaffeSolver {
   def sourceFileName: String;
   def update(dmlScript: StringBuilder, layer: CaffeLayer): Unit;
   def init(dmlScript: StringBuilder, layer: CaffeLayer): Unit;
+  var applyMultiplicativeWeightUpdate = false
 
   // ----------------------------------------------------------------
   // Used for Fine-tuning
@@ -340,6 +341,13 @@ class Nesterov(regularizationType:String = "L2", lambda: Double = 5e-04, momentu
    */
   def update(dmlScript: StringBuilder, layer: CaffeLayer): Unit = {
     val fn            = if (Caffe2DML.USE_NESTEROV_UDF) "update_nesterov" else "sgd_nesterov::update"
+    val fnWithMultiplicativeUpdate = if (Caffe2DML.USE_NESTEROV_UDF) {
+      if(applyMultiplicativeWeightUpdate) throw new DMLRuntimeException("Unsupported multiplicative update when USE_NESTEROV_UDF is set to true")
+      "update_nesterov" 
+    } else {
+      if(applyMultiplicativeWeightUpdate) "sgd_nesterov::multiplicative_update"
+      else "sgd_nesterov::update"
+    }
     val lastParameter = if (Caffe2DML.USE_NESTEROV_UDF) (", " + lambda) else ""
     if (!Caffe2DML.USE_NESTEROV_UDF) {
       regularization_update(regularizationType, lambda, dmlScript, layer)
@@ -349,14 +357,14 @@ class Nesterov(regularizationType:String = "L2", lambda: Double = 5e-04, momentu
         .append("\t")
         .append(
           "[" + commaSep(layer.weight, layer.weight + "_v") + "] " +
-          "= " + fn + "(" + commaSep(layer.weight, layer.dWeight, getWeightLr(layer), momentum.toString, layer.weight + "_v") + lastParameter + ")\n"
+          "= " + fnWithMultiplicativeUpdate + "(" + commaSep(layer.weight, layer.dWeight, getWeightLr(layer), momentum.toString, layer.weight + "_v") + lastParameter + ")\n"
         )
     if (layer.shouldUpdateExtraWeight)
       dmlScript
         .append("\t")
         .append(
           "[" + commaSep(layer.extraWeight, layer.extraWeight + "_v") + "] " +
-          "= " + fn + "(" + commaSep(layer.extraWeight, layer.dExtraWeight, getWeightLr(layer), momentum.toString, layer.extraWeight + "_v") + lastParameter + ")\n"
+          "= " + fnWithMultiplicativeUpdate + "(" + commaSep(layer.extraWeight, layer.dExtraWeight, getWeightLr(layer), momentum.toString, layer.extraWeight + "_v") + lastParameter + ")\n"
         )
     if (layer.shouldUpdateBias)
       dmlScript

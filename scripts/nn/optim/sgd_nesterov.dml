@@ -62,6 +62,31 @@ update = function(matrix[double] X, matrix[double] dX, double lr, double mu, mat
   X = X - mu*v_prev + (1+mu)*v  # update position, including momentum
 }
 
+multiplicative_update = function(matrix[double] X, matrix[double] dX, double lr, double mu, matrix[double] v)
+    return (matrix[double] X, matrix[double] v) {
+  /*
+   * Performs a multiplicative SGD update with Nesterov momentum.
+   *
+   *
+   * Inputs:
+   *  - X: Parameters to update, of shape (any, any).
+   *  - dX: Gradient wrt `X` of a loss function being optimized, of
+   *      same shape as `X`.
+   *  - lr: Learning rate.
+   *  - mu: Momentum value.
+   *      Typical values are in the range of [0.5, 0.99], usually
+   *      started at the lower end and annealed towards the higher end.
+   *  - v: State maintaining the velocity of the parameters `X`, of same
+   *      shape as `X`.
+   *
+   * Outputs:
+   *  - X: Updated parameters X, of same shape as input X.
+   *  - v: Updated velocity of the parameters X, of same shape as
+   *      input v.
+   */
+  X = X*dX
+}
+
 init = function(matrix[double] X)
     return (matrix[double] v) {
   /*

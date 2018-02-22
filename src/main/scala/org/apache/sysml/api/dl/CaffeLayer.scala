@@ -43,6 +43,8 @@ trait CaffeLayer extends BaseDMLGenerator {
   }
   // -------------------------------------------------
   var debugLayer = false
+  var applyMultiplicativeWeightUpdate = false
+  def eligibleMultiplicativeWeightUpdate() = false
   var caffe2dmlObj:Caffe2DML = null
   var computedBottomLayerOutputShape: (String, String, String) = null
   def bottomLayerOutputShape: (String, String, String) = {
@@ -124,7 +126,8 @@ trait CaffeLayer extends BaseDMLGenerator {
   // The layers that have a corresponding dml script call this method.
   // Assumption: the first variable of resultVariables is always dX
   def invokeBackward(dmlScript: StringBuilder, outSuffix: String, resultVariables: List[String], arguments: String*): Unit = {
-    invoke(dmlScript, sourceFileName + "::", resultVariables.map(_ + outSuffix), "backward", arguments.toList, false)
+    val backwardFnPrefix = if(applyMultiplicativeWeightUpdate) "multiplicative_backward" else "backward"
+    invoke(dmlScript, sourceFileName + "::", resultVariables.map(_ + outSuffix), backwardFnPrefix, arguments.toList, false)
     val bottomLayerIDs = net.getBottomLayers(param.getName).map(l => net.getCaffeLayer(l).id)
     dmlScript.append("; ")
     bottomLayerIDs.map(bottomLayerID => dmlScript.append(dX(bottomLayerID) + outSuffix + " = " + resultVariables(0) + outSuffix + "; "))
@@ -828,6 +831,7 @@ class InnerProduct(val param: LayerParameter, val id: Int, val net: CaffeNetwork
   // TODO: bias_filler [default type: 'constant' value: 0]; bias_term [default true]: specifies whether to learn and apply a set of additive biases to the filter outputs
   val isLowRank = param.getInnerProductParam.hasRank && param.getInnerProductParam.getRank > 0
   override def sourceFileName = if(isLowRank) "low_rank_affine" else "affine"
+  override def eligibleMultiplicativeWeightUpdate():Boolean = if(isLowRank) true else false 
   /*
    * Initialize the parameters of this layer.
    *

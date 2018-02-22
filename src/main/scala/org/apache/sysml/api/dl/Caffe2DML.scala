@@ -307,9 +307,15 @@ class Caffe2DML(val sc: SparkContext,
     reset // Reset the state of DML generator for training script.
 
     // Flags passed by user
-    val DEBUG_TRAINING = if (inputs.containsKey("$debug")) inputs.get("$debug").toLowerCase.toBoolean else false
+    val DEBUG_TRAINING = if(inputs.containsKey("$debug")) inputs.get("$debug").toLowerCase.toBoolean else false
     assign(tabDMLScript, "debug", if (DEBUG_TRAINING) "TRUE" else "FALSE")
     setDebugFlags(DEBUG_TRAINING)
+    
+    val applyMultiplicativeWeightUpdate = if(inputs.containsKey("$multiplicative_update")) inputs.get("$multiplicative_update").toLowerCase.toBoolean else false
+    if(applyMultiplicativeWeightUpdate) {
+      net.getLayers.map(layer => net.getCaffeLayer(layer)).filter(_.eligibleMultiplicativeWeightUpdate).map(layer => {layer.applyMultiplicativeWeightUpdate = true})
+      solver.applyMultiplicativeWeightUpdate = true
+    }
 
     appendHeaders(net, solver, true) // Appends DML corresponding to source and externalFunction statements.
     val performOneHotEncoding = !inputs.containsKey("$perform_one_hot_encoding") || inputs.get("$perform_one_hot_encoding").toBoolean

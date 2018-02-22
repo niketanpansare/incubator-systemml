@@ -78,6 +78,34 @@ backward = function(matrix[double] dout, matrix[double] X,
   db = colSums(dout)
 }
 
+multiplicative_backward = function(matrix[double] dout, matrix[double] X,
+                    matrix[double] U, matrix[double] V, matrix[double] b)
+    return (matrix[double] dX, matrix[double] dU, matrix[double] dV, matrix[double] db) {
+  /*
+   * Computes the backward pass for multiplicative gradient descent.
+   *
+   * Inputs:
+   *  - dout: Gradient wrt `out` from upstream, of shape (N, M).
+   *  - X: Inputs, of shape (N, D).
+   *  - U: LHS factor matrix for weights, of shape (D, R).
+   *  - V: RHS factor matrix for weights, of shape (R, M).
+   *  - b: Biases, of shape (1, M).
+   *
+   * Outputs:
+   *  - dX: Gradient wrt `X`, of shape (N, D).
+   *  - dU: Gradient wrt `U`, of shape (D, R).
+   *  - dV: Gradient wrt `V`, of shape (R, M).
+   *  - db: Gradient wrt `b`, of shape (1, M).
+   */
+  dX = dout %*% t(V) %*% t(U)
+  
+  Z = X %*% dout - U %*% V
+  dV = (t(U) %*% Z) / (t(U) %*% U %*% V)
+  dU = (Z %*% t(V)) / (U %*% V %*% t(V))
+  
+  db = colSums(dout)
+}
+
 init = function(int D, int M, int R)
     return (matrix[double] U, matrix[double] V, matrix[double] b) {
   /*

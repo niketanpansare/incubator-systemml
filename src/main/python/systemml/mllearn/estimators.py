@@ -844,7 +844,7 @@ class Caffe2DML(BaseSystemMLClassifier):
         if ignore_weights is not None:
             self.estimator.setWeightsToIgnore(ignore_weights)
             
-    def set(self, debug=None, train_algo=None, test_algo=None, parallel_batches=None, output_activations=None, perform_one_hot_encoding=None, parfor_parameters=None):
+    def set(self, debug=None, train_algo=None, test_algo=None, parallel_batches=None, output_activations=None, perform_one_hot_encoding=None, parfor_parameters=None, multiplicative_update=False):
         """
         Set input to Caffe2DML
         
@@ -857,6 +857,7 @@ class Caffe2DML(BaseSystemMLClassifier):
         output_activations: (developer flag) directory to output activations of each layer as csv while prediction. To be used only in batch mode (default: None)
         perform_one_hot_encoding: should perform one-hot encoding in DML using table function (default: False)
         parfor_parameters: dictionary for parfor parameters when using allreduce-style algorithms (default: "")
+        multiplicative_update: apply multiplicative gradient descent update whenever possible (default: False)
         """
         if debug is not None: self.estimator.setInput("$debug", str(debug).upper())
         if train_algo is not None: self.estimator.setInput("$train_algo", str(train_algo).lower())
@@ -864,6 +865,7 @@ class Caffe2DML(BaseSystemMLClassifier):
         if parallel_batches is not None: self.estimator.setInput("$parallel_batches", str(parallel_batches))
         if output_activations is not None: self.estimator.setInput("$output_activations", str(output_activations))
         if perform_one_hot_encoding is not None: self.estimator.setInput("$perform_one_hot_encoding", str(perform_one_hot_encoding).lower())
+        if multiplicative_update is not None: self.estimator.setInput("$multiplicative_update", str(multiplicative_update).upper())
         if parfor_parameters is not None:
             if isinstance(parfor_parameters, dict):
                 # Convert dictionary to comma-separated list
