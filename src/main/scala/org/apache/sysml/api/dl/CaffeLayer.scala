@@ -831,7 +831,7 @@ class InnerProduct(val param: LayerParameter, val id: Int, val net: CaffeNetwork
   // TODO: bias_filler [default type: 'constant' value: 0]; bias_term [default true]: specifies whether to learn and apply a set of additive biases to the filter outputs
   val isLowRank = param.getInnerProductParam.hasRank && param.getInnerProductParam.getRank > 0
   override def sourceFileName = if(isLowRank) "low_rank_affine" else "affine"
-  override def eligibleMultiplicativeWeightUpdate():Boolean = isLowRank 
+  override def eligibleMultiplicativeWeightUpdate():Boolean = true 
   /*
    * Initialize the parameters of this layer.
    *

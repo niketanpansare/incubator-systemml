@@ -64,6 +64,29 @@ backward = function(matrix[double] dout, matrix[double] X,
   db = colSums(dout)
 }
 
+multiplicative_backward = function(matrix[double] dout, matrix[double] X,
+                    matrix[double] W, matrix[double] b)
+    return (matrix[double] dX, matrix[double] dW, matrix[double] db) {
+  /*
+   * Computes the multiplicative backward pass for a fully-connected (affine) layer
+   * with M neurons.
+   *
+   * Inputs:
+   *  - dout: Gradient wrt `out` from upstream, of shape (N, M).
+   *  - X: Inputs, of shape (N, D).
+   *  - W: Weights, of shape (D, M).
+   *  - b: Biases, of shape (1, M).
+   *
+   * Outputs:
+   *  - dX: Gradient wrt `X`, of shape (N, D).
+   *  - dW: Gradient wrt `W`, of shape (D, M).
+   *  - db: Gradient wrt `b`, of shape (1, M).
+   */
+  dX = dout %*% t(W)
+  dW = W %*% X # FIXME
+  db = colSums(dout)
+}
+
 init = function(int D, int M)
     return (matrix[double] W, matrix[double] b) {
   /*
