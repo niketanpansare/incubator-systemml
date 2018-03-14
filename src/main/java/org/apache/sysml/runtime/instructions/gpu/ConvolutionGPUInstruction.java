@@ -37,7 +37,10 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 	private CPOperand _input1;
 	private CPOperand _input2;
 	private CPOperand _input3;
+	private CPOperand _input4;
+	private CPOperand _input5;
 	private CPOperand _output;
+	private CPOperand _output2;
 	private ArrayList<CPOperand> _input_shape;
 	private ArrayList<CPOperand> _filter_shape;
 	private ArrayList<CPOperand> _stride = new ArrayList<>();
@@ -58,7 +61,23 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		_intermediateMemoryBudget = intermediateMemoryBudget;
 	}
 	
-	public ConvolutionGPUInstruction(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr, double intermediateMemoryBudget) throws DMLRuntimeException {
+	public ConvolutionGPUInstruction(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4, CPOperand in5, 
+			CPOperand out, CPOperand out2, String opcode, String istr, 
+			double intermediateMemoryBudget) throws DMLRuntimeException {
+		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), opcode, istr);
+		_input1 = in1;
+		_input2 = in2;
+		_input3 = in3;
+		_input4 = in4;
+		_input5 = in5;
+		_gputype = GPUINSTRUCTION_TYPE.Convolution;
+		_output = out;
+		_output2 = out2;
+		_intermediateMemoryBudget = intermediateMemoryBudget;
+	}
+	
+	public ConvolutionGPUInstruction(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr, 
+			double intermediateMemoryBudget) throws DMLRuntimeException {
 		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), opcode, istr);
 		if( !opcode.equals("channel_sums") ) {
 			throw new DMLRuntimeException("Incorrect usage. Expected the opcode to be channel_sums, but found " + opcode);
@@ -232,6 +251,17 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 			CPOperand out = new CPOperand(parts[4]);
 			return new ConvolutionGPUInstruction(in, in2, in3, out, opcode, str, 0);
 		}
+		else if (opcode.equalsIgnoreCase("lstm")) {
+			InstructionUtils.checkNumFields(parts, 8);
+			CPOperand in1 = new CPOperand(parts[1]);
+			CPOperand in2 = new CPOperand(parts[2]);
+			CPOperand in3 = new CPOperand(parts[3]);
+			CPOperand in4 = new CPOperand(parts[4]);
+			CPOperand in5 = new CPOperand(parts[5]);
+			CPOperand out = new CPOperand(parts[6]);
+			CPOperand out2 = new CPOperand(parts[7]);
+			return new ConvolutionGPUInstruction(in1, in2, in3, in4, in5, out, out2, opcode, str, Double.parseDouble(parts[8]));
+		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode while parsing a ConvolutionGPUInstruction: " + str);	
 		}
@@ -285,6 +315,25 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
 	}
 	
+	public void processLstmInstruction(ExecutionContext ec) throws DMLRuntimeException {
+		GPUStatistics.incrementNoOfExecutedGPUInst();
+		MatrixObject X = getMatrixInputForGPUInstruction(ec, _input1.getName());
+		MatrixObject W = getMatrixInputForGPUInstruction(ec, _input2.getName());
+		MatrixObject out0 = getMatrixInputForGPUInstruction(ec, _input3.getName());
+		MatrixObject c0 = getMatrixInputForGPUInstruction(ec, _input4.getName());
+		boolean return_sequences = ec.getScalarInput(_input5.getName(), _input5.getValueType(), _input5.isLiteral()).getBooleanValue();
+		
+		LibMatrixCuDNN.lstm(ec, ec.getGPUContext(0), getExtendedOpcode(), X, W, out0, c0, return_sequences, _output.getName(), _output2.getName());
+		
+		// release inputs/outputs
+		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
+		ec.releaseMatrixInputForGPUInstruction(_input2.getName());
+		ec.releaseMatrixInputForGPUInstruction(_input3.getName());
+		ec.releaseMatrixInputForGPUInstruction(_input4.getName());
+		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
+		ec.releaseMatrixOutputForGPUInstruction(_output2.getName());
+	}
+	
 	@Override
 	public void processInstruction(ExecutionContext ec) 
 			throws DMLRuntimeException 
@@ -299,6 +348,10 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		}
 		else if (instOpcode.equalsIgnoreCase("channel_sums")) {
 			processChannelSumsInstruction(ec);
+			return;
+		}
+		else if (instOpcode.equalsIgnoreCase("lstm")) {
+			processLstmInstruction(ec);
 			return;
 		}
 		
