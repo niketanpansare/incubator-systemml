@@ -33,6 +33,7 @@ import static jcuda.jcudnn.cudnnActivationMode.CUDNN_ACTIVATION_RELU;
 import static jcuda.jcudnn.cudnnNanPropagation.CUDNN_PROPAGATE_NAN;
 import static jcuda.jcudnn.cudnnTensorFormat.CUDNN_TENSOR_NCHW;
 import static jcuda.runtime.JCuda.cudaMemset;
+
 import jcuda.CudaException;
 import jcuda.Pointer;
 import jcuda.jcudnn.JCudnn;
@@ -835,17 +836,15 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
 		long N = in.getNumRows();
 		long CHW = in.getNumColumns();
-		MatrixObject output = ec.getMatrixObject(outputName);
-		getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, in.getNumRows(), in.getNumColumns()); // Allocated the dense output matrix
+		Pointer dstData = getDenseOutputPointer(ec, gCtx, instName, outputName, in.getNumRows(), in.getNumColumns());
 		long t0=0;
 		if(N*CHW >= maxNumElementsOfCuDNNTensor) {
 			if(LOG.isTraceEnabled()) {
 				LOG.trace("GPU : relu custom kernel" + ", GPUContext=" + gCtx);
 			}
 			// Invokes relu(double* A,  double* ret, int rlen, int clen)
-			if (DMLScript.FINEGRAINED_STATISTICS) t0 = System.nanoTime();
-			Pointer dstData = getDensePointerForCuDNN(gCtx, output, instName);
 			Pointer srcData = getDensePointerForCuDNN(gCtx, in, instName); // TODO: FIXME: Add sparse kernel support for relu
+			if (DMLScript.FINEGRAINED_STATISTICS) t0 = System.nanoTime();
 			getCudaKernels(gCtx).launchKernel("relu",
 					ExecutionConfig.getConfigForSimpleMatrixOperations(toInt(N), toInt(CHW)),
 					srcData, dstData, toInt(N), toInt(CHW));
@@ -855,9 +854,84 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			cudnnTensorDescriptor tensorDescriptor = new cudnnTensorDescriptor();
 			cudnnCreateTensorDescriptor(tensorDescriptor);
 			cudnnSetTensor4dDescriptor(tensorDescriptor, CUDNN_TENSOR_NCHW, CUDNN_DATA_TYPE, toInt(N), 1, 1, toInt(CHW));
-			cudnnReLU(gCtx, instName, in, getDensePointerForCuDNN(gCtx, output, instName), tensorDescriptor);
+			cudnnReLU(gCtx, instName, in, dstData, tensorDescriptor);
 			cudnnDestroyTensorDescriptor(tensorDescriptor);
 		}
+	}
+	
+	private static Pointer getDenseOutputPointer(ExecutionContext ec, GPUContext gCtx, String instName, String outputName,
+			long numRows, long numCols) throws DMLRuntimeException {
+		MatrixObject output = ec.getMatrixObject(outputName);
+		getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, numRows, numCols); // Allocated the dense output matrix
+		return getDensePointerForCuDNN(gCtx, output, instName);
+	}
+	
+	/**
+	 * Computes the forward pass for an LSTM layer with M neurons.
+	 * The input data has N sequences of T examples, each with D features.
+	 * 
+	 * @param ec execution context 
+	 * @param gCtx gpu context 
+	 * @param instName name of the instruction
+	 * @param X input matrix object
+	 * @param W weight matrix object
+	 * @param out0 Outputs from previous timestep
+	 * @param c0 Initial cell state
+	 * @param return_sequences Whether to return `out` at all timesteps, or just for the final timestep.
+	 * @param outputName name of the out variable. If `return_sequences` is True, outputs for all timesteps.
+	 * @param cyName name of the output cell state. Cell state for final timestep.
+	 * @throws DMLRuntimeException if error
+	 */
+	public static void lstm(ExecutionContext ec, GPUContext gCtx, String instName,
+			MatrixObject X,  MatrixObject W, MatrixObject out0, MatrixObject c0, boolean return_sequences,
+			String outputName, String cyName) throws DMLRuntimeException {
+		singleLayerUnidirectionalRNNForward(ec, gCtx, instName, X, out0, c0, W, outputName, cyName, "lstm", return_sequences);
+	}
+	
+	private static void singleLayerUnidirectionalRNNForward(ExecutionContext ec, GPUContext gCtx, String instName,
+			MatrixObject x, MatrixObject hx, MatrixObject cx, MatrixObject w,  // input
+			String outputName, String cyName,  // output
+			String rnnMode, boolean return_sequences) throws DMLRuntimeException {
+		// batchSize=N, seqLength=T, numFeatures=D and hiddenSize=M
+		// input  X:(N, T*D), 
+		// weight W:(D+M, 4M)
+		// bias   b:(1, 4M)
+		// previous output out0 (also represented by hx) and cell state c0 (also represented by cx): (N, M)
+		// out: (N, T*M) or (N, M)
+		int N = toInt(x.getNumRows()); // batchSize .. since X:(N, T*D)
+		int M = toInt(hx.getNumColumns()); // hiddenSize .. since out0: (N, M)
+		int D = -1; // numFeatures  
+		int T = -1; // seqLength
+		boolean hasCarry = false;
+		if(rnnMode.equalsIgnoreCase("lstm")) {
+			D = toInt(w.getNumRows()) - M; // since W:(D+M, 4M)
+			hasCarry = true;
+		} else {
+			throw new DMLRuntimeException("Unsupported mode:" + rnnMode);
+		}
+		T = toInt(x.getNumColumns() / D); // since X:(N, T*D)
+		
+		// Get output pointers
+		Pointer yPointer = return_sequences ? getDenseOutputPointer(ec, gCtx, instName, cyName, N, T*M) : gCtx.allocate(instName, N*T*M);
+		Pointer hyPointer = !return_sequences ? getDenseOutputPointer(ec, gCtx, instName, cyName, N, M) : gCtx.allocate(instName, N*M);
+		Pointer cyPointer = hasCarry ? getDenseOutputPointer(ec, gCtx, instName, cyName, N, M) : new Pointer();
+		
+		try(LibMatrixCuDNNRnnAlgorithm algo = new LibMatrixCuDNNRnnAlgorithm(gCtx, instName, rnnMode, N, T, M, D, true)) {
+			JCudnn.cudnnRNNForwardTraining(gCtx.getCudnnHandle(), algo.rnnDesc, T, 
+					algo.xDesc, getDensePointerForCuDNN(gCtx, x, instName), 
+					algo.hxDesc, getDensePointerForCuDNN(gCtx, hx, instName), 
+					algo.cxDesc, hasCarry ? getDensePointerForCuDNN(gCtx, cx, instName) : new Pointer(), 
+					algo.wDesc, getDensePointerForCuDNN(gCtx, w, instName), 
+					algo.yDesc, yPointer, 
+					algo.hyDesc, hyPointer, 
+					algo.cyDesc, cyPointer, 
+					algo.workSpace, algo.sizeInBytes, algo.reserveSpace, algo.reserveSpaceSizeInBytes);
+		}
+		
+		if(return_sequences)
+			gCtx.cudaFreeHelper(instName, hyPointer);
+		else
+			gCtx.cudaFreeHelper(instName, yPointer);
 	}
 
 	/**
