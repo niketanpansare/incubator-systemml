@@ -2305,6 +2305,10 @@ public class DMLTranslator
 			inputs.add( processExpression(source.getSecondExpr(), null, hops) );
 		if ( source.getThirdExpr() != null )
 			inputs.add( processExpression(source.getThirdExpr(), null, hops) );
+		if ( source.getFourthExpr() != null )
+			inputs.add( processExpression(source.getFourthExpr(), null, hops) );
+		if ( source.getFifthExpr() != null )
+			inputs.add( processExpression(source.getFifthExpr(), null, hops) );
 		
 		FunctionType ftype = FunctionType.MULTIRETURN_BUILTIN;
 		String nameSpace = DMLProgram.INTERNAL_NAMESPACE;
