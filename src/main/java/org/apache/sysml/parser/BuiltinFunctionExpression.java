@@ -192,10 +192,10 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		{
 			// X,  W, out0, c0, return_sequences
 			checkNumParameters(5);
-			checkMatrixParam(_args[0]);
-			checkMatrixParam(_args[1]);
-			checkMatrixParam(_args[2]);
-			checkMatrixParam(_args[3]);
+			checkMatrixParamAllowUnknown(_args[0]); // For initial testing, allow unknowns
+			checkMatrixParamAllowUnknown(_args[1]);
+			checkMatrixParamAllowUnknown(_args[2]);
+			checkMatrixParamAllowUnknown(_args[3]);
 			
 			// setup output properties
 			DataIdentifier out = (DataIdentifier) getOutputs()[0];
@@ -1517,6 +1517,14 @@ public class BuiltinFunctionExpression extends DataIdentifier
 
 	protected void checkMatrixParam(Expression e) throws LanguageException {
 		if (e.getOutput().getDataType() != DataType.MATRIX) {
+			raiseValidateError(
+					"Expected " + e.getText() + " to be a matrix argument for function " + this.getOpCode().toString().toLowerCase() + "().",
+					false);
+		}
+	}
+	
+	protected void checkMatrixParamAllowUnknown(Expression e) throws LanguageException {
+		if (e.getOutput().getDataType() != DataType.MATRIX && e.getOutput().getDataType() != DataType.UNKNOWN) {
 			raiseValidateError(
 					"Expected " + e.getText() + " to be a matrix argument for function " + this.getOpCode().toString().toLowerCase() + "().",
 					false);
