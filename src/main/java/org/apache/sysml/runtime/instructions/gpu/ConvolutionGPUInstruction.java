@@ -252,7 +252,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 			return new ConvolutionGPUInstruction(in, in2, in3, out, opcode, str, 0);
 		}
 		else if (opcode.equalsIgnoreCase("lstm")) {
-			InstructionUtils.checkNumFields(parts, 8);
+			InstructionUtils.checkNumFields(parts, 7);
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
 			CPOperand in3 = new CPOperand(parts[3]);
@@ -260,7 +260,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 			CPOperand in5 = new CPOperand(parts[5]);
 			CPOperand out = new CPOperand(parts[6]);
 			CPOperand out2 = new CPOperand(parts[7]);
-			return new ConvolutionGPUInstruction(in1, in2, in3, in4, in5, out, out2, opcode, str, Double.parseDouble(parts[8]));
+			return new ConvolutionGPUInstruction(in1, in2, in3, in4, in5, out, out2, opcode, str, 0);
 		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode while parsing a ConvolutionGPUInstruction: " + str);	

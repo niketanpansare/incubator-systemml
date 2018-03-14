@@ -169,6 +169,10 @@ public class FunctionOp extends Hop
 				long outputValues = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), 1, 1.0);
 				return outputVectors+outputValues; 
 			}
+			else if ( getFunctionName().equalsIgnoreCase("lstm") ) {
+				// TODO: To allow for initial version to always run on the GPU
+				return 0; 
+			}
 			else if ( getFunctionName().equalsIgnoreCase("svd") ) {
 				long outputU = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 1.0);
 				long outputSigma = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), getOutputs().get(1).getDim2(), 1.0);
@@ -199,6 +203,10 @@ public class FunctionOp extends Hop
 				return OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 1.0) 
 						+ 3*OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), 1, 1.0); 
 			}
+			else if ( getFunctionName().equalsIgnoreCase("lstm")) {
+				// TODO: To allow for initial version to always run on the GPU
+				return 0; 
+			}
 			else if ( getFunctionName().equalsIgnoreCase("svd")) {
 				double interOutput = OptimizerUtils.estimateSizeExactSparsity(1, getInput().get(0).getDim2(), 1.0);
 				return interOutput;
@@ -216,7 +224,10 @@ public class FunctionOp extends Hop
 	
 	@Override
 	public boolean isGPUEnabled() {
-		return false;
+		if(getFunctionName().equalsIgnoreCase("lstm")) 
+			return true;
+		else
+			return false;
 	}
 	
 	@Override
@@ -256,6 +267,7 @@ public class FunctionOp extends Hop
 		throws HopsException 
 	{
 		checkAndSetForcedPlatform();
+		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
 		
 		if ( getFunctionType() == FunctionType.MULTIRETURN_BUILTIN ) {
 			
@@ -264,7 +276,16 @@ public class FunctionOp extends Hop
 				_etype = ((_etypeForced==ExecType.SPARK 
 					|| (getMemEstimate() >= OptimizerUtils.getLocalMemBudget()
 						&& OptimizerUtils.isSparkExecutionMode())) ? ExecType.SPARK : ExecType.CP);
-			}	
+			}
+			else if( getFunctionName().equalsIgnoreCase("lstm") ) {
+				if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
+					_etype = findExecTypeByMemEstimate();
+				}
+				else {
+					_etype = ExecType.CP;
+				}
+				_etype = _etype == REMOTE ?  ExecType.CP : _etype; // lstm not supported on Spark
+			}
 			else {
 				// Since the memory estimate is only conservative, do not throw
 				// exception if the estimated memory is larger than the budget

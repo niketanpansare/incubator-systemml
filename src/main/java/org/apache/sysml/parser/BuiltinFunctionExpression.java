@@ -188,6 +188,33 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			
 			break;
 
+		case LSTM:
+		{
+			// X,  W, out0, c0, return_sequences
+			checkNumParameters(5);
+			checkMatrixParam(getFirstExpr());
+			checkMatrixParam(getSecondExpr());
+			checkMatrixParam(getExpr(2));
+			checkMatrixParam(getExpr(3));
+			
+			// setup output properties
+			DataIdentifier out = (DataIdentifier) getOutputs()[0];
+			DataIdentifier cy = (DataIdentifier) getOutputs()[1];
+			
+			// Output1 - out: If `return_sequences` is True, outputs for all timesteps, else outputs for the final timestep.
+			out.setDataType(DataType.MATRIX);
+			out.setValueType(ValueType.DOUBLE);
+			out.setDimensions(-1, -1);
+			out.setBlockDimensions(getFirstExpr().getOutput().getRowsInBlock(), getFirstExpr().getOutput().getColumnsInBlock());
+			
+			// Output2 - Cell state for final timestep.
+			cy.setDataType(DataType.MATRIX);
+			cy.setValueType(ValueType.DOUBLE);
+			cy.setDimensions(getExpr(3).getOutput().getDim1(), getExpr(3).getOutput().getDim2());
+			cy.setBlockDimensions(getExpr(3).getOutput().getRowsInBlock(), getExpr(3).getOutput().getColumnsInBlock());
+			
+			break;
+		}
 		case EIGEN:
 			checkNumParameters(1);
 			checkMatrixParam(getFirstExpr());
@@ -1280,7 +1307,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			else {
 				// always unconditional (because unsupported operation)
 				BuiltinFunctionOp op = getOpCode();
-				if( op==BuiltinFunctionOp.EIGEN || op==BuiltinFunctionOp.LU || op==BuiltinFunctionOp.QR || op==BuiltinFunctionOp.SVD)
+				if( op==BuiltinFunctionOp.EIGEN || op==BuiltinFunctionOp.LSTM || op==BuiltinFunctionOp.LU || op==BuiltinFunctionOp.QR || op==BuiltinFunctionOp.SVD)
 					raiseValidateError("Function "+op+" needs to be called with multi-return assignment.", false, LanguageErrorCodes.INVALID_PARAMETERS);
 				else
 					raiseValidateError("Unsupported function "+op, false, LanguageErrorCodes.INVALID_PARAMETERS);
@@ -1345,6 +1372,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case QR:
 		case LU:
 		case EIGEN:
+		case LSTM:
 		case SVD:
 			return true;
 		default:
@@ -1752,6 +1780,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.LU;
 		else if (functionName.equals("eigen"))
 			bifop = Expression.BuiltinFunctionOp.EIGEN;
+		else if (functionName.equals("lstm"))
+			bifop = Expression.BuiltinFunctionOp.LSTM;
 		else if (functionName.equals("conv2d"))
 			 bifop = Expression.BuiltinFunctionOp.CONV2D;
 		else if (functionName.equals("bias_add"))
