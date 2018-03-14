@@ -87,6 +87,14 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	public Expression getThirdExpr() {
 		return (_args.length >= 3 ? _args[2] : null);
 	}
+	
+	public Expression getFourthExpr() {
+		return (_args.length >= 4 ? _args[3] : null);
+	}
+	
+	public Expression getFifthExpr() {
+		return (_args.length >= 5 ? _args[4] : null);
+	}
 
 	public Expression[] getAllExpr(){
 		return _args;
@@ -116,6 +124,18 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				raiseValidateError("UDF function call not supported as parameter to built-in function call", false);
 			}
 			getThirdExpr().validateExpression(ids, constVars, conditional);
+		}
+		if (getFourthExpr() != null) {
+			if (this.getFourthExpr() instanceof FunctionCallIdentifier){
+				raiseValidateError("UDF function call not supported as parameter to built-in function call", false);
+			}
+			getFourthExpr().validateExpression(ids, constVars, conditional);
+		}
+		if (getFifthExpr() != null) {
+			if (this.getFifthExpr() instanceof FunctionCallIdentifier){
+				raiseValidateError("UDF function call not supported as parameter to built-in function call", false);
+			}
+			getFifthExpr().validateExpression(ids, constVars, conditional);
 		}
 		_outputs = new Identifier[stmt.getTargetList().size()];
 		int count = 0;
@@ -192,10 +212,10 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		{
 			// X,  W, out0, c0, return_sequences
 			checkNumParameters(5);
-			checkMatrixParamAllowUnknown(_args[0]); // For initial testing, allow unknowns
-			checkMatrixParamAllowUnknown(_args[1]);
-			checkMatrixParamAllowUnknown(_args[2]);
-			checkMatrixParamAllowUnknown(_args[3]);
+			checkMatrixParam(getFirstExpr());
+			checkMatrixParam(getSecondExpr());
+			checkMatrixParam(getThirdExpr());
+			checkMatrixParam(getFourthExpr());
 			
 			// setup output properties
 			DataIdentifier out = (DataIdentifier) getOutputs()[0];
@@ -1523,14 +1543,6 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		}
 	}
 	
-	protected void checkMatrixParamAllowUnknown(Expression e) throws LanguageException {
-		if (e.getOutput().getDataType() != DataType.MATRIX && e.getOutput().getDataType() != DataType.UNKNOWN) {
-			raiseValidateError(
-					"Expected " + e.getText() + " to be a matrix argument for function " + this.getOpCode().toString().toLowerCase() + "().",
-					false);
-		}
-	}
-
 	protected void checkMatrixFrameParam(Expression e) //always unconditional
 		throws LanguageException 
 	{
