@@ -70,27 +70,7 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 	}
 	
 	private void initializeRnnDescriptor(String rnnMode, int N, int T, int M, int D) throws DMLRuntimeException {
-		int numLayers = 1; 
-		rnnDesc = new cudnnRNNDescriptor();
-		cudnnCreateRNNDescriptor(rnnDesc);
-		xDesc = new cudnnTensorDescriptor[] {allocateTensorDescriptor(N, T, D)};
-		hxDesc = allocateTensorDescriptor(1, N, M); 
-		cxDesc = allocateTensorDescriptor(1, N, M);
-		yDesc = new cudnnTensorDescriptor[T];
-		for(int t = 0; t < T; t++) {
-			yDesc[t] = allocateTensorDescriptorWithColumnStride(N, D);
-		}
-		hyDesc = allocateTensorDescriptor(1, N, M);
-		cyDesc = allocateTensorDescriptor(1, N, M);
-		long [] weightSizeInBytesArray = {-1};
-		JCudnn.cudnnGetRNNParamsSize(gCtx.getCudnnHandle(), rnnDesc, xDesc[0], weightSizeInBytesArray, LibMatrixCUDA.CUDNN_DATA_TYPE);
-		// check if (D+M)*4M == weightsSize / sizeof(dataType) where weightsSize is given by 'cudnnGetRNNParamsSize'.
-		int expectedNumWeights = LibMatrixCUDA.toInt(weightSizeInBytesArray[0]/LibMatrixCUDA.sizeOfDataType);
-		wDesc = allocateFilterDescriptor(expectedNumWeights, 1, 1);
-		
-		boolean bidirectional = true;
 		int inputMode = jcuda.jcudnn.cudnnRNNInputMode.CUDNN_LINEAR_INPUT; // alternative: CUDNN_SKIP_INPUT 
-		int directionMode = bidirectional ? jcuda.jcudnn.cudnnDirectionMode.CUDNN_BIDIRECTIONAL : jcuda.jcudnn.cudnnDirectionMode.CUDNN_UNIDIRECTIONAL;
 		int rnnModeVal = -1;
 		if(rnnMode.equalsIgnoreCase("rnn_relu")) {
 			rnnModeVal = jcuda.jcudnn.cudnnRNNMode.CUDNN_RNN_RELU;
@@ -107,10 +87,30 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 		else {
 			throw new DMLRuntimeException("Unsupported rnn mode:" + rnnMode);
 		}
-		cudnnRNNDescriptor rnnDesc = new cudnnRNNDescriptor();
-		JCudnn.cudnnCreateRNNDescriptor(rnnDesc);
+		rnnDesc = new cudnnRNNDescriptor();
+		cudnnCreateRNNDescriptor(rnnDesc);
 		int rnnAlgo = jcuda.jcudnn.cudnnRNNAlgo.CUDNN_RNN_ALGO_STANDARD; // TODO:
-		JCudnn.cudnnSetRNNDescriptor(gCtx.getCudnnHandle(), rnnDesc, M, numLayers, dropoutDesc, inputMode, directionMode, rnnModeVal, rnnAlgo, LibMatrixCUDA.CUDNN_DATA_TYPE);
+		JCudnn.cudnnSetRNNDescriptor(gCtx.getCudnnHandle(), rnnDesc, M, 1, dropoutDesc, inputMode, jcuda.jcudnn.cudnnDirectionMode.CUDNN_UNIDIRECTIONAL, 
+				rnnModeVal, rnnAlgo, LibMatrixCUDA.CUDNN_DATA_TYPE);
+		xDesc = new cudnnTensorDescriptor[] {allocateTensorDescriptor(N, T, D)};
+		hxDesc = allocateTensorDescriptor(1, N, M); 
+		cxDesc = allocateTensorDescriptor(1, N, M);
+		yDesc = new cudnnTensorDescriptor[T];
+		for(int t = 0; t < T; t++) {
+			yDesc[t] = allocateTensorDescriptorWithColumnStride(N, D);
+		}
+		hyDesc = allocateTensorDescriptor(1, N, M);
+		cyDesc = allocateTensorDescriptor(1, N, M);
+		long [] weightSizeInBytesArray = {-1};
+		JCudnn.cudnnGetRNNParamsSize(gCtx.getCudnnHandle(), rnnDesc, xDesc[0], weightSizeInBytesArray, LibMatrixCUDA.CUDNN_DATA_TYPE);
+		// check if (D+M)*4M == weightsSize / sizeof(dataType) where weightsSize is given by 'cudnnGetRNNParamsSize'.
+		int expectedNumWeights = LibMatrixCUDA.toInt(weightSizeInBytesArray[0]/LibMatrixCUDA.sizeOfDataType);
+		if(rnnMode.equalsIgnoreCase("lstm") && (D+M)*4*M != expectedNumWeights) {
+			throw new DMLRuntimeException("Incorrect number of RNN parameters " +  (D+M)*4*M + " != " +  expectedNumWeights + ", where numFeatures=" + D + ", hiddenSize=" + M);
+		}
+		wDesc = allocateFilterDescriptor(expectedNumWeights, 1, 1);
+		
+		
 	}
 	
 	private void initializeDropout() throws DMLRuntimeException {
