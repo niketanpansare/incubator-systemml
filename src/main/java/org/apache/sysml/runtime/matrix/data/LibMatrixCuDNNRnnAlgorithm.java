@@ -92,7 +92,7 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 		int rnnAlgo = jcuda.jcudnn.cudnnRNNAlgo.CUDNN_RNN_ALGO_STANDARD; // TODO:
 		JCudnn.cudnnSetRNNDescriptor(gCtx.getCudnnHandle(), rnnDesc, M, 1, dropoutDesc, inputMode, jcuda.jcudnn.cudnnDirectionMode.CUDNN_UNIDIRECTIONAL, 
 				rnnModeVal, rnnAlgo, LibMatrixCUDA.CUDNN_DATA_TYPE);
-		xDesc = new cudnnTensorDescriptor[] {allocateTensorDescriptor(N, T, D)};
+		xDesc = new cudnnTensorDescriptor[] {allocateTensorDescriptor(N, D, 1)};
 		hxDesc = allocateTensorDescriptor(1, N, M); 
 		cxDesc = allocateTensorDescriptor(1, N, M);
 		yDesc = new cudnnTensorDescriptor[T];
@@ -103,10 +103,10 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 		cyDesc = allocateTensorDescriptor(1, N, M);
 		long [] weightSizeInBytesArray = {-1};
 		JCudnn.cudnnGetRNNParamsSize(gCtx.getCudnnHandle(), rnnDesc, xDesc[0], weightSizeInBytesArray, LibMatrixCUDA.CUDNN_DATA_TYPE);
-		// check if (D+M)*4M == weightsSize / sizeof(dataType) where weightsSize is given by 'cudnnGetRNNParamsSize'.
+		// check if (D+M+2)*4M == weightsSize / sizeof(dataType) where weightsSize is given by 'cudnnGetRNNParamsSize'.
 		int expectedNumWeights = LibMatrixCUDA.toInt(weightSizeInBytesArray[0]/LibMatrixCUDA.sizeOfDataType);
-		if(rnnMode.equalsIgnoreCase("lstm") && (D+M)*4*M != expectedNumWeights) {
-			throw new DMLRuntimeException("Incorrect number of RNN parameters " +  (D+M)*4*M + " != " +  expectedNumWeights + ", where numFeatures=" + D + ", hiddenSize=" + M);
+		if(rnnMode.equalsIgnoreCase("lstm") && (D+M+2)*4*M != expectedNumWeights) {
+			throw new DMLRuntimeException("Incorrect number of RNN parameters " +  (D+M+2)*4*M + " != " +  expectedNumWeights + ", where numFeatures=" + D + ", hiddenSize=" + M);
 		}
 		wDesc = allocateFilterDescriptor(expectedNumWeights, 1, 1);
 		

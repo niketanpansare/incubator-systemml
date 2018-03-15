@@ -894,7 +894,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			String rnnMode, boolean return_sequences) throws DMLRuntimeException {
 		// batchSize=N, seqLength=T, numFeatures=D and hiddenSize=M
 		// input  X:(N, T*D), 
-		// weight W:(D+M, 4M)
+		// weight W:(D+M+2, 4M)
 		// bias   b:(1, 4M)
 		// previous output out0 (also represented by hx) and cell state c0 (also represented by cx): (N, M)
 		// out: (N, T*M) or (N, M)
@@ -904,7 +904,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		int T = -1; // seqLength
 		boolean hasCarry = false;
 		if(rnnMode.equalsIgnoreCase("lstm")) {
-			D = toInt(w.getNumRows()) - M; // since W:(D+M, 4M)
+			D = toInt(w.getNumRows()) - M - 2; // since W:(D+M+2, 4M)
 			hasCarry = true;
 		} else {
 			throw new DMLRuntimeException("Unsupported mode:" + rnnMode);
