@@ -28,9 +28,6 @@ import static jcuda.jcudnn.JCudnn.cudnnSetTensorNdDescriptorEx;
 import static jcuda.jcudnn.JCudnn.cudnnDestroyDropoutDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnDestroyRNNDescriptor;
 import static jcuda.jcudnn.cudnnTensorFormat.CUDNN_TENSOR_NCHW;
-
-import java.util.Collections;
-
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 
@@ -77,8 +74,10 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 		xDesc = new cudnnTensorDescriptor[] {allocateTensorDescriptor(N, T, D)};
 		hxDesc = allocateTensorDescriptor(1, N, M); 
 		cxDesc = allocateTensorDescriptor(1, N, M);
-		yDesc = (cudnnTensorDescriptor[]) Collections.nCopies(T, 
-				allocateTensorDescriptorWithColumnStride(N, D)).toArray();
+		yDesc = new cudnnTensorDescriptor[T];
+		for(int t = 0; t < T; t++) {
+			yDesc[t] = allocateTensorDescriptorWithColumnStride(N, D);
+		}
 		hyDesc = allocateTensorDescriptor(1, N, M);
 		cyDesc = allocateTensorDescriptor(1, N, M);
 		long [] weightSizeInBytesArray = {-1};
