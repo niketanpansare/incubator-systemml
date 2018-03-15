@@ -92,6 +92,10 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 		int rnnAlgo = jcuda.jcudnn.cudnnRNNAlgo.CUDNN_RNN_ALGO_STANDARD; // TODO:
 		JCudnn.cudnnSetRNNDescriptor(gCtx.getCudnnHandle(), rnnDesc, M, 1, dropoutDesc, inputMode, jcuda.jcudnn.cudnnDirectionMode.CUDNN_UNIDIRECTIONAL, 
 				rnnModeVal, rnnAlgo, LibMatrixCUDA.CUDNN_DATA_TYPE);
+		xDesc = new cudnnTensorDescriptor[N];
+		for(int n = 0; n < N; n++) {
+			xDesc[n] = allocateTensorDescriptor(N, D, 1); // TODO: allocateTensorDescriptorWithColumnStride(N, D);
+		}
 		xDesc = new cudnnTensorDescriptor[] {allocateTensorDescriptor(N, D, 1)};
 		hxDesc = allocateTensorDescriptor(1, N, M); 
 		cxDesc = allocateTensorDescriptor(1, N, M);
@@ -153,27 +157,36 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 	public void close() {
 		if(dropoutDesc != null)
 			cudnnDestroyDropoutDescriptor(dropoutDesc);
+		dropoutDesc = null;
 		if(rnnDesc != null)
 			cudnnDestroyRNNDescriptor(rnnDesc);
+		rnnDesc = null;
 		if(hxDesc != null)
 			cudnnDestroyTensorDescriptor(hxDesc);
+		hxDesc = null;
 		if(hyDesc != null)
 			cudnnDestroyTensorDescriptor(hyDesc);
+		hyDesc = null;
 		if(cxDesc != null)
 			cudnnDestroyTensorDescriptor(cxDesc);
+		cxDesc = null;
 		if(cyDesc != null)
 			cudnnDestroyTensorDescriptor(cyDesc);
+		cyDesc = null;
 		if(wDesc != null)
 			cudnnDestroyFilterDescriptor(wDesc);
+		wDesc = null;
 		if(xDesc != null) {
 			for(cudnnTensorDescriptor dsc : xDesc) {
 				cudnnDestroyTensorDescriptor(dsc);
 			}
+			xDesc = null;
 		}
 		if(yDesc != null) {
 			for(cudnnTensorDescriptor dsc : yDesc) {
 				cudnnDestroyTensorDescriptor(dsc);
 			}
+			yDesc = null;
 		}
 		if(sizeInBytes != 0) {
 			try {
