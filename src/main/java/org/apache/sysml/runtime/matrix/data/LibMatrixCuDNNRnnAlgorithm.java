@@ -29,6 +29,7 @@ import static jcuda.jcudnn.JCudnn.cudnnDestroyDropoutDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnDestroyRNNDescriptor;
 import static jcuda.jcudnn.cudnnTensorFormat.CUDNN_TENSOR_NCHW;
 import static jcuda.jcudnn.JCudnn.cudnnCreateRNNDescriptor;
+
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 
@@ -55,15 +56,16 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 		initializeDropout();
 		initializeRnnDescriptor(rnnMode, N, T, M, D);
 		
-		long [] sizeInBytesArray = new long[1]; long [] reserveSpaceSizeInBytesArray = new long[1];
+		long [] sizeInBytesArray = new long[1];
 		workSpace = new Pointer(); reserveSpace = new Pointer();
+		jcuda.runtime.JCuda.cudaDeviceSynchronize();
 		JCudnn.cudnnGetRNNWorkspaceSize(gCtx.getCudnnHandle(), rnnDesc, T, xDesc, sizeInBytesArray);
 		sizeInBytes = sizeInBytesArray[0];
 		if(sizeInBytes != 0)
 			workSpace = gCtx.allocate(sizeInBytes);
 		if(isTraining) {
-			JCudnn.cudnnGetRNNTrainingReserveSize(gCtx.getCudnnHandle(), rnnDesc, T, xDesc, reserveSpaceSizeInBytesArray);
-			reserveSpaceSizeInBytes = reserveSpaceSizeInBytesArray[0];
+			JCudnn.cudnnGetRNNTrainingReserveSize(gCtx.getCudnnHandle(), rnnDesc, T, xDesc, sizeInBytesArray);
+			reserveSpaceSizeInBytes = sizeInBytesArray[0];
 			if (reserveSpaceSizeInBytes != 0)
 				reserveSpace = gCtx.allocate(reserveSpaceSizeInBytes);
 		}
@@ -90,13 +92,13 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 		rnnDesc = new cudnnRNNDescriptor();
 		cudnnCreateRNNDescriptor(rnnDesc);
 		int rnnAlgo = jcuda.jcudnn.cudnnRNNAlgo.CUDNN_RNN_ALGO_STANDARD; // TODO:
-		JCudnn.cudnnSetRNNDescriptor(gCtx.getCudnnHandle(), rnnDesc, M, 1, dropoutDesc, inputMode, jcuda.jcudnn.cudnnDirectionMode.CUDNN_UNIDIRECTIONAL, 
+		JCudnn.cudnnSetRNNDescriptor(gCtx.getCudnnHandle(), rnnDesc, M, 1, 
+				dropoutDesc, inputMode, jcuda.jcudnn.cudnnDirectionMode.CUDNN_UNIDIRECTIONAL, 
 				rnnModeVal, rnnAlgo, LibMatrixCUDA.CUDNN_DATA_TYPE);
 		xDesc = new cudnnTensorDescriptor[N];
 		for(int n = 0; n < N; n++) {
-			xDesc[n] = allocateTensorDescriptor(N, D, 1); // TODO: allocateTensorDescriptorWithColumnStride(N, D);
+			xDesc[n] = allocateTensorDescriptor(N, D, 1); // allocateTensorDescriptorWithColumnStride(N, D);
 		}
-		xDesc = new cudnnTensorDescriptor[] {allocateTensorDescriptor(N, D, 1)};
 		hxDesc = allocateTensorDescriptor(1, N, M); 
 		cxDesc = allocateTensorDescriptor(1, N, M);
 		yDesc = new cudnnTensorDescriptor[T];
