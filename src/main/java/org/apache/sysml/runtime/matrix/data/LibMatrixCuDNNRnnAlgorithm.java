@@ -28,6 +28,7 @@ import static jcuda.jcudnn.JCudnn.cudnnSetTensorNdDescriptorEx;
 import static jcuda.jcudnn.JCudnn.cudnnDestroyDropoutDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnDestroyRNNDescriptor;
 import static jcuda.jcudnn.cudnnTensorFormat.CUDNN_TENSOR_NCHW;
+import static jcuda.jcudnn.JCudnn.cudnnCreateRNNDescriptor;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 
@@ -70,7 +71,8 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 	
 	private void initializeRnnDescriptor(String rnnMode, int N, int T, int M, int D) throws DMLRuntimeException {
 		int numLayers = 1; 
-		int hiddenSize=-1; 
+		rnnDesc = new cudnnRNNDescriptor();
+		cudnnCreateRNNDescriptor(rnnDesc);
 		xDesc = new cudnnTensorDescriptor[] {allocateTensorDescriptor(N, T, D)};
 		hxDesc = allocateTensorDescriptor(1, N, M); 
 		cxDesc = allocateTensorDescriptor(1, N, M);
@@ -108,7 +110,7 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 		cudnnRNNDescriptor rnnDesc = new cudnnRNNDescriptor();
 		JCudnn.cudnnCreateRNNDescriptor(rnnDesc);
 		int rnnAlgo = jcuda.jcudnn.cudnnRNNAlgo.CUDNN_RNN_ALGO_STANDARD; // TODO:
-		JCudnn.cudnnSetRNNDescriptor(gCtx.getCudnnHandle(), rnnDesc, hiddenSize, numLayers, dropoutDesc, inputMode, directionMode, rnnModeVal, rnnAlgo, LibMatrixCUDA.CUDNN_DATA_TYPE);
+		JCudnn.cudnnSetRNNDescriptor(gCtx.getCudnnHandle(), rnnDesc, M, numLayers, dropoutDesc, inputMode, directionMode, rnnModeVal, rnnAlgo, LibMatrixCUDA.CUDNN_DATA_TYPE);
 	}
 	
 	private void initializeDropout() throws DMLRuntimeException {
