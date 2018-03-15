@@ -912,8 +912,8 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		T = toInt(x.getNumColumns() / D); // since X:(N, T*D)
 		
 		// Get output pointers
-		Pointer yPointer = return_sequences ? getDenseOutputPointer(ec, gCtx, instName, cyName, N, T*M) : gCtx.allocate(instName, N*T*M);
-		Pointer hyPointer = !return_sequences ? getDenseOutputPointer(ec, gCtx, instName, cyName, N, M) : gCtx.allocate(instName, N*M);
+		Pointer yPointer = return_sequences ? getDenseOutputPointer(ec, gCtx, instName, outputName, N, T*M) : gCtx.allocate(instName, N*T*M);
+		Pointer hyPointer = !return_sequences ? getDenseOutputPointer(ec, gCtx, instName, outputName, N, M) : gCtx.allocate(instName, N*M);
 		Pointer cyPointer = hasCarry ? getDenseOutputPointer(ec, gCtx, instName, cyName, N, M) : new Pointer();
 		
 		try(LibMatrixCuDNNRnnAlgorithm algo = new LibMatrixCuDNNRnnAlgorithm(gCtx, instName, rnnMode, N, T, M, D, true)) {
