@@ -97,13 +97,13 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 				rnnModeVal, rnnAlgo, LibMatrixCUDA.CUDNN_DATA_TYPE);
 		xDesc = new cudnnTensorDescriptor[N];
 		for(int n = 0; n < N; n++) {
-			xDesc[n] = allocateTensorDescriptor(N, D, 1); // allocateTensorDescriptorWithColumnStride(N, D);
+			xDesc[n] = allocateTensorDescriptor(T, N, D); // allocateTensorDescriptorWithColumnStride(N, D);
 		}
 		hxDesc = allocateTensorDescriptor(1, N, M); 
 		cxDesc = allocateTensorDescriptor(1, N, M);
 		yDesc = new cudnnTensorDescriptor[T];
 		for(int t = 0; t < T; t++) {
-			yDesc[t] = allocateTensorDescriptorWithColumnStride(N, D);
+			yDesc[t] = allocateTensorDescriptor(T, N, M); // allocateTensorDescriptorWithColumnStride(N, D);
 		}
 		hyDesc = allocateTensorDescriptor(1, N, M);
 		cyDesc = allocateTensorDescriptor(1, N, M);
