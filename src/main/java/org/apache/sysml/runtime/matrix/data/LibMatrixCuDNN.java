@@ -893,11 +893,10 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			String outputName, String cyName,  // output
 			String rnnMode, boolean return_sequences) throws DMLRuntimeException {
 		// batchSize=N, seqLength=T, numFeatures=D and hiddenSize=M
-		// input  X:(N, T*D), 
-		// weight W:(D+M+2, 4M)
-		// bias   b:(1, 4M)
-		// previous output out0 (also represented by hx) and cell state c0 (also represented by cx): (N, M)
-		// out: (N, T*M) or (N, M)
+		// input  X:(N, T*D), 	==> (T, D, N)
+		// weight W:(D+M+2, 4M) 
+		// previous output out0 (also represented by hx) and cell state c0 (also represented by cx): (N, M) ==> (1, M, N)
+		// out: (N, T*M) or (N, M) ==> (T, M, N)
 		int N = toInt(x.getNumRows()); // batchSize .. since X:(N, T*D)
 		int M = toInt(hx.getNumColumns()); // hiddenSize .. since out0: (N, M)
 		int D = -1; // numFeatures  
