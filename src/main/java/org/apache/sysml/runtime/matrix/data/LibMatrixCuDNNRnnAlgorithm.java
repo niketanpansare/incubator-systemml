@@ -33,7 +33,6 @@ import static jcuda.jcudnn.cudnnDirectionMode.CUDNN_UNIDIRECTIONAL;
 import static jcuda.jcudnn.cudnnRNNAlgo.CUDNN_RNN_ALGO_STANDARD;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.instructions.gpu.context.ExecutionConfig;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 
 import jcuda.Pointer;
@@ -105,6 +104,7 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 				reserveSpace = gCtx.allocate(reserveSpaceSizeInBytes);
 		}
 		
+		/*
 		int numLinearLayers = getNumLinearLayers(rnnMode); 
 		for(int i = 0; i < numLinearLayers; i++) {
 			cudnnFilterDescriptor  linLayerMatDesc = new cudnnFilterDescriptor();
@@ -119,6 +119,13 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 			JCudnn.cudnnGetFilterNdDescriptor(linLayerMatDesc, 3, dataType, format, nbDims, filterDimA);
 			
 			int filterDims = filterDimA[0] * filterDimA[1] * filterDimA[2];
+			double [] tmp = new double[filterDims];
+			LibMatrixCUDA.cudaSupportFunctions.deviceToHost(gCtx, linLayerMat, tmp, instName, false);
+			System.out.println();
+			for(int j = 0 ; j < tmp.length; j++) {
+				System.out.print(" " + tmp[j]);
+			}
+			System.out.println();
 			LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("fill", 
 					ExecutionConfig.getConfigForSimpleVectorOperations(filterDims), 
 					linLayerMat, Math.pow(filterDims, -1), filterDims);
@@ -136,6 +143,7 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 					linLayerBias, Math.pow(filterDims, -1), filterDims);
 			JCudnn.cudnnDestroyFilterDescriptor(linLayerBiasDesc);
 		}
+		*/
 	}
 	
 	private int getNumLinearLayers(String rnnMode) throws DMLRuntimeException {

@@ -905,6 +905,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		if(rnnMode.equalsIgnoreCase("lstm")) {
 			D = toInt(w.getNumRows()) - M - 2; // since W:(D+M+2, 4M)
 			hasCarry = true;
+			
 		} else {
 			throw new DMLRuntimeException("Unsupported mode:" + rnnMode);
 		}
@@ -914,12 +915,13 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		Pointer yPointer = return_sequences ? getDenseOutputPointer(ec, gCtx, instName, outputName, N, T*M) : gCtx.allocate(instName, N*T*M);
 		Pointer hyPointer = !return_sequences ? getDenseOutputPointer(ec, gCtx, instName, outputName, N, M) : gCtx.allocate(instName, N*M);
 		Pointer cyPointer = hasCarry ? getDenseOutputPointer(ec, gCtx, instName, cyName, N, M) : new Pointer();
-		Pointer wPointer = getDensePointerForCuDNN(gCtx, w, instName);
+		Pointer wPointer = getDensePointerForCuDNN(gCtx, w, instName, D+M+2, 4*M);
 		try(LibMatrixCuDNNRnnAlgorithm algo = new LibMatrixCuDNNRnnAlgorithm(gCtx, instName, rnnMode, N, T, M, D, true, wPointer)) {
+			jcuda.runtime.JCuda.cudaDeviceSynchronize();
 			JCudnn.cudnnRNNForwardTraining(gCtx.getCudnnHandle(), algo.rnnDesc, T, 
-					algo.xDesc, getDensePointerForCuDNN(gCtx, x, instName), 
-					algo.hxDesc, getDensePointerForCuDNN(gCtx, hx, instName), 
-					algo.cxDesc, hasCarry ? getDensePointerForCuDNN(gCtx, cx, instName) : new Pointer(), 
+					algo.xDesc, getDensePointerForCuDNN(gCtx, x, instName, N, T*D), 
+					algo.hxDesc, getDensePointerForCuDNN(gCtx, hx, instName, N, M), 
+					algo.cxDesc, hasCarry ? getDensePointerForCuDNN(gCtx, cx, instName, N, M) : new Pointer(), 
 					algo.wDesc, wPointer, 
 					algo.yDesc, yPointer, 
 					algo.hyDesc, hyPointer, 
@@ -946,6 +948,28 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	protected static Pointer getDensePointerForCuDNN(GPUContext gCtx, MatrixObject image, String instName) throws DMLRuntimeException {
 		long numElems = image.getNumRows()*image.getNumColumns();
 		if(numElems > maxNumElementsOfCuDNNTensor) {
+			throw new DMLRuntimeException("CuDNN restriction: the size of input tensor cannot have greater than 2 giga-elements, but has " + numElems + " (i.e. [" + image.getNumRows() + " X " + image.getNumColumns() + "]). Hint: try reducing the mini-batch size.");
+		}
+		return getDensePointer(gCtx, image, instName);
+	}
+	
+	/**
+	 * Convenience method to get jcudaDenseMatrixPtr. This method explicitly converts sparse to dense format, so use it judiciously.
+	 * 
+	 * @param gCtx a valid {@link GPUContext}
+	 * @param image input matrix object
+	 * @param instName name of the instruction
+	 * @param numRows expected number of rows
+	 * @param numCols expected number of columns 
+	 * @return jcuda pointer
+	 * @throws DMLRuntimeException if error occurs while sparse to dense conversion
+	 */
+	protected static Pointer getDensePointerForCuDNN(GPUContext gCtx, MatrixObject image, String instName, int numRows, int numCols) throws DMLRuntimeException {
+		long numElems = image.getNumRows()*image.getNumColumns();
+		if(image.getNumRows() != numRows || image.getNumColumns() != numCols) {
+			throw new DMLRuntimeException("Expected input of size:[" +  numRows + ", " + numCols + "], but found [" + image.getNumRows() + ", " + image.getNumColumns() + "]."); 
+		}
+		else if(numElems > maxNumElementsOfCuDNNTensor) {
 			throw new DMLRuntimeException("CuDNN restriction: the size of input tensor cannot have greater than 2 giga-elements, but has " + numElems + " (i.e. [" + image.getNumRows() + " X " + image.getNumColumns() + "]). Hint: try reducing the mini-batch size.");
 		}
 		return getDensePointer(gCtx, image, instName);
