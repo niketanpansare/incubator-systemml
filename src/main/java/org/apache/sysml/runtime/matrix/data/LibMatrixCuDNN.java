@@ -914,17 +914,18 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		Pointer yPointer = return_sequences ? getDenseOutputPointer(ec, gCtx, instName, outputName, N, T*M) : gCtx.allocate(instName, N*T*M);
 		Pointer hyPointer = !return_sequences ? getDenseOutputPointer(ec, gCtx, instName, outputName, N, M) : gCtx.allocate(instName, N*M);
 		Pointer cyPointer = hasCarry ? getDenseOutputPointer(ec, gCtx, instName, cyName, N, M) : new Pointer();
-		
-		try(LibMatrixCuDNNRnnAlgorithm algo = new LibMatrixCuDNNRnnAlgorithm(gCtx, instName, rnnMode, N, T, M, D, true)) {
+		Pointer wPointer = getDensePointerForCuDNN(gCtx, w, instName);
+		try(LibMatrixCuDNNRnnAlgorithm algo = new LibMatrixCuDNNRnnAlgorithm(gCtx, instName, rnnMode, N, T, M, D, true, wPointer)) {
 			JCudnn.cudnnRNNForwardTraining(gCtx.getCudnnHandle(), algo.rnnDesc, T, 
 					algo.xDesc, getDensePointerForCuDNN(gCtx, x, instName), 
 					algo.hxDesc, getDensePointerForCuDNN(gCtx, hx, instName), 
 					algo.cxDesc, hasCarry ? getDensePointerForCuDNN(gCtx, cx, instName) : new Pointer(), 
-					algo.wDesc, getDensePointerForCuDNN(gCtx, w, instName), 
+					algo.wDesc, wPointer, 
 					algo.yDesc, yPointer, 
 					algo.hyDesc, hyPointer, 
 					algo.cyDesc, cyPointer, 
-					algo.workSpace, algo.sizeInBytes, algo.reserveSpace, algo.reserveSpaceSizeInBytes);
+					algo.workSpace, algo.sizeInBytes, 
+					algo.reserveSpace, algo.reserveSpaceSizeInBytes);
 		}
 		
 		if(return_sequences)

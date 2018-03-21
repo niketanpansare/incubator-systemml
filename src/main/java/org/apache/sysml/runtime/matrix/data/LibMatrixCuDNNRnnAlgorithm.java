@@ -31,7 +31,9 @@ import static jcuda.jcudnn.JCudnn.cudnnCreateRNNDescriptor;
 import static jcuda.jcudnn.cudnnRNNInputMode.CUDNN_LINEAR_INPUT;
 import static jcuda.jcudnn.cudnnDirectionMode.CUDNN_UNIDIRECTIONAL;
 import static jcuda.jcudnn.cudnnRNNAlgo.CUDNN_RNN_ALGO_STANDARD;
+
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.instructions.gpu.context.ExecutionConfig;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 
 import jcuda.Pointer;
@@ -51,7 +53,8 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 	cudnnFilterDescriptor wDesc;
 	long sizeInBytes; Pointer workSpace;
 	long reserveSpaceSizeInBytes; Pointer reserveSpace;
-	public LibMatrixCuDNNRnnAlgorithm(GPUContext gCtx, String instName, String rnnMode, int N, int T, int M, int D, boolean isTraining) throws DMLRuntimeException {
+	public LibMatrixCuDNNRnnAlgorithm(GPUContext gCtx, String instName, 
+			String rnnMode, int N, int T, int M, int D, boolean isTraining, Pointer w) throws DMLRuntimeException {
 		this.gCtx = gCtx;
 		this.instName = instName;
 		
@@ -101,6 +104,55 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 			if (reserveSpaceSizeInBytes != 0)
 				reserveSpace = gCtx.allocate(reserveSpaceSizeInBytes);
 		}
+		
+		int numLinearLayers = getNumLinearLayers(rnnMode); 
+		for(int i = 0; i < numLinearLayers; i++) {
+			cudnnFilterDescriptor  linLayerMatDesc = new cudnnFilterDescriptor();
+			cudnnCreateFilterDescriptor(linLayerMatDesc);
+			Pointer linLayerMat = new Pointer();
+			JCudnn.cudnnGetRNNLinLayerMatrixParams(gCtx.getCudnnHandle(), rnnDesc, 0, 
+					xDesc[0], wDesc, w, i, linLayerMatDesc, linLayerMat);
+			int[] dataType = new int[] {-1};
+			int[] format = new int[] {-1};
+			int[] nbDims = new int[] {-1};
+			int[] filterDimA = new int[3];
+			JCudnn.cudnnGetFilterNdDescriptor(linLayerMatDesc, 3, dataType, format, nbDims, filterDimA);
+			
+			int filterDims = filterDimA[0] * filterDimA[1] * filterDimA[2];
+			LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("fill", 
+					ExecutionConfig.getConfigForSimpleVectorOperations(filterDims), 
+					linLayerMat, Math.pow(filterDims, -1), filterDims);
+			JCudnn.cudnnDestroyFilterDescriptor(linLayerMatDesc);
+			
+			cudnnFilterDescriptor  linLayerBiasDesc = new cudnnFilterDescriptor();
+			cudnnCreateFilterDescriptor(linLayerBiasDesc);
+			Pointer linLayerBias = new Pointer();
+			JCudnn.cudnnGetRNNLinLayerBiasParams(gCtx.getCudnnHandle(), rnnDesc, 0,
+					xDesc[0], wDesc, w, i, linLayerBiasDesc, linLayerBias);
+			JCudnn.cudnnGetFilterNdDescriptor(linLayerBiasDesc, 3, dataType, format, nbDims, filterDimA);
+			filterDims = filterDimA[0] * filterDimA[1] * filterDimA[2];
+			LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("fill", 
+					ExecutionConfig.getConfigForSimpleVectorOperations(filterDims), 
+					linLayerBias, Math.pow(filterDims, -1), filterDims);
+			JCudnn.cudnnDestroyFilterDescriptor(linLayerBiasDesc);
+		}
+	}
+	
+	private int getNumLinearLayers(String rnnMode) throws DMLRuntimeException {
+		int ret = 0;
+		if(rnnMode.equalsIgnoreCase("rnn_relu") || rnnMode.equalsIgnoreCase("rnn_tanh")) {
+			ret = 2;
+		}
+		else if(rnnMode.equalsIgnoreCase("lstm")) {
+			ret = 8;
+		}
+		else if(rnnMode.equalsIgnoreCase("gru")) {
+			ret = 6;
+		}
+		else {
+			throw new DMLRuntimeException("Unsupported rnn mode:" + rnnMode);
+		}
+		return ret;
 	}
 	
 	private long getWorkspaceSize(int seqLength) {
