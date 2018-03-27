@@ -918,6 +918,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		Pointer wPointer = getDensePointerForCuDNN(gCtx, w, instName, D+M+2, 4*M);
 		try(LibMatrixCuDNNRnnAlgorithm algo = new LibMatrixCuDNNRnnAlgorithm(gCtx, instName, rnnMode, N, T, M, D, true, wPointer)) {
 			jcuda.runtime.JCuda.cudaDeviceSynchronize();
+			
 			JCudnn.cudnnRNNForwardTraining(gCtx.getCudnnHandle(), algo.rnnDesc, T, 
 					algo.xDesc, getDensePointerForCuDNN(gCtx, x, instName, N, T*D), 
 					algo.hxDesc, getDensePointerForCuDNN(gCtx, hx, instName, N, M), 
