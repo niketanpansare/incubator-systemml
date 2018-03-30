@@ -863,7 +863,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			long numRows, long numCols) throws DMLRuntimeException {
 		MatrixObject output = ec.getMatrixObject(outputName);
 		getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, numRows, numCols); // Allocated the dense output matrix
-		return getDensePointerForCuDNN(gCtx, output, instName);
+		return getDensePointerForCuDNN(gCtx, output, instName, toInt(numRows), toInt(numCols));
 	}
 	
 	/**
@@ -973,7 +973,12 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		else if(numElems > maxNumElementsOfCuDNNTensor) {
 			throw new DMLRuntimeException("CuDNN restriction: the size of input tensor cannot have greater than 2 giga-elements, but has " + numElems + " (i.e. [" + image.getNumRows() + " X " + image.getNumColumns() + "]). Hint: try reducing the mini-batch size.");
 		}
-		return getDensePointer(gCtx, image, instName);
+		Pointer ptr = getDensePointer(gCtx, image, instName);
+		long sizeOfPtr = gCtx.getMemoryManager().getSizeAllocatedGPUPointer(ptr);
+		if(sizeOfPtr != numElems*sizeOfDataType) {
+			throw new DMLRuntimeException("Incorrect pointer: expected size:" +  (numElems*sizeOfDataType) + ", but found " + sizeOfPtr);
+		}
+		return ptr;
 	}
 
 	/**
