@@ -872,44 +872,30 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @param ec execution context 
 	 * @param gCtx gpu context 
 	 * @param instName name of the instruction
-	 * @param X input matrix object
-	 * @param W weight matrix object
+	 * @param X input matrix pointer
+	 * @param W weight matrix
 	 * @param out0 Outputs from previous timestep
 	 * @param c0 Initial cell state
 	 * @param return_sequences Whether to return `out` at all timesteps, or just for the final timestep.
 	 * @param outputName name of the out variable. If `return_sequences` is True, outputs for all timesteps.
 	 * @param cyName name of the output cell state. Cell state for final timestep.
+	 * @param N minibatch size
+	 * @param M hidden size
+	 * @param D number of features
+	 * @param T sequence length
 	 * @throws DMLRuntimeException if error
 	 */
 	public static void lstm(ExecutionContext ec, GPUContext gCtx, String instName,
-			MatrixObject X,  MatrixObject W, MatrixObject out0, MatrixObject c0, boolean return_sequences,
-			String outputName, String cyName) throws DMLRuntimeException {
-		singleLayerUnidirectionalRNNForward(ec, gCtx, instName, X, out0, c0, W, outputName, cyName, "lstm", return_sequences);
+			Pointer X,  MatrixObject W, Pointer out0, Pointer c0, boolean return_sequences,
+			String outputName, String cyName, int N, int M, int D, int T) throws DMLRuntimeException {
+		singleLayerUnidirectionalRNNForward(ec, gCtx, instName, X, out0, c0, W, outputName, cyName, "lstm", return_sequences, N, M, D, T);
 	}
 	
 	private static void singleLayerUnidirectionalRNNForward(ExecutionContext ec, GPUContext gCtx, String instName,
-			MatrixObject x, MatrixObject hx, MatrixObject cx, MatrixObject w,  // input
+			Pointer x, Pointer hx, Pointer cx, MatrixObject w,  // input
 			String outputName, String cyName,  // output
-			String rnnMode, boolean return_sequences) throws DMLRuntimeException {
-		// batchSize=N, seqLength=T, numFeatures=D and hiddenSize=M
-		// input  X:(N, T*D), 	==> (T, D, N)
-		// weight W:(D+M+2, 4M) 
-		// previous output out0 (also represented by hx) and cell state c0 (also represented by cx): (N, M) ==> (1, M, N)
-		// out: (N, T*M) or (N, M) ==> (T, M, N)
-		int N = toInt(x.getNumRows()); // batchSize .. since X:(N, T*D)
-		int M = toInt(hx.getNumColumns()); // hiddenSize .. since out0: (N, M)
-		int D = -1; // numFeatures  
-		int T = -1; // seqLength
-		boolean hasCarry = false;
-		if(rnnMode.equalsIgnoreCase("lstm")) {
-			D = toInt(w.getNumRows()) - M - 2; // since W:(D+M+2, 4M)
-			hasCarry = true;
-			
-		} else {
-			throw new DMLRuntimeException("Unsupported mode:" + rnnMode);
-		}
-		T = toInt(x.getNumColumns() / D); // since X:(N, T*D)
-		
+			String rnnMode, boolean return_sequences, int N, int M, int D, int T) throws DMLRuntimeException {
+		boolean hasCarry = rnnMode.equalsIgnoreCase("lstm");
 		// Get output pointers
 		Pointer yPointer = return_sequences ? getDenseOutputPointer(ec, gCtx, instName, outputName, N, T*M) : gCtx.allocate(instName, N*T*M*sizeOfDataType);
 		Pointer hyPointer = !return_sequences ? getDenseOutputPointer(ec, gCtx, instName, outputName, N, M) : gCtx.allocate(instName, N*M*sizeOfDataType);
@@ -919,9 +905,9 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		try(LibMatrixCuDNNRnnAlgorithm algo = new LibMatrixCuDNNRnnAlgorithm(gCtx, instName, rnnMode, N, T, M, D, true, wPointer)) {
 			jcuda.runtime.JCuda.cudaDeviceSynchronize();
 			JCudnn.cudnnRNNForwardTraining(gCtx.getCudnnHandle(), algo.rnnDesc, T, 
-					algo.xDesc, getDensePointerForCuDNN(gCtx, x, instName, N, T*D), 
-					algo.hxDesc, getDensePointerForCuDNN(gCtx, hx, instName, N, M), 
-					algo.cxDesc, hasCarry ? getDensePointerForCuDNN(gCtx, cx, instName, N, M) : new Pointer(), 
+					algo.xDesc, x, 
+					algo.hxDesc, hx, 
+					algo.cxDesc, cx, 
 					algo.wDesc, wPointer, 
 					algo.yDesc, yPointer, 
 					algo.hyDesc, hyPointer, 

@@ -280,7 +280,7 @@ public class LibMatrixCUDA {
 	 * @return jcuda pointer
 	 * @throws DMLRuntimeException if error occurs while sparse to dense conversion
 	 */
-	protected static Pointer getDensePointer(GPUContext gCtx, MatrixObject input, String instName) throws DMLRuntimeException {
+	public static Pointer getDensePointer(GPUContext gCtx, MatrixObject input, String instName) throws DMLRuntimeException {
 		if(isInSparseFormat(gCtx, input)) {
 			input.getGPUObject(gCtx).sparseToDense(instName);
 		}
@@ -303,7 +303,13 @@ public class LibMatrixCUDA {
 	}
 	
 	protected static Pointer dataTypePointerTo(double value) {
-		if(sizeOfDataType == Sizeof.DOUBLE) {
+		if(value == 1) {
+			return one();
+		}
+		else if(value == 0) {
+			return zero();
+		}
+		else if(sizeOfDataType == Sizeof.DOUBLE) {
 			return Pointer.to(new double[] { value });
 		}
 		else if(sizeOfDataType == Sizeof.FLOAT) {
@@ -1736,6 +1742,36 @@ public class LibMatrixCUDA {
 			cudaSupportFunctions.cublasgeam(getCublasHandle(gCtx), transa, transb, m, n, alphaPtr, A, lda, betaPtr, B, ldb, C, ldc);
 			if (DMLScript.FINEGRAINED_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DENSE_DGEAM_LIB, System.nanoTime() - t0);
 		}
+	}
+	
+	/**
+	 * Computes C = t(A)
+	 * @param ec execution context
+	 * @param gCtx gpu context
+	 * @param instName name of the instruction
+	 * @param A pointer to the input matrix
+	 * @param C pointer to the output matrix
+	 * @param numRowsA number of rows of the input matrix
+	 * @param numColsA number of columns of the output matrix
+	 * @throws DMLRuntimeException if error
+	 */
+	public static void denseTranspose(ExecutionContext ec, GPUContext gCtx, String instName, 
+			Pointer A, Pointer C, long numRowsA, long numColsA) throws DMLRuntimeException {
+		if (ec.getGPUContext(0) != gCtx)
+			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
+		if(LOG.isTraceEnabled()) {
+			LOG.trace("GPU : dense transpose" + ", GPUContext=" + gCtx);
+		}
+		long t0=0;
+		// Dense-Dense dgeam
+		int lda = toInt(numColsA);
+		int ldb = lda;
+		int m = toInt(numRowsA);
+		int n = lda;
+		int ldc = m;
+		if (DMLScript.FINEGRAINED_STATISTICS) t0 = System.nanoTime();
+		cudaSupportFunctions.cublasgeam(getCublasHandle(gCtx), CUBLAS_OP_T, CUBLAS_OP_T, m, n, one(), A, lda, zero(), A, ldb, C, ldc);
+		if (DMLScript.FINEGRAINED_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DENSE_DGEAM_LIB, System.nanoTime() - t0);
 	}
 
 

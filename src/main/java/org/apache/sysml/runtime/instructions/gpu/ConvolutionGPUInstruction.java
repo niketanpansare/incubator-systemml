@@ -20,12 +20,15 @@ package org.apache.sysml.runtime.instructions.gpu;
 
 import java.util.ArrayList;
 
+import jcuda.Pointer;
+
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.functionobjects.SwapIndex;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCuDNN;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNN.PoolingType;
@@ -315,21 +318,60 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
 	}
 	
-	public void processLstmInstruction(ExecutionContext ec) throws DMLRuntimeException {
+	private static int toInt(long num) throws DMLRuntimeException {
+		if(num >= Integer.MAX_VALUE || num <= Integer.MIN_VALUE) {
+			throw new DMLRuntimeException("GPU : Exceeded supported size " + num);
+		}
+		return (int)num;
+	}
+	
+	private Pointer transpose(ExecutionContext ec, MatrixObject X) throws DMLRuntimeException {
+		GPUContext gCtx = ec.getGPUContext(0);
+		String instructionName = getExtendedOpcode();
+		long numRowsX = X.getNumRows(); long numColsX = X.getNumColumns();
+		Pointer tX = gCtx.allocate(instructionName, numRowsX*numColsX*LibMatrixCUDA.sizeOfDataType);
+		LibMatrixCUDA.denseTranspose(ec, gCtx, instructionName, LibMatrixCUDA.getDensePointer(gCtx, X, instructionName), tX, numRowsX, numColsX);
+		return tX;
+	}
+	
+	private void processLstmInstruction(ExecutionContext ec) throws DMLRuntimeException {
+		// batchSize=N, seqLength=T, numFeatures=D and hiddenSize=M
+		// input  X:(N, T*D), 	==> (T, D, N)
+		// weight W:(D+M+2, 4M) 
+		// previous output out0 (also represented by hx) and cell state c0 (also represented by cx): (N, M) ==> (1, M, N)
+		// out: (N, T*M) or (N, M) ==> (T, M, N)
 		GPUStatistics.incrementNoOfExecutedGPUInst();
+		GPUContext gCtx = ec.getGPUContext(0);
+		String instructionName = getExtendedOpcode();
+		
+		// Beause the matrices are released immediately, the output for transpose need not be taken into account
 		MatrixObject X = getMatrixInputForGPUInstruction(ec, _input1.getName());
-		MatrixObject W = getMatrixInputForGPUInstruction(ec, _input2.getName());
+		int N = toInt(X.getNumRows()); // batchSize .. since X:(N, T*D)
+		long numColsX = X.getNumColumns();
+		Pointer tX = transpose(ec, X);
+		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
+		
 		MatrixObject out0 = getMatrixInputForGPUInstruction(ec, _input3.getName());
+		int M = toInt(out0.getNumColumns()); // hiddenSize .. since out0: (N, M)
+		Pointer tOut0 = transpose(ec, out0);
+		ec.releaseMatrixInputForGPUInstruction(_input3.getName());
+		
 		MatrixObject c0 = getMatrixInputForGPUInstruction(ec, _input4.getName());
+		Pointer tC0 = transpose(ec, c0);
+		ec.releaseMatrixInputForGPUInstruction(_input4.getName());
+		
+		MatrixObject W = getMatrixInputForGPUInstruction(ec, _input2.getName());
+		long numRowsW = W.getNumRows();
+		
 		boolean return_sequences = ec.getScalarInput(_input5.getName(), _input5.getValueType(), _input5.isLiteral()).getBooleanValue();
 		
-		LibMatrixCuDNN.lstm(ec, ec.getGPUContext(0), getExtendedOpcode(), X, W, out0, c0, return_sequences, _output.getName(), _output2.getName());
+		int D = toInt(numRowsW) - M - 2; // since W:(D+M+2, 4M) ... numFeatures 
+		int T = toInt(numColsX/ D); // since X:(N, T*D) ... seqLength
+		
+		LibMatrixCuDNN.lstm(ec, gCtx, instructionName, tX, W, tOut0, tC0, return_sequences, _output.getName(), _output2.getName(), N, M, D, T);
 		
 		// release inputs/outputs
-		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
 		ec.releaseMatrixInputForGPUInstruction(_input2.getName());
-		ec.releaseMatrixInputForGPUInstruction(_input3.getName());
-		ec.releaseMatrixInputForGPUInstruction(_input4.getName());
 		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
 		ec.releaseMatrixOutputForGPUInstruction(_output2.getName());
 	}
