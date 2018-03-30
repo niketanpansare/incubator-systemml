@@ -33,7 +33,6 @@ import static jcuda.jcudnn.cudnnActivationMode.CUDNN_ACTIVATION_RELU;
 import static jcuda.jcudnn.cudnnNanPropagation.CUDNN_PROPAGATE_NAN;
 import static jcuda.jcudnn.cudnnTensorFormat.CUDNN_TENSOR_NCHW;
 import static jcuda.runtime.JCuda.cudaMemset;
-
 import jcuda.CudaException;
 import jcuda.Pointer;
 import jcuda.jcudnn.JCudnn;
@@ -912,13 +911,13 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		T = toInt(x.getNumColumns() / D); // since X:(N, T*D)
 		
 		// Get output pointers
-		Pointer yPointer = return_sequences ? getDenseOutputPointer(ec, gCtx, instName, outputName, N, T*M) : gCtx.allocate(instName, N*T*M);
-		Pointer hyPointer = !return_sequences ? getDenseOutputPointer(ec, gCtx, instName, outputName, N, M) : gCtx.allocate(instName, N*M);
+		Pointer yPointer = return_sequences ? getDenseOutputPointer(ec, gCtx, instName, outputName, N, T*M) : gCtx.allocate(instName, N*T*M*sizeOfDataType);
+		Pointer hyPointer = !return_sequences ? getDenseOutputPointer(ec, gCtx, instName, outputName, N, M) : gCtx.allocate(instName, N*M*sizeOfDataType);
 		Pointer cyPointer = hasCarry ? getDenseOutputPointer(ec, gCtx, instName, cyName, N, M) : new Pointer();
 		Pointer wPointer = getDensePointerForCuDNN(gCtx, w, instName, D+M+2, 4*M);
+		
 		try(LibMatrixCuDNNRnnAlgorithm algo = new LibMatrixCuDNNRnnAlgorithm(gCtx, instName, rnnMode, N, T, M, D, true, wPointer)) {
 			jcuda.runtime.JCuda.cudaDeviceSynchronize();
-			
 			JCudnn.cudnnRNNForwardTraining(gCtx.getCudnnHandle(), algo.rnnDesc, T, 
 					algo.xDesc, getDensePointerForCuDNN(gCtx, x, instName, N, T*D), 
 					algo.hxDesc, getDensePointerForCuDNN(gCtx, hx, instName, N, M), 
@@ -936,7 +935,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		else
 			gCtx.cudaFreeHelper(instName, yPointer);
 	}
-
+	
 	/**
 	 * Convenience method to get jcudaDenseMatrixPtr. This method explicitly converts sparse to dense format, so use it judiciously.
 	 * 
