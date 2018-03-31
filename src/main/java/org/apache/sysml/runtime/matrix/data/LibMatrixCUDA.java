@@ -255,7 +255,7 @@ public class LibMatrixCUDA {
 	 */
 	public static Pointer one() {
 		if(_one == null || oldDataTypeSize != sizeOfDataType) {
-			_one = dataTypePointerTo(1.0);
+			_one = _dataTypePointerTo(1.0);
 			oldDataTypeSize = sizeOfDataType;
 		}
 		return _one;
@@ -266,7 +266,7 @@ public class LibMatrixCUDA {
 	 */
 	public static Pointer zero() {
 		if(_zero == null  || oldDataTypeSize != sizeOfDataType) {
-			_zero = dataTypePointerTo(0.0);
+			_zero = _dataTypePointerTo(0.0);
 			oldDataTypeSize = sizeOfDataType;
 		}
 		return _zero;
@@ -302,14 +302,8 @@ public class LibMatrixCUDA {
 		return input.getGPUObject(gCtx).getJcudaSparseMatrixPtr();
 	}
 	
-	protected static Pointer dataTypePointerTo(double value) {
-		if(value == 1) {
-			return one();
-		}
-		else if(value == 0) {
-			return zero();
-		}
-		else if(sizeOfDataType == Sizeof.DOUBLE) {
+	private static Pointer _dataTypePointerTo(double value) {
+		if(sizeOfDataType == Sizeof.DOUBLE) {
 			return Pointer.to(new double[] { value });
 		}
 		else if(sizeOfDataType == Sizeof.FLOAT) {
@@ -317,6 +311,18 @@ public class LibMatrixCUDA {
 		}
 		else {
 			throw new RuntimeException("Unsupported datatype with size " + sizeOfDataType);
+		}
+	}
+	
+	protected static Pointer dataTypePointerTo(double value) {
+		if(value == 1) {
+			return one();
+		}
+		else if(value == 0) {
+			return zero();
+		}
+		else {
+			return _dataTypePointerTo(value);
 		}
 	}
 	
