@@ -127,7 +127,7 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 			}
 			System.out.println();
 			LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("fill", 
-					ExecutionConfig.getConfigForSimpleVectorOperations(filterDims), 
+					org.apache.sysml.runtime.instructions.gpu.context.ExecutionConfig.getConfigForSimpleVectorOperations(filterDims), 
 					linLayerMat, Math.pow(filterDims, -1), filterDims);
 			JCudnn.cudnnDestroyFilterDescriptor(linLayerMatDesc);
 			
@@ -139,7 +139,7 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 			JCudnn.cudnnGetFilterNdDescriptor(linLayerBiasDesc, 3, dataType, format, nbDims, filterDimA);
 			filterDims = filterDimA[0] * filterDimA[1] * filterDimA[2];
 			LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("fill", 
-					ExecutionConfig.getConfigForSimpleVectorOperations(filterDims), 
+					org.apache.sysml.runtime.instructions.gpu.context.ExecutionConfig.getConfigForSimpleVectorOperations(filterDims), 
 					linLayerBias, Math.pow(filterDims, -1), filterDims);
 			JCudnn.cudnnDestroyFilterDescriptor(linLayerBiasDesc);
 		}
