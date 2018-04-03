@@ -1988,19 +1988,19 @@ __device__ void prepare_lstm_weight(T* smlWeight, T* smlBias, T* cudnnWeight, in
   	index -= DM4;
   	smlColIndex = (index/(MM))*M + (index%(MM))%M;
   	smlRowIndex = (index%(MM))/M;
-  	cudnnWeight[index] = smlWeight[DM4 + smlRowIndex*M4+smlColIndex];
+  	cudnnWeight[index + DM4] = smlWeight[DM4 + smlRowIndex*M4+smlColIndex];
   }
   else if(index < (D+M)*M4) {
   	// Reorg a matrix of shape [4M, M] to [M, 4M] and swap c and o gates
   	index -= DM4;
   	smlColIndex = ((index < MM*3) ? 3*M : 2*M) + (index%(MM))%M;
   	smlRowIndex = (index%(MM))/M;
-  	cudnnWeight[index] = smlWeight[DM4 + smlRowIndex*M4+smlColIndex];
+  	cudnnWeight[index + DM4] = smlWeight[DM4 + smlRowIndex*M4+smlColIndex];
   }
   else if(index < (D+M+2)*M4) {
   	// Fill bias
 	index -= (D+M)*M4;
-	cudnnWeight[index] = (index % 2 == 0) ? smlBias[index/2] : 0;
+	cudnnWeight[index + (D+M)*M4] = (index % 2 == 0) ? smlBias[index/2] : 0;
   }
 }
 
