@@ -222,7 +222,7 @@ public class LibMatrixCUDA {
 		return gCtx.getCublasHandle();
 	}
 
-	protected static JCudaKernels getCudaKernels(GPUContext gCtx) throws DMLRuntimeException {
+	public static JCudaKernels getCudaKernels(GPUContext gCtx) throws DMLRuntimeException {
 		return gCtx.getKernels();
 	}
 	

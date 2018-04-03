@@ -28,6 +28,7 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.functionobjects.SwapIndex;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
+import org.apache.sysml.runtime.instructions.gpu.context.ExecutionConfig;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCuDNN;
@@ -344,6 +345,24 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		GPUContext gCtx = ec.getGPUContext(0);
 		String instructionName = getExtendedOpcode();
 		
+		MatrixObject out0 = getMatrixInputForGPUInstruction(ec, _input3.getName());
+		int M = toInt(out0.getNumColumns()); // hiddenSize .. since out0: (N, M)
+		Pointer tOut0 = transpose(ec, out0);
+		ec.releaseMatrixInputForGPUInstruction(_input3.getName());
+		
+		MatrixObject W = getMatrixInputForGPUInstruction(ec, _input2.getName());
+		long numRowsW = W.getNumRows();
+		int D = toInt(numRowsW) - M - 2; // since W:(D+M+2, 4M) ... numFeatures 
+		Pointer sysmlWPointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, W, instructionName, D+M+2, 4*M);
+		Pointer sysmlBiasPointer = sysmlWPointer.withByteOffset((D+M)*4*M*LibMatrixCUDA.sizeOfDataType); // TODO:
+		Pointer cudnnWPointer = gCtx.allocate(instructionName, (D+M+2)*(4*M)*LibMatrixCUDA.sizeOfDataType);
+		LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("prepare_lstm_weight",
+				ExecutionConfig.getConfigForSimpleVectorOperations((D+M+2)*(4*M)),
+				sysmlWPointer, sysmlBiasPointer, cudnnWPointer, D, M);
+		
+		ec.releaseMatrixInputForGPUInstruction(_input2.getName());
+		boolean return_sequences = ec.getScalarInput(_input5.getName(), _input5.getValueType(), _input5.isLiteral()).getBooleanValue();
+		
 		// Beause the matrices are released immediately, the output for transpose need not be taken into account
 		MatrixObject X = getMatrixInputForGPUInstruction(ec, _input1.getName());
 		int N = toInt(X.getNumRows()); // batchSize .. since X:(N, T*D)
@@ -351,27 +370,15 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		Pointer tX = transpose(ec, X);
 		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
 		
-		MatrixObject out0 = getMatrixInputForGPUInstruction(ec, _input3.getName());
-		int M = toInt(out0.getNumColumns()); // hiddenSize .. since out0: (N, M)
-		Pointer tOut0 = transpose(ec, out0);
-		ec.releaseMatrixInputForGPUInstruction(_input3.getName());
-		
 		MatrixObject c0 = getMatrixInputForGPUInstruction(ec, _input4.getName());
 		Pointer tC0 = transpose(ec, c0);
 		ec.releaseMatrixInputForGPUInstruction(_input4.getName());
 		
-		MatrixObject W = getMatrixInputForGPUInstruction(ec, _input2.getName());
-		long numRowsW = W.getNumRows();
-		
-		boolean return_sequences = ec.getScalarInput(_input5.getName(), _input5.getValueType(), _input5.isLiteral()).getBooleanValue();
-		
-		int D = toInt(numRowsW) - M - 2; // since W:(D+M+2, 4M) ... numFeatures 
 		int T = toInt(numColsX/ D); // since X:(N, T*D) ... seqLength
 		
-		LibMatrixCuDNN.lstm(ec, gCtx, instructionName, tX, W, tOut0, tC0, return_sequences, _output.getName(), _output2.getName(), N, M, D, T);
+		LibMatrixCuDNN.lstm(ec, gCtx, instructionName, tX, cudnnWPointer, tOut0, tC0, return_sequences, _output.getName(), _output2.getName(), N, M, D, T);
 		
 		// release inputs/outputs
-		ec.releaseMatrixInputForGPUInstruction(_input2.getName());
 		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
 		ec.releaseMatrixOutputForGPUInstruction(_output2.getName());
 	}

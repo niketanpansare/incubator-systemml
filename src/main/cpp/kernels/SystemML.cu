@@ -1961,3 +1961,53 @@ extern "C" __global__ void matrix_sigmoid_f(float *A, float *C,
                                          unsigned int size) {
   matrix_sigmoid(A, C, size);
 }
+
+template <typename T>
+__device__ void prepare_lstm_weight(T* smlWeight, T* smlBias, T* cudnnWeight, int D, int M) {
+  int DM = D*M; int MM = M*M; int DM4 = DM*4; 
+  int M4 = M*4;
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  // Reorg such that: Wi Wf Wc Wo Ri Rf Rc Ro bi 0 bf 0 bc 0 bo 0
+  // where W: [DxM], R: [MxM] and b: [1x1]
+  
+  int smlColIndex; int smlRowIndex;
+  if(index < 2*DM) {
+  	// First reorg a matrix of shape [4D, M] to [D, 4M]  
+  	smlColIndex = (index/(DM))*M + (index%(DM))%M;
+  	smlRowIndex = (index%(DM))/M;
+  	cudnnWeight[index] = smlWeight[smlRowIndex*M4+smlColIndex];
+  }
+  else if(index < DM4) {
+  	// Reorg a matrix of shape [4D, M] to [D, 4M] and swap c and o gates  
+  	smlColIndex = ((index < DM*3) ? 3*M : 2*M) + (index%(DM))%M;
+  	smlRowIndex = (index%(DM))/M;
+  	cudnnWeight[index] = smlWeight[smlRowIndex*M4+smlColIndex];
+  }
+  else if(index < (2*MM)+DM4) {
+  	// Reorg a matrix of shape [4M, M] to [M, 4M]
+  	index -= DM4;
+  	smlColIndex = (index/(MM))*M + (index%(MM))%M;
+  	smlRowIndex = (index%(MM))/M;
+  	cudnnWeight[index] = smlWeight[DM4 + smlRowIndex*M4+smlColIndex];
+  }
+  else if(index < (D+M)*M4) {
+  	// Reorg a matrix of shape [4M, M] to [M, 4M] and swap c and o gates
+  	index -= DM4;
+  	smlColIndex = ((index < MM*3) ? 3*M : 2*M) + (index%(MM))%M;
+  	smlRowIndex = (index%(MM))/M;
+  	cudnnWeight[index] = smlWeight[DM4 + smlRowIndex*M4+smlColIndex];
+  }
+  else if(index < (D+M+2)*M4) {
+  	// Fill bias
+	index -= (D+M)*M4;
+	cudnnWeight[index] = (index % 2 == 0) ? smlBias[index/2] : 0;
+  }
+}
+
+extern "C" __global__ void prepare_lstm_weight_d(double* smlWeight, double* smlBias, double* cudnnWeight, int D, int M) {
+  prepare_lstm_weight(smlWeight, smlBias, cudnnWeight, D, M);
+}
+
+extern "C" __global__ void prepare_lstm_weight_f(float* smlWeight, float* smlBias, float* cudnnWeight, int D, int M) {
+  prepare_lstm_weight(smlWeight, smlBias, cudnnWeight, D, M);
+}

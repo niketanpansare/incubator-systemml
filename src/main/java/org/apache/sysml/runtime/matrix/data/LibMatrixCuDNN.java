@@ -886,13 +886,13 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @throws DMLRuntimeException if error
 	 */
 	public static void lstm(ExecutionContext ec, GPUContext gCtx, String instName,
-			Pointer X,  MatrixObject W, Pointer out0, Pointer c0, boolean return_sequences,
+			Pointer X,  Pointer wPointer, Pointer out0, Pointer c0, boolean return_sequences,
 			String outputName, String cyName, int N, int M, int D, int T) throws DMLRuntimeException {
-		singleLayerUnidirectionalRNNForward(ec, gCtx, instName, X, out0, c0, W, outputName, cyName, "lstm", return_sequences, N, M, D, T);
+		singleLayerUnidirectionalRNNForward(ec, gCtx, instName, X, out0, c0, wPointer, outputName, cyName, "lstm", return_sequences, N, M, D, T);
 	}
 	
 	private static void singleLayerUnidirectionalRNNForward(ExecutionContext ec, GPUContext gCtx, String instName,
-			Pointer x, Pointer hx, Pointer cx, MatrixObject w,  // input
+			Pointer x, Pointer hx, Pointer cx, Pointer wPointer,  // input
 			String outputName, String cyName,  // output
 			String rnnMode, boolean return_sequences, int N, int M, int D, int T) throws DMLRuntimeException {
 		boolean hasCarry = rnnMode.equalsIgnoreCase("lstm");
@@ -900,7 +900,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		Pointer yPointer = return_sequences ? getDenseOutputPointer(ec, gCtx, instName, outputName, N, T*M) : gCtx.allocate(instName, N*T*M*sizeOfDataType);
 		Pointer hyPointer = !return_sequences ? getDenseOutputPointer(ec, gCtx, instName, outputName, N, M) : gCtx.allocate(instName, N*M*sizeOfDataType);
 		Pointer cyPointer = hasCarry ? getDenseOutputPointer(ec, gCtx, instName, cyName, N, M) : new Pointer();
-		Pointer wPointer = getDensePointerForCuDNN(gCtx, w, instName, D+M+2, 4*M);
+		// Pointer wPointer = getDensePointerForCuDNN(gCtx, w, instName, D+M+2, 4*M);
 		
 		try(LibMatrixCuDNNRnnAlgorithm algo = new LibMatrixCuDNNRnnAlgorithm(gCtx, instName, rnnMode, N, T, M, D, true, wPointer)) {
 			jcuda.runtime.JCuda.cudaDeviceSynchronize();
@@ -950,7 +950,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @return jcuda pointer
 	 * @throws DMLRuntimeException if error occurs while sparse to dense conversion
 	 */
-	protected static Pointer getDensePointerForCuDNN(GPUContext gCtx, MatrixObject image, String instName, int numRows, int numCols) throws DMLRuntimeException {
+	public static Pointer getDensePointerForCuDNN(GPUContext gCtx, MatrixObject image, String instName, int numRows, int numCols) throws DMLRuntimeException {
 		long numElems = image.getNumRows()*image.getNumColumns();
 		if(image.getNumRows() != numRows || image.getNumColumns() != numCols) {
 			throw new DMLRuntimeException("Expected input of size:[" +  numRows + ", " + numCols + "], but found [" + image.getNumRows() + ", " + image.getNumColumns() + "]."); 
