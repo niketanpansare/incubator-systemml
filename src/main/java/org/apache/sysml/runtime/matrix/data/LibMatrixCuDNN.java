@@ -873,7 +873,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @param gCtx gpu context 
 	 * @param instName name of the instruction
 	 * @param X input matrix pointer
-	 * @param W weight matrix
+	 * @param wPointer weight matrix pointer
 	 * @param out0 Outputs from previous timestep
 	 * @param c0 Initial cell state
 	 * @param return_sequences Whether to return `out` at all timesteps, or just for the final timestep.
