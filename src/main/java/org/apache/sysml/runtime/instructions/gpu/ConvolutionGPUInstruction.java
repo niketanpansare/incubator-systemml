@@ -326,14 +326,15 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		return (int)num;
 	}
 	
-	private Pointer transpose(ExecutionContext ec, MatrixObject X) throws DMLRuntimeException {
-		GPUContext gCtx = ec.getGPUContext(0);
-		String instructionName = getExtendedOpcode();
-		long numRowsX = X.getNumRows(); long numColsX = X.getNumColumns();
-		Pointer tX = gCtx.allocate(instructionName, numRowsX*numColsX*LibMatrixCUDA.sizeOfDataType);
-		LibMatrixCUDA.denseTranspose(ec, gCtx, instructionName, LibMatrixCUDA.getDensePointer(gCtx, X, instructionName), tX, numRowsX, numColsX);
-		return tX;
-	}
+//	private Pointer transpose(ExecutionContext ec, MatrixObject X) throws DMLRuntimeException {
+//		GPUContext gCtx = ec.getGPUContext(0);
+//		String instructionName = getExtendedOpcode();
+//		long numRowsX = X.getNumRows(); long numColsX = X.getNumColumns();
+//		Pointer tX = gCtx.allocate(instructionName, numRowsX*numColsX*LibMatrixCUDA.sizeOfDataType);
+//		jcuda.runtime.JCuda.cudaMemcpy(tX, LibMatrixCUDA.getDensePointer(gCtx, X, instructionName), numRowsX*numColsX*LibMatrixCUDA.sizeOfDataType,  jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToDevice);
+//		// LibMatrixCUDA.denseTranspose(ec, gCtx, instructionName, LibMatrixCUDA.getDensePointer(gCtx, X, instructionName), tX, numRowsX, numColsX);
+//		return tX;
+//	}
 	
 	private void processLstmInstruction(ExecutionContext ec) throws DMLRuntimeException {
 		// batchSize=N, seqLength=T, numFeatures=D and hiddenSize=M
@@ -347,7 +348,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		
 		MatrixObject out0 = getMatrixInputForGPUInstruction(ec, _input3.getName());
 		int M = toInt(out0.getNumColumns()); // hiddenSize .. since out0: (N, M)
-		Pointer tOut0 = transpose(ec, out0);
+		Pointer tOut0 =  LibMatrixCUDA.getDensePointer(gCtx, out0, instructionName);
 		ec.releaseMatrixInputForGPUInstruction(_input3.getName());
 		
 		MatrixObject W = getMatrixInputForGPUInstruction(ec, _input2.getName());
@@ -367,20 +368,27 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		MatrixObject X = getMatrixInputForGPUInstruction(ec, _input1.getName());
 		int N = toInt(X.getNumRows()); // batchSize .. since X:(N, T*D)
 		long numColsX = X.getNumColumns();
-		Pointer tX = transpose(ec, X);
-		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
-		
+		Pointer tX = LibMatrixCUDA.getDensePointer(gCtx, X, instructionName); 
 		MatrixObject c0 = getMatrixInputForGPUInstruction(ec, _input4.getName());
-		Pointer tC0 = transpose(ec, c0);
-		ec.releaseMatrixInputForGPUInstruction(_input4.getName());
+		Pointer tC0 = LibMatrixCUDA.getDensePointer(gCtx, c0, instructionName); 
+		
 		
 		int T = toInt(numColsX/ D); // since X:(N, T*D) ... seqLength
 		
 		LibMatrixCuDNN.lstm(ec, gCtx, instructionName, tX, cudnnWPointer, tOut0, tC0, return_sequences, _output.getName(), _output2.getName(), N, M, D, T);
 		
 		// release inputs/outputs
-		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
+		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
+		ec.releaseMatrixInputForGPUInstruction(_input4.getName());
 		ec.releaseMatrixOutputForGPUInstruction(_output2.getName());
+		
+		if(return_sequences) {
+			 ec.getMatrixObject(_output.getName()).getGPUObject(gCtx).denseColumnMajorToRowMajor();
+		}
+		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
+		
+		
+		
 	}
 	
 	@Override
