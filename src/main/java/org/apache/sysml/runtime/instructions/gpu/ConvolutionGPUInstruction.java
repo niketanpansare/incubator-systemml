@@ -348,8 +348,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		
 		MatrixObject out0 = getMatrixInputForGPUInstruction(ec, _input3.getName());
 		int M = toInt(out0.getNumColumns()); // hiddenSize .. since out0: (N, M)
-		Pointer tOut0 =  LibMatrixCUDA.getDensePointer(gCtx, out0, instructionName);
-		ec.releaseMatrixInputForGPUInstruction(_input3.getName());
+		Pointer out0Pointer =  LibMatrixCUDA.getDensePointer(gCtx, out0, instructionName);
 		
 		MatrixObject W = getMatrixInputForGPUInstruction(ec, _input2.getName());
 		long numRowsW = W.getNumRows();
@@ -360,25 +359,25 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("prepare_lstm_weight",
 				ExecutionConfig.getConfigForSimpleVectorOperations((D+M+2)*(4*M)),
 				sysmlWPointer, sysmlBiasPointer, cudnnWPointer, D, M);
-		
 		ec.releaseMatrixInputForGPUInstruction(_input2.getName());
+		
 		boolean return_sequences = ec.getScalarInput(_input5.getName(), _input5.getValueType(), _input5.isLiteral()).getBooleanValue();
 		
 		// Beause the matrices are released immediately, the output for transpose need not be taken into account
 		MatrixObject X = getMatrixInputForGPUInstruction(ec, _input1.getName());
+		Pointer xPointer = LibMatrixCUDA.getDensePointer(gCtx, X, instructionName); 
+		Pointer c0Pointer = LibMatrixCUDA.getDensePointer(gCtx, getMatrixInputForGPUInstruction(ec, _input4.getName()), instructionName); 
+		
 		int N = toInt(X.getNumRows()); // batchSize .. since X:(N, T*D)
 		long numColsX = X.getNumColumns();
-		Pointer tX = LibMatrixCUDA.getDensePointer(gCtx, X, instructionName); 
-		MatrixObject c0 = getMatrixInputForGPUInstruction(ec, _input4.getName());
-		Pointer tC0 = LibMatrixCUDA.getDensePointer(gCtx, c0, instructionName); 
-		
-		
 		int T = toInt(numColsX/ D); // since X:(N, T*D) ... seqLength
 		
-		LibMatrixCuDNN.lstm(ec, gCtx, instructionName, tX, cudnnWPointer, tOut0, tC0, return_sequences, _output.getName(), _output2.getName(), N, M, D, T);
+		LibMatrixCuDNN.lstm(ec, gCtx, instructionName, xPointer, cudnnWPointer, out0Pointer, c0Pointer, return_sequences, _output.getName(), _output2.getName(), N, M, D, T);
+		gCtx.cudaFreeHelper(instructionName, cudnnWPointer);
 		
 		// release inputs/outputs
 		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
+		ec.releaseMatrixInputForGPUInstruction(_input3.getName());
 		ec.releaseMatrixInputForGPUInstruction(_input4.getName());
 		ec.releaseMatrixOutputForGPUInstruction(_output2.getName());
 		
@@ -386,9 +385,6 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 			 ec.getMatrixObject(_output.getName()).getGPUObject(gCtx).denseColumnMajorToRowMajor();
 		}
 		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
-		
-		
-		
 	}
 	
 	@Override
