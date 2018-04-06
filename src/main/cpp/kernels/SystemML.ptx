@@ -11700,37 +11700,39 @@ BB97_5:
 )
 {
 	.reg .pred 	%p<2>;
-	.reg .b32 	%r<16>;
+	.reg .b32 	%r<18>;
 	.reg .f64 	%fd<2>;
 	.reg .b64 	%rd<9>;
 
 
 	ld.param.u64 	%rd1, [prepare_lstm_input_d_param_0];
 	ld.param.u64 	%rd2, [prepare_lstm_input_d_param_1];
-	ld.param.u32 	%r2, [prepare_lstm_input_d_param_3];
-	ld.param.u32 	%r3, [prepare_lstm_input_d_param_4];
-	ld.param.u32 	%r4, [prepare_lstm_input_d_param_5];
-	mov.u32 	%r5, %ctaid.x;
-	mov.u32 	%r6, %ntid.x;
-	mov.u32 	%r7, %tid.x;
-	mad.lo.s32 	%r1, %r6, %r5, %r7;
-	setp.ge.s32	%p1, %r1, %r4;
+	ld.param.u32 	%r2, [prepare_lstm_input_d_param_2];
+	ld.param.u32 	%r3, [prepare_lstm_input_d_param_3];
+	ld.param.u32 	%r4, [prepare_lstm_input_d_param_4];
+	ld.param.u32 	%r5, [prepare_lstm_input_d_param_5];
+	mov.u32 	%r6, %ctaid.x;
+	mov.u32 	%r7, %ntid.x;
+	mov.u32 	%r8, %tid.x;
+	mad.lo.s32 	%r1, %r7, %r6, %r8;
+	setp.ge.s32	%p1, %r1, %r5;
 	@%p1 bra 	BB98_2;
 
 	cvta.to.global.u64 	%rd3, %rd1;
-	rem.s32 	%r8, %r1, %r3;
-	div.s32 	%r9, %r8, %r2;
-	rem.s32 	%r10, %r8, %r2;
-	add.s32 	%r11, %r9, -1;
-	mad.lo.s32 	%r12, %r11, %r2, %r10;
-	mul.wide.s32 	%rd4, %r12, 8;
+	rem.s32 	%r9, %r1, %r4;
+	div.s32 	%r10, %r9, %r3;
+	rem.s32 	%r11, %r9, %r3;
+	div.s32 	%r12, %r1, %r4;
+	mul.lo.s32 	%r13, %r12, %r4;
+	mad.lo.s32 	%r14, %r10, %r3, %r13;
+	add.s32 	%r15, %r14, %r11;
+	mul.wide.s32 	%rd4, %r15, 8;
 	add.s64 	%rd5, %rd3, %rd4;
 	ld.global.f64 	%fd1, [%rd5];
-	div.s32 	%r13, %r1, %r3;
-	add.s32 	%r14, %r13, -1;
-	mad.lo.s32 	%r15, %r14, %r2, %r10;
+	mad.lo.s32 	%r16, %r10, %r2, %r12;
+	mad.lo.s32 	%r17, %r16, %r3, %r11;
 	cvta.to.global.u64 	%rd6, %rd2;
-	mul.wide.s32 	%rd7, %r15, 8;
+	mul.wide.s32 	%rd7, %r17, 8;
 	add.s64 	%rd8, %rd6, %rd7;
 	st.global.f64 	[%rd8], %fd1;
 
@@ -11750,36 +11752,38 @@ BB98_2:
 {
 	.reg .pred 	%p<2>;
 	.reg .f32 	%f<2>;
-	.reg .b32 	%r<16>;
+	.reg .b32 	%r<18>;
 	.reg .b64 	%rd<9>;
 
 
 	ld.param.u64 	%rd1, [prepare_lstm_input_f_param_0];
 	ld.param.u64 	%rd2, [prepare_lstm_input_f_param_1];
-	ld.param.u32 	%r2, [prepare_lstm_input_f_param_3];
-	ld.param.u32 	%r3, [prepare_lstm_input_f_param_4];
-	ld.param.u32 	%r4, [prepare_lstm_input_f_param_5];
-	mov.u32 	%r5, %ctaid.x;
-	mov.u32 	%r6, %ntid.x;
-	mov.u32 	%r7, %tid.x;
-	mad.lo.s32 	%r1, %r6, %r5, %r7;
-	setp.ge.s32	%p1, %r1, %r4;
+	ld.param.u32 	%r2, [prepare_lstm_input_f_param_2];
+	ld.param.u32 	%r3, [prepare_lstm_input_f_param_3];
+	ld.param.u32 	%r4, [prepare_lstm_input_f_param_4];
+	ld.param.u32 	%r5, [prepare_lstm_input_f_param_5];
+	mov.u32 	%r6, %ctaid.x;
+	mov.u32 	%r7, %ntid.x;
+	mov.u32 	%r8, %tid.x;
+	mad.lo.s32 	%r1, %r7, %r6, %r8;
+	setp.ge.s32	%p1, %r1, %r5;
 	@%p1 bra 	BB99_2;
 
 	cvta.to.global.u64 	%rd3, %rd1;
-	rem.s32 	%r8, %r1, %r3;
-	div.s32 	%r9, %r8, %r2;
-	rem.s32 	%r10, %r8, %r2;
-	add.s32 	%r11, %r9, -1;
-	mad.lo.s32 	%r12, %r11, %r2, %r10;
-	mul.wide.s32 	%rd4, %r12, 4;
+	rem.s32 	%r9, %r1, %r4;
+	div.s32 	%r10, %r9, %r3;
+	rem.s32 	%r11, %r9, %r3;
+	div.s32 	%r12, %r1, %r4;
+	mul.lo.s32 	%r13, %r12, %r4;
+	mad.lo.s32 	%r14, %r10, %r3, %r13;
+	add.s32 	%r15, %r14, %r11;
+	mul.wide.s32 	%rd4, %r15, 4;
 	add.s64 	%rd5, %rd3, %rd4;
 	ld.global.f32 	%f1, [%rd5];
-	div.s32 	%r13, %r1, %r3;
-	add.s32 	%r14, %r13, -1;
-	mad.lo.s32 	%r15, %r14, %r2, %r10;
+	mad.lo.s32 	%r16, %r10, %r2, %r12;
+	mad.lo.s32 	%r17, %r16, %r3, %r11;
 	cvta.to.global.u64 	%rd6, %rd2;
-	mul.wide.s32 	%rd7, %r15, 4;
+	mul.wide.s32 	%rd7, %r17, 4;
 	add.s64 	%rd8, %rd6, %rd7;
 	st.global.f32 	[%rd8], %f1;
 

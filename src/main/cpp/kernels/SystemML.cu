@@ -1970,7 +1970,7 @@ __device__ void prepare_lstm_input(T* smlInput, T* cudnnInput, int N, int D, int
 		int td = index % TD;
 		int t = td / D;
 		int d = td % D;
-		cudnnInput[t, (n-1)*D + d] = smlInput[n, (t-1)*D + d];
+		cudnnInput[t*N*D + n*D + d] = smlInput[n*TD + t*D + d];
 	}
 }
 
