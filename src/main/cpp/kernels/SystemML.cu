@@ -1963,6 +1963,27 @@ extern "C" __global__ void matrix_sigmoid_f(float *A, float *C,
 }
 
 template <typename T>
+__device__ void prepare_lstm_input(T* smlInput, T* cudnnInput, int N, int D, int TD, int size) {
+	int index = blockIdx.x * blockDim.x + threadIdx.x;
+	if(index < size) {
+		int n = index / TD;
+		int td = index % TD;
+		int t = td / D;
+		int d = td % D;
+		cudnnInput[t, (n-1)*D + d] = smlInput[n, (t-1)*D + d];
+	}
+}
+
+
+extern "C" __global__ void prepare_lstm_input_d(double* smlInput, double* cudnnInput, int N, int D, int TD, int size) {
+  prepare_lstm_input(smlInput, cudnnInput, N, D, TD, size);
+}
+
+extern "C" __global__ void prepare_lstm_input_f(float* smlInput, float* cudnnInput, int N, int D, int TD, int size) {
+  prepare_lstm_input(smlInput, cudnnInput, N, D, TD, size);
+}
+
+template <typename T>
 __device__ void prepare_lstm_weight(T* smlWeight, T* smlBias, T* cudnnWeight, int D, int M) {
   int DM = D*M; int MM = M*M; int DM4 = DM*4; 
   int M4 = M*4;
