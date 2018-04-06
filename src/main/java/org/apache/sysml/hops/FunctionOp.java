@@ -278,13 +278,14 @@ public class FunctionOp extends Hop
 						&& OptimizerUtils.isSparkExecutionMode())) ? ExecType.SPARK : ExecType.CP);
 			}
 			else if( getFunctionName().equalsIgnoreCase("lstm") ) {
-				if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
-					_etype = findExecTypeByMemEstimate();
-				}
-				else {
-					_etype = ExecType.CP;
-				}
-				_etype = _etype == REMOTE ?  ExecType.CP : _etype; // lstm not supported on Spark
+//				if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
+//					_etype = findExecTypeByMemEstimate();
+//				}
+//				else {
+//					_etype = ExecType.CP;
+//				}
+//				_etype = _etype == REMOTE ?  ExecType.CP : _etype; // lstm not supported on Spark
+				_etype = ExecType.GPU;
 			}
 			else {
 				// Since the memory estimate is only conservative, do not throw
