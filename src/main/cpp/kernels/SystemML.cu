@@ -1970,7 +1970,7 @@ __device__ void prepare_lstm_input(T* smlInput, T* cudnnInput, int N, int D, int
 		int td = index % TD;
 		int t = td / D;
 		int d = td % D;
-		cudnnInput[t*N*D + n*D + d] = smlInput[n*TD + t*D + d];
+		cudnnInput[t*N*D + n*D + d] = smlInput[index];
 	}
 }
 
@@ -1983,45 +1983,52 @@ extern "C" __global__ void prepare_lstm_input_f(float* smlInput, float* cudnnInp
   prepare_lstm_input(smlInput, cudnnInput, N, D, TD, size);
 }
 
+
+
 template <typename T>
 __device__ void prepare_lstm_weight(T* smlWeight, T* smlBias, T* cudnnWeight, int D, int M) {
   int DM = D*M; int MM = M*M; int DM4 = DM*4; 
   int M4 = M*4;
   int index = blockIdx.x * blockDim.x + threadIdx.x;
-  // Reorg such that: Wi Wf Wc Wo Ri Rf Rc Ro bi 0 bf 0 bc 0 bo 0
+  // input: cbind(X_t, out_prev) => [N, D+M], weight: [D+M, 4M]
+  // https://docs.nvidia.com/deeplearning/sdk/cudnn-developer-guide/index.html#cudnnGetRNNLinLayerMatrixParams states that 
+  // Elements in each weight matrix are arranged in the row-major order, but the column-major format works !!
+  // CuDNN gate order: i, f, c, o
+  // CuDNN weight order: w_i, w_f, w_c, w_o, r_i, r_f, r_c, r_o
+  // SystemML weight order: i, f, o, c; TF weight order: i, c, f, o
+  // SystemML performs (X_t %*% W + out_prev %*% R) => [N, 4*M]
+  
+  // bias layout: bi 0 bf 0 bc 0 bo 0
   // where W: [DxM], R: [MxM] and b: [1x1]
   
+  // Maximum (D+M+2)*M4 threads
   int smlColIndex; int smlRowIndex;
-  if(index < 2*DM) {
-  	// First reorg a matrix of shape [4D, M] to [D, 4M]  
-  	smlColIndex = (index/(DM))*M + (index%(DM))%M;
-  	smlRowIndex = (index%(DM))/M;
-  	cudnnWeight[index] = smlWeight[smlRowIndex*M4+smlColIndex];
-  }
-  else if(index < DM4) {
-  	// Reorg a matrix of shape [4D, M] to [D, 4M] and swap c and o gates  
-  	smlColIndex = ((index < DM*3) ? 3*M : 2*M) + (index%(DM))%M;
-  	smlRowIndex = (index%(DM))/M;
-  	cudnnWeight[index] = smlWeight[smlRowIndex*M4+smlColIndex];
-  }
-  else if(index < (2*MM)+DM4) {
-  	// Reorg a matrix of shape [4M, M] to [M, 4M]
-  	index -= DM4;
-  	smlColIndex = (index/(MM))*M + (index%(MM))%M;
-  	smlRowIndex = (index%(MM))/M;
-  	cudnnWeight[index + DM4] = smlWeight[DM4 + smlRowIndex*M4+smlColIndex];
+  int localIndex;
+  if(index < DM4) {
+    // Fill w_i, w_f, w_c and w_o
+    // TODO: Swap c and o
+    localIndex = index%DM;
+    smlRowIndex = localIndex/M; 
+    smlColIndex = (index/(DM))*M + localIndex%M;
+    // Convert index to column-major where index = (index/(DM))*DM + (localIndex/M)*M + localIndex%M
+    int columnMajorIndex = (index/(DM))*DM + (localIndex%M)*D + localIndex/M;
+    cudnnWeight[columnMajorIndex] = smlWeight[smlRowIndex*M4+smlColIndex];
   }
   else if(index < (D+M)*M4) {
-  	// Reorg a matrix of shape [4M, M] to [M, 4M] and swap c and o gates
-  	index -= DM4;
-  	smlColIndex = ((index < MM*3) ? 3*M : 2*M) + (index%(MM))%M;
-  	smlRowIndex = (index%(MM))/M;
-  	cudnnWeight[index + DM4] = smlWeight[DM4 + smlRowIndex*M4+smlColIndex];
+    // Fill r_i, r_f, r_c and r_o
+    int tmpIndex = index-DM4;
+    localIndex = tmpIndex % MM;
+    // TODO: Swap c and o
+    smlRowIndex = D + (localIndex / M);
+    smlColIndex = (tmpIndex/(MM))*M + localIndex % M;
+    // Convert index to column-major where index = DM4 + (tmpIndex/(MM))*MM + (localIndex/M)*M + localIndex%M
+    int columnMajorIndex = DM4 + (tmpIndex/(MM))*MM + (localIndex%M)*M + localIndex/M;
+    cudnnWeight[columnMajorIndex] = smlWeight[smlRowIndex*M4+smlColIndex];
   }
   else if(index < (D+M+2)*M4) {
   	// Fill bias
-	index -= (D+M)*M4;
-	cudnnWeight[index + (D+M)*M4] = (index % 2 == 0) ? smlBias[index/2] : 0;
+	localIndex = index - (D+M)*M4;
+	cudnnWeight[index] = (localIndex % 2 == 0) ? smlBias[localIndex/2] : 0;
   }
 }
 
