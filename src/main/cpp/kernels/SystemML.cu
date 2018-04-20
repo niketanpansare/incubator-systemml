@@ -2006,9 +2006,10 @@ __device__ void prepare_lstm_weight(T* smlWeight, T* smlBias, T* cudnnWeight, in
   int localIndex;
   if(index < DM4) {
     // Fill w_i, w_f, w_c and w_o
-    // TODO: Swap c and o
     localIndex = index%DM;
     smlRowIndex = localIndex/M; 
+    smlColIndex = localIndex%M;
+    smlColIndex += (index < DM*2) ? (index/(DM))*M : (index < DM*3 ? M*4 : M*3);
     smlColIndex = (index/(DM))*M + localIndex%M;
     // Convert index to column-major where index = (index/(DM))*DM + (localIndex/M)*M + localIndex%M
     int columnMajorIndex = (index/(DM))*DM + (localIndex%M)*D + localIndex/M;
@@ -2018,9 +2019,9 @@ __device__ void prepare_lstm_weight(T* smlWeight, T* smlBias, T* cudnnWeight, in
     // Fill r_i, r_f, r_c and r_o
     int tmpIndex = index-DM4;
     localIndex = tmpIndex % MM;
-    // TODO: Swap c and o
     smlRowIndex = D + (localIndex / M);
-    smlColIndex = (tmpIndex/(MM))*M + localIndex % M;
+    smlColIndex = localIndex%M;
+    smlColIndex += (index < (D+M)*M*2) ? (tmpIndex/(MM))*M : ((index < (D+M)*M*3) ? M*4 : M*3);
     // Convert index to column-major where index = DM4 + (tmpIndex/(MM))*MM + (localIndex/M)*M + localIndex%M
     int columnMajorIndex = DM4 + (tmpIndex/(MM))*MM + (localIndex%M)*M + localIndex/M;
     cudnnWeight[columnMajorIndex] = smlWeight[smlRowIndex*M4+smlColIndex];
