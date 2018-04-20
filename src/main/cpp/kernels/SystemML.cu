@@ -1983,7 +1983,9 @@ extern "C" __global__ void prepare_lstm_input_f(float* smlInput, float* cudnnInp
   prepare_lstm_input(smlInput, cudnnInput, N, D, TD, size);
 }
 
-
+__device__ int swap_co(int offset) {
+  return (offset < 2) ? offset : (offset == 2 ? 3 : 2);
+}
 
 template <typename T>
 __device__ void prepare_lstm_weight(T* smlWeight, T* smlBias, T* cudnnWeight, int D, int M) {
@@ -1998,39 +2000,39 @@ __device__ void prepare_lstm_weight(T* smlWeight, T* smlBias, T* cudnnWeight, in
   // SystemML weight order: i, f, o, c; TF weight order: i, c, f, o
   // SystemML performs (X_t %*% W + out_prev %*% R) => [N, 4*M]
   
-  // bias layout: bi 0 bf 0 bc 0 bo 0
+  // bias layout: bi bf bc bo 0 0 0 0
   // where W: [DxM], R: [MxM] and b: [1x1]
   
   // Maximum (D+M+2)*M4 threads
-  int smlColIndex; int smlRowIndex;
-  int localIndex;
+  int srcIndex = -1; int destIndex;
   if(index < DM4) {
     // Fill w_i, w_f, w_c and w_o
-    localIndex = index%DM;
-    smlRowIndex = localIndex/M; 
-    smlColIndex = localIndex%M;
-    smlColIndex += (index < DM*2) ? (index/(DM))*M : (index < DM*3 ? M*4 : M*3);
-    smlColIndex = (index/(DM))*M + localIndex%M;
+    int localIndex = index%DM;
+    int smlRowIndex = localIndex/M; 
+    int smlColIndex = swap_co(index/(DM))*M + localIndex%M;
     // Convert index to column-major where index = (index/(DM))*DM + (localIndex/M)*M + localIndex%M
-    int columnMajorIndex = (index/(DM))*DM + (localIndex%M)*D + localIndex/M;
-    cudnnWeight[columnMajorIndex] = smlWeight[smlRowIndex*M4+smlColIndex];
+    destIndex = (index/(DM))*DM + (localIndex%M)*D + localIndex/M;
+    srcIndex = smlRowIndex*M4+smlColIndex;
   }
   else if(index < (D+M)*M4) {
     // Fill r_i, r_f, r_c and r_o
     int tmpIndex = index-DM4;
-    localIndex = tmpIndex % MM;
-    smlRowIndex = D + (localIndex / M);
-    smlColIndex = localIndex%M;
-    smlColIndex += (index < (D+M)*M*2) ? (tmpIndex/(MM))*M : ((index < (D+M)*M*3) ? M*4 : M*3);
+    int localIndex = tmpIndex % MM;
+    int smlRowIndex = D + (localIndex / M);
+    int smlColIndex = swap_co(tmpIndex/(MM))*M + localIndex%M;
     // Convert index to column-major where index = DM4 + (tmpIndex/(MM))*MM + (localIndex/M)*M + localIndex%M
-    int columnMajorIndex = DM4 + (tmpIndex/(MM))*MM + (localIndex%M)*M + localIndex/M;
-    cudnnWeight[columnMajorIndex] = smlWeight[smlRowIndex*M4+smlColIndex];
+    destIndex = DM4 + (tmpIndex/(MM))*MM + (localIndex%M)*M + localIndex/M;
+    srcIndex = smlRowIndex*M4+smlColIndex;
   }
-  else if(index < (D+M+2)*M4) {
+  else if(index < (D+M+1)*M4) {
   	// Fill bias
-	localIndex = index - (D+M)*M4;
-	cudnnWeight[index] = (localIndex % 2 == 0) ? smlBias[localIndex/2] : 0;
+	int tmpIndex = index - (D+M)*M4;
+	int smlColIndex = swap_co(tmpIndex/(M))*M + tmpIndex%M;
+	cudnnWeight[index] = smlBias[smlColIndex];
   }
+  // __syncthreads();
+  if(srcIndex != -1)
+  	cudnnWeight[destIndex] = smlWeight[srcIndex];
 }
 
 extern "C" __global__ void prepare_lstm_weight_d(double* smlWeight, double* smlBias, double* cudnnWeight, int D, int M) {
