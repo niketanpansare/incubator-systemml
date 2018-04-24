@@ -301,14 +301,14 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 			CPOperand in3 = new CPOperand(parts[3]); // bias
 			CPOperand in4 = new CPOperand(parts[4]); // runningMean
 			CPOperand in5 = new CPOperand(parts[5]); // runningVar
-			CPOperand in6 = new CPOperand(parts[5]); // mode
-			CPOperand in7 = new CPOperand(parts[6]); // epsilon
-			CPOperand in8 = new CPOperand(parts[7]); // exponentialAverageFactor
-			CPOperand out = new CPOperand(parts[8]);  // ret
-			CPOperand out2 = new CPOperand(parts[9]); // retRunningMean
-			CPOperand out3 = new CPOperand(parts[10]); // retRunningVar
-			CPOperand out4 = new CPOperand(parts[11]); // resultSaveMean
-			CPOperand out5 = new CPOperand(parts[12]); // resultSaveInvVariance
+			CPOperand in6 = new CPOperand(parts[6]); // mode
+			CPOperand in7 = new CPOperand(parts[7]); // epsilon
+			CPOperand in8 = new CPOperand(parts[8]); // exponentialAverageFactor
+			CPOperand out = new CPOperand(parts[9]);  // ret
+			CPOperand out2 = new CPOperand(parts[10]); // retRunningMean
+			CPOperand out3 = new CPOperand(parts[11]); // retRunningVar
+			CPOperand out4 = new CPOperand(parts[12]); // resultSaveMean
+			CPOperand out5 = new CPOperand(parts[13]); // resultSaveInvVariance
 			return new ConvolutionGPUInstruction(in1, in2, in3, in4, in5, in6, in7, in8, out, out2, out3, out4, out5, opcode, str, 0);
 		}
 		else {
