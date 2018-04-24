@@ -36,6 +36,7 @@ import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToDevice;
 import static jcuda.runtime.JCuda.cudaMemcpy;
 import static jcuda.jcudnn.JCudnn.cudnnBatchNormalizationForwardTraining;
 import static jcuda.jcudnn.JCudnn.cudnnBatchNormalizationForwardInference;
+import static jcuda.jcudnn.JCudnn.cudnnBatchNormalizationBackward;
 import static jcuda.runtime.JCuda.cudaMemset;
 import jcuda.CudaException;
 import jcuda.Pointer;
@@ -931,17 +932,17 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @param gCtx   a valid {@link GPUContext}
 	 * @param instName name of the instruction
 	 * @param image input image
-	 * @param scale scale (as per CuDNN) and gamma as per original paper: shape [C, 1, 1, 1]
-	 * @param bias bias (as per CuDNN) and beta as per original paper: shape [C, 1, 1, 1]
-	 * @param runningMean running mean accumulated during training phase: shape [C, 1, 1, 1]
-	 * @param runningVar running variance accumulated during training phase: shape [C, 1, 1, 1]
+	 * @param scale scale (as per CuDNN) and gamma as per original paper: shape [1, C, 1, 1]
+	 * @param bias bias (as per CuDNN) and beta as per original paper: shape [1, C, 1, 1]
+	 * @param runningMean running mean accumulated during training phase: shape [1, C, 1, 1]
+	 * @param runningVar running variance accumulated during training phase: shape [1, C, 1, 1]
 	 * @param ret (output) normalized input
-	 * @param retRunningMean (output) running mean accumulated during training phase: shape [C, 1, 1, 1]
-	 * @param retRunningVar (output) running variance accumulated during training phase: shape [C, 1, 1, 1]
+	 * @param retRunningMean (output) running mean accumulated during training phase: shape [1, C, 1, 1]
+	 * @param retRunningVar (output) running variance accumulated during training phase: shape [1, C, 1, 1]
 	 * @param epsilon epsilon value used in the batch normalization formula
 	 * @param exponentialAverageFactor factor used in the moving average computation
-	 * @param resultSaveMean (output) running mean accumulated during training phase: shape [C, 1, 1, 1]
-	 * @param resultSaveInvVariance (output) running variance accumulated during training phase: shape [C, 1, 1, 1]
+	 * @param resultSaveMean (output) running mean accumulated during training phase: shape [1, C, 1, 1]
+	 * @param resultSaveInvVariance (output) running variance accumulated during training phase: shape [1, C, 1, 1]
 	 * @throws DMLRuntimeException if error occurs
 	 */
 	public static void batchNormalizationForwardTraining(GPUContext gCtx, String instName, MatrixObject image,
@@ -977,7 +978,6 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		cudaMemcpy(retRunningMeanPtr, runningMeanPtr, C * sizeOfDataType, cudaMemcpyDeviceToDevice);
 		cudaMemcpy(retRunningVarPtr, runningVarPtr, C * sizeOfDataType, cudaMemcpyDeviceToDevice);
 
-		// don't ignore resultSaveMean and resultSaveVariance
 		Pointer resultSaveMeanPtr = getDensePointerForCuDNN(gCtx, resultSaveMean, instName);
 		Pointer resultSaveInvVariancePtr = getDensePointerForCuDNN(gCtx, resultSaveInvVariance, instName);
 		
@@ -1031,6 +1031,56 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 				nCHWDescriptor, imagePtr, nCHWDescriptor, retPtr,
 				scaleTensorDesc, scalePtr, biasPtr,
 				runningMeanPtr, runningVarPtr, epsilon));
+	}
+	
+	/**
+	 * This method computes the backpropagation errors for image, scale and bias of batch normalization layer
+	 * @param gCtx   a valid {@link GPUContext}
+	 * @param instName name of the instruction
+	 * @param image input image
+	 * @param dout input errors of shape C, H, W
+	 * @param scale scale (as per CuDNN) and gamma as per original paper: shape [1, C, 1, 1]
+	 * @param dX (output) backpropagation errors for previous layer
+	 * @param dScale backpropagation error for scale
+	 * @param dBias backpropagation error for bias
+	 * @param epsilon epsilon value used in the batch normalization formula
+	 * @param resultSaveMean (input) running mean accumulated during training phase: shape [1, C, 1, 1]
+	 * @param resultSaveInvVariance (input) running variance accumulated during training phase: shape [1, C, 1, 1]
+	 * @throws DMLRuntimeException if error occurs
+	 */
+	public static void batchNormalizationBackward(GPUContext gCtx, String instName, MatrixObject image, MatrixObject dout,
+			MatrixObject scale, MatrixObject dX, MatrixObject dScale, MatrixObject dBias,
+			double epsilon, MatrixObject resultSaveMean, MatrixObject resultSaveInvVariance) throws DMLRuntimeException {
+		if(LOG.isTraceEnabled()) {
+			LOG.trace("GPU : batchNormalizationBackward" + ", GPUContext=" + gCtx);
+		}
+		
+		int N = toInt(image.getNumRows());
+		int C = toInt(scale.getNumRows());
+		long CHW = image.getNumColumns();
+
+		// Allocate descriptors
+		cudnnTensorDescriptor nCHWDescriptor = allocateNCHWDescriptors(gCtx, N, C, CHW,
+				new MatrixObject[] {image, dout},  new MatrixObject[] {dX});
+		cudnnTensorDescriptor scaleTensorDesc = allocateTensorDescriptor(1, C, 1, 1);
+
+		// Get underlying dense pointer
+		Pointer imagePtr = getDensePointerForCuDNN(gCtx, image, instName);
+		Pointer doutPtr = getDensePointerForCuDNN(gCtx, dout, instName);
+		Pointer scalePtr = getDensePointerForCuDNN(gCtx, scale, instName);
+		Pointer dXPtr = getDensePointerForCuDNN(gCtx, dX, instName);
+		Pointer dScalePtr = getDensePointerForCuDNN(gCtx, dScale, instName);
+		Pointer dBiasPtr = getDensePointerForCuDNN(gCtx, dBias, instName);
+		
+		Pointer resultSaveMeanPtr = getDensePointerForCuDNN(gCtx, resultSaveMean, instName);
+		Pointer resultSaveInvVariancePtr = getDensePointerForCuDNN(gCtx, resultSaveInvVariance, instName);
+
+
+		// ignoring resultSaveMean and resultSaveVariance as it requires state management
+		checkStatus(cudnnBatchNormalizationBackward(getCudnnHandle(gCtx), 
+				jcuda.jcudnn.cudnnBatchNormMode.CUDNN_BATCHNORM_SPATIAL,  one(), zero(), one(), zero(),
+				nCHWDescriptor,  imagePtr, nCHWDescriptor, doutPtr, nCHWDescriptor, dXPtr,
+				scaleTensorDesc, scalePtr, dScalePtr, dBiasPtr, epsilon, resultSaveMeanPtr, resultSaveInvVariancePtr));
 	}
 	
 	private static void validateBatchNormalizationDimensions(MatrixObject scale, MatrixObject bias, MatrixObject runningMean, MatrixObject runningVar, int C) throws DMLRuntimeException {

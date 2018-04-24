@@ -95,6 +95,10 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	public Expression getFifthExpr() {
 		return (_args.length >= 5 ? _args[4] : null);
 	}
+	
+	public Expression getSixthExpr() {
+		return (_args.length >= 5 ? _args[4] : null);
+	}
 
 	public Expression[] getAllExpr(){
 		return _args;
@@ -222,7 +226,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		}
 		case BATCH_NORM2D:
 		{
-			// X,  W, out0, c0, return_sequences
+			// Input: image, scale, bias, runningMean, runningVar, mode, epsilon, exponentialAverageFactor
 			checkNumParameters(8);
 			checkMatrixParam(getFirstExpr());
 			checkMatrixParam(getSecondExpr());
@@ -230,10 +234,11 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			checkMatrixParam(getFourthExpr());
 			checkMatrixParam(getFifthExpr());
 			
+			// Output: ret, retRunningMean, retRunningVar, resultSaveMean, resultSaveInvVariance
 			// setup output properties
 			if(getOutputs().length != 5)
 				raiseValidateError("batch_norm2d has 5 outputs", false);
-			
+			 
 			DataIdentifier ret = (DataIdentifier) getOutputs()[0];
 			DataIdentifier retRunningMean = (DataIdentifier) getOutputs()[1];
 			DataIdentifier retRunningVar = (DataIdentifier) getOutputs()[2];
@@ -245,6 +250,30 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			setDimensions(retRunningVar, getFourthExpr());
 			setDimensions(resultSaveMean, getFourthExpr());
 			setDimensions(resultSaveInvVariance, getFourthExpr());
+			break;
+		}
+		case BATCH_NORM2D_BACKWARD:
+		{
+			// Input: image, dout, scale, epsilon, savedMean, savedInvVariance
+			checkNumParameters(6);
+			checkMatrixParam(getFirstExpr());
+			checkMatrixParam(getSecondExpr());
+			checkMatrixParam(getThirdExpr());
+			checkMatrixParam(getFifthExpr());
+			checkMatrixParam(getSixthExpr());
+			
+			// Output: dX, dScale, dBias 
+			// setup output properties
+			if(getOutputs().length != 3)
+				raiseValidateError("batch_norm2d_backward has 3 outputs", false);
+			
+			DataIdentifier dX = (DataIdentifier) getOutputs()[0];
+			DataIdentifier dScale = (DataIdentifier) getOutputs()[1];
+			DataIdentifier dBias = (DataIdentifier) getOutputs()[2];
+			
+			setDimensions(dX, getFirstExpr());
+			setDimensions(dScale, getThirdExpr());
+			setDimensions(dBias, getThirdExpr());
 			break;
 		}
 		case EIGEN:
@@ -1346,7 +1375,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			else {
 				// always unconditional (because unsupported operation)
 				BuiltinFunctionOp op = getOpCode();
-				if( op==BuiltinFunctionOp.EIGEN || op==BuiltinFunctionOp.LSTM || op==BuiltinFunctionOp.BATCH_NORM2D || op==BuiltinFunctionOp.LU || op==BuiltinFunctionOp.QR || op==BuiltinFunctionOp.SVD)
+				if( op==BuiltinFunctionOp.EIGEN || op==BuiltinFunctionOp.LU || op==BuiltinFunctionOp.QR || op==BuiltinFunctionOp.SVD 
+						|| op==BuiltinFunctionOp.LSTM || op==BuiltinFunctionOp.BATCH_NORM2D || op==BuiltinFunctionOp.BATCH_NORM2D_BACKWARD)
 					raiseValidateError("Function "+op+" needs to be called with multi-return assignment.", false, LanguageErrorCodes.INVALID_PARAMETERS);
 				else
 					raiseValidateError("Unsupported function "+op, false, LanguageErrorCodes.INVALID_PARAMETERS);
@@ -1413,6 +1443,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case EIGEN:
 		case LSTM:
 		case BATCH_NORM2D:
+		case BATCH_NORM2D_BACKWARD:
 		case SVD:
 			return true;
 		default:
@@ -1824,6 +1855,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.LSTM;
 		else if (functionName.equals("batch_norm2d"))
 			bifop = Expression.BuiltinFunctionOp.BATCH_NORM2D;
+		else if (functionName.equals("batch_norm2d_backward"))
+			bifop = Expression.BuiltinFunctionOp.BATCH_NORM2D_BACKWARD;
 		else if (functionName.equals("conv2d"))
 			 bifop = Expression.BuiltinFunctionOp.CONV2D;
 		else if (functionName.equals("bias_add"))
