@@ -120,13 +120,10 @@ forward = function(matrix[double] X, matrix[double] gamma, matrix[double] beta,
   out = bias_add(scaled, beta)  # shape (N, C*Hin*Win)
 }
 
-backward = function(matrix[double] dout, matrix[double] out,
-                    matrix[double] ema_mean_upd, matrix[double] ema_var_upd,
+backward = function(matrix[double] dout, 
                     matrix[double] cache_mean, matrix[double] cache_inv_var,
-                    matrix[double] X, matrix[double] gamma, matrix[double] beta,
-                    int C, int Hin, int Win, string mode,
-                    matrix[double] ema_mean, matrix[double] ema_var,
-                    double mu, double epsilon)
+                    matrix[double] X, matrix[double] gamma, 
+                    int C, int Hin, int Win, double epsilon)
       return (matrix[double] dX, matrix[double] dgamma, matrix[double] dbeta) {
   /*
    * Computes the backward pass for a 2D (spatial) batch normalization
@@ -134,11 +131,6 @@ backward = function(matrix[double] dout, matrix[double] out,
    *
    * Inputs:
    *  - dout: Gradient wrt `out` from upstream, of shape (N, C*Hin*Win).
-   *  - out: Outputs from the forward pass, of shape (N, C*Hin*Win).
-   *  - ema_mean_upd: Updated exponential moving average of the mean
-   *      from the forward pass, of shape (C, 1).
-   *  - ema_var_upd: Updated exponential moving average of the variance
-   *      from the forward pass, of shape (C, 1).
    *  - cache_mean: Cache of the batch mean from the forward pass, of
    *      shape (C, 1).  Note: This is used for performance during
    *      training.
@@ -148,21 +140,9 @@ backward = function(matrix[double] dout, matrix[double] out,
    *  - X: Input data matrix to the forward pass, of
    *      shape (N, C*Hin*Win).
    *  - gamma: Scale parameters, of shape (C, 1).
-   *  - beta: Shift parameters, of shape (C, 1).
    *  - C: Number of input channels (dimensionality of input depth).
    *  - Hin: Input height.
    *  - Win: Input width.
-   *  - mode: 'train' or 'test' to indicate if the model is currently
-   *      being trained or tested.  During training, the current batch
-   *      mean and variance will be used to normalize the inputs, while
-   *      during testing, the exponential average of the mean and
-   *      variance over all previous batches will be used.
-   *  - ema_mean: Exponential moving average of the mean, of
-   *      shape (C, 1).
-   *  - ema_var: Exponential moving average of the variance, of
-   *      shape (C, 1).
-   *  - mu: Momentum value for moving averages.
-   *      Typical values are in the range of [0.9, 0.999].
    *  - epsilon: Smoothing term to avoid divide by zero errors.
    *      Typical values are in the range of [1e-5, 1e-3].
    *
@@ -176,30 +156,20 @@ backward = function(matrix[double] dout, matrix[double] out,
   mean = cache_mean
   centered = bias_add(X, -mean)  # shape (N, C*Hin*Win)
   norm = bias_multiply(centered, cache_inv_var)  # shape (N, C*Hin*Win)
-
-  if (mode == 'train') {
-    # Compute gradients during training
-    dgamma = util::channel_sums(dout*norm, C, Hin, Win)  # shape (C, 1)
-    dbeta = util::channel_sums(dout, C, Hin, Win)  # shape (C, 1)
-    dnorm = bias_multiply(dout, gamma)  # shape (N, C*Hin*Win)
-    dvar = util::channel_sums((-1/2) * bias_multiply(centered, cache_inv_var^3) * dnorm,
-                              C, Hin, Win)  # shape (C, 1)
-    dmean_norm_branch = util::channel_sums(bias_multiply(dnorm, -cache_inv_var), C, Hin, Win)
-    dmean_var_branch =  util::channel_sums((-2/(N*Hin*Win)) * centered, C, Hin, Win)
-    dmean_var_branch = dmean_var_branch * dvar  # we can't use a function within an expression yet
-    dmean = dmean_norm_branch + dmean_var_branch  # shape (C, 1)
-    dX_norm_branch = bias_multiply(dnorm, cache_inv_var)
-    dX_mean_branch = (1/(N*Hin*Win)) * bias_add(matrix(0, rows=1, cols=C*Hin*Win), dmean)
-    dX_var_branch = (2/(N*Hin*Win)) * bias_multiply(centered, dvar)
-    dX = dX_norm_branch + dX_mean_branch + dX_var_branch  # shape (N, C*Hin*Win)
-  }
-  else {
-    # Compute gradients during testing
-    dgamma = util::channel_sums(dout*norm, C, Hin, Win)  # shape (C, 1)
-    dbeta = util::channel_sums(dout, C, Hin, Win)  # shape (C, 1)
-    dnorm = bias_multiply(dout, gamma)  # shape (N, C*Hin*Win)
-    dX = bias_multiply(dnorm, cache_inv_var)  # shape (N, C*Hin*Win)
-  }
+  # Compute gradients during training
+  dgamma = util::channel_sums(dout*norm, C, Hin, Win)  # shape (C, 1)
+  dbeta = util::channel_sums(dout, C, Hin, Win)  # shape (C, 1)
+  dnorm = bias_multiply(dout, gamma)  # shape (N, C*Hin*Win)
+  dvar = util::channel_sums((-1/2) * bias_multiply(centered, cache_inv_var^3) * dnorm,
+                          C, Hin, Win)  # shape (C, 1)
+  dmean_norm_branch = util::channel_sums(bias_multiply(dnorm, -cache_inv_var), C, Hin, Win)
+  dmean_var_branch =  util::channel_sums((-2/(N*Hin*Win)) * centered, C, Hin, Win)
+  dmean_var_branch = dmean_var_branch * dvar  # we can't use a function within an expression yet
+  dmean = dmean_norm_branch + dmean_var_branch  # shape (C, 1)
+  dX_norm_branch = bias_multiply(dnorm, cache_inv_var)
+  dX_mean_branch = (1/(N*Hin*Win)) * bias_add(matrix(0, rows=1, cols=C*Hin*Win), dmean)
+  dX_var_branch = (2/(N*Hin*Win)) * bias_multiply(centered, dvar)
+  dX = dX_norm_branch + dX_mean_branch + dX_var_branch  # shape (N, C*Hin*Win)
 }
 
 init = function(int C)
