@@ -220,7 +220,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			
 			break;
 		}
-		case BATCHNORM2D:
+		case BATCH_NORM2D:
 		{
 			// X,  W, out0, c0, return_sequences
 			checkNumParameters(8);
@@ -232,7 +232,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			
 			// setup output properties
 			if(getOutputs().length != 5)
-				raiseValidateError("batchnorm2d has 5 outputs", false);
+				raiseValidateError("batch_norm2d has 5 outputs", false);
 			
 			DataIdentifier ret = (DataIdentifier) getOutputs()[0];
 			DataIdentifier retRunningMean = (DataIdentifier) getOutputs()[1];
@@ -1346,7 +1346,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			else {
 				// always unconditional (because unsupported operation)
 				BuiltinFunctionOp op = getOpCode();
-				if( op==BuiltinFunctionOp.EIGEN || op==BuiltinFunctionOp.LSTM || op==BuiltinFunctionOp.BATCHNORM2D || op==BuiltinFunctionOp.LU || op==BuiltinFunctionOp.QR || op==BuiltinFunctionOp.SVD)
+				if( op==BuiltinFunctionOp.EIGEN || op==BuiltinFunctionOp.LSTM || op==BuiltinFunctionOp.BATCH_NORM2D || op==BuiltinFunctionOp.LU || op==BuiltinFunctionOp.QR || op==BuiltinFunctionOp.SVD)
 					raiseValidateError("Function "+op+" needs to be called with multi-return assignment.", false, LanguageErrorCodes.INVALID_PARAMETERS);
 				else
 					raiseValidateError("Unsupported function "+op, false, LanguageErrorCodes.INVALID_PARAMETERS);
@@ -1412,7 +1412,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case LU:
 		case EIGEN:
 		case LSTM:
-		case BATCHNORM2D:
+		case BATCH_NORM2D:
 		case SVD:
 			return true;
 		default:
@@ -1823,7 +1823,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		else if (functionName.equals("lstm"))
 			bifop = Expression.BuiltinFunctionOp.LSTM;
 		else if (functionName.equals("batch_norm2d"))
-			bifop = Expression.BuiltinFunctionOp.BATCHNORM2D;
+			bifop = Expression.BuiltinFunctionOp.BATCH_NORM2D;
 		else if (functionName.equals("conv2d"))
 			 bifop = Expression.BuiltinFunctionOp.CONV2D;
 		else if (functionName.equals("bias_add"))

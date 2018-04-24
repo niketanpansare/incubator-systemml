@@ -294,7 +294,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 			CPOperand out2 = new CPOperand(parts[7]);
 			return new ConvolutionGPUInstruction(in1, in2, in3, in4, in5, out, out2, opcode, str, 0);
 		}
-		else if (opcode.equalsIgnoreCase("batchnorm2d")) {
+		else if (opcode.equalsIgnoreCase("batch_norm2d")) {
 			InstructionUtils.checkNumFields(parts, 7);
 			CPOperand in1 = new CPOperand(parts[1]); // image
 			CPOperand in2 = new CPOperand(parts[2]); // scale
@@ -493,7 +493,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 			processLstmInstruction(ec);
 			return;
 		}
-		else if (instOpcode.equalsIgnoreCase("batchnorm2d")) {
+		else if (instOpcode.equalsIgnoreCase("batch_norm2d")) {
 			processBatchNorm2dInstruction(ec);
 			return;
 		}
