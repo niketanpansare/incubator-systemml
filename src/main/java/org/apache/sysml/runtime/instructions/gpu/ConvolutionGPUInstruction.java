@@ -295,7 +295,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 			return new ConvolutionGPUInstruction(in1, in2, in3, in4, in5, out, out2, opcode, str, 0);
 		}
 		else if (opcode.equalsIgnoreCase("batch_norm2d")) {
-			InstructionUtils.checkNumFields(parts, 7);
+			InstructionUtils.checkNumFields(parts, 13);
 			CPOperand in1 = new CPOperand(parts[1]); // image
 			CPOperand in2 = new CPOperand(parts[2]); // scale
 			CPOperand in3 = new CPOperand(parts[3]); // bias
