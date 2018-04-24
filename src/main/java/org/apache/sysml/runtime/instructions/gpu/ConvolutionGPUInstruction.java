@@ -340,7 +340,14 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		MatrixObject runningMean = getMatrixInputForGPUInstruction(ec, _input4.getName());
 		MatrixObject runningVar = getMatrixInputForGPUInstruction(ec, _input5.getName());
 		
-		boolean mode = ec.getScalarInput(_input6.getName(), _input6.getValueType(), _input6.isLiteral()).getBooleanValue();
+		String phase = ec.getScalarInput(_input6.getName(), _input6.getValueType(), _input6.isLiteral()).getStringValue();
+		boolean mode;
+		if(phase.equalsIgnoreCase("train"))
+			mode = true;
+		else if(phase.equalsIgnoreCase("test"))
+			mode = true;
+		else
+			throw new DMLRuntimeException("Incorrect mode: Expected either train or test, but found " + phase);
 		double epsilon = ec.getScalarInput(_input7.getName(), _input7.getValueType(), _input7.isLiteral()).getDoubleValue();
 		double exponentialAverageFactor = ec.getScalarInput(_input8.getName(), _input8.getValueType(), _input8.isLiteral()).getDoubleValue();
 		
@@ -366,6 +373,9 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		ec.releaseMatrixInputForGPUInstruction(_input5.getName());
 		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
 		ec.releaseMatrixOutputForGPUInstruction(_output2.getName());
+		ec.releaseMatrixOutputForGPUInstruction(_output3.getName());
+		ec.releaseMatrixOutputForGPUInstruction(_output4.getName());
+		ec.releaseMatrixOutputForGPUInstruction(_output5.getName());
 	}
 
 	// (X > 0) * dout
