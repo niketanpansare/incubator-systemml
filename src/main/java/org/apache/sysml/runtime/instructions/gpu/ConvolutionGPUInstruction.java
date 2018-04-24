@@ -352,18 +352,23 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		double exponentialAverageFactor = 1-ec.getScalarInput(_input8.getName(), _input8.getValueType(), _input8.isLiteral()).getDoubleValue();
 		
 		MatrixObject ret = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), image.getNumRows(), image.getNumColumns());
-		MatrixObject retRunningMean = getDenseMatrixOutputForGPUInstruction(ec, _output2.getName(), runningMean.getNumRows(), runningMean.getNumColumns());
-		MatrixObject retRunningVar = getDenseMatrixOutputForGPUInstruction(ec, _output3.getName(), runningVar.getNumRows(), runningVar.getNumColumns());
-		MatrixObject resultSaveMean = getDenseMatrixOutputForGPUInstruction(ec, _output4.getName(), runningMean.getNumRows(), runningMean.getNumColumns());
-		MatrixObject resultSaveInvVariance = getDenseMatrixOutputForGPUInstruction(ec, _output5.getName(), runningVar.getNumRows(), runningVar.getNumColumns());
 		
 		if(mode) {
+			MatrixObject retRunningMean = getDenseMatrixOutputForGPUInstruction(ec, _output2.getName(), runningMean.getNumRows(), runningMean.getNumColumns());
+			MatrixObject retRunningVar = getDenseMatrixOutputForGPUInstruction(ec, _output3.getName(), runningVar.getNumRows(), runningVar.getNumColumns());
+			MatrixObject resultSaveMean = getDenseMatrixOutputForGPUInstruction(ec, _output4.getName(), runningMean.getNumRows(), runningMean.getNumColumns());
+			MatrixObject resultSaveInvVariance = getDenseMatrixOutputForGPUInstruction(ec, _output5.getName(), runningVar.getNumRows(), runningVar.getNumColumns());
 			LibMatrixCuDNN.batchNormalizationForwardTraining(ec.getGPUContext(0), getExtendedOpcode(), 
 				image, scale, bias, runningMean, runningVar, ret, 
 				retRunningMean, retRunningVar, epsilon, exponentialAverageFactor, resultSaveMean, resultSaveInvVariance);
+			ec.releaseMatrixOutputForGPUInstruction(_output2.getName());
+			ec.releaseMatrixOutputForGPUInstruction(_output3.getName());
+			ec.releaseMatrixOutputForGPUInstruction(_output4.getName());
+			ec.releaseMatrixOutputForGPUInstruction(_output5.getName());
 		}
 		else {
-			throw new DMLRuntimeException("Inference not supported on GPU.");
+			LibMatrixCuDNN.batchNormalizationForwardInference(ec.getGPUContext(0), getExtendedOpcode(), 
+					image, scale, bias, runningMean, runningVar, ret, epsilon);
 		}
 		// release inputs/outputs
 		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
@@ -372,10 +377,6 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		ec.releaseMatrixInputForGPUInstruction(_input4.getName());
 		ec.releaseMatrixInputForGPUInstruction(_input5.getName());
 		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
-		ec.releaseMatrixOutputForGPUInstruction(_output2.getName());
-		ec.releaseMatrixOutputForGPUInstruction(_output3.getName());
-		ec.releaseMatrixOutputForGPUInstruction(_output4.getName());
-		ec.releaseMatrixOutputForGPUInstruction(_output5.getName());
 	}
 
 	// (X > 0) * dout

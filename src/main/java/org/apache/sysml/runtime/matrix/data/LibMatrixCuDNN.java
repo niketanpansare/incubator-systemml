@@ -35,6 +35,7 @@ import static jcuda.jcudnn.cudnnTensorFormat.CUDNN_TENSOR_NCHW;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToDevice;
 import static jcuda.runtime.JCuda.cudaMemcpy;
 import static jcuda.jcudnn.JCudnn.cudnnBatchNormalizationForwardTraining;
+import static jcuda.jcudnn.JCudnn.cudnnBatchNormalizationForwardInference;
 import static jcuda.runtime.JCuda.cudaMemset;
 import jcuda.CudaException;
 import jcuda.Pointer;
@@ -951,7 +952,6 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : batchNormalizationForwardTraining" + ", GPUContext=" + gCtx);
 		}
-		int mode = jcuda.jcudnn.cudnnBatchNormMode.CUDNN_BATCHNORM_SPATIAL;
 
 		int N = toInt(image.getNumRows());
 		int C = toInt(scale.getNumRows());
@@ -981,10 +981,56 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		Pointer resultSaveMeanPtr = getDensePointerForCuDNN(gCtx, resultSaveMean, instName);
 		Pointer resultSaveInvVariancePtr = getDensePointerForCuDNN(gCtx, resultSaveInvVariance, instName);
 		
-		checkStatus(cudnnBatchNormalizationForwardTraining(getCudnnHandle(gCtx), mode, one(), zero(),
+		checkStatus(cudnnBatchNormalizationForwardTraining(getCudnnHandle(gCtx), 
+				jcuda.jcudnn.cudnnBatchNormMode.CUDNN_BATCHNORM_SPATIAL, one(), zero(),
 				nCHWDescriptor, imagePtr, nCHWDescriptor, retPtr,
 				scaleTensorDesc, scalePtr, biasPtr, exponentialAverageFactor,
 				retRunningMeanPtr, retRunningVarPtr, epsilon, resultSaveMeanPtr, resultSaveInvVariancePtr));
+	}
+	
+	/**
+	 * Performs the forward BatchNormalization layer computation for inference
+	 * @param gCtx   a valid {@link GPUContext}
+	 * @param instName name of the instruction
+	 * @param image input image
+	 * @param scale scale (as per CuDNN) and gamma as per original paper: shape [1, C, 1, 1]
+	 * @param bias bias (as per CuDNN) and beta as per original paper: shape [1, C, 1, 1]
+	 * @param runningMean running mean accumulated during training phase: shape [1, C, 1, 1]
+	 * @param runningVar running variance accumulated during training phase: shape [1, C, 1, 1]
+	 * @param ret normalized input
+	 * @param epsilon epsilon value used in the batch normalization formula
+	 * @throws DMLRuntimeException if error occurs
+	 */
+	public static void batchNormalizationForwardInference(GPUContext gCtx, String instName, MatrixObject image,
+			MatrixObject scale, MatrixObject bias, MatrixObject runningMean, MatrixObject runningVar,
+			MatrixObject ret, double epsilon) throws DMLRuntimeException {
+		if(LOG.isTraceEnabled()) {
+			LOG.trace("GPU : batchNormalizationForwardInference" + ", GPUContext=" + gCtx);
+		}
+
+		int N = toInt(image.getNumRows());
+		int C = toInt(scale.getNumColumns());
+		long CHW = image.getNumColumns();
+		validateBatchNormalizationDimensions(scale, bias, runningMean, runningVar, C);
+
+		// Allocate descriptors
+		cudnnTensorDescriptor nCHWDescriptor = allocateNCHWDescriptors(gCtx, N, C, CHW,
+				new MatrixObject[] {image},  new MatrixObject[] {ret});
+		cudnnTensorDescriptor scaleTensorDesc = allocateTensorDescriptor(1, C, 1, 1);
+
+		// Get underlying dense pointer
+		Pointer imagePtr = getDensePointerForCuDNN(gCtx, image, instName);
+		Pointer retPtr = getDensePointerForCuDNN(gCtx, ret, instName);
+		Pointer biasPtr = getDensePointerForCuDNN(gCtx, bias, instName);
+		Pointer scalePtr = getDensePointerForCuDNN(gCtx, scale, instName);
+		Pointer runningMeanPtr = getDensePointerForCuDNN(gCtx, runningMean, instName);
+		Pointer runningVarPtr = getDensePointerForCuDNN(gCtx, runningVar, instName);
+
+		checkStatus(cudnnBatchNormalizationForwardInference(getCudnnHandle(gCtx), 
+				jcuda.jcudnn.cudnnBatchNormMode.CUDNN_BATCHNORM_SPATIAL, one(), zero(),
+				nCHWDescriptor, imagePtr, nCHWDescriptor, retPtr,
+				scaleTensorDesc, scalePtr, biasPtr,
+				runningMeanPtr, runningVarPtr, epsilon));
 	}
 	
 	private static void validateBatchNormalizationDimensions(MatrixObject scale, MatrixObject bias, MatrixObject runningMean, MatrixObject runningVar, int C) throws DMLRuntimeException {
