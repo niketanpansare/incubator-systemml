@@ -341,19 +341,12 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		MatrixObject runningVar = getMatrixInputForGPUInstruction(ec, _input5.getName());
 		
 		String phase = ec.getScalarInput(_input6.getName(), _input6.getValueType(), _input6.isLiteral()).getStringValue();
-		boolean mode;
-		if(phase.equalsIgnoreCase("train"))
-			mode = true;
-		else if(phase.equalsIgnoreCase("test"))
-			mode = true;
-		else
-			throw new DMLRuntimeException("Incorrect mode: Expected either train or test, but found " + phase);
 		double epsilon = ec.getScalarInput(_input7.getName(), _input7.getValueType(), _input7.isLiteral()).getDoubleValue();
 		double exponentialAverageFactor = 1-ec.getScalarInput(_input8.getName(), _input8.getValueType(), _input8.isLiteral()).getDoubleValue();
 		
 		MatrixObject ret = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), image.getNumRows(), image.getNumColumns());
 		
-		if(mode) {
+		if(phase.equalsIgnoreCase("train")) {
 			MatrixObject retRunningMean = getDenseMatrixOutputForGPUInstruction(ec, _output2.getName(), runningMean.getNumRows(), runningMean.getNumColumns());
 			MatrixObject retRunningVar = getDenseMatrixOutputForGPUInstruction(ec, _output3.getName(), runningVar.getNumRows(), runningVar.getNumColumns());
 			MatrixObject resultSaveMean = getDenseMatrixOutputForGPUInstruction(ec, _output4.getName(), runningMean.getNumRows(), runningMean.getNumColumns());
@@ -366,10 +359,14 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 			ec.releaseMatrixOutputForGPUInstruction(_output4.getName());
 			ec.releaseMatrixOutputForGPUInstruction(_output5.getName());
 		}
-		else {
+		else if(phase.equalsIgnoreCase("test")) {
 			LibMatrixCuDNN.batchNormalizationForwardInference(ec.getGPUContext(0), getExtendedOpcode(), 
 					image, scale, bias, runningMean, runningVar, ret, epsilon);
 		}
+		else {
+			throw new DMLRuntimeException("Incorrect mode: Expected either train or test, but found " + phase);
+		}
+		
 		// release inputs/outputs
 		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
 		ec.releaseMatrixInputForGPUInstruction(_input2.getName());
