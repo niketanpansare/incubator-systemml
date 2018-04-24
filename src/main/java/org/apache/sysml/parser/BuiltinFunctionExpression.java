@@ -113,29 +113,14 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		}
 		
 		this.getFirstExpr().validateExpression(ids, constVars, conditional);
-		if (getSecondExpr() != null){
-			if (this.getSecondExpr() instanceof FunctionCallIdentifier){
-				raiseValidateError("UDF function call not supported as parameter to built-in function call", false);
+		Expression [] expr = getAllExpr();
+		if(expr != null && expr.length > 1) {
+			for(int i = 1; i < expr.length; i++) {
+				if (expr[i] instanceof FunctionCallIdentifier){
+					raiseValidateError("UDF function call not supported as parameter to built-in function call", false);
+				}
+				expr[i].validateExpression(ids, constVars, conditional);
 			}
-			getSecondExpr().validateExpression(ids, constVars, conditional);
-		}
-		if (getThirdExpr() != null) {
-			if (this.getThirdExpr() instanceof FunctionCallIdentifier){
-				raiseValidateError("UDF function call not supported as parameter to built-in function call", false);
-			}
-			getThirdExpr().validateExpression(ids, constVars, conditional);
-		}
-		if (getFourthExpr() != null) {
-			if (this.getFourthExpr() instanceof FunctionCallIdentifier){
-				raiseValidateError("UDF function call not supported as parameter to built-in function call", false);
-			}
-			getFourthExpr().validateExpression(ids, constVars, conditional);
-		}
-		if (getFifthExpr() != null) {
-			if (this.getFifthExpr() instanceof FunctionCallIdentifier){
-				raiseValidateError("UDF function call not supported as parameter to built-in function call", false);
-			}
-			getFifthExpr().validateExpression(ids, constVars, conditional);
 		}
 		_outputs = new Identifier[stmt.getTargetList().size()];
 		int count = 0;
@@ -1427,6 +1412,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case LU:
 		case EIGEN:
 		case LSTM:
+		case BATCHNORM2D:
 		case SVD:
 			return true;
 		default:
@@ -1836,7 +1822,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.EIGEN;
 		else if (functionName.equals("lstm"))
 			bifop = Expression.BuiltinFunctionOp.LSTM;
-		else if (functionName.equals("batchnorm2d"))
+		else if (functionName.equals("batch_norm2d"))
 			bifop = Expression.BuiltinFunctionOp.BATCHNORM2D;
 		else if (functionName.equals("conv2d"))
 			 bifop = Expression.BuiltinFunctionOp.CONV2D;

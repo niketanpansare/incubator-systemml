@@ -2301,14 +2301,12 @@ public class DMLTranslator
 		// Construct Hops for all inputs
 		ArrayList<Hop> inputs = new ArrayList<>();
 		inputs.add( processExpression(source.getFirstExpr(), null, hops) );
-		if ( source.getSecondExpr() != null )
-			inputs.add( processExpression(source.getSecondExpr(), null, hops) );
-		if ( source.getThirdExpr() != null )
-			inputs.add( processExpression(source.getThirdExpr(), null, hops) );
-		if ( source.getFourthExpr() != null )
-			inputs.add( processExpression(source.getFourthExpr(), null, hops) );
-		if ( source.getFifthExpr() != null )
-			inputs.add( processExpression(source.getFifthExpr(), null, hops) );
+		Expression[] expr = source.getAllExpr();
+		if(expr != null && expr.length > 1) {
+			for(int i = 1; i < expr.length; i++) {
+				inputs.add( processExpression(expr[i], null, hops) );
+			}
+		}
 		
 		FunctionType ftype = FunctionType.MULTIRETURN_BUILTIN;
 		String nameSpace = DMLProgram.INTERNAL_NAMESPACE;
