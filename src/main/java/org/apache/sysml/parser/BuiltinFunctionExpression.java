@@ -235,6 +235,33 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			
 			break;
 		}
+		case BATCHNORM2D:
+		{
+			// X,  W, out0, c0, return_sequences
+			checkNumParameters(8);
+			checkMatrixParam(getFirstExpr());
+			checkMatrixParam(getSecondExpr());
+			checkMatrixParam(getThirdExpr());
+			checkMatrixParam(getFourthExpr());
+			checkMatrixParam(getFifthExpr());
+			
+			// setup output properties
+			if(getOutputs().length != 5)
+				raiseValidateError("batchnorm2d has 5 outputs", false);
+			
+			DataIdentifier ret = (DataIdentifier) getOutputs()[0];
+			DataIdentifier retRunningMean = (DataIdentifier) getOutputs()[1];
+			DataIdentifier retRunningVar = (DataIdentifier) getOutputs()[2];
+			DataIdentifier resultSaveMean = (DataIdentifier) getOutputs()[3];
+			DataIdentifier resultSaveInvVariance = (DataIdentifier) getOutputs()[4];
+			
+			setDimensions(ret, getFirstExpr());
+			setDimensions(retRunningMean, getFourthExpr());
+			setDimensions(retRunningVar, getFourthExpr());
+			setDimensions(resultSaveMean, getFourthExpr());
+			setDimensions(resultSaveInvVariance, getFourthExpr());
+			break;
+		}
 		case EIGEN:
 			checkNumParameters(1);
 			checkMatrixParam(getFirstExpr());
@@ -295,6 +322,13 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		default: //always unconditional
 			raiseValidateError("Unknown Builtin Function opcode: " + _opcode, false);
 		}
+	}
+	
+	private static void setDimensions(DataIdentifier out, Expression exp) {
+		out.setDataType(DataType.MATRIX);
+		out.setValueType(ValueType.DOUBLE);
+		out.setDimensions(exp.getOutput().getDim1(), exp.getOutput().getDim2());
+		out.setBlockDimensions(exp.getOutput().getRowsInBlock(), exp.getOutput().getColumnsInBlock());
 	}
 	
 	private static ArrayList<ParameterExpression> orderConvolutionParams(ArrayList<ParameterExpression> paramExpression, 
@@ -1327,7 +1361,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			else {
 				// always unconditional (because unsupported operation)
 				BuiltinFunctionOp op = getOpCode();
-				if( op==BuiltinFunctionOp.EIGEN || op==BuiltinFunctionOp.LSTM || op==BuiltinFunctionOp.LU || op==BuiltinFunctionOp.QR || op==BuiltinFunctionOp.SVD)
+				if( op==BuiltinFunctionOp.EIGEN || op==BuiltinFunctionOp.LSTM || op==BuiltinFunctionOp.BATCHNORM2D || op==BuiltinFunctionOp.LU || op==BuiltinFunctionOp.QR || op==BuiltinFunctionOp.SVD)
 					raiseValidateError("Function "+op+" needs to be called with multi-return assignment.", false, LanguageErrorCodes.INVALID_PARAMETERS);
 				else
 					raiseValidateError("Unsupported function "+op, false, LanguageErrorCodes.INVALID_PARAMETERS);
@@ -1802,6 +1836,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.EIGEN;
 		else if (functionName.equals("lstm"))
 			bifop = Expression.BuiltinFunctionOp.LSTM;
+		else if (functionName.equals("batchnorm2d"))
+			bifop = Expression.BuiltinFunctionOp.BATCHNORM2D;
 		else if (functionName.equals("conv2d"))
 			 bifop = Expression.BuiltinFunctionOp.CONV2D;
 		else if (functionName.equals("bias_add"))

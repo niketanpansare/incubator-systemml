@@ -2324,6 +2324,7 @@ public class DMLTranslator
 		case LU:
 		case EIGEN:
 		case LSTM:
+		case BATCHNORM2D:
 		case SVD:
 			
 			// Number of outputs = size of targetList = #of identifiers in source.getOutputs

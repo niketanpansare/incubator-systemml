@@ -169,7 +169,7 @@ public class FunctionOp extends Hop
 				long outputValues = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), 1, 1.0);
 				return outputVectors+outputValues; 
 			}
-			else if ( getFunctionName().equalsIgnoreCase("lstm") ) {
+			else if ( getFunctionName().equalsIgnoreCase("lstm") || getFunctionName().equalsIgnoreCase("batch_norm2d") ) {
 				// TODO: To allow for initial version to always run on the GPU
 				return 0; 
 			}
@@ -203,7 +203,7 @@ public class FunctionOp extends Hop
 				return OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 1.0) 
 						+ 3*OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), 1, 1.0); 
 			}
-			else if ( getFunctionName().equalsIgnoreCase("lstm")) {
+			else if ( getFunctionName().equalsIgnoreCase("lstm") || getFunctionName().equalsIgnoreCase("batch_norm2d")) {
 				// TODO: To allow for initial version to always run on the GPU
 				return 0; 
 			}
@@ -224,7 +224,7 @@ public class FunctionOp extends Hop
 	
 	@Override
 	public boolean isGPUEnabled() {
-		if(getFunctionName().equalsIgnoreCase("lstm")) 
+		if(getFunctionName().equalsIgnoreCase("lstm") || getFunctionName().equalsIgnoreCase("batch_norm2d")) 
 			return true;
 		else
 			return false;
@@ -277,7 +277,7 @@ public class FunctionOp extends Hop
 					|| (getMemEstimate() >= OptimizerUtils.getLocalMemBudget()
 						&& OptimizerUtils.isSparkExecutionMode())) ? ExecType.SPARK : ExecType.CP);
 			}
-			else if( getFunctionName().equalsIgnoreCase("lstm") ) {
+			else if( getFunctionName().equalsIgnoreCase("lstm") || getFunctionName().equalsIgnoreCase("batch_norm2d")) {
 //				if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
 //					_etype = findExecTypeByMemEstimate();
 //				}
