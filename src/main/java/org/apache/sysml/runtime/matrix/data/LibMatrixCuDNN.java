@@ -1009,7 +1009,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		}
 
 		int N = toInt(image.getNumRows());
-		int C = toInt(scale.getNumColumns());
+		int C = toInt(scale.getNumRows());
 		long CHW = image.getNumColumns();
 		validateBatchNormalizationDimensions(scale, bias, runningMean, runningVar, C);
 
