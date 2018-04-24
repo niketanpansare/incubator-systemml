@@ -930,17 +930,17 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @param gCtx   a valid {@link GPUContext}
 	 * @param instName name of the instruction
 	 * @param image input image
-	 * @param scale scale (as per CuDNN) and gamma as per original paper: shape [1, C, 1, 1]
-	 * @param bias bias (as per CuDNN) and beta as per original paper: shape [1, C, 1, 1]
-	 * @param runningMean running mean accumulated during training phase: shape [1, C, 1, 1]
-	 * @param runningVar running variance accumulated during training phase: shape [1, C, 1, 1]
+	 * @param scale scale (as per CuDNN) and gamma as per original paper: shape [C, 1, 1, 1]
+	 * @param bias bias (as per CuDNN) and beta as per original paper: shape [C, 1, 1, 1]
+	 * @param runningMean running mean accumulated during training phase: shape [C, 1, 1, 1]
+	 * @param runningVar running variance accumulated during training phase: shape [C, 1, 1, 1]
 	 * @param ret (output) normalized input
-	 * @param retRunningMean (output) running mean accumulated during training phase: shape [1, C, 1, 1]
-	 * @param retRunningVar (output) running variance accumulated during training phase: shape [1, C, 1, 1]
+	 * @param retRunningMean (output) running mean accumulated during training phase: shape [C, 1, 1, 1]
+	 * @param retRunningVar (output) running variance accumulated during training phase: shape [C, 1, 1, 1]
 	 * @param epsilon epsilon value used in the batch normalization formula
 	 * @param exponentialAverageFactor factor used in the moving average computation
-	 * @param resultSaveMean (output) running mean accumulated during training phase: shape [1, C, 1, 1]
-	 * @param resultSaveInvVariance (output) running variance accumulated during training phase: shape [1, C, 1, 1]
+	 * @param resultSaveMean (output) running mean accumulated during training phase: shape [C, 1, 1, 1]
+	 * @param resultSaveInvVariance (output) running variance accumulated during training phase: shape [C, 1, 1, 1]
 	 * @throws DMLRuntimeException if error occurs
 	 */
 	public static void batchNormalizationForwardTraining(GPUContext gCtx, String instName, MatrixObject image,
@@ -954,7 +954,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		int mode = jcuda.jcudnn.cudnnBatchNormMode.CUDNN_BATCHNORM_SPATIAL;
 
 		int N = toInt(image.getNumRows());
-		int C = toInt(scale.getNumColumns());
+		int C = toInt(scale.getNumRows());
 		long CHW = image.getNumColumns();
 		validateBatchNormalizationDimensions(scale, bias, runningMean, runningVar, C);
 
@@ -988,17 +988,17 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	}
 	
 	private static void validateBatchNormalizationDimensions(MatrixObject scale, MatrixObject bias, MatrixObject runningMean, MatrixObject runningVar, int C) throws DMLRuntimeException {
-		if(scale.getNumRows() != 1 || scale.getNumColumns() != C) {
-			throw new DMLRuntimeException("Incorrect dimensions for scale");
+		if(scale.getNumRows() != C || scale.getNumColumns() != 1) {
+			throw new DMLRuntimeException("Incorrect dimensions for scale. Expected a column vector of size " + C + ", but found [" + scale.getNumRows() + ", " + scale.getNumColumns() + "]");
 		}
-		if(bias.getNumRows() != 1 || bias.getNumColumns() != C) {
-			throw new DMLRuntimeException("Incorrect dimensions for bias");
+		if(bias.getNumRows() != C || bias.getNumColumns() != 1) {
+			throw new DMLRuntimeException("Incorrect dimensions for bias. Expected a column vector of size " + C + ", but found [" + bias.getNumRows() + ", " + bias.getNumColumns() + "]");
 		}
-		if(runningMean.getNumRows() != 1 || runningMean.getNumColumns() != C) {
-			throw new DMLRuntimeException("Incorrect dimensions for running mean");
+		if(runningMean.getNumRows() != C || runningMean.getNumColumns() != 1) {
+			throw new DMLRuntimeException("Incorrect dimensions for running mean. Expected a column vector of size " + C + ", but found [" + runningMean.getNumRows() + ", " + runningMean.getNumColumns() + "]");
 		}
-		if(runningVar.getNumRows() != 1 || runningVar.getNumColumns() != C) {
-			throw new DMLRuntimeException("Incorrect dimensions for running variance");
+		if(runningVar.getNumRows() != C || runningVar.getNumColumns() != 1) {
+			throw new DMLRuntimeException("Incorrect dimensions for running variance. Expected a column vector of size " + C + ", but found [" + runningVar.getNumRows() + ", " + runningVar.getNumColumns() + "]");
 		}
 	}
 	
