@@ -132,7 +132,10 @@ public class GPUContext {
 	}
 
 	private void initializeCudaLibraryHandles() throws DMLRuntimeException {
-		deleteCudaLibraryHandles();
+		// TODO Nakul: We don't need to explicitly delete the handles if we are planning to create them again. 
+		// This has a huge performance impact on scripts that has large number of layers (i.e. FunctionCallCP) for example ResNet.
+		// If this is absolutely required for parfor, please add appropriate safeguard for non-parfor scripts. 
+		// deleteCudaLibraryHandles();
 
 		if (cudnnHandle == null) {
 			cudnnHandle = new cudnnHandle();

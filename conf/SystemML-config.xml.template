@@ -85,7 +85,7 @@
     <sysml.gpu.availableGPUs>-1</sysml.gpu.availableGPUs>
     
     <!-- whether to synchronize GPUs after every GPU instruction -->
-    <sysml.gpu.sync.postProcess>true</sysml.gpu.sync.postProcess>
+    <sysml.gpu.sync.postProcess>false</sysml.gpu.sync.postProcess>
     
     <!-- whether to perform eager CUDA free on rmvar instruction -->
     <sysml.gpu.eager.cudaFree>false</sysml.gpu.eager.cudaFree>
