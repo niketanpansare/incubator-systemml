@@ -345,7 +345,7 @@ class BatchNorm(val param: LayerParameter, val id: Int, val net: CaffeNetwork) e
   override def weightShape(): Array[Int]      = Array(numChannels.toInt, 1)
   override def biasShape(): Array[Int]        = Array(numChannels.toInt, 1)
   def cache_mean(): String                    = "cache_mean" + id
-  def cache_var(): String                     = "cache_mean" + id
+  def cache_var(): String                     = "cache_var" + id
   var scaleLayer: Scale                       = null
   def gamma(): String                         = { checkNextLayer(); scaleLayer.weight }
   def ma_fraction(): String                   = if (param.getBatchNormParam.hasMovingAverageFraction()) param.getBatchNormParam.getMovingAverageFraction.toString else "0.999"
