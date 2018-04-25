@@ -28,6 +28,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Set;
 import java.util.concurrent.atomic.LongAdder;
 
@@ -70,7 +72,7 @@ public class GPUMemoryManager {
 	 * If it has zero locks on it, it can be freed, but it is preferrable to keep it around
 	 * so that an extraneous host to dev transfer can be avoided
 	 */
-	private ArrayList<GPUObject> allocatedGPUObjects = new ArrayList<>();
+	private LinkedList<GPUObject> allocatedGPUObjects = new LinkedList<>();
 	
 	/**
 	 * To record size of allocated blocks
@@ -146,6 +148,7 @@ public class GPUMemoryManager {
 			return null;
 		}
 	}
+	
 	
 	/**
 	 * Allocate pointer of the given size in bytes.
@@ -229,20 +232,48 @@ public class GPUMemoryManager {
 		// Step 5: Try eviction based on the given policy
 		if(A == null) {
 			t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-			// Sort based on the eviction policy
-			Collections.sort(allocatedGPUObjects, new GPUComparator(size));
-			while (size > getAvailableMemory() && allocatedGPUObjects.size() > 0) {
-				GPUObject toBeRemoved = allocatedGPUObjects.get(allocatedGPUObjects.size() - 1);
-				if (toBeRemoved.isLocked()) {
-					// All remaining blocks will also be locked
-					break;
-				}
-				else {
-					// Perform eviction
-					if (toBeRemoved.dirty) {
-						toBeRemoved.copyFromDeviceToHost(opcode, true);
-					}
+			// First deallocate non-dirty matrices that do not need eviction to CPU
+			long requiredSize = size - getAvailableMemory();
+			for (Iterator<GPUObject> iterator = allocatedGPUObjects.iterator(); iterator.hasNext() && requiredSize > 0;) {
+				GPUObject toBeRemoved = iterator.next();
+				if(!toBeRemoved.dirty) {
+					requiredSize -= toBeRemoved.getSizeOnDevice();
 					toBeRemoved.clearData(true);
+			        iterator.remove();
+			    }
+			}
+			if(requiredSize > 0) {
+				// Sort based on the eviction policy
+				Collections.sort(allocatedGPUObjects, new GPUComparator(size));
+				while(requiredSize > 0 && allocatedGPUObjects.size() > 0) {
+					if(allocatedGPUObjects.peekLast().isLocked()) {
+						break;
+					}
+					else {
+						GPUObject toBeRemoved = allocatedGPUObjects.removeLast();
+						// Perform eviction
+						if(toBeRemoved.dirty) {
+							toBeRemoved.copyFromDeviceToHost(opcode, true);
+						}
+						requiredSize -= toBeRemoved.getSizeOnDevice();
+						toBeRemoved.clearData(true);
+					}
+				}
+				if(size > getAvailableMemory()) {
+					LOG.warn("Memory likely acquired by a different process.");
+				}
+				while (size > getAvailableMemory() && allocatedGPUObjects.size() > 0) {
+					if(allocatedGPUObjects.peekLast().isLocked()) {
+						break;
+					}
+					else {
+						GPUObject toBeRemoved = allocatedGPUObjects.removeLast();
+						// Perform eviction
+						if(toBeRemoved.dirty) {
+							toBeRemoved.copyFromDeviceToHost(opcode, true);
+						}
+						toBeRemoved.clearData(true);
+					}
 				}
 			}
 			addMiscTime(opcode, GPUStatistics.cudaEvictionCount, GPUStatistics.cudaEvictTime, GPUInstruction.MISC_TIMER_EVICT, t0);
