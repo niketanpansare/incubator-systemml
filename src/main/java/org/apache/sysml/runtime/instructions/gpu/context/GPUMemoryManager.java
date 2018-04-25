@@ -245,7 +245,7 @@ public class GPUMemoryManager {
 		
 		addMiscTime(opcode, GPUStatistics.cudaAllocTime, GPUStatistics.cudaAllocCount, GPUInstruction.MISC_TIMER_ALLOCATE, t0);
 		
-		// Step 5: Try unchecked memory allocation to avoid eviction
+		// Step 5: Try unchecked memory allocation first in case of very small matrices to avoid eviction
 		if(A == null) {
 			A = cudaMallocWithoutWarn(A, size);
 		}
@@ -263,6 +263,7 @@ public class GPUMemoryManager {
 			        iterator.remove();
 			    }
 			}
+			// If still don't have enough available memory, then evict dirty matrices
 			if(requiredSize > 0) {
 				// Sort based on the eviction policy
 				Collections.sort(allocatedGPUObjects, new GPUComparator(size));
@@ -282,18 +283,18 @@ public class GPUMemoryManager {
 				}
 				if(size > getAvailableMemory()) {
 					LOG.warn("Memory likely acquired by a different process.");
-				}
-				while (size > getAvailableMemory() && allocatedGPUObjects.size() > 0) {
-					if(allocatedGPUObjects.peekLast().isLocked()) {
-						break;
-					}
-					else {
-						GPUObject toBeRemoved = allocatedGPUObjects.removeLast();
-						// Perform eviction
-						if(toBeRemoved.dirty) {
-							toBeRemoved.copyFromDeviceToHost(opcode, true);
+					while (size > getAvailableMemory() && allocatedGPUObjects.size() > 0) {
+						if(allocatedGPUObjects.peekLast().isLocked()) {
+							break;
 						}
-						toBeRemoved.clearData(true);
+						else {
+							GPUObject toBeRemoved = allocatedGPUObjects.removeLast();
+							// Perform eviction
+							if(toBeRemoved.dirty) {
+								toBeRemoved.copyFromDeviceToHost(opcode, true);
+							}
+							toBeRemoved.clearData(true);
+						}
 					}
 				}
 			}
