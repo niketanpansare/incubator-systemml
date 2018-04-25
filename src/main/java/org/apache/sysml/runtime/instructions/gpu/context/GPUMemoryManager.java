@@ -23,7 +23,6 @@ import static jcuda.runtime.JCuda.cudaMalloc;
 import static jcuda.runtime.JCuda.cudaMemGetInfo;
 import static jcuda.runtime.JCuda.cudaMemset;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -151,6 +150,23 @@ public class GPUMemoryManager {
 	
 	
 	/**
+	 * Invoke cudaMalloc
+	 * 
+	 * @param A pointer
+	 * @param size size in bytes
+	 * @return allocated pointer
+	 */
+	private Pointer cudaMallocWithoutWarn(Pointer A, long size) {
+		try {
+			cudaMalloc(A, size);
+			allocatedGPUPointers.put(A, size);
+			return A;
+		} catch(jcuda.CudaException e) {
+			return null;
+		}
+	}
+	
+	/**
 	 * Allocate pointer of the given size in bytes.
 	 * 
 	 * @param opcode instruction name
@@ -229,7 +245,12 @@ public class GPUMemoryManager {
 		
 		addMiscTime(opcode, GPUStatistics.cudaAllocTime, GPUStatistics.cudaAllocCount, GPUInstruction.MISC_TIMER_ALLOCATE, t0);
 		
-		// Step 5: Try eviction based on the given policy
+		// Step 5: Try unchecked memory allocation to avoid eviction
+		if(A == null) {
+			A = cudaMallocWithoutWarn(A, size);
+		}
+		
+		// Step 6: Try eviction based on the given policy
 		if(A == null) {
 			t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			// First deallocate non-dirty matrices that do not need eviction to CPU
@@ -277,15 +298,8 @@ public class GPUMemoryManager {
 				}
 			}
 			addMiscTime(opcode, GPUStatistics.cudaEvictionCount, GPUStatistics.cudaEvictTime, GPUInstruction.MISC_TIMER_EVICT, t0);
-			if(size <= getAvailableMemory()) {
-				A = cudaMallocWarnIfFails(new Pointer(), size);
-				if(LOG.isTraceEnabled()) {
-					if(A == null)
-						LOG.trace("Couldnot allocate a new pointer in the GPU memory after eviction:" + size);
-					else
-						LOG.trace("Allocated a new pointer in the GPU memory after eviction:" + size);
-				}
-			}
+			// Try malloc after eviction without memory checks
+			A = cudaMallocWithoutWarn(A, size);
 		}
 		
 		if(A == null) {
