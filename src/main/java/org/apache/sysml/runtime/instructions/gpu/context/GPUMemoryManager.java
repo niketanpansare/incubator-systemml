@@ -682,9 +682,12 @@ public class GPUMemoryManager {
 		for(PointerInfo ptrInfo : allocatedGPUPointers.values()) {
 			totalMemoryAllocated += ptrInfo.getSizeInBytes();
 		}
-		String gpuObjectSizeStr = "Size of GPU objects in bytes: [unlocked:" + byteCountToDisplaySize(sizeOfUnlockedGPUObjects) + ", locked:" + byteCountToDisplaySize(sizeOfLockedGPUObjects) + "]. "; 
+		String gpuObjectSizeStr = null; 
 		if(sizeOfLockedGPUObjects != sizeOfLockedGPUObjects1 || sizeOfUnlockedGPUObjects != sizeOfUnlockedGPUObjects1) {
-			gpuObjectSizeStr += "Size of GPU objects in bytes (accounting for both sparse and dense format): [unlocked:" + byteCountToDisplaySize(sizeOfUnlockedGPUObjects) + ", locked:" + byteCountToDisplaySize(sizeOfLockedGPUObjects) + "]. ";
+			gpuObjectSizeStr = "Size of GPU objects in bytes (accounting for the allocated format / accounting for both sparse and dense format): [unlocked:" +  byteCountToDisplaySize(sizeOfUnlockedGPUObjects) + "/" + byteCountToDisplaySize(sizeOfUnlockedGPUObjects1) + ", locked:" + byteCountToDisplaySize(sizeOfLockedGPUObjects) + "/" + byteCountToDisplaySize(sizeOfLockedGPUObjects1) + "]. ";
+		}
+		else {
+			gpuObjectSizeStr = "Size of GPU objects in bytes: [unlocked:" + byteCountToDisplaySize(sizeOfUnlockedGPUObjects) + ", locked:" + byteCountToDisplaySize(sizeOfLockedGPUObjects) + "]";
 		}
 		return "Num of GPU objects: [unlocked:" + numUnlockedGPUObjects + ", locked:" + numLockedGPUObjects + "]. "
 				+ gpuObjectSizeStr
