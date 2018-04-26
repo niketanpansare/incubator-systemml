@@ -586,7 +586,7 @@ public class GPUMemoryManager {
 		}
 		return "Num of GPU objects: [unlocked:" + numUnlockedGPUObjects + ", locked:" + numLockedGPUObjects + "]. "
 				+ "Size of GPU objects in bytes: [unlocked:" + sizeOfUnlockedGPUObjects + ", locked:" + sizeOfLockedGPUObjects + "]. "
-				+ "Total memory allocated by the current GPU context in bytes:" + totalMemoryAllocated;
+				+ "Total memory allocated by the current GPU context in bytes:" + totalMemoryAllocated + ", number of allocated pointes:" + allocatedGPUPointers.size();
 	}
 	
 	/**
