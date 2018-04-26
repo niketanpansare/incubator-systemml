@@ -386,7 +386,12 @@ public class GPUMemoryManager {
 					}
 				}
 				else {
-					System.out.println("No leaked GPU Pointers were found.");
+					System.out.println("No leaked GPU Pointers were found. Non-leaked GPU pointers were allocated by:");
+					for(PointerInfo ptrInfo : allocatedGPUPointers.values()) {
+						System.out.println(">>" + 
+								// getCallerInfo(ptrInfo.stackTraceElements, 5) + getCallerInfo(ptrInfo.stackTraceElements, 6) + getCallerInfo(ptrInfo.stackTraceElements, 7) +
+								getCallerInfo(ptrInfo.stackTraceElements, 8) + getCallerInfo(ptrInfo.stackTraceElements, 9) + getCallerInfo(ptrInfo.stackTraceElements, 10));
+					}
 				}
 			}
 			else {
@@ -651,6 +656,24 @@ public class GPUMemoryManager {
 				sizeOfUnlockedGPUObjects += gpuObj.getSizeOnDevice();
 			}
 		}
+		
+		long sizeOfLockedGPUObjects1 = 0; long sizeOfUnlockedGPUObjects1 = 0;
+		for(GPUObject gpuObj : allocatedGPUObjects) {
+			long sumMem = (gpuObj.getJcudaDenseMatrixPtr() != null) ?  allocatedGPUPointers.get(gpuObj.getJcudaDenseMatrixPtr()).getSizeInBytes() : 0;
+			if(gpuObj.getSparseMatrixCudaPointer() != null) {
+				CSRPointer sparsePtr = gpuObj.getSparseMatrixCudaPointer();
+				sumMem += sparsePtr.rowPtr != null ? allocatedGPUPointers.get(sparsePtr.rowPtr).getSizeInBytes() : 0;
+				sumMem += sparsePtr.colInd != null ? allocatedGPUPointers.get(sparsePtr.colInd).getSizeInBytes() : 0;
+				sumMem += sparsePtr.val != null ? allocatedGPUPointers.get(sparsePtr.val).getSizeInBytes() : 0;
+			}
+			if(gpuObj.isLocked()) {
+				sizeOfLockedGPUObjects1 += sumMem;
+			}
+			else {
+				sizeOfUnlockedGPUObjects1 += sumMem;
+			}
+		}
+		
 		long rmvarMemoryAllocated = 0;
 		for(long numBytes : rmvarGPUPointers.keySet()) {
 			rmvarMemoryAllocated += numBytes;
@@ -659,8 +682,12 @@ public class GPUMemoryManager {
 		for(PointerInfo ptrInfo : allocatedGPUPointers.values()) {
 			totalMemoryAllocated += ptrInfo.getSizeInBytes();
 		}
+		String gpuObjectSizeStr = "Size of GPU objects in bytes: [unlocked:" + byteCountToDisplaySize(sizeOfUnlockedGPUObjects) + ", locked:" + byteCountToDisplaySize(sizeOfLockedGPUObjects) + "]. "; 
+		if(sizeOfLockedGPUObjects != sizeOfLockedGPUObjects1 || sizeOfUnlockedGPUObjects != sizeOfUnlockedGPUObjects1) {
+			gpuObjectSizeStr += "Size of GPU objects in bytes (accounting for both sparse and dense format): [unlocked:" + byteCountToDisplaySize(sizeOfUnlockedGPUObjects) + ", locked:" + byteCountToDisplaySize(sizeOfLockedGPUObjects) + "]. ";
+		}
 		return "Num of GPU objects: [unlocked:" + numUnlockedGPUObjects + ", locked:" + numLockedGPUObjects + "]. "
-				+ "Size of GPU objects in bytes: [unlocked:" + byteCountToDisplaySize(sizeOfUnlockedGPUObjects) + ", locked:" + byteCountToDisplaySize(sizeOfLockedGPUObjects) + "]. "
+				+ gpuObjectSizeStr
 				+ "Total memory allocated by the current GPU context in bytes:" + byteCountToDisplaySize(totalMemoryAllocated) + ", number of allocated pointers:" + allocatedGPUPointers.size() + ". "
 				+ "Total memory rmvared by the current GPU context in bytes:" + byteCountToDisplaySize(rmvarMemoryAllocated) + ", number of rmvared pointers:" + rmvarGPUPointers.size();
 	}
