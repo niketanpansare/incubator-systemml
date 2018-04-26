@@ -23,6 +23,7 @@ import static jcuda.runtime.JCuda.cudaMemcpy;
 import static jcuda.runtime.JCuda.cudaMemset;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToDevice;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
+
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 
@@ -504,6 +505,7 @@ public class GPUObject {
 		boolean isEmptyAndSparseAndAllocated = isSparseAndAllocated && getJcudaSparseMatrixPtr().nnz == 0;
 		return isEmptyAndSparseAndAllocated;
 	}
+	
 		
 	/**
 	 * Being allocated is a prerequisite for computing nnz.

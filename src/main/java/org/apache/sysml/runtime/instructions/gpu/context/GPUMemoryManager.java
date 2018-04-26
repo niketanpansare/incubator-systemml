@@ -23,6 +23,7 @@ import static jcuda.runtime.JCuda.cudaMalloc;
 import static jcuda.runtime.JCuda.cudaMemGetInfo;
 import static jcuda.runtime.JCuda.cudaMemset;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -32,7 +33,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.stream.Collectors;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
@@ -53,7 +53,6 @@ import jcuda.Pointer;
 public class GPUMemoryManager {
 	protected static final Log LOG = LogFactory.getLog(GPUMemoryManager.class.getName());
 	
-	private static final boolean DEBUG_GPU_MEMORY_LEAKS = true;
 	/**
 	 * Utility to debug memory leaks
 	 */
@@ -61,7 +60,7 @@ public class GPUMemoryManager {
 		private long sizeInBytes;
 		private StackTraceElement[] stackTraceElements;
 		public PointerInfo(long sizeInBytes) {
-			if(DEBUG_GPU_MEMORY_LEAKS) {
+			if(DMLScript.PRINT_GPU_MEMORY_INFO) {
 				this.stackTraceElements = Thread.currentThread().getStackTrace();
 			}
 			this.sizeInBytes = sizeInBytes;
@@ -192,6 +191,23 @@ public class GPUMemoryManager {
 			return "->";
 		else
 			return "->" + stackTrace[index].getClassName() + "." + stackTrace[index].getMethodName() + "(" + stackTrace[index].getFileName() + ":" + stackTrace[index].getLineNumber() + ")";
+	}
+	
+	private ArrayList<Pointer> getAllocatedPointers(GPUObject gpuObj) {
+		ArrayList<jcuda.Pointer> ret = new ArrayList<>();
+		if(gpuObj.getJcudaDenseMatrixPtr() != null) {
+			ret.add(gpuObj.getJcudaDenseMatrixPtr());
+		} else
+			try {
+				if(gpuObj.isAllocated() && !gpuObj.isSparseAndEmpty()) {
+					ret.add(gpuObj.getJcudaSparseMatrixPtr().rowPtr);
+					ret.add(gpuObj.getJcudaSparseMatrixPtr().colInd);
+					ret.add(gpuObj.getJcudaSparseMatrixPtr().val);
+				}
+			} catch (DMLRuntimeException e) {
+				throw new RuntimeException(e);
+			}
+		return ret;
 	}
 	
 	/**
@@ -346,9 +362,13 @@ public class GPUMemoryManager {
 		
 		if(A == null) {
 			String hint = "";
-			if(DEBUG_GPU_MEMORY_LEAKS) {
-				System.out.println("GPU Pointers were allocated by:");
-				for(PointerInfo ptrInfo : allocatedGPUPointers.values()) {
+			if(DMLScript.PRINT_GPU_MEMORY_INFO) {
+				Set<Pointer> managedPointers = allocatedGPUObjects.stream().flatMap(gpuObj -> getAllocatedPointers(gpuObj).stream()).collect(Collectors.toSet());
+				managedPointers.addAll(rmvarGPUPointers.values().stream().flatMap(ptrs -> ptrs.stream()).collect(Collectors.toSet()));
+				Set<Pointer> leakedPointers = nonIn(allocatedGPUPointers.keySet(), managedPointers);
+				System.out.println("Leaked GPU Pointers were allocated by:");
+				for(Pointer leakedPointer : leakedPointers) {
+					PointerInfo ptrInfo = allocatedGPUPointers.get(leakedPointer);
 					System.out.println(">>" + 
 							// getCallerInfo(ptrInfo.stackTraceElements, 5) + getCallerInfo(ptrInfo.stackTraceElements, 6) + getCallerInfo(ptrInfo.stackTraceElements, 7) +
 							getCallerInfo(ptrInfo.stackTraceElements, 8) + getCallerInfo(ptrInfo.stackTraceElements, 9) + getCallerInfo(ptrInfo.stackTraceElements, 10));
@@ -626,7 +646,7 @@ public class GPUMemoryManager {
 		}
 		return "Num of GPU objects: [unlocked:" + numUnlockedGPUObjects + ", locked:" + numLockedGPUObjects + "]. "
 				+ "Size of GPU objects in bytes: [unlocked:" + sizeOfUnlockedGPUObjects + ", locked:" + sizeOfLockedGPUObjects + "]. "
-				+ "Total memory allocated by the current GPU context in bytes:" + totalMemoryAllocated + ", number of allocated pointers:" + allocatedGPUPointers.size()
+				+ "Total memory allocated by the current GPU context in bytes:" + totalMemoryAllocated + ", number of allocated pointers:" + allocatedGPUPointers.size() + ". "
 				+ "Total memory rmvared by the current GPU context in bytes:" + rmvarMemoryAllocated + ", number of rmvared pointers:" + rmvarGPUPointers.size();
 	}
 	

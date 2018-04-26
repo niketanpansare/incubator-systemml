@@ -92,7 +92,7 @@ public class DMLConfig
 	// to handle the tradeoff on calling cudaMemGetInfo too often.
 	public static final String GPU_MEMORY_UTILIZATION_FACTOR = "sysml.gpu.memory.util.factor";
 	public static final String FLOATING_POINT_PRECISION = "sysml.floating.point.precision"; // String to specify the datatype to use internally: supported values are double, single
-
+	public static final String PRINT_GPU_MEMORY_INFO = "sysml.gpu.print.memoryInfo";
 	// supported prefixes for custom map/reduce configurations
 	public static final String PREFIX_MAPRED = "mapred";
 	public static final String PREFIX_MAPREDUCE = "mapreduce";
@@ -133,6 +133,7 @@ public class DMLConfig
 		_defaultVals.put(NATIVE_BLAS,            "none" );
 		_defaultVals.put(NATIVE_BLAS_DIR,        "none" );
 		_defaultVals.put(EXTRA_FINEGRAINED_STATS,"false" );
+		_defaultVals.put(PRINT_GPU_MEMORY_INFO,  "false" );
 		_defaultVals.put(STATS_MAX_WRAP_LEN,     "30" );
 		_defaultVals.put(GPU_MEMORY_UTILIZATION_FACTOR,      "0.9" );
 		_defaultVals.put(AVAILABLE_GPUS,         "-1");
@@ -427,7 +428,7 @@ public class DMLConfig
 				CP_PARALLEL_OPS, CP_PARALLEL_IO, NATIVE_BLAS, NATIVE_BLAS_DIR,
 				COMPRESSED_LINALG, 
 				CODEGEN, CODEGEN_COMPILER, CODEGEN_OPTIMIZER, CODEGEN_PLANCACHE, CODEGEN_LITERALS,
-				EXTRA_FINEGRAINED_STATS, STATS_MAX_WRAP_LEN,
+				EXTRA_FINEGRAINED_STATS, STATS_MAX_WRAP_LEN, PRINT_GPU_MEMORY_INFO,
 				AVAILABLE_GPUS, SYNCHRONIZE_GPU, EAGER_CUDA_FREE, FLOATING_POINT_PRECISION, GPU_EVICTION_POLICY
 		}; 
 		

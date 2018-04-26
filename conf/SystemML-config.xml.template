@@ -89,6 +89,9 @@
     
     <!-- whether to perform eager CUDA free on rmvar instruction -->
     <sysml.gpu.eager.cudaFree>false</sysml.gpu.eager.cudaFree>
+    
+    <!-- Developer flag used to debug GPU memory leaks. This has huge performance overhead and should be only turned on for debugging purposes.  -->
+    <sysml.gpu.print.memoryInfo>false</sysml.gpu.print.memoryInfo>
    
     <!-- the floating point precision. supported values are double, single -->
     <sysml.floating.point.precision>double</sysml.floating.point.precision>

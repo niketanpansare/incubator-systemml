@@ -75,6 +75,7 @@ public class ScriptExecutorUtils {
 		// Whether extra statistics useful for developers and others interested
 		// in digging into performance problems are recorded and displayed
 		DMLScript.FINEGRAINED_STATISTICS = DMLScript.STATISTICS && dmlconf.getBooleanValue(DMLConfig.EXTRA_FINEGRAINED_STATS);
+		DMLScript.PRINT_GPU_MEMORY_INFO = dmlconf.getBooleanValue(DMLConfig.PRINT_GPU_MEMORY_INFO);
 		DMLScript.SYNCHRONIZE_GPU = dmlconf.getBooleanValue(DMLConfig.SYNCHRONIZE_GPU);
 		DMLScript.EAGER_CUDA_FREE = dmlconf.getBooleanValue(DMLConfig.EAGER_CUDA_FREE);
 		DMLScript.STATISTICS_MAX_WRAP_LEN = dmlconf.getIntValue(DMLConfig.STATS_MAX_WRAP_LEN);		
