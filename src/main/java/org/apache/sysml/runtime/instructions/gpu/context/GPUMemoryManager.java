@@ -255,7 +255,11 @@ public class GPUMemoryManager {
 				}
 			}
 			addMiscTime(opcode, GPUStatistics.cudaEvictionCount, GPUStatistics.cudaEvictTime, GPUInstruction.MISC_TIMER_EVICT, t0);
-			A = cudaMallocWarnIfFails(A, size);
+			if(size > getAvailableMemory()) {
+				// TODO: Defragmentation
+				LOG.warn("Potential defragmentation of GPU memory");
+			}
+			A = cudaMallocWarnIfFails(new Pointer(), size);
 		}
 		
 		if(A == null) {
