@@ -366,12 +366,17 @@ public class GPUMemoryManager {
 				Set<Pointer> managedPointers = allocatedGPUObjects.stream().flatMap(gpuObj -> getAllocatedPointers(gpuObj).stream()).collect(Collectors.toSet());
 				managedPointers.addAll(rmvarGPUPointers.values().stream().flatMap(ptrs -> ptrs.stream()).collect(Collectors.toSet()));
 				Set<Pointer> leakedPointers = nonIn(allocatedGPUPointers.keySet(), managedPointers);
-				System.out.println("Leaked GPU Pointers were allocated by:");
-				for(Pointer leakedPointer : leakedPointers) {
-					PointerInfo ptrInfo = allocatedGPUPointers.get(leakedPointer);
-					System.out.println(">>" + 
-							// getCallerInfo(ptrInfo.stackTraceElements, 5) + getCallerInfo(ptrInfo.stackTraceElements, 6) + getCallerInfo(ptrInfo.stackTraceElements, 7) +
-							getCallerInfo(ptrInfo.stackTraceElements, 8) + getCallerInfo(ptrInfo.stackTraceElements, 9) + getCallerInfo(ptrInfo.stackTraceElements, 10));
+				if(leakedPointers.size() == 0) {
+					System.out.println("No leaked GPU Pointers were found.");
+				}
+				else {
+					System.out.println("Leaked GPU Pointers were allocated by:");
+					for(Pointer leakedPointer : leakedPointers) {
+						PointerInfo ptrInfo = allocatedGPUPointers.get(leakedPointer);
+						System.out.println(">>" + 
+								// getCallerInfo(ptrInfo.stackTraceElements, 5) + getCallerInfo(ptrInfo.stackTraceElements, 6) + getCallerInfo(ptrInfo.stackTraceElements, 7) +
+								getCallerInfo(ptrInfo.stackTraceElements, 8) + getCallerInfo(ptrInfo.stackTraceElements, 9) + getCallerInfo(ptrInfo.stackTraceElements, 10));
+					}
 				}
 			}
 			else {
