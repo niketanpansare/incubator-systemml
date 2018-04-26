@@ -53,6 +53,24 @@ import jcuda.Pointer;
 public class GPUMemoryManager {
 	protected static final Log LOG = LogFactory.getLog(GPUMemoryManager.class.getName());
 	
+	private static final boolean DEBUG_GPU_MEMORY_LEAKS = true;
+	/**
+	 * Utility to debug memory leaks
+	 */
+	private static class PointerInfo {
+		private long sizeInBytes;
+		private StackTraceElement[] stackTraceElements;
+		public PointerInfo(long sizeInBytes) {
+			if(DEBUG_GPU_MEMORY_LEAKS) {
+				this.stackTraceElements = Thread.currentThread().getStackTrace();
+			}
+			this.sizeInBytes = sizeInBytes;
+		}
+		public long getSizeInBytes() {
+			return sizeInBytes;
+		}
+	}
+	
 	// If the available free size is less than this factor, GPUMemoryManager will warn users of multiple programs grabbing onto GPU memory.
 	// This often happens if user tries to use both TF and SystemML, and TF grabs onto 90% of the memory ahead of time.
 	private static final double WARN_UTILIZATION_FACTOR = 0.7;
@@ -78,7 +96,7 @@ public class GPUMemoryManager {
 	/**
 	 * To record size of allocated blocks
 	 */
-	private HashMap<Pointer, Long> allocatedGPUPointers = new HashMap<>();
+	private HashMap<Pointer, PointerInfo> allocatedGPUPointers = new HashMap<>();
 	
 	/**
 	 * Adds the GPU object to the memory manager
@@ -96,7 +114,7 @@ public class GPUMemoryManager {
 	 */
 	public long getSizeAllocatedGPUPointer(Pointer ptr) {
 		if(allocatedGPUPointers.containsKey(ptr)) {
-			return allocatedGPUPointers.get(ptr);
+			return allocatedGPUPointers.get(ptr).getSizeInBytes();
 		}
 		return -1;
 	}
@@ -129,7 +147,7 @@ public class GPUMemoryManager {
 	private Pointer cudaMallocWarnIfFails(Pointer A, long size) {
 		try {
 			cudaMalloc(A, size);
-			allocatedGPUPointers.put(A, size);
+			allocatedGPUPointers.put(A, new PointerInfo(size));
 			return A;
 		} catch(jcuda.CudaException e) {
 			LOG.warn("cudaMalloc failed immediately after cudaMemGetInfo reported that memory of size " + size + " is available. "
@@ -148,7 +166,7 @@ public class GPUMemoryManager {
 	private Pointer cudaMallocNoWarn(Pointer A, long size) {
 		try {
 			cudaMalloc(A, size);
-			allocatedGPUPointers.put(A, size);
+			allocatedGPUPointers.put(A, new PointerInfo(size));
 			return A;
 		} catch(jcuda.CudaException e) {
 			return null;
@@ -167,6 +185,13 @@ public class GPUMemoryManager {
 		else {
 			return gpuObj.getSizeOnDevice();
 		}
+	}
+	
+	private String getCallerInfo(StackTraceElement [] stackTrace, int index) {
+		if(stackTrace.length >= index)
+			return "->";
+		else
+			return "->" + stackTrace[index].getClassName() + "." + stackTrace[index].getMethodName() + "(" + stackTrace[index].getFileName() + ":" + stackTrace[index].getLineNumber() + ")";
 	}
 	
 	/**
@@ -253,10 +278,10 @@ public class GPUMemoryManager {
 		if(A == null) {
 			t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			
-			// TODO: Should we deallocate minimum or maximum to clear up more memory for future evictions ?
+			// Deallocate maximum to clear up more memory for the future evictions.
 			Optional<GPUObject> toDelete = allocatedGPUObjects.stream()
 					.filter(gpuObj -> !gpuObj.isLocked() && !gpuObj.isDirty() && getWorstCaseContiguousMemorySize(gpuObj) >= size)
-					.min((o1, o2) -> o1.getSizeOnDevice() < o2.getSizeOnDevice() ? -1: 1);
+					.max((o1, o2) -> o1.getSizeOnDevice() < o2.getSizeOnDevice() ? -1: 1);
 			if(toDelete.isPresent()) {
 				// Delete toDelete from the GPU memory. No eviction to the host memory required as it is not dirty.
 				allocatedGPUObjects.remove(toDelete.get());
@@ -321,8 +346,19 @@ public class GPUMemoryManager {
 		}
 		
 		if(A == null) {
+			String hint = "";
+			if(DEBUG_GPU_MEMORY_LEAKS) {
+				System.out.println("Caller of GPU Pointers are as follows:");
+				for(PointerInfo ptrInfo : allocatedGPUPointers.values()) {
+					System.out.println(">>" + getCallerInfo(ptrInfo.stackTraceElements, 2) 
+							+ getCallerInfo(ptrInfo.stackTraceElements, 3) + getCallerInfo(ptrInfo.stackTraceElements, 4));
+				}
+			}
+			else {
+				hint = ". Hint: Please turn on the DEBUG_GPU_MEMORY_LEAKS developer flag to debug this issue.";
+			}
 			throw new DMLRuntimeException("There is not enough memory on device for this matrix, request (" + size + "). "
-					+ toString());
+					+ toString() + hint);
 		}
 		
 		t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
@@ -341,7 +377,7 @@ public class GPUMemoryManager {
 	private void guardedCudaFree(Pointer toFree) {
 		if (toFree != EMPTY_POINTER) {
 			if(allocatedGPUPointers.containsKey(toFree)) {
-				Long size = allocatedGPUPointers.remove(toFree);
+				long size = allocatedGPUPointers.remove(toFree).getSizeInBytes();
 				if(rmvarGPUPointers.containsKey(size) && rmvarGPUPointers.get(size).contains(toFree)) {
 					remove(rmvarGPUPointers, size, toFree);
 				}
@@ -375,7 +411,7 @@ public class GPUMemoryManager {
 		else {
 			if (!allocatedGPUPointers.containsKey(toFree))
 				throw new RuntimeException("ERROR : Internal state corrupted, cache block size map is not aware of a block it trying to free up");
-			long size = allocatedGPUPointers.get(toFree);
+			long size = allocatedGPUPointers.get(toFree).getSizeInBytes();
 			Set<Pointer> freeList = rmvarGPUPointers.get(size);
 			if (freeList == null) {
 				freeList = new HashSet<Pointer>();
@@ -581,8 +617,8 @@ public class GPUMemoryManager {
 			}
 		}
 		long totalMemoryAllocated = 0;
-		for(Long numBytes : allocatedGPUPointers.values()) {
-			totalMemoryAllocated += numBytes;
+		for(PointerInfo ptrInfo : allocatedGPUPointers.values()) {
+			totalMemoryAllocated += ptrInfo.getSizeInBytes();
 		}
 		return "Num of GPU objects: [unlocked:" + numUnlockedGPUObjects + ", locked:" + numLockedGPUObjects + "]. "
 				+ "Size of GPU objects in bytes: [unlocked:" + sizeOfUnlockedGPUObjects + ", locked:" + sizeOfLockedGPUObjects + "]. "
