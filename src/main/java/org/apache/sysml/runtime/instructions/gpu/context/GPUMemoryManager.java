@@ -188,7 +188,7 @@ public class GPUMemoryManager {
 	}
 	
 	private String getCallerInfo(StackTraceElement [] stackTrace, int index) {
-		if(stackTrace.length >= index)
+		if(stackTrace.length <= index)
 			return "->";
 		else
 			return "->" + stackTrace[index].getClassName() + "." + stackTrace[index].getMethodName() + "(" + stackTrace[index].getFileName() + ":" + stackTrace[index].getLineNumber() + ")";
@@ -320,7 +320,7 @@ public class GPUMemoryManager {
 		// Step 6: Handle defragmentation
 		if(A == null) {
 			t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-			LOG.warn("Potential defragmentation of GPU memory");
+			LOG.warn("Potential fragmentation of GPU memory");
 			List<GPUObject> unlockedNonDirtyGPUObjects = allocatedGPUObjects.stream()
 														.filter(gpuObj -> !gpuObj.isLocked() && !gpuObj.isDirty() 
 														&& getWorstCaseContiguousMemorySize(gpuObj) >= size).collect(Collectors.toList());
