@@ -348,10 +348,10 @@ public class GPUMemoryManager {
 		if(A == null) {
 			String hint = "";
 			if(DEBUG_GPU_MEMORY_LEAKS) {
-				System.out.println("Caller of GPU Pointers are as follows:");
+				System.out.println("GPU Pointers were allocated by:");
 				for(PointerInfo ptrInfo : allocatedGPUPointers.values()) {
-					System.out.println(">>" + getCallerInfo(ptrInfo.stackTraceElements, 2) 
-							+ getCallerInfo(ptrInfo.stackTraceElements, 3) + getCallerInfo(ptrInfo.stackTraceElements, 4));
+					System.out.println(">>" + getCallerInfo(ptrInfo.stackTraceElements, 5) 
+							+ getCallerInfo(ptrInfo.stackTraceElements, 6) + getCallerInfo(ptrInfo.stackTraceElements, 7));
 				}
 			}
 			else {
