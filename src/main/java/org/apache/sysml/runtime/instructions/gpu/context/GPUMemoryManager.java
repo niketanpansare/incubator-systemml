@@ -350,8 +350,9 @@ public class GPUMemoryManager {
 			if(DEBUG_GPU_MEMORY_LEAKS) {
 				System.out.println("GPU Pointers were allocated by:");
 				for(PointerInfo ptrInfo : allocatedGPUPointers.values()) {
-					System.out.println(">>" + getCallerInfo(ptrInfo.stackTraceElements, 5) 
-							+ getCallerInfo(ptrInfo.stackTraceElements, 6) + getCallerInfo(ptrInfo.stackTraceElements, 7));
+					System.out.println(">>" + 
+							// getCallerInfo(ptrInfo.stackTraceElements, 5) + getCallerInfo(ptrInfo.stackTraceElements, 6) + getCallerInfo(ptrInfo.stackTraceElements, 7) +
+							getCallerInfo(ptrInfo.stackTraceElements, 8) + getCallerInfo(ptrInfo.stackTraceElements, 9) + getCallerInfo(ptrInfo.stackTraceElements, 10));
 				}
 			}
 			else {
