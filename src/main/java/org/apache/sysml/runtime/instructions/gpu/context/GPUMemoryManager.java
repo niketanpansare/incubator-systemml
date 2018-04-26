@@ -32,6 +32,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.stream.Collectors;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
@@ -40,6 +41,7 @@ import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
+import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.utils.GPUStatistics;
 
 import jcuda.Pointer;
@@ -136,10 +138,27 @@ public class GPUMemoryManager {
 		}
 	}
 	
+	/**
+	 * Invoke cudaMalloc
+	 * 
+	 * @param A pointer
+	 * @param size size in bytes
+	 * @return allocated pointer
+	 */
+	private Pointer cudaMallocNoWarn(Pointer A, long size) {
+		try {
+			cudaMalloc(A, size);
+			allocatedGPUPointers.put(A, size);
+			return A;
+		} catch(jcuda.CudaException e) {
+			return null;
+		}
+	}
+	
 	private long getWorstCaseContiguousMemorySize(GPUObject gpuObj) {
 		if(gpuObj.getJcudaSparseMatrixPtr() != null) {
 			if(gpuObj.getJcudaSparseMatrixPtr().rowPtr != null) {
-				return Math.max(gpuObj.getJcudaSparseMatrixPtr().nnz, getSizeAllocatedGPUPointer(gpuObj.getJcudaSparseMatrixPtr().rowPtr));
+				return Math.max(gpuObj.getJcudaSparseMatrixPtr().nnz*LibMatrixCUDA.sizeOfDataType, getSizeAllocatedGPUPointer(gpuObj.getJcudaSparseMatrixPtr().rowPtr));
 			}
 			else {
 				return 0;
@@ -270,11 +289,35 @@ public class GPUMemoryManager {
 				}
 			}
 			addMiscTime(opcode, GPUStatistics.cudaEvictionCount, GPUStatistics.cudaEvictTime, GPUInstruction.MISC_TIMER_EVICT, t0);
-			if(size > getAvailableMemory()) {
-				// TODO: Defragmentation
-				LOG.warn("Potential defragmentation of GPU memory");
-			}
 			A = cudaMallocWarnIfFails(tmpA, size);
+		}
+		
+		// Step 6: Handle defragmentation
+		if(A == null) {
+			t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+			LOG.warn("Potential defragmentation of GPU memory");
+			List<GPUObject> unlockedNonDirtyGPUObjects = allocatedGPUObjects.stream()
+														.filter(gpuObj -> !gpuObj.isLocked() && !gpuObj.isDirty() 
+														&& getWorstCaseContiguousMemorySize(gpuObj) >= size).collect(Collectors.toList());
+			allocatedGPUObjects.removeAll(unlockedNonDirtyGPUObjects);
+			for(GPUObject toBeRemoved : unlockedNonDirtyGPUObjects) {
+				toBeRemoved.clearData(true);
+			}
+			A = cudaMallocNoWarn(tmpA, size);
+			if(A == null) {
+				// Evict all
+				List<GPUObject> unlockedGPUObjects = allocatedGPUObjects.stream()
+											.filter(gpuObj -> !gpuObj.isLocked()).collect(Collectors.toList());
+				allocatedGPUObjects.removeAll(unlockedGPUObjects);
+				for(GPUObject toBeRemoved : unlockedGPUObjects) {
+					if(toBeRemoved.dirty) {
+						toBeRemoved.copyFromDeviceToHost(opcode, true);
+					}
+					toBeRemoved.clearData(true);
+				}
+				A = cudaMallocNoWarn(tmpA, size);
+			}
+			addMiscTime(opcode, GPUStatistics.cudaEvictionCount, GPUStatistics.cudaEvictTime, GPUInstruction.MISC_TIMER_EVICT, t0);
 		}
 		
 		if(A == null) {
