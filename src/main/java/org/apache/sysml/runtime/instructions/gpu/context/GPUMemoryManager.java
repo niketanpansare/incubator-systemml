@@ -136,6 +136,20 @@ public class GPUMemoryManager {
 		}
 	}
 	
+	private long getWorstCaseContiguousMemorySize(GPUObject gpuObj) {
+		if(gpuObj.getJcudaSparseMatrixPtr() != null) {
+			if(gpuObj.getJcudaSparseMatrixPtr().rowPtr != null) {
+				return Math.max(gpuObj.getJcudaSparseMatrixPtr().nnz, getSizeAllocatedGPUPointer(gpuObj.getJcudaSparseMatrixPtr().rowPtr));
+			}
+			else {
+				return 0;
+			}	
+		}
+		else {
+			return gpuObj.getSizeOnDevice();
+		}
+	}
+	
 	/**
 	 * Allocate pointer of the given size in bytes.
 	 * 
@@ -222,7 +236,7 @@ public class GPUMemoryManager {
 			
 			// TODO: Should we deallocate minimum or maximum to clear up more memory for future evictions ?
 			Optional<GPUObject> toDelete = allocatedGPUObjects.stream()
-					.filter(gpuObj -> !gpuObj.isLocked() && !gpuObj.isDirty() && gpuObj.getSizeOnDevice() >= size)
+					.filter(gpuObj -> !gpuObj.isLocked() && !gpuObj.isDirty() && getWorstCaseContiguousMemorySize(gpuObj) >= size)
 					.min((o1, o2) -> o1.getSizeOnDevice() < o2.getSizeOnDevice() ? -1: 1);
 			if(toDelete.isPresent()) {
 				// Delete toDelete from the GPU memory. No eviction to the host memory required as it is not dirty.
@@ -231,7 +245,7 @@ public class GPUMemoryManager {
 			}
 			else {
 				Optional<GPUObject> toEvict = allocatedGPUObjects.stream()
-						.filter(gpuObj -> !gpuObj.isLocked() && gpuObj.getSizeOnDevice() >= size)
+						.filter(gpuObj -> !gpuObj.isLocked() && getWorstCaseContiguousMemorySize(gpuObj) >= size)
 						.max(new GPUComparator(size));
 				if(toEvict.isPresent()) {
 					GPUObject toBeRemoved = toEvict.get();
