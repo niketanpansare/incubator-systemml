@@ -22,7 +22,7 @@ import static jcuda.runtime.JCuda.cudaFree;
 import static jcuda.runtime.JCuda.cudaMalloc;
 import static jcuda.runtime.JCuda.cudaMemGetInfo;
 import static jcuda.runtime.JCuda.cudaMemset;
-
+import org.apache.commons.io.FileUtils;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -220,7 +220,7 @@ public class GPUMemoryManager {
 	 */
 	public Pointer malloc(String opcode, long size) throws DMLRuntimeException {
 		if(size < 0) {
-			throw new DMLRuntimeException("Cannot allocate memory of size " + size);
+			throw new DMLRuntimeException("Cannot allocate memory of size " + FileUtils.byteCountToDisplaySize(size));
 		}
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		// Step 1: First try reusing exact match in rmvarGPUPointers to avoid holes in the GPU memory
@@ -231,9 +231,9 @@ public class GPUMemoryManager {
 			A = cudaMallocWarnIfFails(tmpA, size);
 			if(LOG.isTraceEnabled()) {
 				if(A == null)
-					LOG.trace("Couldnot allocate a new pointer in the GPU memory:" + size);
+					LOG.trace("Couldnot allocate a new pointer in the GPU memory:" + FileUtils.byteCountToDisplaySize(size));
 				else
-					LOG.trace("Allocated a new pointer in the GPU memory:" + size);
+					LOG.trace("Allocated a new pointer in the GPU memory:" + FileUtils.byteCountToDisplaySize(size));
 			}
 		}
 		
@@ -254,9 +254,9 @@ public class GPUMemoryManager {
 				A = cudaMallocWarnIfFails(tmpA, size);
 				if(LOG.isTraceEnabled()) {
 					if(A == null)
-						LOG.trace("Couldnot reuse non-exact match of rmvarGPUPointers:" + size);
+						LOG.trace("Couldnot reuse non-exact match of rmvarGPUPointers:" + FileUtils.byteCountToDisplaySize(size));
 					else
-						LOG.trace("Reuses a non-exact match from rmvarGPUPointers:" + size);
+						LOG.trace("Reuses a non-exact match from rmvarGPUPointers:" + FileUtils.byteCountToDisplaySize(size));
 				}
 			}
 		}
@@ -280,9 +280,9 @@ public class GPUMemoryManager {
 				A = cudaMallocWarnIfFails(tmpA, size);
 				if(LOG.isTraceEnabled()) {
 					if(A == null)
-						LOG.trace("Couldnot allocate a new pointer in the GPU memory after eager free:" + size);
+						LOG.trace("Couldnot allocate a new pointer in the GPU memory after eager free:" + FileUtils.byteCountToDisplaySize(size));
 					else
-						LOG.trace("Allocated a new pointer in the GPU memory after eager free:" + size);
+						LOG.trace("Allocated a new pointer in the GPU memory after eager free:" + FileUtils.byteCountToDisplaySize(size));
 				}
 			}
 		}
@@ -382,7 +382,7 @@ public class GPUMemoryManager {
 			else {
 				hint = ". Hint: Please turn on the DEBUG_GPU_MEMORY_LEAKS developer flag to debug this issue.";
 			}
-			throw new DMLRuntimeException("There is not enough memory on device for this matrix, request (" + size + "). "
+			throw new DMLRuntimeException("There is not enough memory on device for this matrix, requested = " + FileUtils.byteCountToDisplaySize(size) + ". "
 					+ toString() + hint);
 		}
 		
@@ -650,10 +650,12 @@ public class GPUMemoryManager {
 			totalMemoryAllocated += ptrInfo.getSizeInBytes();
 		}
 		return "Num of GPU objects: [unlocked:" + numUnlockedGPUObjects + ", locked:" + numLockedGPUObjects + "]. "
-				+ "Size of GPU objects in bytes: [unlocked:" + sizeOfUnlockedGPUObjects + ", locked:" + sizeOfLockedGPUObjects + "]. "
-				+ "Total memory allocated by the current GPU context in bytes:" + totalMemoryAllocated + ", number of allocated pointers:" + allocatedGPUPointers.size() + ". "
-				+ "Total memory rmvared by the current GPU context in bytes:" + rmvarMemoryAllocated + ", number of rmvared pointers:" + rmvarGPUPointers.size();
+				+ "Size of GPU objects in bytes: [unlocked:" + FileUtils.byteCountToDisplaySize(sizeOfUnlockedGPUObjects) + ", locked:" + FileUtils.byteCountToDisplaySize(sizeOfLockedGPUObjects) + "]. "
+				+ "Total memory allocated by the current GPU context in bytes:" + FileUtils.byteCountToDisplaySize(totalMemoryAllocated) + ", number of allocated pointers:" + allocatedGPUPointers.size() + ". "
+				+ "Total memory rmvared by the current GPU context in bytes:" + FileUtils.byteCountToDisplaySize(rmvarMemoryAllocated) + ", number of rmvared pointers:" + rmvarGPUPointers.size();
 	}
+	
+	
 	
 	/**
 	 * Gets the available memory on GPU that SystemML can use.
