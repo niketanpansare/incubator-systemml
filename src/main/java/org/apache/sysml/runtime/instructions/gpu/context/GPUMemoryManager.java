@@ -219,6 +219,7 @@ public class GPUMemoryManager {
 		if(A == null) {
 			t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			
+			// TODO: Should we deallocate minimum or maximum to clear up more memory for future evictions ?
 			Optional<GPUObject> toDelete = allocatedGPUObjects.stream()
 					.filter(gpuObj -> !gpuObj.isLocked() && !gpuObj.isDirty() && gpuObj.getSizeOnDevice() >= size)
 					.min((o1, o2) -> o1.getSizeOnDevice() < o2.getSizeOnDevice() ? -1: 1);
@@ -237,20 +238,20 @@ public class GPUMemoryManager {
 					if(toBeRemoved.dirty) {
 						toBeRemoved.copyFromDeviceToHost(opcode, true);
 					}
-					toBeRemoved.clearData(true);
 					allocatedGPUObjects.remove(toBeRemoved);
+					toBeRemoved.clearData(true);
 				}
 				else {
 					// Evict all
 					List<GPUObject> unlockedGPUObjects = allocatedGPUObjects.stream()
 												.filter(gpuObj -> !gpuObj.isLocked()).collect(Collectors.toList());
+					allocatedGPUObjects.removeAll(unlockedGPUObjects);
 					for(GPUObject toBeRemoved : unlockedGPUObjects) {
 						if(toBeRemoved.dirty) {
 							toBeRemoved.copyFromDeviceToHost(opcode, true);
 						}
 						toBeRemoved.clearData(true);
 					}
-					allocatedGPUObjects.removeAll(unlockedGPUObjects);
 				}
 			}
 			addMiscTime(opcode, GPUStatistics.cudaEvictionCount, GPUStatistics.cudaEvictTime, GPUInstruction.MISC_TIMER_EVICT, t0);
@@ -322,6 +323,18 @@ public class GPUMemoryManager {
 			freeList.add(toFree);
 		}
 	}
+	
+	/**
+	 * Removes the GPU object from the memory manager
+	 * 
+	 * @param gpuObj the handle to the GPU object
+	 */
+	public void removeGPUObject(GPUObject gpuObj) {
+		if(LOG.isDebugEnabled())
+			LOG.debug("Removing the GPU object: " + gpuObj);
+		allocatedGPUObjects.removeIf(a -> a.equals(gpuObj));
+	}
+
 	
 	/**
 	 * Clear the allocated GPU objects

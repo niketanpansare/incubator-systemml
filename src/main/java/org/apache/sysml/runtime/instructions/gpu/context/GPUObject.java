@@ -1003,6 +1003,7 @@ public class GPUObject {
 	 */
 	public void clearData(boolean eager) throws DMLRuntimeException {
 		deallocateMemoryOnDevice(eager);
+		getGPUContext().getMemoryManager().removeGPUObject(this);
 	}
 
 	/**
