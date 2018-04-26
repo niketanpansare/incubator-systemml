@@ -235,7 +235,6 @@ public class GPUMemoryManager {
 				A = getRmvarPointer(opcode, key);
 				// To avoid potential for holes in the GPU memory
 				guardedCudaFree(A);
-				tmpA = 
 				A = cudaMallocWarnIfFails(tmpA, size);
 				if(LOG.isTraceEnabled()) {
 					if(A == null)
@@ -617,13 +616,18 @@ public class GPUMemoryManager {
 				sizeOfUnlockedGPUObjects += gpuObj.getSizeOnDevice();
 			}
 		}
+		long rmvarMemoryAllocated = 0;
+		for(long numBytes : rmvarGPUPointers.keySet()) {
+			rmvarMemoryAllocated += numBytes;
+		}
 		long totalMemoryAllocated = 0;
 		for(PointerInfo ptrInfo : allocatedGPUPointers.values()) {
 			totalMemoryAllocated += ptrInfo.getSizeInBytes();
 		}
 		return "Num of GPU objects: [unlocked:" + numUnlockedGPUObjects + ", locked:" + numLockedGPUObjects + "]. "
 				+ "Size of GPU objects in bytes: [unlocked:" + sizeOfUnlockedGPUObjects + ", locked:" + sizeOfLockedGPUObjects + "]. "
-				+ "Total memory allocated by the current GPU context in bytes:" + totalMemoryAllocated + ", number of allocated pointes:" + allocatedGPUPointers.size();
+				+ "Total memory allocated by the current GPU context in bytes:" + totalMemoryAllocated + ", number of allocated pointers:" + allocatedGPUPointers.size()
+				+ "Total memory rmvared by the current GPU context in bytes:" + rmvarMemoryAllocated + ", number of rmvared pointers:" + rmvarGPUPointers.size();
 	}
 	
 	/**
