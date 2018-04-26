@@ -151,10 +151,10 @@ public class GPUMemoryManager {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		// Step 1: First try reusing exact match in rmvarGPUPointers to avoid holes in the GPU memory
 		Pointer A = getRmvarPointer(opcode, size);
-		
+		Pointer tmpA = (A == null) ? new Pointer() : null;
 		// Step 2: Allocate a new pointer in the GPU memory (since memory is available)
 		if(A == null && size <= getAvailableMemory()) {
-			A = cudaMallocWarnIfFails(new Pointer(), size);
+			A = cudaMallocWarnIfFails(tmpA, size);
 			if(LOG.isTraceEnabled()) {
 				if(A == null)
 					LOG.trace("Couldnot allocate a new pointer in the GPU memory:" + size);
@@ -177,7 +177,8 @@ public class GPUMemoryManager {
 				A = getRmvarPointer(opcode, key);
 				// To avoid potential for holes in the GPU memory
 				guardedCudaFree(A);
-				A = cudaMallocWarnIfFails(new Pointer(), size);
+				tmpA = 
+				A = cudaMallocWarnIfFails(tmpA, size);
 				if(LOG.isTraceEnabled()) {
 					if(A == null)
 						LOG.trace("Couldnot reuse non-exact match of rmvarGPUPointers:" + size);
@@ -203,7 +204,7 @@ public class GPUMemoryManager {
 				guardedCudaFree(ptr);
 			}
 			if(size <= getAvailableMemory()) {
-				A = cudaMallocWarnIfFails(new Pointer(), size);
+				A = cudaMallocWarnIfFails(tmpA, size);
 				if(LOG.isTraceEnabled()) {
 					if(A == null)
 						LOG.trace("Couldnot allocate a new pointer in the GPU memory after eager free:" + size);
@@ -259,7 +260,7 @@ public class GPUMemoryManager {
 				// TODO: Defragmentation
 				LOG.warn("Potential defragmentation of GPU memory");
 			}
-			A = cudaMallocWarnIfFails(new Pointer(), size);
+			A = cudaMallocWarnIfFails(tmpA, size);
 		}
 		
 		if(A == null) {
@@ -273,13 +274,15 @@ public class GPUMemoryManager {
 		return A;
 	}
 	
+	private static Pointer EMPTY_POINTER = new Pointer();
+	
 	/**
 	 * Note: This method should not be called from an iterator as it removes entries from allocatedGPUPointers and rmvarGPUPointers
 	 * 
 	 * @param toFree pointer to call cudaFree method on
 	 */
 	private void guardedCudaFree(Pointer toFree) {
-		if (toFree != new Pointer()) {
+		if (toFree != EMPTY_POINTER) {
 			if(allocatedGPUPointers.containsKey(toFree)) {
 				Long size = allocatedGPUPointers.remove(toFree);
 				if(rmvarGPUPointers.containsKey(size) && rmvarGPUPointers.get(size).contains(toFree)) {
@@ -304,8 +307,7 @@ public class GPUMemoryManager {
 	 * @throws DMLRuntimeException if error
 	 */
 	public void free(String opcode, Pointer toFree, boolean eager) throws DMLRuntimeException {
-		Pointer dummy = new Pointer();
-		if (toFree == dummy) { // trying to free a null pointer
+		if (toFree == EMPTY_POINTER) { // trying to free a null pointer
 			return;
 		}
 		if (eager) {
