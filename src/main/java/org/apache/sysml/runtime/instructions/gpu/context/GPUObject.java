@@ -779,7 +779,7 @@ public class GPUObject {
 		resetReadWriteLock();
 	}
 
-	protected long getSizeOnDevice() throws DMLRuntimeException {
+	protected long getSizeOnDevice() {
 		long GPUSize = 0;
 		long rlen = mat.getNumRows();
 		long clen = mat.getNumColumns();
@@ -1003,7 +1003,6 @@ public class GPUObject {
 	 */
 	public void clearData(boolean eager) throws DMLRuntimeException {
 		deallocateMemoryOnDevice(eager);
-		getGPUContext().getMemoryManager().removeGPUObject(this);
 	}
 
 	/**

@@ -23,15 +23,15 @@ import static jcuda.runtime.JCuda.cudaMalloc;
 import static jcuda.runtime.JCuda.cudaMemGetInfo;
 import static jcuda.runtime.JCuda.cudaMemset;
 
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.LongAdder;
-
+import java.util.stream.Collectors;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
@@ -86,18 +86,6 @@ public class GPUMemoryManager {
 	public void addGPUObject(GPUObject gpuObj) {
 		allocatedGPUObjects.add(gpuObj);
 	}
-	
-	/**
-	 * Removes the GPU object from the memory manager
-	 * 
-	 * @param gpuObj the handle to the GPU object
-	 */
-	public void removeGPUObject(GPUObject gpuObj) {
-		if(LOG.isDebugEnabled())
-			LOG.debug("Removing the GPU object: " + gpuObj);
-		allocatedGPUObjects.removeIf(a -> a.equals(gpuObj));
-	}
-	
 	
 	/**
 	 * Get size of allocated GPU Pointer
@@ -230,49 +218,39 @@ public class GPUMemoryManager {
 		// Step 5: Try eviction based on the given policy
 		if(A == null) {
 			t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-			// First deallocate non-dirty matrices that do not need eviction to CPU
-			long requiredSize = size - getAvailableMemory();
-			for (Iterator<GPUObject> iterator = allocatedGPUObjects.iterator(); iterator.hasNext() && requiredSize > 0;) {
-				GPUObject toBeRemoved = iterator.next();
-				if(!toBeRemoved.dirty) {
-					requiredSize -= toBeRemoved.getSizeOnDevice();
-					toBeRemoved.clearData(true);
-			        iterator.remove();
-			    }
+			
+			Optional<GPUObject> toDelete = allocatedGPUObjects.stream()
+					.filter(gpuObj -> !gpuObj.isLocked() && !gpuObj.isDirty() && gpuObj.getSizeOnDevice() >= size)
+					.min((o1, o2) -> o1.getSizeOnDevice() < o2.getSizeOnDevice() ? -1: 1);
+			if(toDelete.isPresent()) {
+				// Delete toDelete from the GPU memory. No eviction to the host memory required as it is not dirty.
+				allocatedGPUObjects.remove(toDelete.get());
+				toDelete.get().clearData(true);
 			}
-			// If still don't have enough available memory, then evict dirty matrices
-			if(requiredSize > 0) {
-				// Sort based on the eviction policy
-				Collections.sort(allocatedGPUObjects, new GPUComparator(size));
-				while(requiredSize > 0 && allocatedGPUObjects.size() > 0) {
-					if(allocatedGPUObjects.peekLast().isLocked()) {
-						break;
+			else {
+				Optional<GPUObject> toEvict = allocatedGPUObjects.stream()
+						.filter(gpuObj -> !gpuObj.isLocked() && gpuObj.getSizeOnDevice() >= size)
+						.max(new GPUComparator(size));
+				if(toEvict.isPresent()) {
+					GPUObject toBeRemoved = toEvict.get();
+					// Perform eviction
+					if(toBeRemoved.dirty) {
+						toBeRemoved.copyFromDeviceToHost(opcode, true);
 					}
-					else {
-						GPUObject toBeRemoved = allocatedGPUObjects.removeLast();
-						// Perform eviction
+					toBeRemoved.clearData(true);
+					allocatedGPUObjects.remove(toBeRemoved);
+				}
+				else {
+					// Evict all
+					List<GPUObject> unlockedGPUObjects = allocatedGPUObjects.stream()
+												.filter(gpuObj -> !gpuObj.isLocked()).collect(Collectors.toList());
+					for(GPUObject toBeRemoved : unlockedGPUObjects) {
 						if(toBeRemoved.dirty) {
 							toBeRemoved.copyFromDeviceToHost(opcode, true);
 						}
-						requiredSize -= toBeRemoved.getSizeOnDevice();
 						toBeRemoved.clearData(true);
 					}
-				}
-				if(size > getAvailableMemory()) {
-					LOG.warn("Memory likely acquired by a different process.");
-					while (size > getAvailableMemory() && allocatedGPUObjects.size() > 0) {
-						if(allocatedGPUObjects.peekLast().isLocked()) {
-							break;
-						}
-						else {
-							GPUObject toBeRemoved = allocatedGPUObjects.removeLast();
-							// Perform eviction
-							if(toBeRemoved.dirty) {
-								toBeRemoved.copyFromDeviceToHost(opcode, true);
-							}
-							toBeRemoved.clearData(true);
-						}
-					}
+					allocatedGPUObjects.removeAll(unlockedGPUObjects);
 				}
 			}
 			addMiscTime(opcode, GPUStatistics.cudaEvictionCount, GPUStatistics.cudaEvictTime, GPUInstruction.MISC_TIMER_EVICT, t0);
@@ -517,17 +495,13 @@ public class GPUMemoryManager {
 		long sizeOfLockedGPUObjects = 0; long numLockedGPUObjects = 0;
 		long sizeOfUnlockedGPUObjects = 0; long numUnlockedGPUObjects = 0;
 		for(GPUObject gpuObj : allocatedGPUObjects) {
-			try {
-				if(gpuObj.isLocked()) {
-					numLockedGPUObjects++;
-					sizeOfLockedGPUObjects += gpuObj.getSizeOnDevice();
-				}
-				else {
-					numUnlockedGPUObjects++;
-					sizeOfUnlockedGPUObjects += gpuObj.getSizeOnDevice();
-				}
-			} catch (DMLRuntimeException e) {
-				throw new RuntimeException(e);
+			if(gpuObj.isLocked()) {
+				numLockedGPUObjects++;
+				sizeOfLockedGPUObjects += gpuObj.getSizeOnDevice();
+			}
+			else {
+				numUnlockedGPUObjects++;
+				sizeOfUnlockedGPUObjects += gpuObj.getSizeOnDevice();
 			}
 		}
 		long totalMemoryAllocated = 0;
@@ -575,14 +549,8 @@ public class GPUMemoryManager {
 			} else {
 				// Both are unlocked
 				if (DMLScript.GPU_EVICTION_POLICY == DMLScript.EvictionPolicy.MIN_EVICT) {
-					long p1Size = 0;
-					long p2Size = 0;
-					try {
-						p1Size = p1.getSizeOnDevice() - neededSize;
-						p2Size = p2.getSizeOnDevice() - neededSize;
-					} catch (DMLRuntimeException e) {
-						throw new RuntimeException(e);
-					}
+					long p1Size = p1.getSizeOnDevice() - neededSize;
+					long p2Size = p2.getSizeOnDevice() - neededSize;
 
 					if (p1Size >= 0 && p2Size >= 0) {
 						return Long.compare(p2Size, p1Size);
