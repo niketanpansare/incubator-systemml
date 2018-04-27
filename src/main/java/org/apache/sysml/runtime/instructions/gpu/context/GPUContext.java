@@ -303,7 +303,7 @@ public class GPUContext {
 	 */
 	public GPUObject createGPUObject(MatrixObject mo) {
 		GPUObject ret = new GPUObject(this, mo);
-		getMemoryManager().addGPUObject(ret);
+		getMemoryManager().getGPUMatrixMemoryManager().addGPUObject(ret);
 		return ret;
 	}
 
