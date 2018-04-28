@@ -259,9 +259,10 @@ public class GPUMemoryManager {
 				if(DMLScript.PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled()) {
 					if(A == null)
 						LOG.info("Couldnot reuse non-exact match of rmvarGPUPointers:" + byteCountToDisplaySize(size));
-					else
+					else {
 						LOG.info("Reuses a non-exact match from rmvarGPUPointers:" + byteCountToDisplaySize(size));
-					LOG.info("GPU Memory info:" + toString());
+						LOG.info("GPU Memory info after reusing a non-exact match from rmvarGPUPointers:" + toString());
+					}
 				}
 			}
 		}
@@ -280,9 +281,10 @@ public class GPUMemoryManager {
 				if(DMLScript.PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled()) {
 					if(A == null)
 						LOG.info("Couldnot allocate a new pointer in the GPU memory after eager free:" + byteCountToDisplaySize(size));
-					else
+					else {
 						LOG.info("Allocated a new pointer in the GPU memory after eager free:" + byteCountToDisplaySize(size));
-					LOG.info("GPU Memory info:" + toString());
+						LOG.info("GPU Memory info after allocating new pointer post lazyCudaFreeMemoryManager.clearAll():" + toString());
+					}
 				}
 			}
 		}
@@ -297,23 +299,26 @@ public class GPUMemoryManager {
 			// Comparator clears the largest matrix to avoid future evictions
 			boolean success = matrixMemoryManager.clear(false, false, size, SIMPLE_COMPARATOR_SORT_BY_SIZE, opcode);
 			if(DMLScript.PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled()) {
-				if(success)
-					LOG.info("Cleared an unlocked non-dirty matrix greater than or equal to size.");
+				if(success) {
+					LOG.info("Cleared an unlocked non-dirty matrix greater than or equal to " + byteCountToDisplaySize(size));
+					LOG.info("GPU Memory info after clearing an unlocked non-dirty matrix:" + toString());
+				}
 				else
-					LOG.info("No unlocked non-dirty matrix greater than or equal to size found for clearing.");
-				LOG.info("GPU Memory info:" + toString());
+					LOG.info("No unlocked non-dirty matrix greater than or equal to " + byteCountToDisplaySize(size) + " found for clearing.");
 			}
 			if(!success) {
 				// First, clear unlocked dirty matrices greater than or equal to size using the eviction policy
 				// Comparator clears the largest matrix to avoid future evictions
 				LOG.info("GPU Memory info:" + toString());
 				success = matrixMemoryManager.clear(false, true, size, new EvictionPolicyBasedComparator(size), opcode);
+				// JCuda.cudaDeviceSynchronize();
 				if(DMLScript.PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled()) {
-					if(success)
-						LOG.info("Evicted an unlocked dirty matrix greater than or equal to size.");
+					if(success) {
+						LOG.info("Evicted an unlocked dirty matrix greater than or equal to " + byteCountToDisplaySize(size));
+						LOG.info("GPU Memory info after evicting an unlocked dirty matrix:" + toString());
+					}
 					else
-						LOG.info("No unlocked dirty matrix greater than or equal to size found for evicted.");
-					LOG.info("GPU Memory info:" + toString());
+						LOG.info("No unlocked dirty matrix greater than or equal to " + byteCountToDisplaySize(size) + " found for evicted.");
 				}
 				if(!success) {
 					// Evict all
@@ -327,7 +332,7 @@ public class GPUMemoryManager {
 						}
 						toBeRemoved.clearData(true);
 					}
-					LOG.info("GPU Memory info:" + toString());
+					LOG.info("GPU Memory info after evicting all unlocked matrices:" + toString());
 				}
 			}
 			addMiscTime(opcode, GPUStatistics.cudaEvictionCount, GPUStatistics.cudaEvictTime, GPUInstruction.MISC_TIMER_EVICT, t0);
@@ -339,7 +344,7 @@ public class GPUMemoryManager {
 			LOG.warn("Potential fragmentation of the GPU memory. Forcibly evicting all ...");
 			LOG.info("Before clearAllUnlocked, GPU Memory info:" + toString());
 			matrixMemoryManager.clearAllUnlocked(opcode);
-			LOG.info("GPU Memory info:" + toString());
+			LOG.info("GPU Memory info after evicting all unlocked matrices:" + toString());
 			A = cudaMallocNoWarn(tmpA, size);
 		}
 		
@@ -558,13 +563,8 @@ public class GPUMemoryManager {
 		StringBuilder ret = new StringBuilder();
 		if(DMLScript.PRINT_GPU_MEMORY_INFO) {
 			if(potentiallyLeakyPointers.size() > 0) {
-				ret.append("Potentially leaky GPU Pointers were allocated by:\n");
+				ret.append("Non-matrix pointers were allocated by:\n");
 				printPointers(potentiallyLeakyPointers, ret);
-			}
-			else {
-				ret.append("No leaked GPU Pointers were found.\n");
-				// System.out.println("Non-leaked GPU pointers were allocated by:");
-				// printPointers(new ArrayList<PointerInfo>(allPointers.values()));
 			}
 		}
 		ret.append("\n====================================================\n");
