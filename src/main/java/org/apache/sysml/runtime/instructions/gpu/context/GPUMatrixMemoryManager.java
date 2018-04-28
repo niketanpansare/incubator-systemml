@@ -77,12 +77,14 @@ public class GPUMatrixMemoryManager {
 		}
 		else {
 			CSRPointer sparsePtr = gObj.getSparseMatrixCudaPointer();
-			if(sparsePtr.rowPtr != null)
-				ret.add(sparsePtr.rowPtr);
-			else if(sparsePtr.colInd != null)
-				ret.add(sparsePtr.colInd);
-			else if(sparsePtr.val != null)
-				ret.add(sparsePtr.val);
+			if(sparsePtr != null) {
+				if(sparsePtr.rowPtr != null)
+					ret.add(sparsePtr.rowPtr);
+				else if(sparsePtr.colInd != null)
+					ret.add(sparsePtr.colInd);
+				else if(sparsePtr.val != null)
+					ret.add(sparsePtr.val);
+			}
 		}
 		return ret;
 	}
