@@ -152,9 +152,8 @@ public class GPULazyCudaFreeMemoryManager {
 	}
 	
 	/**
-	 * Remove a specific pointer if present in the given hashmap
+	 * Remove a specific pointer if present in the internal hashmap
 	 * 
-	 * @param hm hashmap of size, pointers
 	 * @param size size in bytes
 	 * @param ptr pointer to be removed
 	 */
