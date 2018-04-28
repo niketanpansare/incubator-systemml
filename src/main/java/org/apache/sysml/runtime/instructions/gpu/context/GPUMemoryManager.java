@@ -533,11 +533,11 @@ public class GPUMemoryManager {
 		
 		StringBuilder ret = new StringBuilder();
 		ret.append("\n====================================================\n");
-		ret.append(String.format("%-30s%-10s%-10s%-15s\n", "", "Num Objects", "Num Pointers", "Size"));
-		ret.append(String.format("%-30s%-10s%-10s%-15s\n", "Unlocked GPU Objects", numUnlockedGPUObjects, numUnlockedPointers, byteCountToDisplaySize(sizeOfUnlockedGPUObjects)));
-		ret.append(String.format("%-30s%-10s%-10s%-15s\n", "Locked GPU Objects", numLockedGPUObjects, numLockedPointers, byteCountToDisplaySize(sizeOfLockedGPUObjects)));
-		ret.append(String.format("%-30s%-10s%-10s%-15s\n", "Cached rmvar-ed Pointers", "-", lazyCudaFreeMemoryManager.getNumPointers(), byteCountToDisplaySize(lazyCudaFreeMemoryManager.getTotalMemoryAllocated())));
-		ret.append(String.format("%-30s%-10s%-10s%-15s\n", "All pointers", "-", allPointers.size(), byteCountToDisplaySize(totalMemoryAllocated)));
+		ret.append(String.format("%-30s%-15s%-15s%-15s\n", "", "Num Objects", "Num Pointers", "Size"));
+		ret.append(String.format("%-30s%-15s%-15s%-15s\n", "Unlocked GPU Objects", numUnlockedGPUObjects, numUnlockedPointers, byteCountToDisplaySize(sizeOfUnlockedGPUObjects)));
+		ret.append(String.format("%-30s%-15s%-15s%-15s\n", "Locked GPU Objects", numLockedGPUObjects, numLockedPointers, byteCountToDisplaySize(sizeOfLockedGPUObjects)));
+		ret.append(String.format("%-30s%-15s%-15s%-15s\n", "Cached rmvar-ed Pointers", "-", lazyCudaFreeMemoryManager.getNumPointers(), byteCountToDisplaySize(lazyCudaFreeMemoryManager.getTotalMemoryAllocated())));
+		ret.append(String.format("%-30s%-15s%-15s%-15s\n", "All pointers", "-", allPointers.size(), byteCountToDisplaySize(totalMemoryAllocated)));
 		ret.append("====================================================\n");
 		return ret.toString();
 	}
