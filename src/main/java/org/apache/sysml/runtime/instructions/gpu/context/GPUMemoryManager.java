@@ -386,18 +386,13 @@ public class GPUMemoryManager {
 		if (toFree != EMPTY_POINTER) {
 			if(allPointers.containsKey(toFree)) {
 				long size = allPointers.get(toFree).getSizeInBytes();
-				if(DMLScript.PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled()) {
-					LOG.info("Free-ing up the pointer of size " +  byteCountToDisplaySize(size));
-					// LOG.info("Before cudaFree:" + toString()); 
+				if(LOG.isTraceEnabled()) {
+					LOG.trace("Free-ing up the pointer of size " +  byteCountToDisplaySize(size));
 				}
 				allPointers.remove(toFree);
 				lazyCudaFreeMemoryManager.removeIfPresent(size, toFree);
 				cudaFree(toFree);
 				JCuda.cudaDeviceSynchronize(); // Force a device synchronize after free-ing the pointer for debugging
-//				if(DMLScript.PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled()) {
-//					LOG.info("Free-ing up the pointer of size " +  byteCountToDisplaySize(size));
-//					LOG.info("After cudaFree:" + toString()); 
-//				}
 			}
 			else {
 				throw new RuntimeException("Attempting to free an unaccounted pointer:" + toFree);
