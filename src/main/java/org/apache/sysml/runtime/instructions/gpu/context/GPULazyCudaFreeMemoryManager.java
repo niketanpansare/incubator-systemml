@@ -164,4 +164,5 @@ public class GPULazyCudaFreeMemoryManager {
 				rmvarGPUPointers.remove(size);
 		}
 	}
+	
 }

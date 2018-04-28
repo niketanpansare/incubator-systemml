@@ -334,7 +334,7 @@ public class GPUMemoryManager {
 					printPointers(new ArrayList<PointerInfo>(allPointers.values()));
 				}
 			}
-			throw new DMLRuntimeException("There is not enough memory on device for this matrix, requested = " + byteCountToDisplaySize(size) + "\n. "
+			throw new DMLRuntimeException("There is not enough memory on device for this matrix, requested = " + byteCountToDisplaySize(size) + ". \n "
 					+ toString());
 		}
 		
@@ -361,7 +361,7 @@ public class GPUMemoryManager {
 		}
 	}
 	
-	private static Pointer EMPTY_POINTER = new Pointer();
+	private static final Pointer EMPTY_POINTER = new Pointer();
 	
 	/**
 	 * Note: This method should not be called from an iterator as it removes entries from allocatedGPUPointers and rmvarGPUPointers
@@ -522,15 +522,20 @@ public class GPUMemoryManager {
 			}
 		}
 		
-		long rmvarMemoryAllocated = lazyCudaFreeMemoryManager.getTotalMemoryAllocated();
+		
 		long totalMemoryAllocated = 0;
 		for(PointerInfo ptrInfo : allPointers.values()) {
 			totalMemoryAllocated += ptrInfo.getSizeInBytes();
 		}
-		return "Num of GPU objects: [unlocked:" + numUnlockedGPUObjects + ", locked:" + numLockedGPUObjects + "]. "
-				+ "Size of GPU objects in bytes: [unlocked:" + byteCountToDisplaySize(sizeOfUnlockedGPUObjects) + ", locked:" + byteCountToDisplaySize(sizeOfLockedGPUObjects) + "]. "
-				+ "Total memory allocated by the current GPU context in bytes:" + byteCountToDisplaySize(totalMemoryAllocated) + ", number of allocated pointers:" + allPointers.size() + ". "
-				+ "Total memory rmvared by the current GPU context in bytes:" + byteCountToDisplaySize(rmvarMemoryAllocated) + ", number of rmvared pointers:" + lazyCudaFreeMemoryManager.getNumPointers();
+		
+		StringBuilder ret = new StringBuilder();
+		ret.append("\n");
+		ret.append(String.format("%-15s%-15s%-15s\n", "", "Count", "Size"));
+		ret.append(String.format("%-15s%-15s%-15s\n", "Unlocked GPU Objects", numUnlockedGPUObjects, byteCountToDisplaySize(sizeOfUnlockedGPUObjects)));
+		ret.append(String.format("%-15s%-15s%-15s\n", "Locked GPU Objects", numLockedGPUObjects, byteCountToDisplaySize(sizeOfLockedGPUObjects)));
+		ret.append(String.format("%-15s%-15s%-15s\n", "Cached rmvar-ed Pointers", lazyCudaFreeMemoryManager.getNumPointers(), byteCountToDisplaySize(lazyCudaFreeMemoryManager.getTotalMemoryAllocated())));
+		ret.append(String.format("%-15s%-15s%-15s\n", "All pointers", allPointers.size(), byteCountToDisplaySize(totalMemoryAllocated)));
+		return ret.toString();
 	}
 	
 	/**
