@@ -238,11 +238,11 @@ public class GPUMemoryManager {
 		// Step 2: Allocate a new pointer in the GPU memory (since memory is available)
 		if(A == null && size <= getAvailableMemory()) {
 			A = cudaMallocWarnIfFails(tmpA, size);
-			if(LOG.isTraceEnabled()) {
+			if(DMLScript.PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled()) {
 				if(A == null)
-					LOG.trace("Couldnot allocate a new pointer in the GPU memory:" + byteCountToDisplaySize(size));
+					LOG.info("Couldnot allocate a new pointer in the GPU memory:" + byteCountToDisplaySize(size));
 				else
-					LOG.trace("Allocated a new pointer in the GPU memory:" + byteCountToDisplaySize(size));
+					LOG.info("Allocated a new pointer in the GPU memory:" + byteCountToDisplaySize(size));
 			}
 		}
 		
@@ -255,11 +255,11 @@ public class GPUMemoryManager {
 			if(A != null) {
 				guardedCudaFree(A);
 				A = cudaMallocWarnIfFails(tmpA, size);
-				if(LOG.isTraceEnabled()) {
+				if(DMLScript.PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled()) {
 					if(A == null)
-						LOG.trace("Couldnot reuse non-exact match of rmvarGPUPointers:" + byteCountToDisplaySize(size));
+						LOG.info("Couldnot reuse non-exact match of rmvarGPUPointers:" + byteCountToDisplaySize(size));
 					else
-						LOG.trace("Reuses a non-exact match from rmvarGPUPointers:" + byteCountToDisplaySize(size));
+						LOG.info("Reuses a non-exact match from rmvarGPUPointers:" + byteCountToDisplaySize(size));
 				}
 			}
 		}
@@ -275,11 +275,11 @@ public class GPUMemoryManager {
 			lazyCudaFreeMemoryManager.clearAll();
 			if(size <= getAvailableMemory()) {
 				A = cudaMallocWarnIfFails(tmpA, size);
-				if(LOG.isTraceEnabled()) {
+				if(DMLScript.PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled()) {
 					if(A == null)
-						LOG.trace("Couldnot allocate a new pointer in the GPU memory after eager free:" + byteCountToDisplaySize(size));
+						LOG.info("Couldnot allocate a new pointer in the GPU memory after eager free:" + byteCountToDisplaySize(size));
 					else
-						LOG.trace("Allocated a new pointer in the GPU memory after eager free:" + byteCountToDisplaySize(size));
+						LOG.info("Allocated a new pointer in the GPU memory after eager free:" + byteCountToDisplaySize(size));
 				}
 			}
 		}
@@ -529,12 +529,13 @@ public class GPUMemoryManager {
 		}
 		
 		StringBuilder ret = new StringBuilder();
-		ret.append("\n");
-		ret.append(String.format("%-15s%-15s%-15s\n", "", "Count", "Size"));
-		ret.append(String.format("%-15s%-15s%-15s\n", "Unlocked GPU Objects", numUnlockedGPUObjects, byteCountToDisplaySize(sizeOfUnlockedGPUObjects)));
-		ret.append(String.format("%-15s%-15s%-15s\n", "Locked GPU Objects", numLockedGPUObjects, byteCountToDisplaySize(sizeOfLockedGPUObjects)));
-		ret.append(String.format("%-15s%-15s%-15s\n", "Cached rmvar-ed Pointers", lazyCudaFreeMemoryManager.getNumPointers(), byteCountToDisplaySize(lazyCudaFreeMemoryManager.getTotalMemoryAllocated())));
-		ret.append(String.format("%-15s%-15s%-15s\n", "All pointers", allPointers.size(), byteCountToDisplaySize(totalMemoryAllocated)));
+		ret.append("\n====================================================\n");
+		ret.append(String.format("%-30s%-10s%-15s\n", "", "Count", "Size"));
+		ret.append(String.format("%-30s%-10s%-15s\n", "Unlocked GPU Objects", numUnlockedGPUObjects, byteCountToDisplaySize(sizeOfUnlockedGPUObjects)));
+		ret.append(String.format("%-30s%-10s%-15s\n", "Locked GPU Objects", numLockedGPUObjects, byteCountToDisplaySize(sizeOfLockedGPUObjects)));
+		ret.append(String.format("%-30s%-10s%-15s\n", "Cached rmvar-ed Pointers", lazyCudaFreeMemoryManager.getNumPointers(), byteCountToDisplaySize(lazyCudaFreeMemoryManager.getTotalMemoryAllocated())));
+		ret.append(String.format("%-30s%-10s%-15s\n", "All pointers", allPointers.size(), byteCountToDisplaySize(totalMemoryAllocated)));
+		ret.append("====================================================\n");
 		return ret.toString();
 	}
 	

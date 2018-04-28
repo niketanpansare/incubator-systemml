@@ -27,10 +27,13 @@ import java.util.stream.Collectors;
 
 import jcuda.Pointer;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 
 public class GPUMatrixMemoryManager {
+	protected static final Log LOG = LogFactory.getLog(GPUMatrixMemoryManager.class.getName());
 	GPUMemoryManager gpuManager;
 	public GPUMatrixMemoryManager(GPUMemoryManager gpuManager) {
 		this.gpuManager = gpuManager;
@@ -158,7 +161,7 @@ public class GPUMatrixMemoryManager {
 		Set<GPUObject> unlockedGPUObjects = gpuObjects.stream()
 				.filter(gpuObj -> !gpuObj.isLocked()).collect(Collectors.toSet());
 		if(unlockedGPUObjects.size() > 0) {
-			GPUMemoryManager.LOG.warn("Clearing all unlocked matrices (count=" + unlockedGPUObjects.size() + ").");
+			LOG.warn("Clearing all unlocked matrices (count=" + unlockedGPUObjects.size() + ").");
 			gpuObjects.removeAll(unlockedGPUObjects);
 			for(GPUObject toBeRemoved : unlockedGPUObjects) {
 				if(toBeRemoved.dirty) {

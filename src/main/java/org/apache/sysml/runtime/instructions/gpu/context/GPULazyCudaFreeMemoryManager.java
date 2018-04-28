@@ -24,6 +24,8 @@ import java.util.stream.Collectors;
 import java.util.Optional;
 import java.util.Set;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
@@ -31,6 +33,7 @@ import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
 import jcuda.Pointer;
 
 public class GPULazyCudaFreeMemoryManager {
+	protected static final Log LOG = LogFactory.getLog(GPULazyCudaFreeMemoryManager.class.getName());
 	GPUMemoryManager gpuManager;
 	public GPULazyCudaFreeMemoryManager(GPUMemoryManager gpuManager) {
 		this.gpuManager = gpuManager;
@@ -50,8 +53,8 @@ public class GPULazyCudaFreeMemoryManager {
 	 */
 	public Pointer getRmvarPointer(String opcode, long size) {
 		if (rmvarGPUPointers.containsKey(size)) {
-			if(GPUMemoryManager.LOG.isTraceEnabled())
-				GPUMemoryManager.LOG.trace("Getting rmvar-ed pointers for size:" + size);
+			if(LOG.isTraceEnabled())
+				LOG.trace("Getting rmvar-ed pointers for size:" + size);
 			Pointer A = remove(rmvarGPUPointers, size); // remove from rmvarGPUPointers as you are not calling cudaFree
 			return A;
 		}
