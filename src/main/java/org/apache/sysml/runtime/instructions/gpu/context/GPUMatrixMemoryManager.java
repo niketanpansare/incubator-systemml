@@ -29,7 +29,6 @@ import jcuda.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 
 public class GPUMatrixMemoryManager {
 	protected static final Log LOG = LogFactory.getLog(GPUMatrixMemoryManager.class.getName());
@@ -53,13 +52,20 @@ public class GPUMatrixMemoryManager {
 	 * @return memory size in bytes
 	 */
 	private long getWorstCaseContiguousMemorySize(GPUObject gpuObj) {
-		if(gpuObj.getJcudaSparseMatrixPtr() == null)
-			return gpuObj.getSizeOnDevice();
-		else if(gpuObj.getJcudaSparseMatrixPtr().rowPtr != null) 
-			return Math.max(gpuObj.getJcudaSparseMatrixPtr().nnz*LibMatrixCUDA.sizeOfDataType, 
-					gpuManager.getSizeAllocatedGPUPointer(gpuObj.getJcudaSparseMatrixPtr().rowPtr));
-		else
-			return 0;
+		long ret = 0;
+		if(gpuObj.getJcudaDenseMatrixPtr() != null) {
+			ret = gpuManager.allPointers.get(gpuObj.getJcudaDenseMatrixPtr()).getSizeInBytes();
+		}
+		else if(gpuObj.getJcudaSparseMatrixPtr() != null) {
+			CSRPointer sparsePtr = gpuObj.getJcudaSparseMatrixPtr();
+			if(sparsePtr.rowPtr != null)
+				ret = Math.max(ret, gpuManager.allPointers.get(sparsePtr.rowPtr).getSizeInBytes());
+			if(sparsePtr.colInd != null)
+				ret = Math.max(ret, gpuManager.allPointers.get(sparsePtr.colInd).getSizeInBytes());
+			if(sparsePtr.val != null)
+				ret = Math.max(ret, gpuManager.allPointers.get(sparsePtr.val).getSizeInBytes());
+		}
+		return ret;
 	}
 	
 	/**

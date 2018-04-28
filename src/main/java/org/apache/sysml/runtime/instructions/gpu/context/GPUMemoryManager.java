@@ -106,7 +106,7 @@ public class GPUMemoryManager {
 	/**
 	 * Utility to debug memory leaks
 	 */
-	private static class PointerInfo {
+	static class PointerInfo {
 		private long sizeInBytes;
 		private StackTraceElement[] stackTraceElements;
 		public PointerInfo(long sizeInBytes) {
