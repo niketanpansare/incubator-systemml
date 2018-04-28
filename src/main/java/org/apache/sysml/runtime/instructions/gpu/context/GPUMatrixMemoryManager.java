@@ -147,8 +147,8 @@ public class GPUMatrixMemoryManager {
 				// Perform eviction if dirty
 				gObj.copyFromDeviceToHost(opcode, true);
 			}
-			gpuObjects.remove(gObj);
 			gObj.clearData(true);
+			gpuObjects.remove(gObj);
 		}
 		return toClear.isPresent();
 	}
@@ -164,13 +164,13 @@ public class GPUMatrixMemoryManager {
 				.filter(gpuObj -> !gpuObj.isLocked()).collect(Collectors.toSet());
 		if(unlockedGPUObjects.size() > 0) {
 			LOG.warn("Clearing all unlocked matrices (count=" + unlockedGPUObjects.size() + ").");
-			gpuObjects.removeAll(unlockedGPUObjects);
 			for(GPUObject toBeRemoved : unlockedGPUObjects) {
 				if(toBeRemoved.dirty) {
 					toBeRemoved.copyFromDeviceToHost(opcode, true);
 				}
 				toBeRemoved.clearData(true);
 			}
+			gpuObjects.removeAll(unlockedGPUObjects);
 		}
 	}
 }
