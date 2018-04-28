@@ -363,12 +363,15 @@ public class GPUMemoryManager {
 		}
 	}
 	
-	private void printPointers(Set<Pointer> pointers) {
+	private void printPointers(Set<Pointer> pointers, StringBuilder sb) {
 		for(Pointer ptr : pointers) {
 			PointerInfo ptrInfo = allPointers.get(ptr);
-			System.out.println(">>" + 
-					// getCallerInfo(ptrInfo.stackTraceElements, 5) + getCallerInfo(ptrInfo.stackTraceElements, 6) + getCallerInfo(ptrInfo.stackTraceElements, 7) +
-					getCallerInfo(ptrInfo.stackTraceElements, 8) + getCallerInfo(ptrInfo.stackTraceElements, 9) + getCallerInfo(ptrInfo.stackTraceElements, 10));
+			sb.append(">>");
+			// getCallerInfo(ptrInfo.stackTraceElements, 5) + getCallerInfo(ptrInfo.stackTraceElements, 6) + getCallerInfo(ptrInfo.stackTraceElements, 7) +
+			sb.append(getCallerInfo(ptrInfo.stackTraceElements, 8));
+			sb.append(getCallerInfo(ptrInfo.stackTraceElements, 9));
+			sb.append(getCallerInfo(ptrInfo.stackTraceElements, 10));
+			sb.append("\n");
 		}
 	}
 	
@@ -385,16 +388,16 @@ public class GPUMemoryManager {
 				long size = allPointers.get(toFree).getSizeInBytes();
 				if(DMLScript.PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled()) {
 					LOG.info("Free-ing up the pointer of size " +  byteCountToDisplaySize(size));
-					LOG.info("Before cudaFree:" + toString()); 
+					// LOG.info("Before cudaFree:" + toString()); 
 				}
 				allPointers.remove(toFree);
 				lazyCudaFreeMemoryManager.removeIfPresent(size, toFree);
 				cudaFree(toFree);
 				JCuda.cudaDeviceSynchronize(); // Force a device synchronize after free-ing the pointer for debugging
-				if(DMLScript.PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled()) {
-					LOG.info("Free-ing up the pointer of size " +  byteCountToDisplaySize(size));
-					LOG.info("After cudaFree:" + toString()); 
-				}
+//				if(DMLScript.PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled()) {
+//					LOG.info("Free-ing up the pointer of size " +  byteCountToDisplaySize(size));
+//					LOG.info("After cudaFree:" + toString()); 
+//				}
 			}
 			else {
 				throw new RuntimeException("Attempting to free an unaccounted pointer:" + toFree);
@@ -557,19 +560,18 @@ public class GPUMemoryManager {
 		for(long size : sizePotentiallyLeakyPointers) {
 			totalSizePotentiallyLeakyPointers += size;
 		}
+		StringBuilder ret = new StringBuilder();
 		if(DMLScript.PRINT_GPU_MEMORY_INFO) {
 			if(potentiallyLeakyPointers.size() > 0) {
-				System.out.println("Potentially leaky GPU Pointers were allocated by:");
-				printPointers(potentiallyLeakyPointers);
+				ret.append("Potentially leaky GPU Pointers were allocated by:\n");
+				printPointers(potentiallyLeakyPointers, ret);
 			}
 			else {
-				System.out.println("No leaked GPU Pointers were found.");
+				ret.append("No leaked GPU Pointers were found.\n");
 				// System.out.println("Non-leaked GPU pointers were allocated by:");
 				// printPointers(new ArrayList<PointerInfo>(allPointers.values()));
 			}
 		}
-		
-		StringBuilder ret = new StringBuilder();
 		ret.append("\n====================================================\n");
 		ret.append(String.format("%-35s%-15s%-15s%-15s\n", "", 
 				"Num Objects", "Num Pointers", "Size"));
