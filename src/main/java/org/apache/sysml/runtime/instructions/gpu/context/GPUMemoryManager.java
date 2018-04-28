@@ -162,7 +162,8 @@ public class GPUMemoryManager {
 			allPointers.put(A, new PointerInfo(size));
 			return A;
 		} catch(jcuda.CudaException e) {
-			LOG.warn("cudaMalloc failed immediately after cudaMemGetInfo reported that memory of size " + size + " is available. "
+			LOG.warn("cudaMalloc failed immediately after cudaMemGetInfo reported that memory of size " 
+					+ byteCountToDisplaySize(size) + " is available. "
 					+ "This usually happens if there are external programs trying to grab on to memory in parallel.");
 			return null;
 		}
@@ -238,11 +239,11 @@ public class GPUMemoryManager {
 		// Step 2: Allocate a new pointer in the GPU memory (since memory is available)
 		if(A == null && size <= getAvailableMemory()) {
 			A = cudaMallocWarnIfFails(tmpA, size);
-			if(DMLScript.PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled()) {
+			if(LOG.isTraceEnabled()) {
 				if(A == null)
-					LOG.info("Couldnot allocate a new pointer in the GPU memory:" + byteCountToDisplaySize(size));
+					LOG.trace("Couldnot allocate a new pointer in the GPU memory:" + byteCountToDisplaySize(size));
 				else
-					LOG.info("Allocated a new pointer in the GPU memory:" + byteCountToDisplaySize(size));
+					LOG.trace("Allocated a new pointer in the GPU memory:" + byteCountToDisplaySize(size));
 			}
 		}
 		
@@ -509,16 +510,18 @@ public class GPUMemoryManager {
 	 * Print debugging information
 	 */
 	public String toString() {
-		long sizeOfLockedGPUObjects = 0; long numLockedGPUObjects = 0;
-		long sizeOfUnlockedGPUObjects = 0; long numUnlockedGPUObjects = 0;
+		long sizeOfLockedGPUObjects = 0; int numLockedGPUObjects = 0; int numLockedPointers = 0;
+		long sizeOfUnlockedGPUObjects = 0; int numUnlockedGPUObjects = 0; int numUnlockedPointers = 0;
 		for(GPUObject gpuObj : matrixMemoryManager.gpuObjects) {
 			if(gpuObj.isLocked()) {
 				numLockedGPUObjects++;
 				sizeOfLockedGPUObjects += gpuObj.getSizeOnDevice();
+				numLockedPointers += matrixMemoryManager.getPointers(gpuObj).size();
 			}
 			else {
 				numUnlockedGPUObjects++;
 				sizeOfUnlockedGPUObjects += gpuObj.getSizeOnDevice();
+				numUnlockedPointers += matrixMemoryManager.getPointers(gpuObj).size();
 			}
 		}
 		
@@ -530,11 +533,11 @@ public class GPUMemoryManager {
 		
 		StringBuilder ret = new StringBuilder();
 		ret.append("\n====================================================\n");
-		ret.append(String.format("%-30s%-10s%-15s\n", "", "Count", "Size"));
-		ret.append(String.format("%-30s%-10s%-15s\n", "Unlocked GPU Objects", numUnlockedGPUObjects, byteCountToDisplaySize(sizeOfUnlockedGPUObjects)));
-		ret.append(String.format("%-30s%-10s%-15s\n", "Locked GPU Objects", numLockedGPUObjects, byteCountToDisplaySize(sizeOfLockedGPUObjects)));
-		ret.append(String.format("%-30s%-10s%-15s\n", "Cached rmvar-ed Pointers", lazyCudaFreeMemoryManager.getNumPointers(), byteCountToDisplaySize(lazyCudaFreeMemoryManager.getTotalMemoryAllocated())));
-		ret.append(String.format("%-30s%-10s%-15s\n", "All pointers", allPointers.size(), byteCountToDisplaySize(totalMemoryAllocated)));
+		ret.append(String.format("%-30s%-10s%-10s%-15s\n", "", "Num Objects", "Num Pointers", "Size"));
+		ret.append(String.format("%-30s%-10s%-10s%-15s\n", "Unlocked GPU Objects", numUnlockedGPUObjects, numUnlockedPointers, byteCountToDisplaySize(sizeOfUnlockedGPUObjects)));
+		ret.append(String.format("%-30s%-10s%-10s%-15s\n", "Locked GPU Objects", numLockedGPUObjects, numLockedPointers, byteCountToDisplaySize(sizeOfLockedGPUObjects)));
+		ret.append(String.format("%-30s%-10s%-10s%-15s\n", "Cached rmvar-ed Pointers", "-", lazyCudaFreeMemoryManager.getNumPointers(), byteCountToDisplaySize(lazyCudaFreeMemoryManager.getTotalMemoryAllocated())));
+		ret.append(String.format("%-30s%-10s%-10s%-15s\n", "All pointers", "-", allPointers.size(), byteCountToDisplaySize(totalMemoryAllocated)));
 		ret.append("====================================================\n");
 		return ret.toString();
 	}

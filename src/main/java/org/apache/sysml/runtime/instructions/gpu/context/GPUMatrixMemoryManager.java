@@ -66,10 +66,10 @@ public class GPUMatrixMemoryManager {
 	/**
 	 * Get list of all Pointers in a GPUObject 
 	 * @param gObj gpu object 
-	 * @return list of pointers
+	 * @return set of pointers
 	 */
-	private ArrayList<Pointer> getPointers(GPUObject gObj) {
-		ArrayList<Pointer> ret = new ArrayList<>();
+	Set<Pointer> getPointers(GPUObject gObj) {
+		Set<Pointer> ret = new HashSet<>();
 		if(gObj.getJcudaDenseMatrixPtr() != null && gObj.getSparseMatrixCudaPointer() != null) {
 			throw new RuntimeException("Matrix allocated in both dense and sparse format");
 		}
@@ -106,6 +106,7 @@ public class GPUMatrixMemoryManager {
 	Set<GPUObject> getGPUObjects(boolean locked, boolean dirty) {
 		return gpuObjects.stream().filter(gObj -> gObj.isLocked() == locked && gObj.isDirty() == dirty).collect(Collectors.toSet());
 	}
+	
 	/**
 	 * Return all pointers in the first section
 	 * @return all pointers in this section
