@@ -532,7 +532,8 @@ public class GPUMemoryManager {
 	 */
 	public String toString() {
 		long sizeOfLockedGPUObjects = 0; int numLockedGPUObjects = 0; int numLockedPointers = 0;
-		long sizeOfUnlockedGPUObjects = 0; int numUnlockedGPUObjects = 0; int numUnlockedPointers = 0;
+		long sizeOfUnlockedDirtyGPUObjects = 0; int numUnlockedDirtyGPUObjects = 0; int numUnlockedDirtyPointers = 0;
+		long sizeOfUnlockedNonDirtyGPUObjects = 0; int numUnlockedNonDirtyGPUObjects = 0; int numUnlockedNonDirtyPointers = 0;
 		for(GPUObject gpuObj : matrixMemoryManager.gpuObjects) {
 			if(gpuObj.isLocked()) {
 				numLockedGPUObjects++;
@@ -540,9 +541,16 @@ public class GPUMemoryManager {
 				numLockedPointers += matrixMemoryManager.getPointers(gpuObj).size();
 			}
 			else {
-				numUnlockedGPUObjects++;
-				sizeOfUnlockedGPUObjects += gpuObj.getSizeOnDevice();
-				numUnlockedPointers += matrixMemoryManager.getPointers(gpuObj).size();
+				if(gpuObj.isDirty()) {
+					numUnlockedDirtyGPUObjects++;
+					sizeOfUnlockedDirtyGPUObjects += gpuObj.getSizeOnDevice();
+					numUnlockedDirtyPointers += matrixMemoryManager.getPointers(gpuObj).size();
+				}
+				else {
+					numUnlockedNonDirtyGPUObjects++;
+					sizeOfUnlockedNonDirtyGPUObjects += gpuObj.getSizeOnDevice();
+					numUnlockedNonDirtyPointers += matrixMemoryManager.getPointers(gpuObj).size();
+				}
 			}
 		}
 		
@@ -570,8 +578,10 @@ public class GPUMemoryManager {
 		ret.append("\n====================================================\n");
 		ret.append(String.format("%-35s%-15s%-15s%-15s\n", "", 
 				"Num Objects", "Num Pointers", "Size"));
-		ret.append(String.format("%-35s%-15s%-15s%-15s\n", "Unlocked GPU objects", 
-				numUnlockedGPUObjects, numUnlockedPointers, byteCountToDisplaySize(sizeOfUnlockedGPUObjects)));
+		ret.append(String.format("%-35s%-15s%-15s%-15s\n", "Unlocked Dirty GPU objects", 
+				numUnlockedDirtyGPUObjects, numUnlockedDirtyPointers, byteCountToDisplaySize(sizeOfUnlockedDirtyGPUObjects)));
+		ret.append(String.format("%-35s%-15s%-15s%-15s\n", "Unlocked NonDirty GPU objects", 
+				numUnlockedNonDirtyGPUObjects, numUnlockedNonDirtyPointers, byteCountToDisplaySize(sizeOfUnlockedNonDirtyGPUObjects)));
 		ret.append(String.format("%-35s%-15s%-15s%-15s\n", "Locked GPU objects", 
 				numLockedGPUObjects, numLockedPointers, byteCountToDisplaySize(sizeOfLockedGPUObjects)));
 		ret.append(String.format("%-35s%-15s%-15s%-15s\n", "Cached rmvar-ed pointers", 

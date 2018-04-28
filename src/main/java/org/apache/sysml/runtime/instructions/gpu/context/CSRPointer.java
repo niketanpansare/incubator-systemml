@@ -527,14 +527,15 @@ public class CSRPointer {
 	 * @throws DMLRuntimeException ?
 	 */
 	public void deallocate(boolean eager) throws DMLRuntimeException {
-		if (nnz > 0) {
+		if(val != null)
 			cudaFreeHelper(val, eager);
+		if(rowPtr != null)
 			cudaFreeHelper(rowPtr, eager);
+		if(colInd != null)
 			cudaFreeHelper(colInd, eager);
-			val = null;
-			rowPtr = null;
-			colInd = null;
-		}
+		val = null;
+		rowPtr = null;
+		colInd = null;
 	}
 
 	@Override
