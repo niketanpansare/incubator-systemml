@@ -256,11 +256,6 @@ public class GPUMemoryManager {
 			lazyCudaFreeMemoryManager.clearAll();
 			if(size <= getAvailableMemory()) {
 				A = cudaMallocNoWarn(tmpA, size);
-				if(A == null) {
-					LOG.warn("cudaMalloc failed immediately after cudaMemGetInfo reported that memory of size " 
-							+ byteCountToDisplaySize(size) + " is available. "
-							+ "This usually happens if there are external programs trying to grab on to memory in parallel or there is potential fragmentation.");
-				}
 				if(DMLScript.PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled()) {
 					if(A == null)
 						LOG.info("Couldnot allocate a new pointer in the GPU memory after eager free:" + byteCountToDisplaySize(size));
