@@ -378,7 +378,7 @@ public class GPUMemoryManager {
 		}
 	}
 	
-	private static final Pointer EMPTY_POINTER = new Pointer();
+	public static final Pointer EMPTY_POINTER = new Pointer();
 	
 	/**
 	 * Note: This method should not be called from an iterator as it removes entries from allocatedGPUPointers and rmvarGPUPointers
