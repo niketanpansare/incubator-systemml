@@ -154,26 +154,6 @@ public class GPUMemoryManager {
 	 * @param size size in bytes
 	 * @return allocated pointer
 	 */
-	private Pointer cudaMallocWarnIfFails(Pointer A, long size) {
-		try {
-			cudaMalloc(A, size);
-			allPointers.put(A, new PointerInfo(size));
-			return A;
-		} catch(jcuda.CudaException e) {
-			LOG.warn("cudaMalloc failed immediately after cudaMemGetInfo reported that memory of size " 
-					+ byteCountToDisplaySize(size) + " is available. "
-					+ "This usually happens if there are external programs trying to grab on to memory in parallel.");
-			return null;
-		}
-	}
-	
-	/**
-	 * Invoke cudaMalloc
-	 * 
-	 * @param A pointer
-	 * @param size size in bytes
-	 * @return allocated pointer
-	 */
 	private Pointer cudaMallocNoWarn(Pointer A, long size) {
 		try {
 			cudaMalloc(A, size);
@@ -236,7 +216,7 @@ public class GPUMemoryManager {
 		Pointer tmpA = (A == null) ? new Pointer() : null;
 		// Step 2: Allocate a new pointer in the GPU memory (since memory is available)
 		if(A == null && size <= getAvailableMemory()) {
-			A = cudaMallocWarnIfFails(tmpA, size);
+			A = cudaMallocNoWarn(tmpA, size);
 			if(LOG.isTraceEnabled()) {
 				if(A == null)
 					LOG.trace("Couldnot allocate a new pointer in the GPU memory:" + byteCountToDisplaySize(size));
@@ -253,7 +233,7 @@ public class GPUMemoryManager {
 			A = lazyCudaFreeMemoryManager.getRmvarPointerMinSize(opcode, size);
 			if(A != null) {
 				guardedCudaFree(A);
-				A = cudaMallocWarnIfFails(tmpA, size);
+				A = cudaMallocNoWarn(tmpA, size);
 				if(DMLScript.PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled()) {
 					if(A == null)
 						LOG.info("Couldnot reuse non-exact match of rmvarGPUPointers:" + byteCountToDisplaySize(size));
@@ -275,7 +255,12 @@ public class GPUMemoryManager {
 		if(A == null) {
 			lazyCudaFreeMemoryManager.clearAll();
 			if(size <= getAvailableMemory()) {
-				A = cudaMallocWarnIfFails(tmpA, size);
+				A = cudaMallocNoWarn(tmpA, size);
+				if(A == null) {
+					LOG.warn("cudaMalloc failed immediately after cudaMemGetInfo reported that memory of size " 
+							+ byteCountToDisplaySize(size) + " is available. "
+							+ "This usually happens if there are external programs trying to grab on to memory in parallel or there is potential fragmentation.");
+				}
 				if(DMLScript.PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled()) {
 					if(A == null)
 						LOG.info("Couldnot allocate a new pointer in the GPU memory after eager free:" + byteCountToDisplaySize(size));
@@ -338,7 +323,12 @@ public class GPUMemoryManager {
 				}
 			}
 			addMiscTime(opcode, GPUStatistics.cudaEvictionCount, GPUStatistics.cudaEvictTime, GPUInstruction.MISC_TIMER_EVICT, t0);
-			A = cudaMallocWarnIfFails(tmpA, size);
+			A = cudaMallocNoWarn(tmpA, size);
+			if(A == null) {
+				LOG.warn("cudaMalloc failed immediately after cudaMemGetInfo reported that memory of size " 
+						+ byteCountToDisplaySize(size) + " is available. "
+						+ "This usually happens if there are external programs trying to grab on to memory in parallel or there is potential fragmentation.");
+			}
 		}
 		
 		// Step 6: Handle defragmentation
@@ -427,8 +417,10 @@ public class GPUMemoryManager {
 			addMiscTime(opcode, GPUStatistics.cudaDeAllocTime, GPUStatistics.cudaDeAllocCount, GPUInstruction.MISC_TIMER_CUDA_FREE, t0);
 		}
 		else {
-			if (!allPointers.containsKey(toFree))
+			if (!allPointers.containsKey(toFree)) {
+				LOG.info("GPU memory info before failure:" + toString());
 				throw new RuntimeException("ERROR : Internal state corrupted, cache block size map is not aware of a block it trying to free up");
+			}
 			long size = allPointers.get(toFree).getSizeInBytes();
 			lazyCudaFreeMemoryManager.add(size, toFree);
 		}
