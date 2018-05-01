@@ -307,7 +307,9 @@ public class GPUMemoryManager {
 			if(!success) {
 				// First, clear unlocked dirty matrices greater than or equal to size using the eviction policy
 				// Comparator clears the largest matrix to avoid future evictions
-				LOG.info("GPU Memory info:" + toString());
+				if(DMLScript.PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled()) {
+					LOG.info("GPU Memory info before eviction:" + toString());
+				}
 				success = matrixMemoryManager.clear(false, true, size, new EvictionPolicyBasedComparator(size), opcode);
 				// JCuda.cudaDeviceSynchronize();
 				if(DMLScript.PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled()) {
@@ -330,7 +332,9 @@ public class GPUMemoryManager {
 						else
 							toBeRemoved.clearData(opcode, true);
 					}
-					LOG.info("GPU Memory info after evicting all unlocked matrices:" + toString());
+					if(DMLScript.PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled()) {
+						LOG.info("GPU Memory info after evicting all unlocked matrices:" + toString());
+					}
 				}
 			}
 			addMiscTime(opcode, GPUStatistics.cudaEvictionCount, GPUStatistics.cudaEvictTime, GPUInstruction.MISC_TIMER_EVICT, t0);
