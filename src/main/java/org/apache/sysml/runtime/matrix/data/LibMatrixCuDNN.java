@@ -224,7 +224,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 				CSRPointer filterPointer = filter.getGPUObject(gCtx).getJcudaSparseMatrixPtr();
 				Pointer matmultOutputPointer = gCtx.allocate(instName, NKPQ*sizeOfDataType);
 				LibMatrixCuMatMult.sparseDenseMatMult(gCtx, instName, matmultOutputPointer, filterPointer, im2colPointer, K, CRS, CRS, NPQ, K, NPQ, false, false);
-				gCtx.cudaFreeHelper(instName, im2colPointer);
+				gCtx.cudaFreeHelper(instName, im2colPointer, DMLScript.EAGER_CUDA_FREE);
 				
 				// Perform reorg_knpq a reorg operation of matmultOutputPointer matrix with dimensions [K, NPQ]
 				// and return a matrix dstPointer with dimensions [N, KPQ]
@@ -233,7 +233,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 						matmultOutputPointer, dstPointer, NKPQ, NPQ, KPQ, P*Q);
 				if (DMLScript.FINEGRAINED_STATISTICS)
 					GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DENSE_REORG_KNPQ_KERNEL, System.nanoTime() - t1);
-				gCtx.cudaFreeHelper(instName, matmultOutputPointer);
+				gCtx.cudaFreeHelper(instName, matmultOutputPointer, DMLScript.EAGER_CUDA_FREE);
 			}
 			else {
 				// Filter and output are accounted as dense in the memory estimation for conv2d
@@ -460,7 +460,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 
 						}
 						// Deallocate temporary array to hold one element of input
-						gCtx.cudaFreeHelper(tempdwPointer, true);
+						gCtx.cudaFreeHelper(instName, tempdwPointer, true);
 					}
 				}
 			}
@@ -793,7 +793,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			long t4=0;
 			if (DMLScript.FINEGRAINED_STATISTICS) t4 = System.nanoTime();
 			if(!isMaxPoolOutputProvided)
-				gCtx.cudaFreeHelper(instName, y);
+				gCtx.cudaFreeHelper(instName, y, DMLScript.EAGER_CUDA_FREE);
 			if (DMLScript.FINEGRAINED_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CUDNN_CLEANUP, System.nanoTime() - t4);
 		}
 	}
@@ -922,9 +922,9 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		}
 		
 		if(return_sequences)
-			gCtx.cudaFreeHelper(instName, hyPointer);
+			gCtx.cudaFreeHelper(instName, hyPointer, DMLScript.EAGER_CUDA_FREE);
 		else
-			gCtx.cudaFreeHelper(instName, yPointer);
+			gCtx.cudaFreeHelper(instName, yPointer, DMLScript.EAGER_CUDA_FREE);
 	}
 	
 	/**

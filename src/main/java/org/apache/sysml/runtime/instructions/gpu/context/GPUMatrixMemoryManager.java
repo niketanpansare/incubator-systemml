@@ -153,7 +153,7 @@ public class GPUMatrixMemoryManager {
 				// Perform eviction if dirty
 				gObj.copyFromDeviceToHost(opcode, true);
 			}
-			gObj.clearData(true);
+			gObj.clearData(opcode, true);
 			gpuObjects.remove(gObj);
 		}
 		return toClear.isPresent();
@@ -174,7 +174,7 @@ public class GPUMatrixMemoryManager {
 				if(toBeRemoved.dirty) {
 					toBeRemoved.copyFromDeviceToHost(opcode, true);
 				}
-				toBeRemoved.clearData(true);
+				toBeRemoved.clearData(opcode, true);
 			}
 			gpuObjects.removeAll(unlockedGPUObjects);
 		}

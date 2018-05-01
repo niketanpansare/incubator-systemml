@@ -142,15 +142,7 @@ public class GPUObject {
 	}
 
 	private void cudaFreeHelper(Pointer toFree) throws DMLRuntimeException {
-		getGPUContext().cudaFreeHelper(toFree);
-	}
-
-	//	private void cudaFreeHelper(Pointer toFree, boolean eager) throws DMLRuntimeException {
-	//		getGPUContext().cudaFreeHelper(toFree, eager);
-	//	}
-
-	private void cudaFreeHelper(String instName, Pointer toFree, boolean eager) throws DMLRuntimeException {
-		getGPUContext().cudaFreeHelper(instName, toFree, eager);
+		getGPUContext().cudaFreeHelper(null, toFree, DMLScript.EAGER_CUDA_FREE);
 	}
 
 	private GPUContext getGPUContext() {
@@ -237,8 +229,8 @@ public class GPUObject {
 				C.colInd);
 		//cudaDeviceSynchronize();
 
-		gCtx.cudaFreeHelper(nnzPerRowPtr);
-		gCtx.cudaFreeHelper(nnzTotalDevHostPtr);
+		gCtx.cudaFreeHelper(null, nnzPerRowPtr, DMLScript.EAGER_CUDA_FREE);
+		gCtx.cudaFreeHelper(null, nnzTotalDevHostPtr, DMLScript.EAGER_CUDA_FREE);
 
 		return C;
 	}
@@ -545,8 +537,8 @@ public class GPUObject {
 					throw new DMLRuntimeException(
 							"cusparseDnnz did not calculate the correct number of nnz on the GPU");
 				}
-				gCtx.cudaFreeHelper(nnzPerRowPtr);
-				gCtx.cudaFreeHelper(nnzTotalDevHostPtr);
+				gCtx.cudaFreeHelper(instName, nnzPerRowPtr, DMLScript.EAGER_CUDA_FREE);
+				gCtx.cudaFreeHelper(instName, nnzTotalDevHostPtr, DMLScript.EAGER_CUDA_FREE);
 				if(DMLScript.FINEGRAINED_STATISTICS) {
 					GPUStatistics.maintainCPMiscTimes(instName, CPInstruction.MISC_TIMER_RECOMPUTE_NNZ, System.nanoTime()-t1);
 			}
@@ -766,21 +758,6 @@ public class GPUObject {
 		setSparseMatrixCudaPointer(tmp);
 	}
 
-	void deallocateMemoryOnDevice(boolean eager) throws DMLRuntimeException {
-		if(LOG.isTraceEnabled()) {
-			LOG.trace("GPU : deallocateMemoryOnDevice, on " + this + ", GPUContext=" + getGPUContext());
-		}
-		if (getJcudaDenseMatrixPtr() != null) {
-			cudaFreeHelper(null, getJcudaDenseMatrixPtr(), eager);
-		}
-		if (getJcudaSparseMatrixPtr() != null) {
-			getJcudaSparseMatrixPtr().deallocate(eager);
-		}
-		jcudaDenseMatrixPtr = null;
-		jcudaSparseMatrixPtr = null;
-		resetReadWriteLock();
-	}
-
 	protected long getSizeOnDevice() {
 		long GPUSize = 0;
 		long rlen = mat.getNumRows();
@@ -989,22 +966,25 @@ public class GPUObject {
 	}
 
 	/**
-	 * lazily clears the data associated with this {@link GPUObject} instance
-	 *
-	 * @throws CacheException ?
-	 */
-	public void clearData() throws DMLRuntimeException {
-		clearData(DMLScript.EAGER_CUDA_FREE);
-	}
-
-	/**
 	 * Clears the data associated with this {@link GPUObject} instance
 	 *
+	 * @param opcode opcode of the instruction
 	 * @param eager whether to be done synchronously or asynchronously
-	 * @throws CacheException ?
+	 * @throws CacheException if error occurs
 	 */
-	public void clearData(boolean eager) throws DMLRuntimeException {
-		deallocateMemoryOnDevice(eager);
+	public void clearData(String opcode, boolean eager) throws DMLRuntimeException {
+		if(LOG.isTraceEnabled()) {
+			LOG.trace("GPU : clearData on " + this + ", GPUContext=" + getGPUContext());
+		}
+		if (getJcudaDenseMatrixPtr() != null) {
+			getGPUContext().cudaFreeHelper(opcode, getJcudaDenseMatrixPtr(), eager);
+		}
+		if (getJcudaSparseMatrixPtr() != null) {
+			getJcudaSparseMatrixPtr().deallocate(eager);
+		}
+		jcudaDenseMatrixPtr = null;
+		jcudaSparseMatrixPtr = null;
+		resetReadWriteLock();
 		getGPUContext().getMemoryManager().removeGPUObject(this);
 	}
 

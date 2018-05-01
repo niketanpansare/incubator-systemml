@@ -178,7 +178,7 @@ public class SinglePrecisionCudaSupportFunctions implements CudaSupportFunctions
 			Pointer deviceDoubleData = gCtx.allocate(((long)dest.length)*Sizeof.DOUBLE);
 			LibMatrixCUDA.float2double(gCtx, src, deviceDoubleData, dest.length);
 			cudaMemcpy(Pointer.to(dest), deviceDoubleData, ((long)dest.length)*Sizeof.DOUBLE, cudaMemcpyDeviceToHost);
-			gCtx.cudaFreeHelper(deviceDoubleData);
+			gCtx.cudaFreeHelper(instName, deviceDoubleData, DMLScript.EAGER_CUDA_FREE);
 		}
 		else {
 			LOG.debug("Potential OOM: Allocated additional space on host in deviceToHost");
@@ -201,7 +201,7 @@ public class SinglePrecisionCudaSupportFunctions implements CudaSupportFunctions
 			Pointer deviceDoubleData = gCtx.allocate(((long)src.length)*Sizeof.DOUBLE);
 			cudaMemcpy(deviceDoubleData, Pointer.to(src), ((long)src.length)*Sizeof.DOUBLE, cudaMemcpyHostToDevice);
 			LibMatrixCUDA.double2float(gCtx, deviceDoubleData, dest, src.length);
-			gCtx.cudaFreeHelper(deviceDoubleData);
+			gCtx.cudaFreeHelper(instName, deviceDoubleData, DMLScript.EAGER_CUDA_FREE);
 		}
 		else {
 			float [] floatData = new float[src.length];

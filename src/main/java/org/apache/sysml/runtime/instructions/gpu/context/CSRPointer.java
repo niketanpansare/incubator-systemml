@@ -447,10 +447,6 @@ public class CSRPointer {
 		return getGPUContext().allocate(size);
 	}
 
-	private void cudaFreeHelper(Pointer toFree, boolean eager) throws DMLRuntimeException {
-		getGPUContext().cudaFreeHelper(toFree, eager);
-	}
-
 	private GPUContext getGPUContext() {
 		return gpuContext;
 	}
@@ -528,11 +524,11 @@ public class CSRPointer {
 	 */
 	public void deallocate(boolean eager) throws DMLRuntimeException {
 		if(val != null)
-			cudaFreeHelper(val, eager);
+			getGPUContext().cudaFreeHelper(null, val, eager);
 		if(rowPtr != null)
-			cudaFreeHelper(rowPtr, eager);
+			getGPUContext().cudaFreeHelper(null, rowPtr, eager);
 		if(colInd != null)
-			cudaFreeHelper(colInd, eager);
+			getGPUContext().cudaFreeHelper(null, colInd, eager);
 		val = null;
 		rowPtr = null;
 		colInd = null;

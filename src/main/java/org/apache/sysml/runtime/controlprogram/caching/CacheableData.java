@@ -691,7 +691,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		if( _gpuObjects != null )
 			for (GPUObject gObj : _gpuObjects.values())
 				if (gObj != null)
-					gObj.clearData();
+					gObj.clearData(null, DMLScript.EAGER_CUDA_FREE);
 
 		// change object state EMPTY
 		setDirty(false);

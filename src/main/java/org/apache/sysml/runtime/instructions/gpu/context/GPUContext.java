@@ -213,38 +213,6 @@ public class GPUContext {
 
 
 	/**
-	 * Does lazy cudaFree calls.
-	 *
-	 * @param toFree {@link Pointer} instance to be freed
-	 * @throws DMLRuntimeException if error
-	 */
-	public void cudaFreeHelper(final Pointer toFree) throws DMLRuntimeException {
-		cudaFreeHelper(null, toFree, DMLScript.EAGER_CUDA_FREE);
-	}
-
-	/**
-	 * Does lazy/eager cudaFree calls.
-	 *
-	 * @param toFree {@link Pointer} instance to be freed
-	 * @param eager  true if to be done eagerly
-	 * @throws DMLRuntimeException if error
-	 */
-	public void cudaFreeHelper(final Pointer toFree, boolean eager) throws DMLRuntimeException {
-		cudaFreeHelper(null, toFree, eager);
-	}
-
-	/**
-	 * Does lazy cudaFree calls.
-	 *
-	 * @param instructionName name of the instruction for which to record per instruction free time, null if do not want to record
-	 * @param toFree          {@link Pointer} instance to be freed
-	 * @throws DMLRuntimeException if error
-	 */
-	public void cudaFreeHelper(String instructionName, final Pointer toFree) throws DMLRuntimeException {
-		cudaFreeHelper(instructionName, toFree, DMLScript.EAGER_CUDA_FREE);
-	}
-
-	/**
 	 * Does cudaFree calls, lazily.
 	 *
 	 * @param instructionName name of the instruction for which to record per instruction free time, null if do not want to record

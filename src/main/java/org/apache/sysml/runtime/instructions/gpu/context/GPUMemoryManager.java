@@ -330,7 +330,7 @@ public class GPUMemoryManager {
 						if(toBeRemoved.dirty) {
 							toBeRemoved.copyFromDeviceToHost(opcode, true);
 						}
-						toBeRemoved.clearData(true);
+						toBeRemoved.clearData(opcode, true);
 					}
 					LOG.info("GPU Memory info after evicting all unlocked matrices:" + toString());
 				}
@@ -417,6 +417,7 @@ public class GPUMemoryManager {
 		if (toFree == EMPTY_POINTER) { // trying to free a null pointer
 			return;
 		}
+		LOG.info("Free-ing the pointer with eager=" + eager);
 		if (eager) {
 			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			guardedCudaFree(toFree);
@@ -454,7 +455,7 @@ public class GPUMemoryManager {
 				LOG.debug("Attempted to free GPU Memory when a block[" + gpuObj + "] is still on GPU memory, copying it back to host.");
 				gpuObj.copyFromDeviceToHost(null, true);
 			}
-			gpuObj.clearData(true);
+			gpuObj.clearData(null, true);
 		}
 		matrixMemoryManager.gpuObjects.clear();
 		

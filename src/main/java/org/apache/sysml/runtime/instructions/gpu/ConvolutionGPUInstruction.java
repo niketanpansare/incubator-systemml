@@ -22,6 +22,7 @@ import java.util.ArrayList;
 
 import jcuda.Pointer;
 
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -513,8 +514,8 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		Pointer c0Pointer = LibMatrixCUDA.getDensePointer(gCtx, getMatrixInputForGPUInstruction(ec, _input4.getName()), instructionName); 
 		
 		LibMatrixCuDNN.lstm(ec, gCtx, instructionName, cudnnInput, cudnnWPointer, out0Pointer, c0Pointer, return_sequences, _output.getName(), _output2.getName(), N, M, D, T);
-		gCtx.cudaFreeHelper(instructionName, cudnnWPointer);
-		gCtx.cudaFreeHelper(instructionName, cudnnInput);
+		gCtx.cudaFreeHelper(instructionName, cudnnWPointer, DMLScript.EAGER_CUDA_FREE);
+		gCtx.cudaFreeHelper(instructionName, cudnnInput, DMLScript.EAGER_CUDA_FREE);
 		
 		// release inputs/outputs
 		ec.releaseMatrixInputForGPUInstruction(_input3.getName());
