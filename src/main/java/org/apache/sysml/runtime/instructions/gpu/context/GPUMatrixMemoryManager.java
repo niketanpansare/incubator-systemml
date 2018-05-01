@@ -76,12 +76,12 @@ public class GPUMatrixMemoryManager {
 	Set<Pointer> getPointers(GPUObject gObj) {
 		Set<Pointer> ret = new HashSet<>();
 		if(gObj.getJcudaDenseMatrixPtr() != null && gObj.getSparseMatrixCudaPointer() != null) {
-			throw new RuntimeException("Matrix allocated in both dense and sparse format");
+			LOG.warn("Matrix allocated in both dense and sparse format");
 		}
-		else if(gObj.getJcudaDenseMatrixPtr() != null) {
+		if(gObj.getJcudaDenseMatrixPtr() != null) {
 			ret.add(gObj.getJcudaDenseMatrixPtr());
 		}
-		else {
+		if(gObj.getSparseMatrixCudaPointer() != null) {
 			CSRPointer sparsePtr = gObj.getSparseMatrixCudaPointer();
 			if(sparsePtr != null) {
 				if(sparsePtr.rowPtr != null)
