@@ -626,7 +626,10 @@ public class GPUObject {
 					LOG.trace("GPU : data is dirty on device, copying to host, on " + this + ", GPUContext="
 						+ getGPUContext());
 				}
-				copyFromDeviceToHost(instName, false);
+				// TODO: Future optimization:
+				// For now, we are deleting the device data when copied from device to host. 
+				// This can be optimized later by treating acquiredModify+release as a new state
+				copyFromDeviceToHost(instName, false, true); 
 				copied = true;
 			}
 		} catch (DMLRuntimeException e) {
@@ -896,7 +899,7 @@ public class GPUObject {
 		return (int) l;
 	}
 
-	protected void copyFromDeviceToHost(String instName, boolean isEviction) throws DMLRuntimeException {
+	protected void copyFromDeviceToHost(String instName, boolean isEviction, boolean deleteDeviceData) throws DMLRuntimeException {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : copyFromDeviceToHost, on " + this + ", GPUContext=" + getGPUContext());
 		}
@@ -912,7 +915,8 @@ public class GPUObject {
 			tmp.allocateDenseBlock();
 			LibMatrixCUDA.cudaSupportFunctions.deviceToHost(getGPUContext(),
 						getJcudaDenseMatrixPtr(), tmp.getDenseBlockValues(), instName, isEviction);
-			
+			if(deleteDeviceData)
+				clearData(instName, true);
 			tmp.recomputeNonZeros();
 			mat.acquireModify(tmp);
 			mat.release();

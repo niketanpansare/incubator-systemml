@@ -149,11 +149,10 @@ public class GPUMatrixMemoryManager {
 					.max(comparator);
 		if(toClear.isPresent()) {
 			GPUObject gObj = toClear.get();
-			if(gObj.dirty) {
-				// Perform eviction if dirty
-				gObj.copyFromDeviceToHost(opcode, true);
-			}
-			gObj.clearData(opcode, true);
+			if(gObj.dirty) 
+				gObj.copyFromDeviceToHost(opcode, true, true); // Perform eviction if dirty
+			else
+				gObj.clearData(opcode, true);
 			gpuObjects.remove(gObj);
 		}
 		return toClear.isPresent();
@@ -171,10 +170,10 @@ public class GPUMatrixMemoryManager {
 		if(unlockedGPUObjects.size() > 0) {
 			LOG.warn("Clearing all unlocked matrices (count=" + unlockedGPUObjects.size() + ").");
 			for(GPUObject toBeRemoved : unlockedGPUObjects) {
-				if(toBeRemoved.dirty) {
-					toBeRemoved.copyFromDeviceToHost(opcode, true);
-				}
-				toBeRemoved.clearData(opcode, true);
+				if(toBeRemoved.dirty)
+					toBeRemoved.copyFromDeviceToHost(opcode, true, true);
+				else
+					toBeRemoved.clearData(opcode, true);
 			}
 			gpuObjects.removeAll(unlockedGPUObjects);
 		}

@@ -327,10 +327,10 @@ public class GPUMemoryManager {
 												.filter(gpuObj -> !gpuObj.isLocked()).collect(Collectors.toList());
 					matrixMemoryManager.gpuObjects.removeAll(unlockedGPUObjects);
 					for(GPUObject toBeRemoved : unlockedGPUObjects) {
-						if(toBeRemoved.dirty) {
-							toBeRemoved.copyFromDeviceToHost(opcode, true);
-						}
-						toBeRemoved.clearData(opcode, true);
+						if(toBeRemoved.dirty)
+							toBeRemoved.copyFromDeviceToHost(opcode, true, true);
+						else
+							toBeRemoved.clearData(opcode, true);
 					}
 					LOG.info("GPU Memory info after evicting all unlocked matrices:" + toString());
 				}
@@ -452,10 +452,12 @@ public class GPUMemoryManager {
 		// First deallocate all the GPU objects
 		for(GPUObject gpuObj : matrixMemoryManager.gpuObjects) {
 			if(gpuObj.isDirty()) {
-				LOG.debug("Attempted to free GPU Memory when a block[" + gpuObj + "] is still on GPU memory, copying it back to host.");
-				gpuObj.copyFromDeviceToHost(null, true);
+				if(LOG.isDebugEnabled())
+					LOG.debug("Attempted to free GPU Memory when a block[" + gpuObj + "] is still on GPU memory, copying it back to host.");
+				gpuObj.copyFromDeviceToHost(null, true, true);
 			}
-			gpuObj.clearData(null, true);
+			else
+				gpuObj.clearData(null, true);
 		}
 		matrixMemoryManager.gpuObjects.clear();
 		
