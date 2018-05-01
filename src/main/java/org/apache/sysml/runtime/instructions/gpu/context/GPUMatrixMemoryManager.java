@@ -168,7 +168,8 @@ public class GPUMatrixMemoryManager {
 		Set<GPUObject> unlockedGPUObjects = gpuObjects.stream()
 				.filter(gpuObj -> !gpuObj.isLocked()).collect(Collectors.toSet());
 		if(unlockedGPUObjects.size() > 0) {
-			LOG.warn("Clearing all unlocked matrices (count=" + unlockedGPUObjects.size() + ").");
+			if(LOG.isWarnEnabled())
+				LOG.warn("Clearing all unlocked matrices (count=" + unlockedGPUObjects.size() + ").");
 			for(GPUObject toBeRemoved : unlockedGPUObjects) {
 				if(toBeRemoved.dirty)
 					toBeRemoved.copyFromDeviceToHost(opcode, true, true);

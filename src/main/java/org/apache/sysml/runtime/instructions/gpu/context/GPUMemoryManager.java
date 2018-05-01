@@ -42,8 +42,6 @@ import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
 import org.apache.sysml.utils.GPUStatistics;
 
 import jcuda.Pointer;
-import jcuda.runtime.JCuda;
-
 /**
  * - All cudaFree and cudaMalloc in SystemML should go through this class to avoid OOM or incorrect results.
  * - This class can be refactored in future to accept a chunk of memory ahead of time rather than while execution. This will only thow memory-related errors during startup.  
@@ -208,12 +206,12 @@ public class GPUMemoryManager {
 	 */
 	private String byteCountToDisplaySize(long numBytes) {
 		// return org.apache.commons.io.FileUtils.byteCountToDisplaySize(bytes); // performs rounding
-	    if (numBytes < 1000) { 
+	    if (numBytes < 1024) { 
 	    	return numBytes + " bytes";
 	    }
 	    else {
-		    int exp = (int) (Math.log(numBytes) / 6.907755278982137);
-		    return String.format("%.3f %sB", ((double)numBytes) / Math.pow(1000, exp), "kMGTP".charAt(exp-1));
+		    int exp = (int) (Math.log(numBytes) / 6.931471805599453);
+		    return String.format("%.3f %sB", ((double)numBytes) / Math.pow(1024, exp), "KMGTP".charAt(exp-1));
 	    }
 	}
 	
@@ -397,7 +395,7 @@ public class GPUMemoryManager {
 				allPointers.remove(toFree);
 				lazyCudaFreeMemoryManager.removeIfPresent(size, toFree);
 				cudaFree(toFree);
-				JCuda.cudaDeviceSynchronize(); // Force a device synchronize after free-ing the pointer for debugging
+				// JCuda.cudaDeviceSynchronize(); // Force a device synchronize after free-ing the pointer for debugging
 			}
 			else {
 				throw new RuntimeException("Attempting to free an unaccounted pointer:" + toFree);
@@ -417,7 +415,8 @@ public class GPUMemoryManager {
 		if (toFree == EMPTY_POINTER) { // trying to free a null pointer
 			return;
 		}
-		LOG.info("Free-ing the pointer with eager=" + eager);
+		if(LOG.isTraceEnabled())
+			LOG.trace("Free-ing the pointer with eager=" + eager);
 		if (eager) {
 			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			guardedCudaFree(toFree);
