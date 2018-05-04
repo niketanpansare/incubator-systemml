@@ -332,6 +332,7 @@ public class GPUMemoryManager {
 							toBeRemoved.add(gpuObj);
 							sizeUntilNow += matrixMemoryManager.getWorstCaseContiguousMemorySize(gpuObj);
 						}
+						
 						toBeRemoved.stream().forEach((gpuObj) ->  gpuObj.copyFromDeviceToHost(opcode, true, true));
 						// toBeRemoved.parallelStream().forEach((gpuObj) ->  gpuObj.copyFromDeviceToHost(opcode, true, true));
 						if(DMLScript.PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled()) {

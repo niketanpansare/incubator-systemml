@@ -52,7 +52,7 @@ public class GPUStatistics {
 	public static LongAdder cudaToDevTime = new LongAdder();             // time spent in copying data from host (CPU) to device (GPU) memory
 	public static LongAdder cudaFromDevTime = new LongAdder();           // time spent in copying data from device to host
 	public static LongAdder cudaEvictTime = new LongAdder();           	 // time spent in eviction
-	public static LongAdder cudaEvictTimeCPUFloat2Double = new LongAdder(); // time spent in converting float to double during eviction
+	public static LongAdder cudaEvictCPUFloat2DoubleTime = new LongAdder(); // time spent in converting float to double during eviction
 	public static LongAdder cudaForcedClearLazyFreedEvictTime = new LongAdder(); // time spent in forced lazy eviction
 	public static LongAdder cudaForcedClearUnpinnedEvictTime = new LongAdder(); // time spent in forced unpinned eviction
 	public static LongAdder cudaAllocCount = new LongAdder();
@@ -89,7 +89,7 @@ public class GPUStatistics {
 		cudaToDevTime.reset();
 		cudaFromDevTime.reset();
 		cudaEvictTime.reset();
-		cudaEvictTimeCPUFloat2Double.reset();
+		cudaEvictCPUFloat2DoubleTime.reset();
 		cudaForcedClearLazyFreedEvictTime.reset();
 		cudaForcedClearUnpinnedEvictTime.reset();
 		cudaAllocCount.reset();
@@ -202,7 +202,7 @@ public class GPUStatistics {
 				+ String.format("%.3f", cudaToDevTime.longValue()*1e-9) + "/"
 				+ String.format("%.3f", cudaFromDevTime.longValue()*1e-9) + "/"
 				+ String.format("%.3f", cudaEvictTime.longValue()*1e-9) + "("
-				+ String.format("%.3f", cudaEvictTimeCPUFloat2Double.longValue()*1e-9)
+				+ String.format("%.3f", cudaEvictCPUFloat2DoubleTime.longValue()*1e-9)
 				+ ") sec.\n");
 		sb.append("GPU mem tx count (alloc/dealloc/set0/toDev/fromDev/evict):\t"
 				+ cudaAllocCount.longValue() + "/"

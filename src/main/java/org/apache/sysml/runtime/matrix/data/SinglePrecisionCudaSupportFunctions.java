@@ -183,11 +183,12 @@ public class SinglePrecisionCudaSupportFunctions implements CudaSupportFunctions
 			LOG.debug("Potential OOM: Allocated additional space on host in deviceToHost");
 			float [] floatData = new float[dest.length];
 			cudaMemcpy(Pointer.to(floatData), src, ((long)dest.length)*Sizeof.FLOAT, cudaMemcpyDeviceToHost);
-			long t0 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
+			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			for(int i = 0; i < dest.length; i++) {
 				dest[i] = floatData[i];
 			}
-			GPUStatistics.cudaEvictTimeCPUFloat2Double.add(System.nanoTime()-t0);
+			if(DMLScript.STATISTICS)
+				GPUStatistics.cudaEvictCPUFloat2DoubleTime.add(System.nanoTime()-t0);
 		}
 		if(DMLScript.FINEGRAINED_STATISTICS && instName != null) 
 			GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DEVICE_TO_HOST, System.nanoTime() - t1);
