@@ -523,12 +523,14 @@ public class CSRPointer {
 	 * @throws DMLRuntimeException ?
 	 */
 	public void deallocate(boolean eager) throws DMLRuntimeException {
-		if(val != null && val != GPUMemoryManager.EMPTY_POINTER)
-			getGPUContext().cudaFreeHelper(null, val, eager);
-		if(rowPtr != null && rowPtr != GPUMemoryManager.EMPTY_POINTER)
-			getGPUContext().cudaFreeHelper(null, rowPtr, eager);
-		if(colInd != null && colInd != GPUMemoryManager.EMPTY_POINTER)
-			getGPUContext().cudaFreeHelper(null, colInd, eager);
+		if (nnz > 0) {
+			if (val != null)
+				getGPUContext().cudaFreeHelper(null, val, eager);
+			if (rowPtr != null)
+				getGPUContext().cudaFreeHelper(null, rowPtr, eager);
+			if (colInd != null)
+				getGPUContext().cudaFreeHelper(null, colInd, eager);
+		}
 		val = null;
 		rowPtr = null;
 		colInd = null;

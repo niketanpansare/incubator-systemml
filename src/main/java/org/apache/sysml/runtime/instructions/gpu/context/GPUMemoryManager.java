@@ -366,30 +366,27 @@ public class GPUMemoryManager {
 			sb.append("\n");
 		}
 	}
-	
-	public static final Pointer EMPTY_POINTER = new Pointer();
-	
+
 	/**
 	 * Note: This method should not be called from an iterator as it removes entries from allocatedGPUPointers and rmvarGPUPointers
 	 * 
 	 * @param toFree pointer to call cudaFree method on
 	 */
 	void guardedCudaFree(Pointer toFree) {
-		if (toFree != EMPTY_POINTER) {
-			if(allPointers.containsKey(toFree)) {
-				long size = allPointers.get(toFree).getSizeInBytes();
-				if(LOG.isTraceEnabled()) {
-					LOG.trace("Free-ing up the pointer of size " +  byteCountToDisplaySize(size));
-				}
-				allPointers.remove(toFree);
-				lazyCudaFreeMemoryManager.removeIfPresent(size, toFree);
-				cudaFree(toFree);
-				// JCuda.cudaDeviceSynchronize(); // Force a device synchronize after free-ing the pointer for debugging
+		if(allPointers.containsKey(toFree)) {
+			long size = allPointers.get(toFree).getSizeInBytes();
+			if(LOG.isTraceEnabled()) {
+				LOG.trace("Free-ing up the pointer of size " +  byteCountToDisplaySize(size));
 			}
-			else {
-				throw new RuntimeException("Attempting to free an unaccounted pointer:" + toFree);
-			}
+			allPointers.remove(toFree);
+			lazyCudaFreeMemoryManager.removeIfPresent(size, toFree);
+			cudaFree(toFree);
+			// JCuda.cudaDeviceSynchronize(); // Force a device synchronize after free-ing the pointer for debugging
 		}
+		else {
+			throw new RuntimeException("Attempting to free an unaccounted pointer:" + toFree);
+		}
+
 	}
 	
 	/**
@@ -401,9 +398,6 @@ public class GPUMemoryManager {
 	 * @throws DMLRuntimeException if error
 	 */
 	public void free(String opcode, Pointer toFree, boolean eager) throws DMLRuntimeException {
-		if (toFree == EMPTY_POINTER) { // trying to free a null pointer
-			return;
-		}
 		if(LOG.isTraceEnabled())
 			LOG.trace("Free-ing the pointer with eager=" + eager);
 		if (eager) {
@@ -562,12 +556,12 @@ public class GPUMemoryManager {
 			totalSizePotentiallyLeakyPointers += size;
 		}
 		StringBuilder ret = new StringBuilder();
-		if(DMLScript.PRINT_GPU_MEMORY_INFO) {
-			if(potentiallyLeakyPointers.size() > 0) {
-				ret.append("Non-matrix pointers were allocated by:\n");
-				printPointers(potentiallyLeakyPointers, ret);
-			}
-		}
+		//if(DMLScript.PRINT_GPU_MEMORY_INFO) {
+		//	if(potentiallyLeakyPointers.size() > 0) {
+		//		ret.append("Non-matrix pointers were allocated by:\n");
+		//		printPointers(potentiallyLeakyPointers, ret);
+		//	}
+		//}
 		ret.append("\n====================================================\n");
 		ret.append(String.format("%-35s%-15s%-15s%-15s\n", "", 
 				"Num Objects", "Num Pointers", "Size"));
