@@ -338,7 +338,7 @@ public class GPUMemoryManager {
 				}
 				// ---------------------------------------------------------------
 			}
-			addMiscTime(opcode, GPUStatistics.cudaEvictionCount, GPUStatistics.cudaEvictTime, GPUInstruction.MISC_TIMER_EVICT, t0);
+			addMiscTime(opcode, GPUStatistics.cudaEvictTime, GPUStatistics.cudaEvictionCount, GPUInstruction.MISC_TIMER_EVICT, t0);
 			if(A == null) {
 				A = cudaMallocNoWarn(tmpA, size); // if the matrix is not allocated via eviction
 			}
