@@ -51,7 +51,7 @@ public class GPUMatrixMemoryManager {
 	 * @param gpuObj gpu object
 	 * @return memory size in bytes
 	 */
-	private long getWorstCaseContiguousMemorySize(GPUObject gpuObj) {
+	long getWorstCaseContiguousMemorySize(GPUObject gpuObj) {
 		long ret = 0;
 		if(gpuObj.getJcudaDenseMatrixPtr() != null) {
 			ret = gpuManager.allPointers.get(gpuObj.getJcudaDenseMatrixPtr()).getSizeInBytes();

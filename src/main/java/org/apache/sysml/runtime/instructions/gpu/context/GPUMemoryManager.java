@@ -23,6 +23,7 @@ import static jcuda.runtime.JCuda.cudaMalloc;
 import static jcuda.runtime.JCuda.cudaMemGetInfo;
 import static jcuda.runtime.JCuda.cudaMemset;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -324,11 +325,18 @@ public class GPUMemoryManager {
 						Collections.sort(unlockedGPUObjects, new EvictionPolicyBasedComparator(size));
 					}
 					while(A == null && unlockedGPUObjects.size() > 0) {
-						GPUObject toBeRemoved = unlockedGPUObjects.remove(unlockedGPUObjects.size()-1);
-						toBeRemoved.copyFromDeviceToHost(opcode, true, true);
+						List<GPUObject> toBeRemoved = new ArrayList<>();
+						long sizeUntilNow = 0;
+						while(sizeUntilNow < size && unlockedGPUObjects.size() > 0) {
+							GPUObject gpuObj = unlockedGPUObjects.remove(unlockedGPUObjects.size()-1);
+							toBeRemoved.add(gpuObj);
+							sizeUntilNow += matrixMemoryManager.getWorstCaseContiguousMemorySize(gpuObj);
+						}
+						// toBeRemoved.stream().forEach((gpuObj) ->  gpuObj.copyFromDeviceToHost(opcode, true, true));
+						toBeRemoved.parallelStream().forEach((gpuObj) ->  gpuObj.copyFromDeviceToHost(opcode, true, true));
 						if(DMLScript.PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled()) {
 							// greater than or equal to " + byteCountToDisplaySize(size)
-							LOG.info("GPU Memory info after evicting an unlocked matrix:" + toString());
+							LOG.info("GPU Memory info after evicting " + toBeRemoved.size() + " unlocked matrices:" + toString());
 						}
 						A = cudaMallocNoWarn(tmpA, size); // Try malloc rather than check available memory to avoid fragmentation related issues
 					}
