@@ -889,22 +889,20 @@ public class GPUObject {
 		}
 
 		if (getJcudaDenseMatrixPtr() != null) {
-			long start = 0;
-			if (DMLScript.STATISTICS)
-				start = System.nanoTime();
+			long start = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			MatrixBlock tmp = new MatrixBlock(toIntExact(mat.getNumRows()), toIntExact(mat.getNumColumns()), false);
 			tmp.allocateDenseBlock();
-			int nnz = LibMatrixCUDA.computeNNZ(getGPUContext(), getJcudaDenseMatrixPtr(), toIntExact(mat.getNumRows()*mat.getNumColumns()));
 			LibMatrixCUDA.cudaSupportFunctions.deviceToHost(getGPUContext(),
-						getJcudaDenseMatrixPtr(), tmp.getDenseBlockValues(), instName, isEviction);
+						getJcudaDenseMatrixPtr(), tmp.getDenseBlockValues(), instName, isEviction); 
+			int nnz = LibMatrixCUDA.computeNNZ(getGPUContext(), getJcudaDenseMatrixPtr(), toIntExact(mat.getNumRows()*mat.getNumColumns()));
 			if(eagerDelete)
-				clearData(instName, true); 
+				clearData(instName, true);
 			tmp.setNonZeros(nnz);
 			mat.acquireModify(tmp);
 			mat.release();
-
+			long end = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			if (DMLScript.STATISTICS)
-				GPUStatistics.cudaFromDevTime.add(System.nanoTime() - start);
+				GPUStatistics.cudaFromDevTime.add(end - start);
 			if (DMLScript.STATISTICS)
 				GPUStatistics.cudaFromDevCount.add(1);
 		} else if (getJcudaSparseMatrixPtr() != null) {
