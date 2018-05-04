@@ -66,10 +66,6 @@ public class GPUContext {
 	private final int deviceNum;
 	
 	/**
-	 * By default, we initialize the handles lazily to avoid paying penalty (memory+initialization) when the given library is not used.  
-	 */
-	private final boolean INITIALIZE_HANDLES_LAZILY = true;
-	/**
 	 * cudnnHandle for Deep Neural Network operations on the GPU
 	 */
 	private cudnnHandle cudnnHandle;
@@ -136,18 +132,17 @@ public class GPUContext {
 		}
 	}
 
-	@SuppressWarnings("unused")
 	private void initializeCudaLibraryHandles() throws DMLRuntimeException {
 		// We don't need to explicitly delete the handles if we are planning to create them again. 
 		// This has a huge performance impact on scripts that has large number of layers (i.e. FunctionCallCP) for example ResNet.
 		// If this is absolutely required for parfor, please add appropriate safeguard for non-parfor scripts. 
 		// deleteCudaLibraryHandles();
-		if (!INITIALIZE_HANDLES_LAZILY && cudnnHandle == null) {
+		if (cudnnHandle == null) {
 			cudnnHandle = new cudnnHandle();
 			cudnnCreate(cudnnHandle);
 		}
 
-		if (!INITIALIZE_HANDLES_LAZILY && cublasHandle == null) {
+		if (cublasHandle == null) {
 			cublasHandle = new cublasHandle();
 			cublasCreate(cublasHandle);
 		}
@@ -155,14 +150,9 @@ public class GPUContext {
 		// This applies to arguments like "alpha" in Dgemm, and "y" in Ddot.
 		// cublasSetPointerMode(LibMatrixCUDA.cublasHandle, cublasPointerMode.CUBLAS_POINTER_MODE_DEVICE);
 
-		if (!INITIALIZE_HANDLES_LAZILY && cusparseHandle == null) {
+		if (cusparseHandle == null) {
 			cusparseHandle = new cusparseHandle();
 			cusparseCreate(cusparseHandle);
-		}
-
-		if (!INITIALIZE_HANDLES_LAZILY && cusolverDnHandle == null) {
-			cusolverDnHandle = new cusolverDnHandle();
-			cusolverDnCreate(cusolverDnHandle);
 		}
 		
 		if (kernels == null) {
@@ -328,12 +318,6 @@ public class GPUContext {
 	 * @return cudnnHandle for current thread
 	 */
 	public cudnnHandle getCudnnHandle() {
-		if (cudnnHandle == null) {
-			synchronized(this) {
-				cudnnHandle = new cudnnHandle();
-				cudnnCreate(cudnnHandle);
-			}
-		}
 		return cudnnHandle;
 	}
 
@@ -343,12 +327,6 @@ public class GPUContext {
 	 * @return cublasHandle for current thread
 	 */
 	public cublasHandle getCublasHandle() {
-		if (cublasHandle == null) {
-			synchronized(this) {
-				cublasHandle = new cublasHandle();
-				cublasCreate(cublasHandle);
-			}
-		}
 		return cublasHandle;
 	}
 
@@ -358,12 +336,6 @@ public class GPUContext {
 	 * @return cusparseHandle for current thread
 	 */
 	public cusparseHandle getCusparseHandle() {
-		if (cusparseHandle == null) {
-			synchronized(this) {
-				cusparseHandle = new cusparseHandle();
-				cusparseCreate(cusparseHandle);
-			}
-		}
 		return cusparseHandle;
 	}
 
@@ -375,8 +347,11 @@ public class GPUContext {
 	public cusolverDnHandle getCusolverDnHandle() {
 		if (cusolverDnHandle == null) {
 			synchronized(this) {
-				cusolverDnHandle = new cusolverDnHandle();
-				cusolverDnCreate(cusolverDnHandle);
+				if (cusolverDnHandle == null) {
+					// Since cusolverDnHandle handle is rarely used and occupies unnecessary memory, it is only initialized when needed.
+					cusolverDnHandle = new cusolverDnHandle();
+					cusolverDnCreate(cusolverDnHandle);
+				}
 			}
 		}
 		return cusolverDnHandle;
