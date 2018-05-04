@@ -21,6 +21,7 @@ package org.apache.sysml.runtime.matrix.data;
 
 import static jcuda.jcublas.cublasOperation.CUBLAS_OP_N;
 import static jcuda.jcublas.cublasOperation.CUBLAS_OP_T;
+import static jcuda.runtime.JCuda.cudaMalloc;
 import static jcuda.runtime.JCuda.cudaMemcpy;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToDevice;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
@@ -88,8 +89,10 @@ import jcuda.jcublas.cublasHandle;
 import jcuda.jcublas.cublasOperation;
 import jcuda.jcublas.cublasSideMode;
 import jcuda.jcusparse.cusparseAction;
+import jcuda.jcusparse.cusparseDirection;
 import jcuda.jcusparse.cusparseHandle;
 import jcuda.jcusparse.cusparseIndexBase;
+import jcuda.jcusparse.cusparseMatDescr;
 
 /**
  * All CUDA kernels and library calls are redirected through this class
@@ -2541,6 +2544,37 @@ public class LibMatrixCUDA {
 			if (DMLScript.FINEGRAINED_STATISTICS)
 				GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_ALLOCATE_SPARSE_OUTPUT, System.nanoTime() - t0);
 		return mb.getKey();
+	}
+	
+	// Small 1-int pointers to avoid unnecessary allocation/deallocation
+	private static Pointer _TMP_NNZ_ROW_PTR = null;
+	private static Pointer _TMP_NNZ_PTR = null;
+	/**
+	 * Utility to compute number of non-zeroes on the GPU
+	 * 
+	 * @param gCtx the associated GPUContext
+	 * @param densePtr device pointer to the dense matrix
+	 * @param length length of the dense pointer
+	 * @return the number of non-zeroes
+	 */
+	public static synchronized int computeNNZ(GPUContext gCtx, Pointer densePtr, int length) {
+		cusparseMatDescr matDescr = CSRPointer.getDefaultCuSparseMatrixDescriptor();
+		cusparseHandle cusparseHandle = gCtx.getCusparseHandle();
+		if(_TMP_NNZ_ROW_PTR == null) {
+			// As these are 4-byte pointers, using cudaMalloc directly so as not to include them in memory information.
+			_TMP_NNZ_ROW_PTR = new Pointer();
+			cudaMalloc(_TMP_NNZ_ROW_PTR, jcuda.Sizeof.INT);
+			_TMP_NNZ_PTR = new Pointer();
+			cudaMalloc(_TMP_NNZ_PTR, jcuda.Sizeof.INT);
+			// _TMP_NNZ_ROW_PTR = gCtx.allocate(jcuda.Sizeof.INT);
+			// _TMP_NNZ_PTR = gCtx.allocate(jcuda.Sizeof.INT);
+		}
+		// Output is in dense vector format, convert it to CSR
+		LibMatrixCUDA.cudaSupportFunctions.cusparsennz(cusparseHandle, cusparseDirection.CUSPARSE_DIRECTION_ROW, 1, length, matDescr, densePtr, 1,
+				_TMP_NNZ_ROW_PTR, _TMP_NNZ_PTR);
+		int[] nnzC = { -1 };
+		cudaMemcpy(Pointer.to(nnzC), _TMP_NNZ_PTR, jcuda.Sizeof.INT, cudaMemcpyDeviceToHost);
+		return nnzC[0];
 	}
 
 

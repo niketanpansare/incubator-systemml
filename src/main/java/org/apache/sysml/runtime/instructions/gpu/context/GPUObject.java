@@ -169,6 +169,7 @@ public class GPUObject {
 				lda, C, ldc);
 		return C;
 	}
+	
 
 	/**
 	 * Convenience method to convert a CSR matrix to a dense matrix on the GPU
@@ -869,7 +870,17 @@ public class GPUObject {
 		return (int) l;
 	}
 
-	protected void copyFromDeviceToHost(String instName, boolean isEviction, boolean deleteDeviceData) throws DMLRuntimeException {
+	/**
+	 * Copies the data from device to host.
+	 * Currently eagerDelete and isEviction are both provided for better control in different scenarios. 
+	 * In future, we can force eagerDelete if isEviction is true, else false.
+	 * 
+	 * @param instName opcode of the instruction for fine-grained statistics
+	 * @param isEviction is called for eviction
+	 * @param eagerDelete whether to perform eager deletion of the device data. 
+	 * @throws DMLRuntimeException if error occurs
+	 */
+	protected void copyFromDeviceToHost(String instName, boolean isEviction, boolean eagerDelete) throws DMLRuntimeException {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : copyFromDeviceToHost, on " + this + ", GPUContext=" + getGPUContext());
 		}
@@ -883,11 +894,12 @@ public class GPUObject {
 				start = System.nanoTime();
 			MatrixBlock tmp = new MatrixBlock(toIntExact(mat.getNumRows()), toIntExact(mat.getNumColumns()), false);
 			tmp.allocateDenseBlock();
+			int nnz = LibMatrixCUDA.computeNNZ(getGPUContext(), getJcudaDenseMatrixPtr(), toIntExact(mat.getNumRows()*mat.getNumColumns()));
 			LibMatrixCUDA.cudaSupportFunctions.deviceToHost(getGPUContext(),
 						getJcudaDenseMatrixPtr(), tmp.getDenseBlockValues(), instName, isEviction);
-			if(deleteDeviceData)
-				clearData(instName, true);
-			tmp.recomputeNonZeros();
+			if(eagerDelete)
+				clearData(instName, true); 
+			tmp.setNonZeros(nnz);
 			mat.acquireModify(tmp);
 			mat.release();
 
@@ -922,7 +934,8 @@ public class GPUObject {
 					GPUStatistics.cudaFromDevTime.add(System.nanoTime() - t0);
 				if (DMLScript.STATISTICS)
 					GPUStatistics.cudaFromDevCount.add(3);
-
+				if(eagerDelete)
+					clearData(instName, true);
 				SparseBlockCSR sparseBlock = new SparseBlockCSR(rowPtr, colInd, values, nnz);
 				MatrixBlock tmp = new MatrixBlock(rows, cols, nnz, sparseBlock);
 				mat.acquireModify(tmp);

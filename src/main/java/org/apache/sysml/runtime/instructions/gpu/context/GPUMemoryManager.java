@@ -23,6 +23,7 @@ import static jcuda.runtime.JCuda.cudaMalloc;
 import static jcuda.runtime.JCuda.cudaMemGetInfo;
 import static jcuda.runtime.JCuda.cudaMemset;
 
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -299,32 +300,42 @@ public class GPUMemoryManager {
 					else
 						LOG.info("No unlocked dirty matrix greater than or equal to " + byteCountToDisplaySize(size) + " found for evicted.");
 				}
+				
+				// Minor optimization: clear all unlocked non-dirty matrices before attempting eviction 
 				if(!success) {
-					// Evict all
-					String caller = "";
-					if(DMLScript.PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled()) {
-						StringBuilder sb = new StringBuilder();
-						sb.append(": ");
-						for (StackTraceElement ste : Thread.currentThread().getStackTrace()) {
-						    sb.append(ste);
-						    sb.append("\n");
-						}
-						caller = sb.toString();
-					}
-					LOG.warn("Evicting all unlocked matrices" + caller);
+					// Delete all non-dirty
 					List<GPUObject> unlockedGPUObjects = matrixMemoryManager.gpuObjects.stream()
-												.filter(gpuObj -> !gpuObj.isLocked()).collect(Collectors.toList());
+												.filter(gpuObj -> !gpuObj.isLocked() && !gpuObj.isDirty()).collect(Collectors.toList());
 					matrixMemoryManager.gpuObjects.removeAll(unlockedGPUObjects);
 					for(GPUObject toBeRemoved : unlockedGPUObjects) {
-						if(toBeRemoved.dirty)
-							toBeRemoved.copyFromDeviceToHost(opcode, true, true);
-						else
-							toBeRemoved.clearData(opcode, true);
+						toBeRemoved.clearData(opcode, true);
 					}
 					if(DMLScript.PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled()) {
-						LOG.info("GPU Memory info after evicting all unlocked matrices:" + toString());
+						LOG.info("GPU Memory info after clearing all unlocked non-dirty matrices:" + toString());
 					}
+					A = cudaMallocNoWarn(tmpA, size); // Try malloc rather than check available memory to avoid fragmentation related issues
 				}
+				
+				// ---------------------------------------------------------------
+				// Evict unlocked GPU objects one-by-one and try malloc
+				List<GPUObject> unlockedGPUObjects = null;
+				if(A == null) {
+					unlockedGPUObjects = matrixMemoryManager.gpuObjects.stream()
+							.filter(gpuObj -> !gpuObj.isLocked() && gpuObj.isDirty()).collect(Collectors.toList());
+					Collections.sort(unlockedGPUObjects, new EvictionPolicyBasedComparator(size));
+				}
+				while(A == null && unlockedGPUObjects.size() > 0) {
+					GPUObject toBeRemoved = unlockedGPUObjects.remove(unlockedGPUObjects.size()-1);
+					toBeRemoved.copyFromDeviceToHost(opcode, true, true);
+					if(DMLScript.PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled()) {
+						LOG.info("GPU Memory info after evicting an unlocked matrices:" + toString());
+					}
+					A = cudaMallocNoWarn(tmpA, size); // Try malloc rather than check available memory to avoid fragmentation related issues
+				}
+				if(unlockedGPUObjects != null && unlockedGPUObjects.size() == 0) {
+					LOG.warn("Evicted all unlocked matrices");
+				}
+				// ---------------------------------------------------------------
 			}
 			addMiscTime(opcode, GPUStatistics.cudaEvictionCount, GPUStatistics.cudaEvictTime, GPUInstruction.MISC_TIMER_EVICT, t0);
 			A = cudaMallocNoWarn(tmpA, size);
