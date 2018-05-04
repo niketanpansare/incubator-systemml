@@ -211,7 +211,7 @@ public class LibMatrixCUDA {
 		return gCtx.getCublasHandle();
 	}
 
-	protected static JCudaKernels getCudaKernels(GPUContext gCtx) {
+	public static JCudaKernels getCudaKernels(GPUContext gCtx) throws DMLRuntimeException {
 		return gCtx.getKernels();
 	}
 	
@@ -244,7 +244,7 @@ public class LibMatrixCUDA {
 	 */
 	public static Pointer one() {
 		if(_one == null || oldDataTypeSize != sizeOfDataType) {
-			_one = dataTypePointerTo(1.0);
+			_one = _dataTypePointerTo(1.0);
 			oldDataTypeSize = sizeOfDataType;
 		}
 		return _one;
@@ -255,7 +255,7 @@ public class LibMatrixCUDA {
 	 */
 	public static Pointer zero() {
 		if(_zero == null  || oldDataTypeSize != sizeOfDataType) {
-			_zero = dataTypePointerTo(0.0);
+			_zero = _dataTypePointerTo(0.0);
 			oldDataTypeSize = sizeOfDataType;
 		}
 		return _zero;
@@ -268,7 +268,7 @@ public class LibMatrixCUDA {
 	 * @param instName  the invoking instruction's name for record {@link Statistics}.
 	 * @return jcuda pointer
 	 */
-	protected static Pointer getDensePointer(GPUContext gCtx, MatrixObject input, String instName) {
+	public static Pointer getDensePointer(GPUContext gCtx, MatrixObject input, String instName) throws DMLRuntimeException {
 		if(isInSparseFormat(gCtx, input)) {
 			input.getGPUObject(gCtx).sparseToDense(instName);
 		}
@@ -289,7 +289,7 @@ public class LibMatrixCUDA {
 		return input.getGPUObject(gCtx).getJcudaSparseMatrixPtr();
 	}
 	
-	protected static Pointer dataTypePointerTo(double value) {
+	private static Pointer _dataTypePointerTo(double value) {
 		if(sizeOfDataType == Sizeof.DOUBLE) {
 			return Pointer.to(new double[] { value });
 		}
@@ -298,6 +298,18 @@ public class LibMatrixCUDA {
 		}
 		else {
 			throw new RuntimeException("Unsupported datatype with size " + sizeOfDataType);
+		}
+	}
+	
+	protected static Pointer dataTypePointerTo(double value) {
+		if(value == 1) {
+			return one();
+		}
+		else if(value == 0) {
+			return zero();
+		}
+		else {
+			return _dataTypePointerTo(value);
 		}
 	}
 	
@@ -355,8 +367,7 @@ public class LibMatrixCUDA {
 		Pointer tmp = gCtx.allocate(instName, cols*sizeOfDataType);
 		reduceCol(gCtx, instName, "reduce_col_sum", imagePointer, tmp, N, cols);
 		reduceRow(gCtx, instName, "reduce_row_sum", tmp, outputPointer, toInt(C), toInt(HW));
-		gCtx.cudaFreeHelper(tmp);
-
+		gCtx.cudaFreeHelper(instName, tmp, DMLScript.EAGER_CUDA_FREE);
 	}
 
 	/**
@@ -729,7 +740,7 @@ public class LibMatrixCUDA {
 			default:
 				throw new DMLRuntimeException("Internal Error - Unsupported reduction direction for summation squared");
 			}
-			gCtx.cudaFreeHelper(instName, tmp);
+			gCtx.cudaFreeHelper(instName, tmp, DMLScript.EAGER_CUDA_FREE);
 			break;
 		}
 		case OP_MEAN:{
@@ -842,7 +853,7 @@ public class LibMatrixCUDA {
 				ScalarOperator divideOp = new RightScalarOperator(Divide.getDivideFnObject(), clen - 1);
 				matrixScalarOp(gCtx, instName, tmpRow, clen - 1, rlen, 1, out, divideOp);
 
-				gCtx.cudaFreeHelper(instName, tmpRow);
+				gCtx.cudaFreeHelper(instName, tmpRow, DMLScript.EAGER_CUDA_FREE);
 
 				break;
 			}
@@ -860,15 +871,15 @@ public class LibMatrixCUDA {
 				ScalarOperator divideOp = new RightScalarOperator(Divide.getDivideFnObject(), rlen - 1);
 				matrixScalarOp(gCtx, instName, tmpCol, rlen - 1, 1, clen, out, divideOp);
 
-				gCtx.cudaFreeHelper(instName, tmpCol);
+				gCtx.cudaFreeHelper(instName, tmpCol, DMLScript.EAGER_CUDA_FREE);
 
 				break;
 			}
 			default:
 				throw new DMLRuntimeException("Internal Error - Unsupported reduction direction for variance");
 			}
-			gCtx.cudaFreeHelper(instName, tmp);
-			gCtx.cudaFreeHelper(instName, tmp2);
+			gCtx.cudaFreeHelper(instName, tmp, DMLScript.EAGER_CUDA_FREE);
+			gCtx.cudaFreeHelper(instName, tmp2, DMLScript.EAGER_CUDA_FREE);
 			break;
 		}
 		case OP_MAXINDEX : {
@@ -944,7 +955,7 @@ public class LibMatrixCUDA {
 		}
 		double[] result = {-1f};
 		cudaSupportFunctions.deviceToHost(gCtx, tempOut, result, instName, false);
-		gCtx.cudaFreeHelper(instName, tempOut);
+		gCtx.cudaFreeHelper(instName, tempOut, DMLScript.EAGER_CUDA_FREE);
 		return result[0];
 	}
 
@@ -1699,6 +1710,36 @@ public class LibMatrixCUDA {
 			if (DMLScript.FINEGRAINED_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DENSE_DGEAM_LIB, System.nanoTime() - t0);
 		}
 	}
+	
+	/**
+	 * Computes C = t(A)
+	 * @param ec execution context
+	 * @param gCtx gpu context
+	 * @param instName name of the instruction
+	 * @param A pointer to the input matrix
+	 * @param C pointer to the output matrix
+	 * @param numRowsA number of rows of the input matrix
+	 * @param numColsA number of columns of the output matrix
+	 * @throws DMLRuntimeException if error
+	 */
+	public static void denseTranspose(ExecutionContext ec, GPUContext gCtx, String instName, 
+			Pointer A, Pointer C, long numRowsA, long numColsA) throws DMLRuntimeException {
+		if (ec.getGPUContext(0) != gCtx)
+			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
+		if(LOG.isTraceEnabled()) {
+			LOG.trace("GPU : dense transpose" + ", GPUContext=" + gCtx);
+		}
+		long t0=0;
+		// Dense-Dense dgeam
+		int lda = toInt(numColsA);
+		int ldb = lda;
+		int m = toInt(numRowsA);
+		int n = lda;
+		int ldc = m;
+		if (DMLScript.FINEGRAINED_STATISTICS) t0 = System.nanoTime();
+		cudaSupportFunctions.cublasgeam(getCublasHandle(gCtx), CUBLAS_OP_T, CUBLAS_OP_T, m, n, one(), A, lda, zero(), A, ldb, C, ldc);
+		if (DMLScript.FINEGRAINED_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DENSE_DGEAM_LIB, System.nanoTime() - t0);
+	}
 
 
 	//********************************************************************/
@@ -2449,10 +2490,10 @@ public class LibMatrixCUDA {
 		MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, in1.getNumColumns(), 1);
 		cudaMemcpy(out.getGPUObject(gCtx).getJcudaDenseMatrixPtr(), bTobj.getJcudaDenseMatrixPtr(), n * 1 * sizeOfDataType, cudaMemcpyDeviceToDevice);
 
-		gCtx.cudaFreeHelper(instName, work);
-		gCtx.cudaFreeHelper(instName, tau);
-		ATobj.clearData();
-		bTobj.clearData();
+		gCtx.cudaFreeHelper(instName, work, DMLScript.EAGER_CUDA_FREE);
+		gCtx.cudaFreeHelper(instName, tau, DMLScript.EAGER_CUDA_FREE);
+		ATobj.clearData(instName, DMLScript.EAGER_CUDA_FREE);
+		bTobj.clearData(instName, DMLScript.EAGER_CUDA_FREE);
 
 		//debugPrintMatrix(b, n, 1);
     }

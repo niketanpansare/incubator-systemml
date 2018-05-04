@@ -130,9 +130,11 @@ public class GPUContext {
 		}
 	}
 
-	private void initializeCudaLibraryHandles() {
-		deleteCudaLibraryHandles();
-
+	private void initializeCudaLibraryHandles() throws DMLRuntimeException {
+		// We don't need to explicitly delete the handles if we are planning to create them again. 
+		// This has a huge performance impact on scripts that has large number of layers (i.e. FunctionCallCP) for example ResNet.
+		// If this is absolutely required for parfor, please add appropriate safeguard for non-parfor scripts. 
+		// deleteCudaLibraryHandles();
 		if (cudnnHandle == null) {
 			cudnnHandle = new cudnnHandle();
 			cudnnCreate(cudnnHandle);
@@ -204,36 +206,6 @@ public class GPUContext {
 		return memoryManager.malloc(instructionName, size);
 	}
 
-
-	/**
-	 * Does lazy cudaFree calls.
-	 *
-	 * @param toFree {@link Pointer} instance to be freed
-	 */
-	public void cudaFreeHelper(final Pointer toFree) {
-		cudaFreeHelper(null, toFree, DMLScript.EAGER_CUDA_FREE);
-	}
-
-	/**
-	 * Does lazy/eager cudaFree calls.
-	 *
-	 * @param toFree {@link Pointer} instance to be freed
-	 * @param eager  true if to be done eagerly
-	 */
-	public void cudaFreeHelper(final Pointer toFree, boolean eager) {
-		cudaFreeHelper(null, toFree, eager);
-	}
-
-	/**
-	 * Does lazy cudaFree calls.
-	 *
-	 * @param instructionName name of the instruction for which to record per instruction free time, null if do not want to record
-	 * @param toFree          {@link Pointer} instance to be freed
-	 */
-	public void cudaFreeHelper(String instructionName, final Pointer toFree) {
-		cudaFreeHelper(instructionName, toFree, DMLScript.EAGER_CUDA_FREE);
-	}
-
 	/**
 	 * Does cudaFree calls, lazily.
 	 *
@@ -290,7 +262,7 @@ public class GPUContext {
 	 */
 	public GPUObject createGPUObject(MatrixObject mo) {
 		GPUObject ret = new GPUObject(this, mo);
-		getMemoryManager().addGPUObject(ret);
+		getMemoryManager().getGPUMatrixMemoryManager().addGPUObject(ret);
 		return ret;
 	}
 

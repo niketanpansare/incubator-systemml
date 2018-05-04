@@ -85,10 +85,13 @@
     <sysml.gpu.availableGPUs>-1</sysml.gpu.availableGPUs>
     
     <!-- whether to synchronize GPUs after every GPU instruction -->
-    <sysml.gpu.sync.postProcess>true</sysml.gpu.sync.postProcess>
+    <sysml.gpu.sync.postProcess>false</sysml.gpu.sync.postProcess>
     
     <!-- whether to perform eager CUDA free on rmvar instruction -->
     <sysml.gpu.eager.cudaFree>false</sysml.gpu.eager.cudaFree>
+    
+    <!-- Developer flag used to debug GPU memory leaks. This has huge performance overhead and should be only turned on for debugging purposes.  -->
+    <sysml.gpu.print.memoryInfo>false</sysml.gpu.print.memoryInfo>
    
     <!-- the floating point precision. supported values are double, single -->
     <sysml.floating.point.precision>double</sysml.floating.point.precision>

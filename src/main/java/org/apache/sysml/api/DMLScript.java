@@ -173,7 +173,8 @@ public class DMLScript
 	public static String            DML_FILE_PATH_ANTLR_PARSER = DMLOptions.defaultOptions.filePath; // filename of dml/pydml script
 	public static String            FLOATING_POINT_PRECISION = "double"; 							// data type to use internally
 	public static EvictionPolicy	GPU_EVICTION_POLICY = EvictionPolicy.LRU;						// currently employed GPU eviction policy
-
+	public static boolean 			PRINT_GPU_MEMORY_INFO = false;									// whether to print GPU memory-related information
+	
 	/**
 	 * Global variable indicating the script type (DML or PYDML). Can be used
 	 * for DML/PYDML-specific tasks, such as outputting booleans in the correct

@@ -23,6 +23,7 @@ import static jcuda.runtime.JCuda.cudaMemcpy;
 import static jcuda.runtime.JCuda.cudaMemset;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToDevice;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
+
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 
@@ -135,12 +136,8 @@ public class GPUObject {
 		return getGPUContext().allocate(size);
 	}
 
-	private void cudaFreeHelper(Pointer toFree) {
-		getGPUContext().cudaFreeHelper(toFree);
-	}
-
-	private void cudaFreeHelper(String instName, Pointer toFree, boolean eager) {
-		getGPUContext().cudaFreeHelper(instName, toFree, eager);
+	private void cudaFreeHelper(Pointer toFree) throws DMLRuntimeException {
+		getGPUContext().cudaFreeHelper(null, toFree, DMLScript.EAGER_CUDA_FREE);
 	}
 
 	private GPUContext getGPUContext() {
@@ -224,8 +221,8 @@ public class GPUObject {
 				C.colInd);
 		//cudaDeviceSynchronize();
 
-		gCtx.cudaFreeHelper(nnzPerRowPtr);
-		gCtx.cudaFreeHelper(nnzTotalDevHostPtr);
+		gCtx.cudaFreeHelper(null, nnzPerRowPtr, DMLScript.EAGER_CUDA_FREE);
+		gCtx.cudaFreeHelper(null, nnzTotalDevHostPtr, DMLScript.EAGER_CUDA_FREE);
 
 		return C;
 	}
@@ -475,6 +472,7 @@ public class GPUObject {
 		boolean isEmptyAndSparseAndAllocated = isSparseAndAllocated && getJcudaSparseMatrixPtr().nnz == 0;
 		return isEmptyAndSparseAndAllocated;
 	}
+	
 		
 	/**
 	 * Being allocated is a prerequisite for computing nnz.
@@ -513,8 +511,8 @@ public class GPUObject {
 					throw new DMLRuntimeException(
 							"cusparseDnnz did not calculate the correct number of nnz on the GPU");
 				}
-				gCtx.cudaFreeHelper(nnzPerRowPtr);
-				gCtx.cudaFreeHelper(nnzTotalDevHostPtr);
+				gCtx.cudaFreeHelper(instName, nnzPerRowPtr, DMLScript.EAGER_CUDA_FREE);
+				gCtx.cudaFreeHelper(instName, nnzTotalDevHostPtr, DMLScript.EAGER_CUDA_FREE);
 				if(DMLScript.FINEGRAINED_STATISTICS) {
 					GPUStatistics.maintainCPMiscTimes(instName, CPInstruction.MISC_TIMER_RECOMPUTE_NNZ, System.nanoTime()-t1);
 			}
@@ -600,8 +598,18 @@ public class GPUObject {
 				LOG.trace("GPU : data is dirty on device, copying to host, on " + this + ", GPUContext="
 					+ getGPUContext());
 			}
-			copyFromDeviceToHost(instName, false);
-			copied = true;
+
+			if (isAllocated() && dirty) {
+				if(LOG.isTraceEnabled()) {
+					LOG.trace("GPU : data is dirty on device, copying to host, on " + this + ", GPUContext="
+						+ getGPUContext());
+				}
+				// TODO: Future optimization:
+				// For now, we are deleting the device data when copied from device to host. 
+				// This can be optimized later by treating acquiredModify+release as a new state
+				copyFromDeviceToHost(instName, false, true); 
+				copied = true;
+			}
 		}
 		return copied;
 	}
@@ -721,21 +729,6 @@ public class GPUObject {
 			throw new DMLRuntimeException("Internal error - invalid number of non zeroes when allocating a sparse matrix");
 		CSRPointer tmp = CSRPointer.allocateEmpty(getGPUContext(), nnz, rows);
 		setSparseMatrixCudaPointer(tmp);
-	}
-
-	void deallocateMemoryOnDevice(boolean eager) {
-		if(LOG.isTraceEnabled()) {
-			LOG.trace("GPU : deallocateMemoryOnDevice, on " + this + ", GPUContext=" + getGPUContext());
-		}
-		if (getJcudaDenseMatrixPtr() != null) {
-			cudaFreeHelper(null, getJcudaDenseMatrixPtr(), eager);
-		}
-		if (getJcudaSparseMatrixPtr() != null) {
-			getJcudaSparseMatrixPtr().deallocate(eager);
-		}
-		jcudaDenseMatrixPtr = null;
-		jcudaSparseMatrixPtr = null;
-		resetReadWriteLock();
 	}
 
 	protected long getSizeOnDevice() {
@@ -876,7 +869,7 @@ public class GPUObject {
 		return (int) l;
 	}
 
-	protected void copyFromDeviceToHost(String instName, boolean isEviction) {
+	protected void copyFromDeviceToHost(String instName, boolean isEviction, boolean deleteDeviceData) throws DMLRuntimeException {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : copyFromDeviceToHost, on " + this + ", GPUContext=" + getGPUContext());
 		}
@@ -892,7 +885,8 @@ public class GPUObject {
 			tmp.allocateDenseBlock();
 			LibMatrixCUDA.cudaSupportFunctions.deviceToHost(getGPUContext(),
 						getJcudaDenseMatrixPtr(), tmp.getDenseBlockValues(), instName, isEviction);
-			
+			if(deleteDeviceData)
+				clearData(instName, true);
 			tmp.recomputeNonZeros();
 			mat.acquireModify(tmp);
 			mat.release();
@@ -945,20 +939,27 @@ public class GPUObject {
 		dirty = false;
 	}
 
-	/**
-	 * lazily clears the data associated with this {@link GPUObject} instance
-	 */
-	public void clearData() {
-		clearData(DMLScript.EAGER_CUDA_FREE);
-	}
 
 	/**
 	 * Clears the data associated with this {@link GPUObject} instance
 	 *
+	 * @param opcode opcode of the instruction
 	 * @param eager whether to be done synchronously or asynchronously
+	 * @throws DMLRuntimeException if error occurs
 	 */
-	public void clearData(boolean eager) {
-		deallocateMemoryOnDevice(eager);
+	public void clearData(String opcode, boolean eager) throws DMLRuntimeException {
+		if(LOG.isTraceEnabled()) {
+			LOG.trace("GPU : clearData on " + this + ", GPUContext=" + getGPUContext());
+		}
+		if (getJcudaDenseMatrixPtr() != null) {
+			getGPUContext().cudaFreeHelper(opcode, getJcudaDenseMatrixPtr(), eager);
+		}
+		if (getJcudaSparseMatrixPtr() != null) {
+			getJcudaSparseMatrixPtr().deallocate(eager);
+		}
+		jcudaDenseMatrixPtr = null;
+		jcudaSparseMatrixPtr = null;
+		resetReadWriteLock();
 		getGPUContext().getMemoryManager().removeGPUObject(this);
 	}
 
