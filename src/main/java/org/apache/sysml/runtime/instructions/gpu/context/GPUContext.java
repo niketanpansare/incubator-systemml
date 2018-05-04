@@ -327,10 +327,12 @@ public class GPUContext {
 	 *
 	 * @return cudnnHandle for current thread
 	 */
-	public synchronized cudnnHandle getCudnnHandle() {
+	public cudnnHandle getCudnnHandle() {
 		if (cudnnHandle == null) {
-			cudnnHandle = new cudnnHandle();
-			cudnnCreate(cudnnHandle);
+			synchronized(this) {
+				cudnnHandle = new cudnnHandle();
+				cudnnCreate(cudnnHandle);
+			}
 		}
 		return cudnnHandle;
 	}
@@ -342,8 +344,10 @@ public class GPUContext {
 	 */
 	public cublasHandle getCublasHandle() {
 		if (cublasHandle == null) {
-			cublasHandle = new cublasHandle();
-			cublasCreate(cublasHandle);
+			synchronized(this) {
+				cublasHandle = new cublasHandle();
+				cublasCreate(cublasHandle);
+			}
 		}
 		return cublasHandle;
 	}
@@ -355,8 +359,10 @@ public class GPUContext {
 	 */
 	public cusparseHandle getCusparseHandle() {
 		if (cusparseHandle == null) {
-			cusparseHandle = new cusparseHandle();
-			cusparseCreate(cusparseHandle);
+			synchronized(this) {
+				cusparseHandle = new cusparseHandle();
+				cusparseCreate(cusparseHandle);
+			}
 		}
 		return cusparseHandle;
 	}
@@ -368,8 +374,10 @@ public class GPUContext {
 	 */
 	public cusolverDnHandle getCusolverDnHandle() {
 		if (cusolverDnHandle == null) {
-			cusolverDnHandle = new cusolverDnHandle();
-			cusolverDnCreate(cusolverDnHandle);
+			synchronized(this) {
+				cusolverDnHandle = new cusolverDnHandle();
+				cusolverDnCreate(cusolverDnHandle);
+			}
 		}
 		return cusolverDnHandle;
 	}
