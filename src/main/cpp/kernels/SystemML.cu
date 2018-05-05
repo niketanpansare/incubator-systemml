@@ -2042,3 +2042,39 @@ extern "C" __global__ void prepare_lstm_weight_d(double* smlWeight, double* smlB
 extern "C" __global__ void prepare_lstm_weight_f(float* smlWeight, float* smlBias, float* cudnnWeight, int D, int M) {
   prepare_lstm_weight(smlWeight, smlBias, cudnnWeight, D, M);
 }
+
+// Based on Mark Harris' parallel reduction example
+// We can later fold it in our reduce method
+template <typename T>
+__device__ void compute_nnz(T *g_idata, T *g_odata, unsigned int n) {
+    // extern __shared__ T sdata[];
+  	extern __shared__ __align__(sizeof(T)) unsigned char my_sdata[];
+  	T *sdata = reinterpret_cast<T *>(my_sdata);
+
+    unsigned int tid = threadIdx.x;
+    unsigned int i = blockIdx.x*(blockDim.x*2) + threadIdx.x;
+
+	// Key modification to the parallel sum:
+    T mySum = (i < n) && (g_idata[i] != 0) ? 1 : 0;
+    if (i + blockDim.x < n)
+        mySum += (g_idata[i+blockDim.x] != 0) ? 1 : 0;
+
+    sdata[tid] = mySum;
+    __syncthreads();
+    for (unsigned int s = blockDim.x/2; s > 0; s >>= 1) {
+        if (tid < s) {
+            sdata[tid] = mySum = mySum + sdata[tid + s];
+        }
+        __syncthreads();
+    }
+    if (tid == 0) 
+    	g_odata[blockIdx.x] = mySum;
+}
+
+extern "C" __global__ void compute_nnz_d(double *g_idata, double *g_odata, unsigned int n) {
+	compute_nnz(g_idata, g_odata, n);
+}
+
+extern "C" __global__ void compute_nnz_f(float *g_idata, float *g_odata, unsigned int n) {
+	compute_nnz(g_idata, g_odata, n);
+}

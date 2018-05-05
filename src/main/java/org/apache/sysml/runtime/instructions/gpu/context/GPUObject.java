@@ -869,6 +869,7 @@ public class GPUObject {
 		}
 		return (int) l;
 	}
+	
 
 	/**
 	 * Copies the data from device to host.
@@ -884,13 +885,27 @@ public class GPUObject {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : copyFromDeviceToHost, on " + this + ", GPUContext=" + getGPUContext());
 		}
-		if (getJcudaDenseMatrixPtr() != null && getJcudaSparseMatrixPtr() != null) {
+		if (getJcudaDenseMatrixPtr() == null && getJcudaSparseMatrixPtr() == null) {
+			throw new DMLRuntimeException(
+					"Cannot copy from device to host as JCuda dense/sparse pointer is not allocated");
+		}
+		else if (getJcudaDenseMatrixPtr() != null && getJcudaSparseMatrixPtr() != null) {
 			throw new DMLRuntimeException("Invalid state : JCuda dense/sparse pointer are both allocated");
 		}
-
+		else if(getJcudaSparseMatrixPtr() != null && !LibMatrixCUDA.isInSparseFormat(getGPUContext(), mat)) {
+			throw new DMLRuntimeException(
+					"Block not in sparse format on host yet the device sparse matrix pointer is not null");
+		}
+		else if(getJcudaSparseMatrixPtr() != null && isSparseAndEmpty()) {
+			mat.acquireModify(new MatrixBlock((int)mat.getNumRows(), (int)mat.getNumColumns(), 0l)); // empty block
+			mat.release();
+			return;
+		}
+		
+		MatrixBlock tmp = null;
+		long start = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		if (getJcudaDenseMatrixPtr() != null) {
-			long start = DMLScript.STATISTICS ? System.nanoTime() : 0;
-			MatrixBlock tmp = new MatrixBlock(toIntExact(mat.getNumRows()), toIntExact(mat.getNumColumns()), false);
+			tmp = new MatrixBlock(toIntExact(mat.getNumRows()), toIntExact(mat.getNumColumns()), false);
 			tmp.allocateDenseBlock();
 			LibMatrixCUDA.cudaSupportFunctions.deviceToHost(getGPUContext(),
 						getJcudaDenseMatrixPtr(), tmp.getDenseBlockValues(), instName, isEviction); 
@@ -898,54 +913,27 @@ public class GPUObject {
 			if(eagerDelete)
 				clearData(instName, true);
 			tmp.setNonZeros(nnz);
-			mat.acquireModify(tmp);
-			mat.release();
-			long end = DMLScript.STATISTICS ? System.nanoTime() : 0;
-			if (DMLScript.STATISTICS)
-				GPUStatistics.cudaFromDevTime.add(end - start);
-			if (DMLScript.STATISTICS)
-				GPUStatistics.cudaFromDevCount.add(1);
-		} else if (getJcudaSparseMatrixPtr() != null) {
-			if (!LibMatrixCUDA.isInSparseFormat(getGPUContext(), mat))
-				throw new DMLRuntimeException(
-						"Block not in sparse format on host yet the device sparse matrix pointer is not null");
-
-			if (this.isSparseAndEmpty()) {
-				MatrixBlock tmp = new MatrixBlock((int)mat.getNumRows(), (int)mat.getNumColumns(), 0l);    // Empty Block
-				mat.acquireModify(tmp);
-				mat.release();
-			} else {
-				long start = 0;
-				if (DMLScript.STATISTICS)
-					start = System.nanoTime();
-
-				int rows = toIntExact(mat.getNumRows());
-				int cols = toIntExact(mat.getNumColumns());
-				int nnz = toIntExact(getJcudaSparseMatrixPtr().nnz);
-				double[] values = new double[nnz];
-				LibMatrixCUDA.cudaSupportFunctions.deviceToHost(getGPUContext(), getJcudaSparseMatrixPtr().val, values, instName, isEviction);
-				int[] rowPtr = new int[rows + 1];
-				int[] colInd = new int[nnz];
-				long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-				CSRPointer.copyPtrToHost(getJcudaSparseMatrixPtr(), rows, nnz, rowPtr, colInd);
-				if (DMLScript.STATISTICS)
-					GPUStatistics.cudaFromDevTime.add(System.nanoTime() - t0);
-				if (DMLScript.STATISTICS)
-					GPUStatistics.cudaFromDevCount.add(3);
-				if(eagerDelete)
-					clearData(instName, true);
-				SparseBlockCSR sparseBlock = new SparseBlockCSR(rowPtr, colInd, values, nnz);
-				MatrixBlock tmp = new MatrixBlock(rows, cols, nnz, sparseBlock);
-				mat.acquireModify(tmp);
-				mat.release();
-				if (DMLScript.STATISTICS)
-					GPUStatistics.cudaFromDevTime.add(System.nanoTime() - start);
-				if (DMLScript.STATISTICS)
-					GPUStatistics.cudaFromDevCount.add(1);
-			}
 		} else {
-			throw new DMLRuntimeException(
-					"Cannot copy from device to host as JCuda dense/sparse pointer is not allocated");
+			int rows = toIntExact(mat.getNumRows());
+			int cols = toIntExact(mat.getNumColumns());
+			int nnz = toIntExact(getJcudaSparseMatrixPtr().nnz);
+			double[] values = new double[nnz];
+			LibMatrixCUDA.cudaSupportFunctions.deviceToHost(getGPUContext(), getJcudaSparseMatrixPtr().val, values, instName, isEviction);
+			int[] rowPtr = new int[rows + 1];
+			int[] colInd = new int[nnz];
+			CSRPointer.copyPtrToHost(getJcudaSparseMatrixPtr(), rows, nnz, rowPtr, colInd);
+			if(eagerDelete)
+				clearData(instName, true);
+			SparseBlockCSR sparseBlock = new SparseBlockCSR(rowPtr, colInd, values, nnz);
+			tmp = new MatrixBlock(rows, cols, nnz, sparseBlock);
+		}
+		mat.acquireModify(tmp);
+		mat.release();
+		if (DMLScript.STATISTICS)
+			GPUStatistics.cudaFromDevTime.add(System.nanoTime() - start);
+		if (DMLScript.STATISTICS) {
+			int count = getJcudaDenseMatrixPtr() != null ? 1 : 3;
+			GPUStatistics.cudaFromDevCount.add(count);
 		}
 		dirty = false;
 	}

@@ -53,6 +53,7 @@ public class GPUStatistics {
 	public static LongAdder cudaFromDevTime = new LongAdder();           // time spent in copying data from device to host
 	public static LongAdder cudaEvictTime = new LongAdder();           	 // time spent in eviction
 	public static LongAdder cudaEvictCPUFloat2DoubleTime = new LongAdder(); // time spent in converting float to double during eviction
+	public static LongAdder cudaEvictMemcpyTime = new LongAdder(); // time spent in cudaMemcpy kernel during eviction
 	public static LongAdder cudaForcedClearLazyFreedEvictTime = new LongAdder(); // time spent in forced lazy eviction
 	public static LongAdder cudaForcedClearUnpinnedEvictTime = new LongAdder(); // time spent in forced unpinned eviction
 	public static LongAdder cudaAllocCount = new LongAdder();
