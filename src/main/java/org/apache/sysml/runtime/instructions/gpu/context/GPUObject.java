@@ -909,10 +909,12 @@ public class GPUObject {
 			tmp.allocateDenseBlock();
 			LibMatrixCUDA.cudaSupportFunctions.deviceToHost(getGPUContext(),
 						getJcudaDenseMatrixPtr(), tmp.getDenseBlockValues(), instName, isEviction); 
-			int nnz = LibMatrixCUDA.computeNNZ(getGPUContext(), getJcudaDenseMatrixPtr(), toIntExact(mat.getNumRows()*mat.getNumColumns()));
+			// int nnz = LibMatrixCUDA.computeNNZ(getGPUContext(), getJcudaDenseMatrixPtr(), toIntExact(mat.getNumRows()*mat.getNumColumns()));
+			// tmp.setNonZeros(nnz);
 			if(eagerDelete)
 				clearData(instName, true);
-			tmp.setNonZeros(nnz);
+			// tmp.recomputeNonZeros();
+			tmp.setNonZeros(-1);
 		} else {
 			int rows = toIntExact(mat.getNumRows());
 			int cols = toIntExact(mat.getNumColumns());

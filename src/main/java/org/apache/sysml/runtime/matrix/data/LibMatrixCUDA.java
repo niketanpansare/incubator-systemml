@@ -937,7 +937,7 @@ public class LibMatrixCUDA {
 		int[] tmp = getKernelParamsForReduceAll(gCtx, n);
 		int blocks = tmp[0], threads = tmp[1], sharedMem = tmp[2];
 
-		Pointer tempOut = gCtx.allocate(instName, sizeOfDataType); // TODO: double-check this 
+		Pointer tempOut = gCtx.allocate(instName, n*sizeOfDataType); 
 
 		long t1=0,t2=0;
 

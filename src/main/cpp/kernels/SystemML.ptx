@@ -12018,80 +12018,173 @@ BB101_8:
 	.param .u32 compute_nnz_d_param_2
 )
 {
-	.reg .pred 	%p<9>;
-	.reg .b32 	%r<19>;
-	.reg .f64 	%fd<19>;
-	.reg .b64 	%rd<11>;
+	.reg .pred 	%p<22>;
+	.reg .b32 	%r<36>;
+	.reg .f64 	%fd<62>;
+	.reg .b64 	%rd<12>;
 
 
-	ld.param.u64 	%rd3, [compute_nnz_d_param_0];
+	ld.param.u64 	%rd1, [compute_nnz_d_param_0];
 	ld.param.u64 	%rd2, [compute_nnz_d_param_1];
-	ld.param.u32 	%r10, [compute_nnz_d_param_2];
-	cvta.to.global.u64 	%rd1, %rd3;
-	mov.u32 	%r1, %ctaid.x;
-	shl.b32 	%r11, %r1, 1;
-	mov.u32 	%r2, %ntid.x;
-	mov.u32 	%r3, %tid.x;
-	mad.lo.s32 	%r4, %r11, %r2, %r3;
-	mov.f64 	%fd16, 0d0000000000000000;
-	setp.ge.u32	%p1, %r4, %r10;
-	@%p1 bra 	BB102_2;
+	ld.param.u32 	%r6, [compute_nnz_d_param_2];
+	mov.u32 	%r7, %tid.x;
+	mov.u32 	%r8, %ctaid.x;
+	shl.b32 	%r9, %r8, 1;
+	mov.u32 	%r10, %ntid.x;
+	mad.lo.s32 	%r35, %r9, %r10, %r7;
+	mov.f64 	%fd46, 0d0000000000000000;
+	setp.ge.u32	%p1, %r35, %r6;
+	@%p1 bra 	BB102_4;
 
-	mul.wide.u32 	%rd4, %r4, 8;
-	add.s64 	%rd5, %rd1, %rd4;
-	ld.global.f64 	%fd10, [%rd5];
-	setp.neu.f64	%p2, %fd10, 0d0000000000000000;
-	selp.f64	%fd16, 0d3FF0000000000000, 0d0000000000000000, %p2;
+BB102_1:
+	cvta.to.global.u64 	%rd3, %rd1;
+	mul.wide.u32 	%rd4, %r35, 8;
+	add.s64 	%rd5, %rd3, %rd4;
+	ld.global.f64 	%fd30, [%rd5];
+	setp.neu.f64	%p2, %fd30, 0d0000000000000000;
+	selp.f64	%fd31, 0d3FF0000000000000, 0d0000000000000000, %p2;
+	add.f64 	%fd46, %fd46, %fd31;
+	add.s32 	%r3, %r35, %r10;
+	setp.ge.u32	%p3, %r3, %r6;
+	@%p3 bra 	BB102_3;
 
-BB102_2:
-	add.s32 	%r5, %r4, %r2;
-	setp.ge.u32	%p3, %r5, %r10;
-	@%p3 bra 	BB102_4;
+	mul.wide.u32 	%rd7, %r3, 8;
+	add.s64 	%rd8, %rd3, %rd7;
+	ld.global.f64 	%fd32, [%rd8];
+	setp.neu.f64	%p4, %fd32, 0d0000000000000000;
+	selp.f64	%fd33, 0d3FF0000000000000, 0d0000000000000000, %p4;
+	add.f64 	%fd46, %fd46, %fd33;
 
-	mul.wide.u32 	%rd6, %r5, 8;
-	add.s64 	%rd7, %rd1, %rd6;
-	ld.global.f64 	%fd11, [%rd7];
-	setp.neu.f64	%p4, %fd11, 0d0000000000000000;
-	selp.f64	%fd12, 0d3FF0000000000000, 0d0000000000000000, %p4;
-	add.f64 	%fd16, %fd16, %fd12;
+BB102_3:
+	shl.b32 	%r13, %r10, 1;
+	mov.u32 	%r14, %nctaid.x;
+	mad.lo.s32 	%r35, %r13, %r14, %r35;
+	setp.lt.u32	%p5, %r35, %r6;
+	@%p5 bra 	BB102_1;
 
 BB102_4:
-	shl.b32 	%r12, %r3, 3;
-	mov.u32 	%r13, my_sdata;
-	add.s32 	%r6, %r13, %r12;
-	st.shared.f64 	[%r6], %fd16;
+	shl.b32 	%r16, %r7, 3;
+	mov.u32 	%r17, my_sdata;
+	add.s32 	%r5, %r17, %r16;
+	st.shared.f64 	[%r5], %fd46;
 	bar.sync 	0;
-	shr.u32 	%r18, %r2, 1;
-	setp.eq.s32	%p5, %r18, 0;
-	@%p5 bra 	BB102_8;
+	setp.lt.u32	%p6, %r10, 1024;
+	@%p6 bra 	BB102_8;
 
-BB102_5:
-	setp.ge.u32	%p6, %r3, %r18;
-	@%p6 bra 	BB102_7;
+	setp.gt.u32	%p7, %r7, 511;
+	@%p7 bra 	BB102_7;
 
-	add.s32 	%r14, %r18, %r3;
-	shl.b32 	%r15, %r14, 3;
-	add.s32 	%r17, %r13, %r15;
-	ld.shared.f64 	%fd13, [%r17];
-	add.f64 	%fd16, %fd16, %fd13;
-	st.shared.f64 	[%r6], %fd16;
+	ld.shared.f64 	%fd34, [%r5+4096];
+	add.f64 	%fd46, %fd46, %fd34;
+	st.shared.f64 	[%r5], %fd46;
 
 BB102_7:
 	bar.sync 	0;
-	shr.u32 	%r18, %r18, 1;
-	setp.ne.s32	%p7, %r18, 0;
-	@%p7 bra 	BB102_5;
 
 BB102_8:
-	setp.ne.s32	%p8, %r3, 0;
-	@%p8 bra 	BB102_10;
+	setp.lt.u32	%p8, %r10, 512;
+	@%p8 bra 	BB102_12;
 
-	cvta.to.global.u64 	%rd8, %rd2;
-	mul.wide.u32 	%rd9, %r1, 8;
-	add.s64 	%rd10, %rd8, %rd9;
-	st.global.f64 	[%rd10], %fd16;
+	setp.gt.u32	%p9, %r7, 255;
+	@%p9 bra 	BB102_11;
 
-BB102_10:
+	ld.shared.f64 	%fd35, [%r5+2048];
+	add.f64 	%fd46, %fd46, %fd35;
+	st.shared.f64 	[%r5], %fd46;
+
+BB102_11:
+	bar.sync 	0;
+
+BB102_12:
+	setp.lt.u32	%p10, %r10, 256;
+	@%p10 bra 	BB102_16;
+
+	setp.gt.u32	%p11, %r7, 127;
+	@%p11 bra 	BB102_15;
+
+	ld.shared.f64 	%fd36, [%r5+1024];
+	add.f64 	%fd46, %fd46, %fd36;
+	st.shared.f64 	[%r5], %fd46;
+
+BB102_15:
+	bar.sync 	0;
+
+BB102_16:
+	setp.lt.u32	%p12, %r10, 128;
+	@%p12 bra 	BB102_20;
+
+	setp.gt.u32	%p13, %r7, 63;
+	@%p13 bra 	BB102_19;
+
+	ld.shared.f64 	%fd37, [%r5+512];
+	add.f64 	%fd46, %fd46, %fd37;
+	st.shared.f64 	[%r5], %fd46;
+
+BB102_19:
+	bar.sync 	0;
+
+BB102_20:
+	setp.gt.u32	%p14, %r7, 31;
+	@%p14 bra 	BB102_33;
+
+	setp.lt.u32	%p15, %r10, 64;
+	@%p15 bra 	BB102_23;
+
+	ld.volatile.shared.f64 	%fd38, [%r5+256];
+	add.f64 	%fd46, %fd46, %fd38;
+	st.volatile.shared.f64 	[%r5], %fd46;
+
+BB102_23:
+	setp.lt.u32	%p16, %r10, 32;
+	@%p16 bra 	BB102_25;
+
+	ld.volatile.shared.f64 	%fd39, [%r5+128];
+	add.f64 	%fd46, %fd46, %fd39;
+	st.volatile.shared.f64 	[%r5], %fd46;
+
+BB102_25:
+	setp.lt.u32	%p17, %r10, 16;
+	@%p17 bra 	BB102_27;
+
+	ld.volatile.shared.f64 	%fd40, [%r5+64];
+	add.f64 	%fd46, %fd46, %fd40;
+	st.volatile.shared.f64 	[%r5], %fd46;
+
+BB102_27:
+	setp.lt.u32	%p18, %r10, 8;
+	@%p18 bra 	BB102_29;
+
+	ld.volatile.shared.f64 	%fd41, [%r5+32];
+	add.f64 	%fd46, %fd46, %fd41;
+	st.volatile.shared.f64 	[%r5], %fd46;
+
+BB102_29:
+	setp.lt.u32	%p19, %r10, 4;
+	@%p19 bra 	BB102_31;
+
+	ld.volatile.shared.f64 	%fd42, [%r5+16];
+	add.f64 	%fd46, %fd46, %fd42;
+	st.volatile.shared.f64 	[%r5], %fd46;
+
+BB102_31:
+	setp.lt.u32	%p20, %r10, 2;
+	@%p20 bra 	BB102_33;
+
+	ld.volatile.shared.f64 	%fd43, [%r5+8];
+	add.f64 	%fd44, %fd46, %fd43;
+	st.volatile.shared.f64 	[%r5], %fd44;
+
+BB102_33:
+	setp.ne.s32	%p21, %r7, 0;
+	@%p21 bra 	BB102_35;
+
+	ld.shared.f64 	%fd45, [my_sdata];
+	cvta.to.global.u64 	%rd9, %rd2;
+	mul.wide.u32 	%rd10, %r8, 8;
+	add.s64 	%rd11, %rd9, %rd10;
+	st.global.f64 	[%rd11], %fd45;
+
+BB102_35:
 	ret;
 }
 
@@ -12102,80 +12195,173 @@ BB102_10:
 	.param .u32 compute_nnz_f_param_2
 )
 {
-	.reg .pred 	%p<9>;
-	.reg .f32 	%f<19>;
-	.reg .b32 	%r<19>;
-	.reg .b64 	%rd<11>;
+	.reg .pred 	%p<22>;
+	.reg .f32 	%f<62>;
+	.reg .b32 	%r<36>;
+	.reg .b64 	%rd<12>;
 
 
-	ld.param.u64 	%rd3, [compute_nnz_f_param_0];
+	ld.param.u64 	%rd1, [compute_nnz_f_param_0];
 	ld.param.u64 	%rd2, [compute_nnz_f_param_1];
-	ld.param.u32 	%r10, [compute_nnz_f_param_2];
-	cvta.to.global.u64 	%rd1, %rd3;
-	mov.u32 	%r1, %ctaid.x;
-	shl.b32 	%r11, %r1, 1;
-	mov.u32 	%r2, %ntid.x;
-	mov.u32 	%r3, %tid.x;
-	mad.lo.s32 	%r4, %r11, %r2, %r3;
-	mov.f32 	%f16, 0f00000000;
-	setp.ge.u32	%p1, %r4, %r10;
-	@%p1 bra 	BB103_2;
+	ld.param.u32 	%r6, [compute_nnz_f_param_2];
+	mov.u32 	%r7, %tid.x;
+	mov.u32 	%r8, %ctaid.x;
+	shl.b32 	%r9, %r8, 1;
+	mov.u32 	%r10, %ntid.x;
+	mad.lo.s32 	%r35, %r9, %r10, %r7;
+	mov.f32 	%f46, 0f00000000;
+	setp.ge.u32	%p1, %r35, %r6;
+	@%p1 bra 	BB103_4;
 
-	mul.wide.u32 	%rd4, %r4, 4;
-	add.s64 	%rd5, %rd1, %rd4;
-	ld.global.f32 	%f10, [%rd5];
-	setp.neu.f32	%p2, %f10, 0f00000000;
-	selp.f32	%f16, 0f3F800000, 0f00000000, %p2;
+BB103_1:
+	cvta.to.global.u64 	%rd3, %rd1;
+	mul.wide.u32 	%rd4, %r35, 4;
+	add.s64 	%rd5, %rd3, %rd4;
+	ld.global.f32 	%f30, [%rd5];
+	setp.neu.f32	%p2, %f30, 0f00000000;
+	selp.f32	%f31, 0f3F800000, 0f00000000, %p2;
+	add.f32 	%f46, %f46, %f31;
+	add.s32 	%r3, %r35, %r10;
+	setp.ge.u32	%p3, %r3, %r6;
+	@%p3 bra 	BB103_3;
 
-BB103_2:
-	add.s32 	%r5, %r4, %r2;
-	setp.ge.u32	%p3, %r5, %r10;
-	@%p3 bra 	BB103_4;
+	mul.wide.u32 	%rd7, %r3, 4;
+	add.s64 	%rd8, %rd3, %rd7;
+	ld.global.f32 	%f32, [%rd8];
+	setp.neu.f32	%p4, %f32, 0f00000000;
+	selp.f32	%f33, 0f3F800000, 0f00000000, %p4;
+	add.f32 	%f46, %f46, %f33;
 
-	mul.wide.u32 	%rd6, %r5, 4;
-	add.s64 	%rd7, %rd1, %rd6;
-	ld.global.f32 	%f11, [%rd7];
-	setp.neu.f32	%p4, %f11, 0f00000000;
-	selp.f32	%f12, 0f3F800000, 0f00000000, %p4;
-	add.f32 	%f16, %f16, %f12;
+BB103_3:
+	shl.b32 	%r13, %r10, 1;
+	mov.u32 	%r14, %nctaid.x;
+	mad.lo.s32 	%r35, %r13, %r14, %r35;
+	setp.lt.u32	%p5, %r35, %r6;
+	@%p5 bra 	BB103_1;
 
 BB103_4:
-	shl.b32 	%r12, %r3, 2;
-	mov.u32 	%r13, my_sdata;
-	add.s32 	%r6, %r13, %r12;
-	st.shared.f32 	[%r6], %f16;
+	shl.b32 	%r16, %r7, 2;
+	mov.u32 	%r17, my_sdata;
+	add.s32 	%r5, %r17, %r16;
+	st.shared.f32 	[%r5], %f46;
 	bar.sync 	0;
-	shr.u32 	%r18, %r2, 1;
-	setp.eq.s32	%p5, %r18, 0;
-	@%p5 bra 	BB103_8;
+	setp.lt.u32	%p6, %r10, 1024;
+	@%p6 bra 	BB103_8;
 
-BB103_5:
-	setp.ge.u32	%p6, %r3, %r18;
-	@%p6 bra 	BB103_7;
+	setp.gt.u32	%p7, %r7, 511;
+	@%p7 bra 	BB103_7;
 
-	add.s32 	%r14, %r18, %r3;
-	shl.b32 	%r15, %r14, 2;
-	add.s32 	%r17, %r13, %r15;
-	ld.shared.f32 	%f13, [%r17];
-	add.f32 	%f16, %f16, %f13;
-	st.shared.f32 	[%r6], %f16;
+	ld.shared.f32 	%f34, [%r5+2048];
+	add.f32 	%f46, %f46, %f34;
+	st.shared.f32 	[%r5], %f46;
 
 BB103_7:
 	bar.sync 	0;
-	shr.u32 	%r18, %r18, 1;
-	setp.ne.s32	%p7, %r18, 0;
-	@%p7 bra 	BB103_5;
 
 BB103_8:
-	setp.ne.s32	%p8, %r3, 0;
-	@%p8 bra 	BB103_10;
+	setp.lt.u32	%p8, %r10, 512;
+	@%p8 bra 	BB103_12;
 
-	cvta.to.global.u64 	%rd8, %rd2;
-	mul.wide.u32 	%rd9, %r1, 4;
-	add.s64 	%rd10, %rd8, %rd9;
-	st.global.f32 	[%rd10], %f16;
+	setp.gt.u32	%p9, %r7, 255;
+	@%p9 bra 	BB103_11;
 
-BB103_10:
+	ld.shared.f32 	%f35, [%r5+1024];
+	add.f32 	%f46, %f46, %f35;
+	st.shared.f32 	[%r5], %f46;
+
+BB103_11:
+	bar.sync 	0;
+
+BB103_12:
+	setp.lt.u32	%p10, %r10, 256;
+	@%p10 bra 	BB103_16;
+
+	setp.gt.u32	%p11, %r7, 127;
+	@%p11 bra 	BB103_15;
+
+	ld.shared.f32 	%f36, [%r5+512];
+	add.f32 	%f46, %f46, %f36;
+	st.shared.f32 	[%r5], %f46;
+
+BB103_15:
+	bar.sync 	0;
+
+BB103_16:
+	setp.lt.u32	%p12, %r10, 128;
+	@%p12 bra 	BB103_20;
+
+	setp.gt.u32	%p13, %r7, 63;
+	@%p13 bra 	BB103_19;
+
+	ld.shared.f32 	%f37, [%r5+256];
+	add.f32 	%f46, %f46, %f37;
+	st.shared.f32 	[%r5], %f46;
+
+BB103_19:
+	bar.sync 	0;
+
+BB103_20:
+	setp.gt.u32	%p14, %r7, 31;
+	@%p14 bra 	BB103_33;
+
+	setp.lt.u32	%p15, %r10, 64;
+	@%p15 bra 	BB103_23;
+
+	ld.volatile.shared.f32 	%f38, [%r5+128];
+	add.f32 	%f46, %f46, %f38;
+	st.volatile.shared.f32 	[%r5], %f46;
+
+BB103_23:
+	setp.lt.u32	%p16, %r10, 32;
+	@%p16 bra 	BB103_25;
+
+	ld.volatile.shared.f32 	%f39, [%r5+64];
+	add.f32 	%f46, %f46, %f39;
+	st.volatile.shared.f32 	[%r5], %f46;
+
+BB103_25:
+	setp.lt.u32	%p17, %r10, 16;
+	@%p17 bra 	BB103_27;
+
+	ld.volatile.shared.f32 	%f40, [%r5+32];
+	add.f32 	%f46, %f46, %f40;
+	st.volatile.shared.f32 	[%r5], %f46;
+
+BB103_27:
+	setp.lt.u32	%p18, %r10, 8;
+	@%p18 bra 	BB103_29;
+
+	ld.volatile.shared.f32 	%f41, [%r5+16];
+	add.f32 	%f46, %f46, %f41;
+	st.volatile.shared.f32 	[%r5], %f46;
+
+BB103_29:
+	setp.lt.u32	%p19, %r10, 4;
+	@%p19 bra 	BB103_31;
+
+	ld.volatile.shared.f32 	%f42, [%r5+8];
+	add.f32 	%f46, %f46, %f42;
+	st.volatile.shared.f32 	[%r5], %f46;
+
+BB103_31:
+	setp.lt.u32	%p20, %r10, 2;
+	@%p20 bra 	BB103_33;
+
+	ld.volatile.shared.f32 	%f43, [%r5+4];
+	add.f32 	%f44, %f46, %f43;
+	st.volatile.shared.f32 	[%r5], %f44;
+
+BB103_33:
+	setp.ne.s32	%p21, %r7, 0;
+	@%p21 bra 	BB103_35;
+
+	ld.shared.f32 	%f45, [my_sdata];
+	cvta.to.global.u64 	%rd9, %rd2;
+	mul.wide.u32 	%rd10, %r8, 4;
+	add.s64 	%rd11, %rd9, %rd10;
+	st.global.f32 	[%rd11], %f45;
+
+BB103_35:
 	ret;
 }
 
