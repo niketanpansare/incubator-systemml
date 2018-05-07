@@ -101,4 +101,7 @@
     
    <!-- maximum wrap length for instruction and miscellaneous timer column of statistics -->
    <sysml.stats.maxWrapLength>30</sysml.stats.maxWrapLength>
+   
+   <!-- Advanced optimization: fraction of driver memory to use for caching (default: 0.15) -->
+   <sysml.caching.bufferSize>0.15</sysml.caching.bufferSize>
 </root>

@@ -81,7 +81,7 @@ public class DMLConfig
 	public static final String CODEGEN_OPTIMIZER    = "sysml.codegen.optimizer"; //see SpoofCompiler.PlanSelector
 	public static final String CODEGEN_PLANCACHE    = "sysml.codegen.plancache"; //boolean
 	public static final String CODEGEN_LITERALS     = "sysml.codegen.literals"; //1..heuristic, 2..always
-	
+	public static final String CACHING_BUFFER_SIZE 	= "sysml.caching.bufferSize"; //double: default:0.15
 	public static final String EXTRA_FINEGRAINED_STATS = "sysml.stats.finegrained"; //boolean
 	public static final String STATS_MAX_WRAP_LEN   = "sysml.stats.maxWrapLength"; //int
 	public static final String AVAILABLE_GPUS       = "sysml.gpu.availableGPUs"; // String to specify which GPUs to use (a range, all GPUs, comma separated list or a specific GPU)
@@ -139,6 +139,7 @@ public class DMLConfig
 		_defaultVals.put(AVAILABLE_GPUS,         "-1");
 		_defaultVals.put(GPU_EVICTION_POLICY,    "lru");
 		_defaultVals.put(SYNCHRONIZE_GPU,        "false" );
+		_defaultVals.put(CACHING_BUFFER_SIZE,    "0.15" );
 		_defaultVals.put(EAGER_CUDA_FREE,        "false" );
 		_defaultVals.put(FLOATING_POINT_PRECISION,        	 "double" );
 	}
@@ -421,7 +422,7 @@ public class DMLConfig
 				CP_PARALLEL_OPS, CP_PARALLEL_IO, NATIVE_BLAS, NATIVE_BLAS_DIR,
 				COMPRESSED_LINALG, 
 				CODEGEN, CODEGEN_COMPILER, CODEGEN_OPTIMIZER, CODEGEN_PLANCACHE, CODEGEN_LITERALS,
-				EXTRA_FINEGRAINED_STATS, STATS_MAX_WRAP_LEN, PRINT_GPU_MEMORY_INFO,
+				EXTRA_FINEGRAINED_STATS, STATS_MAX_WRAP_LEN, PRINT_GPU_MEMORY_INFO, CACHING_BUFFER_SIZE,
 				AVAILABLE_GPUS, SYNCHRONIZE_GPU, EAGER_CUDA_FREE, FLOATING_POINT_PRECISION, GPU_EVICTION_POLICY
 		}; 
 		
