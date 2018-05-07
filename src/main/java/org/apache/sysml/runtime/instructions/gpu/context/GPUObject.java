@@ -951,7 +951,9 @@ public class GPUObject {
 			getGPUContext().cudaFreeHelper(instName, jcudaDenseMatrixPtr, eagerDelete);
 			jcudaDenseMatrixPtr = null;
 			if (DMLScript.STATISTICS) {
-				GPUStatistics.cudaFromDevTime.add(System.nanoTime() - start);
+				long memCopyTime = System.nanoTime() - start;
+				GPUStatistics.cudaEvictCPUFloatCopyTime.add(memCopyTime);
+				GPUStatistics.cudaFromDevTime.add(memCopyTime);
 				GPUStatistics.cudaFromDevCount.add(1);
 			}
 			return;
