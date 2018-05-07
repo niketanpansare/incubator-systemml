@@ -53,7 +53,8 @@ public class GPUStatistics {
 	public static LongAdder cudaFromDevTime = new LongAdder();           // time spent in copying data from device to host
 	public static LongAdder cudaEvictTime = new LongAdder();           	 // time spent in eviction
 	public static LongAdder cudaEvictCPUFloat2DoubleTime = new LongAdder(); // time spent in converting float to double during eviction
-	public static LongAdder cudaEvictCPUFloatCopyTime = new LongAdder(); // time spent in converting float to double during eviction
+	public static LongAdder cudaEvictCPUFloatCopyTime = new LongAdder(); // time spent in copying float array during eviction
+	public static LongAdder cudaEvictMallocTime = new LongAdder(); // time spent in converting perform malloc
 	public static LongAdder cudaEvictMemcpyTime = new LongAdder(); // time spent in cudaMemcpy kernel during eviction
 	public static LongAdder cudaForcedClearLazyFreedEvictTime = new LongAdder(); // time spent in forced lazy eviction
 	public static LongAdder cudaForcedClearUnpinnedEvictTime = new LongAdder(); // time spent in forced unpinned eviction
@@ -93,6 +94,7 @@ public class GPUStatistics {
 		cudaEvictTime.reset();
 		cudaEvictCPUFloat2DoubleTime.reset();
 		cudaEvictCPUFloatCopyTime.reset();
+		cudaEvictMallocTime.reset();
 		cudaForcedClearLazyFreedEvictTime.reset();
 		cudaForcedClearUnpinnedEvictTime.reset();
 		cudaAllocCount.reset();
@@ -198,7 +200,7 @@ public class GPUStatistics {
 		sb.append("CUDA/CuLibraries init time:\t" + String.format("%.3f", cudaInitTime*1e-9) + "/"
 				+ String.format("%.3f", cudaLibrariesInitTime*1e-9) + " sec.\n");
 		sb.append("Number of executed GPU inst:\t" + getNoOfExecutedGPUInst() + ".\n");
-		sb.append("GPU mem tx time  (alloc/dealloc/set0/toDev/fromDev/evict(f2d/cpy)):\t"
+		sb.append("GPU mem tx time  (alloc/dealloc/set0/toDev/fromDev/evict(f2d/cpy/alloc)):\t"
 				+ String.format("%.3f", cudaAllocTime.longValue()*1e-9) + "/"
 				+ String.format("%.3f", cudaDeAllocTime.longValue()*1e-9) + "/"
 				+ String.format("%.3f", cudaMemSet0Time.longValue()*1e-9) + "/"
@@ -206,7 +208,8 @@ public class GPUStatistics {
 				+ String.format("%.3f", cudaFromDevTime.longValue()*1e-9) + "/"
 				+ String.format("%.3f", cudaEvictTime.longValue()*1e-9) + "("
 				+ String.format("%.3f", cudaEvictCPUFloat2DoubleTime.longValue()*1e-9) + "/"
-				+ String.format("%.3f", cudaEvictCPUFloatCopyTime.longValue()*1e-9)
+				+ String.format("%.3f", cudaEvictCPUFloatCopyTime.longValue()*1e-9) + "/"
+				+ String.format("%.3f", cudaEvictMallocTime.longValue()*1e-9)
 				+ ") sec.\n");
 		sb.append("GPU mem tx count (alloc/dealloc/set0/toDev/fromDev/evict):\t"
 				+ cudaAllocCount.longValue() + "/"

@@ -313,8 +313,11 @@ public class GPUMemoryManager {
 					if(DMLScript.PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled()) {
 						LOG.info("GPU Memory info after clearing all unlocked non-dirty matrices:" + toString());
 					}
+					long t1 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 					A = cudaMallocNoWarn(tmpA, size); // Try malloc rather than check available memory to avoid fragmentation related issues
-				
+					if(DMLScript.STATISTICS)
+						GPUStatistics.cudaEvictMallocTime.add(System.nanoTime()-t1);
+					
 					// ---------------------------------------------------------------
 					// Evict unlocked GPU objects one-by-one and try malloc
 					unlockedGPUObjects = null;
@@ -325,7 +328,10 @@ public class GPUMemoryManager {
 						while(A == null && unlockedGPUObjects.size() > 0) {
 							GPUObject gpuObj = unlockedGPUObjects.remove(unlockedGPUObjects.size()-1);
 							gpuObj.copyFromDeviceToHost(opcode, true, true);
+							t1 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 							A = cudaMallocNoWarn(tmpA, size); // Try malloc rather than check available memory to avoid fragmentation related issues
+							if(DMLScript.STATISTICS)
+								GPUStatistics.cudaEvictMallocTime.add(System.nanoTime()-t1);
 						}
 						if(DMLScript.PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled()) {
 							// greater than or equal to " + byteCountToDisplaySize(size)
