@@ -928,7 +928,22 @@ public class GPUObject {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : copyFromDeviceToHost, on " + this + ", GPUContext=" + getGPUContext());
 		}
-		if(IN_MEMORY_FLOAT_EVICTION && LibMatrixCUDA.sizeOfDataType == jcuda.Sizeof.FLOAT && isEviction && eagerDelete && !isDensePointerNull()) {
+		if(evictedDenseArr != null) {
+			if(!isEviction) {
+				MatrixBlock tmp = new MatrixBlock(toIntExact(mat.getNumRows()), toIntExact(mat.getNumColumns()), false);
+				tmp.allocateDenseBlock();
+				double [] tmpArr = tmp.getDenseBlockValues();
+				for(int i = 0; i < evictedDenseArr.length; i++) {
+					tmpArr[i] = evictedDenseArr[i];
+				}
+				mat.acquireModify(tmp);
+				mat.release();
+				evictedDenseArr = null;
+				dirty = false;
+			}
+			return;
+		}
+		else if(IN_MEMORY_FLOAT_EVICTION && LibMatrixCUDA.sizeOfDataType == jcuda.Sizeof.FLOAT && isEviction && eagerDelete && !isDensePointerNull()) {
 			long start = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			int numElems = toIntExact(mat.getNumRows()*mat.getNumColumns());
 			evictedDenseArr = new float[numElems];
