@@ -81,7 +81,8 @@ public class GPUMatrixMemoryManager {
 		if(!gObj.isDensePointerNull() && gObj.getSparseMatrixCudaPointer() != null) {
 			LOG.warn("Matrix allocated in both dense and sparse format");
 		}
-		if(!(gObj.isDensePointerNull() && gObj.evictedDenseArr == null)) {
+		if(!gObj.isDensePointerNull()) {
+			// && gObj.evictedDenseArr == null - Ignore evicted array
 			ret.add(gObj.getDensePointer());
 		}
 		if(gObj.getSparseMatrixCudaPointer() != null) {
