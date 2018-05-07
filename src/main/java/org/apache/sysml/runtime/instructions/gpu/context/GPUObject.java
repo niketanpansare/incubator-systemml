@@ -53,6 +53,9 @@ import jcuda.jcusparse.cusparseMatDescr;
 public class GPUObject {
 
 	private static final Log LOG = LogFactory.getLog(GPUObject.class.getName());
+	
+	// Set this flag to true if you want to avoid float2double conversion of evicted dense matrices
+	private final boolean IN_MEMORY_FLOAT_EVICTION = true; 
 
 	/**
 	 * GPUContext that owns this GPUObject
@@ -101,6 +104,7 @@ public class GPUObject {
 	
 	// ----------------------------------------------------------------------
 	// Methods used to access, set and check jcudaDenseMatrixPtr
+	private float[] evictedDenseArr = null;
 	
 	/**
 	 * Pointer to dense matrix
@@ -108,6 +112,12 @@ public class GPUObject {
 	 * @return a pointer to the dense matrix
 	 */
 	public Pointer getDensePointer() {
+		if(jcudaDenseMatrixPtr == null && getJcudaSparseMatrixPtr() == null && evictedDenseArr != null) {
+			long numBytes = evictedDenseArr.length*LibMatrixCUDA.sizeOfDataType;
+			jcudaDenseMatrixPtr = gpuContext.allocate(numBytes);
+			cudaMemcpy(jcudaDenseMatrixPtr, Pointer.to(evictedDenseArr), numBytes, jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice);
+			evictedDenseArr = null;
+		}
 		return jcudaDenseMatrixPtr;
 	}
 	
@@ -117,7 +127,7 @@ public class GPUObject {
 	 * @return if the state of dense pointer is null
 	 */
 	public boolean isDensePointerNull() {
-		return jcudaDenseMatrixPtr == null;
+		return jcudaDenseMatrixPtr == null && evictedDenseArr == null;
 	}
 	
 	/**
@@ -125,6 +135,7 @@ public class GPUObject {
 	 */
 	public void clearDensePointer() {
 		jcudaDenseMatrixPtr = null;
+		evictedDenseArr = null;
 	}
 	
 	/**
@@ -899,8 +910,8 @@ public class GPUObject {
 		}
 		return (int) l;
 	}
-	
 
+	
 	/**
 	 * Copies the data from device to host.
 	 * Currently eagerDelete and isEviction are both provided for better control in different scenarios. 
@@ -929,6 +940,21 @@ public class GPUObject {
 		else if(getJcudaSparseMatrixPtr() != null && isSparseAndEmpty()) {
 			mat.acquireModify(new MatrixBlock((int)mat.getNumRows(), (int)mat.getNumColumns(), 0l)); // empty block
 			mat.release();
+			return;
+		}
+		else if(IN_MEMORY_FLOAT_EVICTION && LibMatrixCUDA.sizeOfDataType == jcuda.Sizeof.FLOAT && isEviction && eagerDelete && !isDensePointerNull()) {
+			long start = DMLScript.STATISTICS ? System.nanoTime() : 0;
+			int numElems = toIntExact(mat.getNumRows()*mat.getNumColumns());
+			evictedDenseArr = new float[numElems];
+			cudaMemcpy(Pointer.to(evictedDenseArr), jcudaDenseMatrixPtr, numElems*LibMatrixCUDA.sizeOfDataType, jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost);
+			getGPUContext().cudaFreeHelper(instName, jcudaDenseMatrixPtr, eagerDelete);
+			jcudaDenseMatrixPtr = null;
+			if (DMLScript.STATISTICS)
+				GPUStatistics.cudaFromDevTime.add(System.nanoTime() - start);
+			if (DMLScript.STATISTICS) {
+				int count = !isDensePointerNull() ? 1 : 3;
+				GPUStatistics.cudaFromDevCount.add(count);
+			}
 			return;
 		}
 		
