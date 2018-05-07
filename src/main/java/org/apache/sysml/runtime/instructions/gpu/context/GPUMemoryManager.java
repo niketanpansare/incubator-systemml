@@ -323,8 +323,20 @@ public class GPUMemoryManager {
 								.filter(gpuObj -> !gpuObj.isLocked() && gpuObj.isDirty()).collect(Collectors.toList());
 						Collections.sort(unlockedGPUObjects, new EvictionPolicyBasedComparator(size));
 						while(A == null && unlockedGPUObjects.size() > 0) {
-							GPUObject gpuObj = unlockedGPUObjects.remove(unlockedGPUObjects.size()-1);
-							gpuObj.copyFromDeviceToHost(opcode, true, true);
+							if(DMLScript.GPU_EVICTION_POLICY == DMLScript.EvictionPolicy.ALIGN_MEMORY) {
+								// TODO: Optimize later using sliding window
+								// Evict as many sequential dense objects from back of the queue as possible
+								long neededSize = size;
+								while(neededSize >= 0 && unlockedGPUObjects.size() > 0) {
+									GPUObject gpuObj = unlockedGPUObjects.remove(unlockedGPUObjects.size()-1);
+									neededSize -= matrixMemoryManager.getWorstCaseContiguousMemorySize(gpuObj);
+									gpuObj.copyFromDeviceToHost(opcode, true, true);
+								}
+							}
+							else {
+								GPUObject gpuObj = unlockedGPUObjects.remove(unlockedGPUObjects.size()-1);
+								gpuObj.copyFromDeviceToHost(opcode, true, true);
+							}
 							A = cudaMallocNoWarn(tmpA, size); // Try malloc rather than check available memory to avoid fragmentation related issues
 						}
 						if(DMLScript.PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled()) {
@@ -630,6 +642,17 @@ public class GPUMemoryManager {
 	
 	private static Comparator<GPUObject> SIMPLE_COMPARATOR_SORT_BY_SIZE = (o1, o2) -> o1.getSizeOnDevice() < o2.getSizeOnDevice() ? -1 : 1;
 	
+	private static class CustomPointer extends Pointer {
+		public CustomPointer(Pointer p) {
+			super(p);
+		}
+		
+		@Override
+		public long getNativePointer() {
+			return super.getNativePointer();
+		}
+		
+	}
 	/**
 	 * Class that governs the eviction policy
 	 */
@@ -638,6 +661,18 @@ public class GPUMemoryManager {
 		public EvictionPolicyBasedComparator(long neededSize) {
 			this.neededSize = neededSize;
 		}
+		
+		private int minEvictCompare(GPUObject p1, GPUObject p2) {
+			long p1Size = p1.getSizeOnDevice() - neededSize;
+			long p2Size = p2.getSizeOnDevice() - neededSize;
+
+			if (p1Size >= 0 && p2Size >= 0) {
+				return Long.compare(p2Size, p1Size);
+			} else {
+				return Long.compare(p1Size, p2Size);
+			}
+		}
+		
 		@Override
 		public int compare(GPUObject p1, GPUObject p2) {
 			if (p1.isLocked() && p2.isLocked()) {
@@ -653,15 +688,28 @@ public class GPUMemoryManager {
 				return 1;
 			} else {
 				// Both are unlocked
-				if (DMLScript.GPU_EVICTION_POLICY == DMLScript.EvictionPolicy.MIN_EVICT) {
-					long p1Size = p1.getSizeOnDevice() - neededSize;
-					long p2Size = p2.getSizeOnDevice() - neededSize;
-
-					if (p1Size >= 0 && p2Size >= 0) {
-						return Long.compare(p2Size, p1Size);
-					} else {
-						return Long.compare(p1Size, p2Size);
+				if (DMLScript.GPU_EVICTION_POLICY == DMLScript.EvictionPolicy.ALIGN_MEMORY) {
+					if(!p1.isDensePointerNull() && !p2.isDensePointerNull()) {
+						long p1Ptr = new CustomPointer(p1.getDensePointer()).getNativePointer();
+						long p2Ptr = new CustomPointer(p2.getDensePointer()).getNativePointer();
+						
+						if(p1Ptr <= p2Ptr)
+							return -1;
+						else
+							return 1;
 					}
+					else if(p1.isDensePointerNull() && !p2.isDensePointerNull()) {
+						return -1;
+					}
+					else if(!p1.isDensePointerNull() && p2.isDensePointerNull()) {
+						return 1;
+					}
+					else {
+						return minEvictCompare(p1, p2);
+					}
+				}
+				else if (DMLScript.GPU_EVICTION_POLICY == DMLScript.EvictionPolicy.MIN_EVICT) {
+					return minEvictCompare(p1, p2);
 				} else {
 					return Long.compare(p2.timestamp.get(), p1.timestamp.get());
 				}

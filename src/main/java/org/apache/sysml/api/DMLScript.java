@@ -112,6 +112,7 @@ public class DMLScript
 		LFU, 				// Evict the least frequently used GPUObject. 
 		MIN_EVICT,
 		MRU, 				// http://www.vldb.org/conf/1985/P127.PDF
+		ALIGN_MEMORY
 		// TODO:
 		// ARC, // https://dbs.uni-leipzig.de/file/ARC.pdf
 		// LOOP_AWARE 		// different policies for operations in for/while/parfor loop vs out-side the loop
