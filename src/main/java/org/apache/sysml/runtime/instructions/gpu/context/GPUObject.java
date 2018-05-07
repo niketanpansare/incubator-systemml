@@ -104,7 +104,7 @@ public class GPUObject {
 	
 	// ----------------------------------------------------------------------
 	// Methods used to access, set and check jcudaDenseMatrixPtr
-	private float[] evictedDenseArr = null;
+	float[] evictedDenseArr = null;
 	
 	/**
 	 * Pointer to dense matrix
@@ -127,7 +127,7 @@ public class GPUObject {
 	 * @return if the state of dense pointer is null
 	 */
 	public boolean isDensePointerNull() {
-		return jcudaDenseMatrixPtr == null && evictedDenseArr == null;
+		return jcudaDenseMatrixPtr == null;
 	}
 	
 	/**
@@ -311,8 +311,10 @@ public class GPUObject {
 		this.jcudaSparseMatrixPtr = sparseMatrixPtr;
 		this.isSparse = true;
 		if (!isDensePointerNull()) {
-			cudaFreeHelper(getDensePointer());
-			clearDensePointer();
+			if(evictedDenseArr == null) {
+				cudaFreeHelper(getDensePointer());
+				clearDensePointer();
+			}
 		}
 	}
 	
@@ -332,7 +334,7 @@ public class GPUObject {
 		int rows = toIntExact(mat.getNumRows());
 		int cols = toIntExact(mat.getNumColumns());
 
-		if (isDensePointerNull() || !isAllocated())
+		if ((isDensePointerNull() && evictedDenseArr == null) || !isAllocated())
 			throw new DMLRuntimeException("Expected allocated dense matrix before denseToSparse() call");
 
 		denseRowMajorToColumnMajor();
@@ -465,7 +467,7 @@ public class GPUObject {
 	}
 
 	public boolean isAllocated() {
-		boolean eitherAllocated = (!isDensePointerNull() || getJcudaSparseMatrixPtr() != null);
+		boolean eitherAllocated = (!(isDensePointerNull() && evictedDenseArr == null) || getJcudaSparseMatrixPtr() != null);
 		return eitherAllocated;
 	}
 
@@ -926,7 +928,20 @@ public class GPUObject {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : copyFromDeviceToHost, on " + this + ", GPUContext=" + getGPUContext());
 		}
-		if (isDensePointerNull() && getJcudaSparseMatrixPtr() == null) {
+		if(IN_MEMORY_FLOAT_EVICTION && LibMatrixCUDA.sizeOfDataType == jcuda.Sizeof.FLOAT && isEviction && eagerDelete && !isDensePointerNull()) {
+			long start = DMLScript.STATISTICS ? System.nanoTime() : 0;
+			int numElems = toIntExact(mat.getNumRows()*mat.getNumColumns());
+			evictedDenseArr = new float[numElems];
+			cudaMemcpy(Pointer.to(evictedDenseArr), jcudaDenseMatrixPtr, numElems*LibMatrixCUDA.sizeOfDataType, jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost);
+			getGPUContext().cudaFreeHelper(instName, jcudaDenseMatrixPtr, eagerDelete);
+			jcudaDenseMatrixPtr = null;
+			if (DMLScript.STATISTICS) {
+				GPUStatistics.cudaFromDevTime.add(System.nanoTime() - start);
+				GPUStatistics.cudaFromDevCount.add(1);
+			}
+			return;
+		}
+		else if (isDensePointerNull() && getJcudaSparseMatrixPtr() == null) {
 			throw new DMLRuntimeException(
 					"Cannot copy from device to host as JCuda dense/sparse pointer is not allocated");
 		}
@@ -940,21 +955,6 @@ public class GPUObject {
 		else if(getJcudaSparseMatrixPtr() != null && isSparseAndEmpty()) {
 			mat.acquireModify(new MatrixBlock((int)mat.getNumRows(), (int)mat.getNumColumns(), 0l)); // empty block
 			mat.release();
-			return;
-		}
-		else if(IN_MEMORY_FLOAT_EVICTION && LibMatrixCUDA.sizeOfDataType == jcuda.Sizeof.FLOAT && isEviction && eagerDelete && !isDensePointerNull()) {
-			long start = DMLScript.STATISTICS ? System.nanoTime() : 0;
-			int numElems = toIntExact(mat.getNumRows()*mat.getNumColumns());
-			evictedDenseArr = new float[numElems];
-			cudaMemcpy(Pointer.to(evictedDenseArr), jcudaDenseMatrixPtr, numElems*LibMatrixCUDA.sizeOfDataType, jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost);
-			getGPUContext().cudaFreeHelper(instName, jcudaDenseMatrixPtr, eagerDelete);
-			jcudaDenseMatrixPtr = null;
-			if (DMLScript.STATISTICS)
-				GPUStatistics.cudaFromDevTime.add(System.nanoTime() - start);
-			if (DMLScript.STATISTICS) {
-				int count = !isDensePointerNull() ? 1 : 3;
-				GPUStatistics.cudaFromDevCount.add(count);
-			}
 			return;
 		}
 		
