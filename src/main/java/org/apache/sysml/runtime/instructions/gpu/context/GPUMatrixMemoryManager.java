@@ -53,8 +53,8 @@ public class GPUMatrixMemoryManager {
 	 */
 	long getWorstCaseContiguousMemorySize(GPUObject gpuObj) {
 		long ret = 0;
-		if(gpuObj.getJcudaDenseMatrixPtr() != null) {
-			ret = gpuManager.allPointers.get(gpuObj.getJcudaDenseMatrixPtr()).getSizeInBytes();
+		if(!gpuObj.isDensePointerNull()) {
+			ret = gpuManager.allPointers.get(gpuObj.getDensePointer()).getSizeInBytes();
 		}
 		else if(gpuObj.getJcudaSparseMatrixPtr() != null) {
 			CSRPointer sparsePtr = gpuObj.getJcudaSparseMatrixPtr();
@@ -75,11 +75,11 @@ public class GPUMatrixMemoryManager {
 	 */
 	Set<Pointer> getPointers(GPUObject gObj) {
 		Set<Pointer> ret = new HashSet<>();
-		if(gObj.getJcudaDenseMatrixPtr() != null && gObj.getSparseMatrixCudaPointer() != null) {
+		if(!gObj.isDensePointerNull() && gObj.getSparseMatrixCudaPointer() != null) {
 			LOG.warn("Matrix allocated in both dense and sparse format");
 		}
-		if(gObj.getJcudaDenseMatrixPtr() != null) {
-			ret.add(gObj.getJcudaDenseMatrixPtr());
+		if(!gObj.isDensePointerNull()) {
+			ret.add(gObj.getDensePointer());
 		}
 		if(gObj.getSparseMatrixCudaPointer() != null) {
 			CSRPointer sparsePtr = gObj.getSparseMatrixCudaPointer();

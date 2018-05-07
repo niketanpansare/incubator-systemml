@@ -275,7 +275,7 @@ public class LibMatrixCUDA {
 		if(isInSparseFormat(gCtx, input)) {
 			input.getGPUObject(gCtx).sparseToDense(instName);
 		}
-		return input.getGPUObject(gCtx).getJcudaDenseMatrixPtr();
+		return input.getGPUObject(gCtx).getDensePointer();
 	}
 
 	/**
@@ -401,9 +401,9 @@ public class LibMatrixCUDA {
 		if(bias.getNumColumns() != 1 || cols % K != 0) {
 			throw new DMLRuntimeException("Incorrect inputs for bias_multiply: input[" + rows + " X " + cols + "] and bias[" + K + " X " + bias.getNumColumns() + "]");
 		}
-		Pointer imagePointer = input.getGPUObject(gCtx).getJcudaDenseMatrixPtr();
-		Pointer biasPointer = bias.getGPUObject(gCtx).getJcudaDenseMatrixPtr();
-		Pointer outputPointer = outputBlock.getGPUObject(gCtx).getJcudaDenseMatrixPtr();
+		Pointer imagePointer = input.getGPUObject(gCtx).getDensePointer();
+		Pointer biasPointer = bias.getGPUObject(gCtx).getDensePointer();
+		Pointer outputPointer = outputBlock.getGPUObject(gCtx).getDensePointer();
 		long t1 = 0;
 		if (DMLScript.FINEGRAINED_STATISTICS) t1 = System.nanoTime();
 		getCudaKernels(gCtx).launchKernel("bias_multiply",
@@ -2433,7 +2433,7 @@ public class LibMatrixCUDA {
 		if (DMLScript.FINEGRAINED_STATISTICS) t0 = System.nanoTime();
 		ATobj.denseRowMajorToColumnMajor();
 		if (DMLScript.FINEGRAINED_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_ROW_TO_COLUMN_MAJOR, System.nanoTime() - t0);
-		Pointer A = ATobj.getJcudaDenseMatrixPtr();
+		Pointer A = ATobj.getDensePointer();
 
 		if (DMLScript.FINEGRAINED_STATISTICS) t0 = System.nanoTime();
 		GPUObject bTobj = (GPUObject) bobj.clone();
@@ -2443,7 +2443,7 @@ public class LibMatrixCUDA {
 		if (DMLScript.FINEGRAINED_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_ROW_TO_COLUMN_MAJOR, System.nanoTime() - t0);
 
 
-		Pointer b = bTobj.getJcudaDenseMatrixPtr();
+		Pointer b = bTobj.getDensePointer();
 
 		// The following set of operations is done following the example in the cusolver documentation
 		// http://docs.nvidia.com/cuda/cusolver/#ormqr-example1
@@ -2491,7 +2491,7 @@ public class LibMatrixCUDA {
 		// TODO  : Find a way to assign bTobj directly to the output and set the correct flags so as to not crash
 		// There is an avoidable copy happening here
 		MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, in1.getNumColumns(), 1);
-		cudaMemcpy(out.getGPUObject(gCtx).getJcudaDenseMatrixPtr(), bTobj.getJcudaDenseMatrixPtr(), n * 1 * sizeOfDataType, cudaMemcpyDeviceToDevice);
+		cudaMemcpy(out.getGPUObject(gCtx).getDensePointer(), bTobj.getDensePointer(), n * 1 * sizeOfDataType, cudaMemcpyDeviceToDevice);
 
 		gCtx.cudaFreeHelper(instName, work, DMLScript.EAGER_CUDA_FREE);
 		gCtx.cudaFreeHelper(instName, tau, DMLScript.EAGER_CUDA_FREE);
