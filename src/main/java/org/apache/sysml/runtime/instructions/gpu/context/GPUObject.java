@@ -709,6 +709,7 @@ public class GPUObject {
 				timestamp.addAndGet(1);
 				break;
 			case MIN_EVICT: /* Do Nothing */
+			case ALIGN_MEMORY:
 				break;
 			case MRU:
 				timestamp.set(-System.nanoTime());
