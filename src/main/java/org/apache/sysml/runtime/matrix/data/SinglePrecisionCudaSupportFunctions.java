@@ -22,6 +22,11 @@ import static jcuda.runtime.JCuda.cudaMemcpy;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.FloatBuffer;
+import java.util.stream.IntStream;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
@@ -181,12 +186,10 @@ public class SinglePrecisionCudaSupportFunctions implements CudaSupportFunctions
 		}
 		else {
 			LOG.debug("Potential OOM: Allocated additional space on host in deviceToHost");
-			float [] floatData = new float[dest.length];
-			cudaMemcpy(Pointer.to(floatData), src, ((long)dest.length)*Sizeof.FLOAT, cudaMemcpyDeviceToHost);
 			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-			for(int i = 0; i < dest.length; i++) {
-				dest[i] = floatData[i];
-			}
+			FloatBuffer floatData = ByteBuffer.allocateDirect(Sizeof.FLOAT*dest.length).order(ByteOrder.nativeOrder()).asFloatBuffer();
+			cudaMemcpy(Pointer.to(floatData), src, ((long)dest.length)*Sizeof.FLOAT, cudaMemcpyDeviceToHost);
+			LibMatrixNative.fromFloatBuffer(floatData, dest);
 			if(DMLScript.STATISTICS)
 				GPUStatistics.cudaEvictCPUFloat2DoubleTime.add(System.nanoTime()-t0);
 		}
@@ -206,11 +209,12 @@ public class SinglePrecisionCudaSupportFunctions implements CudaSupportFunctions
 			gCtx.cudaFreeHelper(instName, deviceDoubleData, DMLScript.EAGER_CUDA_FREE);
 		}
 		else {
-			float [] floatData = new float[src.length];
-			for(int i = 0; i < src.length; i++) {
-				floatData[i] = (float) src[i];
-			}
+			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+			FloatBuffer floatData = ByteBuffer.allocateDirect(Sizeof.FLOAT*src.length).order(ByteOrder.nativeOrder()).asFloatBuffer();
+			IntStream.range(0, src.length).parallel().forEach(i -> floatData.put(i, (float)src[i]));
 			cudaMemcpy(dest, Pointer.to(floatData), ((long)src.length)*Sizeof.FLOAT, cudaMemcpyHostToDevice);
+			if(DMLScript.STATISTICS)
+				GPUStatistics.cudaEvictCPUDouble2FloatTime.add(System.nanoTime()-t0);
 		}
 		
 		if(DMLScript.FINEGRAINED_STATISTICS && instName != null) 
