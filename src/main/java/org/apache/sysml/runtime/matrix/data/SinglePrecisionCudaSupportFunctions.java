@@ -192,7 +192,8 @@ public class SinglePrecisionCudaSupportFunctions implements CudaSupportFunctions
 		}
 		if(DMLScript.STATISTICS) {
 			long totalTime = System.nanoTime() - t0;
-			GPUStatistics.cudaEvictCPUFloat2DoubleTime.add(totalTime);
+			GPUStatistics.cudaFloat2DoubleTime.add(totalTime);
+			GPUStatistics.cudaFloat2DoubleCount.add(1);
 			if(DMLScript.FINEGRAINED_STATISTICS && instName != null) 
 				GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DEVICE_TO_HOST, totalTime);
 		}
@@ -217,7 +218,8 @@ public class SinglePrecisionCudaSupportFunctions implements CudaSupportFunctions
 		
 		if(DMLScript.STATISTICS) {
 			long totalTime = System.nanoTime() - t0;
-			GPUStatistics.cudaEvictCPUDouble2FloatTime.add(totalTime);
+			GPUStatistics.cudaDouble2FloatTime.add(totalTime);
+			GPUStatistics.cudaDouble2FloatCount.add(1);
 			if(DMLScript.FINEGRAINED_STATISTICS && instName != null) 
 				GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_HOST_TO_DEVICE, totalTime);
 		}
