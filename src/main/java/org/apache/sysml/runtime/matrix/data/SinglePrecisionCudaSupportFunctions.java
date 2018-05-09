@@ -168,7 +168,7 @@ public class SinglePrecisionCudaSupportFunctions implements CudaSupportFunctions
 	
 	@Override
 	public void deviceToHost(GPUContext gCtx, Pointer src, double[] dest, String instName, boolean isEviction) {
-		long t1 = DMLScript.FINEGRAINED_STATISTICS  && instName != null? System.nanoTime() : 0;
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		// We invoke transfer matrix from device to host in two cases:
 		// 1. During eviction of unlocked matrices
 		// 2. During acquireHostRead
@@ -186,22 +186,23 @@ public class SinglePrecisionCudaSupportFunctions implements CudaSupportFunctions
 		}
 		else {
 			LOG.debug("Potential OOM: Allocated additional space on host in deviceToHost");
-			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			FloatBuffer floatData = ByteBuffer.allocateDirect(Sizeof.FLOAT*dest.length).order(ByteOrder.nativeOrder()).asFloatBuffer();
 			cudaMemcpy(Pointer.to(floatData), src, ((long)dest.length)*Sizeof.FLOAT, cudaMemcpyDeviceToHost);
 			LibMatrixNative.fromFloatBuffer(floatData, dest);
-			if(DMLScript.STATISTICS)
-				GPUStatistics.cudaEvictCPUFloat2DoubleTime.add(System.nanoTime()-t0);
 		}
-		if(DMLScript.FINEGRAINED_STATISTICS && instName != null) 
-			GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DEVICE_TO_HOST, System.nanoTime() - t1);
+		if(DMLScript.STATISTICS) {
+			long totalTime = System.nanoTime() - t0;
+			GPUStatistics.cudaEvictCPUFloat2DoubleTime.add(totalTime);
+			if(DMLScript.FINEGRAINED_STATISTICS && instName != null) 
+				GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DEVICE_TO_HOST, totalTime);
+		}
 	}
 
 	@Override
 	public void hostToDevice(GPUContext gCtx, double[] src, Pointer dest, String instName) {
 		LOG.debug("Potential OOM: Allocated additional space in hostToDevice");
 		// TODO: Perform conversion on GPU using double2float and float2double kernels
-		long t1 = DMLScript.FINEGRAINED_STATISTICS  && instName != null? System.nanoTime() : 0;
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		if(PERFORM_CONVERSION_ON_DEVICE) {
 			Pointer deviceDoubleData = gCtx.allocate(((long)src.length)*Sizeof.DOUBLE);
 			cudaMemcpy(deviceDoubleData, Pointer.to(src), ((long)src.length)*Sizeof.DOUBLE, cudaMemcpyHostToDevice);
@@ -209,15 +210,16 @@ public class SinglePrecisionCudaSupportFunctions implements CudaSupportFunctions
 			gCtx.cudaFreeHelper(instName, deviceDoubleData, DMLScript.EAGER_CUDA_FREE);
 		}
 		else {
-			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			FloatBuffer floatData = ByteBuffer.allocateDirect(Sizeof.FLOAT*src.length).order(ByteOrder.nativeOrder()).asFloatBuffer();
 			IntStream.range(0, src.length).parallel().forEach(i -> floatData.put(i, (float)src[i]));
 			cudaMemcpy(dest, Pointer.to(floatData), ((long)src.length)*Sizeof.FLOAT, cudaMemcpyHostToDevice);
-			if(DMLScript.STATISTICS)
-				GPUStatistics.cudaEvictCPUDouble2FloatTime.add(System.nanoTime()-t0);
 		}
 		
-		if(DMLScript.FINEGRAINED_STATISTICS && instName != null) 
-			GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_HOST_TO_DEVICE, System.nanoTime() - t1);
+		if(DMLScript.STATISTICS) {
+			long totalTime = System.nanoTime() - t0;
+			GPUStatistics.cudaEvictCPUDouble2FloatTime.add(totalTime);
+			if(DMLScript.FINEGRAINED_STATISTICS && instName != null) 
+				GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_HOST_TO_DEVICE, totalTime);
+		}
 	}
 }
