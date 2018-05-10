@@ -101,11 +101,10 @@ public class GPUObject {
 	
 	// ----------------------------------------------------------------------
 	// Methods used to access, set and check jcudaDenseMatrixPtr
-	public static EvictedGPUDataCache evictedDataCache = null;
 	
 	private void loadEvictedGPUObject() {
-		if(evictedDataCache != null && evictedDataCache.containsKey(this)) {
-			EvictedGPUData data = evictedDataCache.get(this);
+		if(EvictedGPUDataCache.isCached(this)) {
+			EvictedGPUData data = EvictedGPUDataCache.getCachedData(this);
 			int numElems = LibMatrixCUDA.sizeOfDataType == jcuda.Sizeof.FLOAT ? data.floatVal.length : data.doubleVal.length;
 			long numBytes = numElems*LibMatrixCUDA.sizeOfDataType;
 			Pointer valPtr = null;
@@ -140,7 +139,7 @@ public class GPUObject {
 	 * @return a pointer to the dense matrix
 	 */
 	public Pointer getDensePointer() {
-		if(jcudaDenseMatrixPtr == null && getJcudaSparseMatrixPtr() == null && evictedDataCache != null) {
+		if(jcudaDenseMatrixPtr == null && getJcudaSparseMatrixPtr() == null && EvictedGPUDataCache.isCached(this)) {
 			loadEvictedGPUObject();
 		}
 		return jcudaDenseMatrixPtr;
@@ -152,7 +151,7 @@ public class GPUObject {
 	 * @return if the state of dense pointer is null
 	 */
 	public boolean isDensePointerNull() {
-		return jcudaDenseMatrixPtr == null && evictedDataCache != null && evictedDataCache.containsKey(this);
+		return jcudaDenseMatrixPtr == null && EvictedGPUDataCache.isCachedInDense(this);
 	}
 
 	/**
@@ -319,7 +318,7 @@ public class GPUObject {
 	 * @return CSR (compressed sparse row) pointer
 	 */
 	public CSRPointer getSparseMatrixCudaPointer() {
-		if(jcudaDenseMatrixPtr == null && getJcudaSparseMatrixPtr() == null && evictedDataCache != null) {
+		if(jcudaDenseMatrixPtr == null && getJcudaSparseMatrixPtr() == null && EvictedGPUDataCache.isCachedInSparse(this)) {
 			loadEvictedGPUObject();
 		}
 		return getJcudaSparseMatrixPtr();
@@ -493,7 +492,7 @@ public class GPUObject {
 
 	public boolean isAllocated() {
 		boolean eitherAllocated = !isDensePointerNull() || getJcudaSparseMatrixPtr() != null || 
-				(evictedDataCache != null && evictedDataCache.containsKey(this));
+				EvictedGPUDataCache.isCached(this);
 		return eitherAllocated;
 	}
 
@@ -955,7 +954,7 @@ public class GPUObject {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : copyFromDeviceToHost, on " + this + ", GPUContext=" + getGPUContext());
 		}
-		if(isEviction && eagerDelete && evictedDataCache != null && !isDensePointerNull()) {
+		if(isEviction && eagerDelete && EvictedGPUDataCache.isCacheAvailable() && !isDensePointerNull()) {
 			long start = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			EvictedGPUData data = new EvictedGPUData();
 			int numElems = toIntExact(mat.getNumRows()*mat.getNumColumns());
@@ -972,7 +971,7 @@ public class GPUObject {
 			
 			getGPUContext().cudaFreeHelper(instName, jcudaDenseMatrixPtr, eagerDelete);
 			jcudaDenseMatrixPtr = null;
-			evictedDataCache.put(this, data);
+			EvictedGPUDataCache.putCachedData(this, data);
 			if (DMLScript.STATISTICS) {
 				GPUStatistics.cudaFromDevTime.add(System.nanoTime() - start);
 				GPUStatistics.cudaFromDevCount.add(1);
@@ -1057,7 +1056,7 @@ public class GPUObject {
 		}
 		clearDensePointer();
 		jcudaSparseMatrixPtr = null;
-		evictedDataCache.remove(this);
+		EvictedGPUDataCache.removeCachedData(this);
 		resetReadWriteLock();
 		getGPUContext().getMemoryManager().removeGPUObject(this);
 	}

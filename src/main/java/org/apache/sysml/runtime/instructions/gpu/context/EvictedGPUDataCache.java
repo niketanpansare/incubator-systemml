@@ -30,6 +30,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.sysml.api.DMLScript;
+
+// TODO: Make this class thread safe
 public class EvictedGPUDataCache implements Map<GPUObject, EvictedGPUData> {
 	private final String _filePrefix = "evicted_";
 	private final String _fileSuffix = ".bin";
@@ -40,14 +43,55 @@ public class EvictedGPUDataCache implements Map<GPUObject, EvictedGPUData> {
 	protected final Comparator<GPUObject> _evictionPolicy;
 	protected final HashMap<GPUObject, EvictedGPUData> _inMemoryMap;
 	protected final HashMap<GPUObject, Long> _sizeMap;
+	protected final HashMap<GPUObject, Boolean> _denseMap;
 
-	public EvictedGPUDataCache(long maxSize, Comparator<GPUObject> evictionPolicy) {
+	private static EvictedGPUDataCache _singleton = null;
+	public static EvictedGPUDataCache getCache() {
+		return _singleton;
+	}
+	public static void initialize(double evictionFraction) {
+		if(evictionFraction > 0 && DMLScript.USE_ACCELERATOR) {
+			Comparator<GPUObject> simpleEvictionPolicy = (GPUObject o1, GPUObject o2) -> 0;
+			_singleton = new EvictedGPUDataCache((long) (Runtime.getRuntime().maxMemory()*evictionFraction), simpleEvictionPolicy);
+		}
+	}
+	
+	public static boolean isCacheAvailable() {
+		return _singleton != null;
+	}
+	public static boolean isCached(GPUObject gpuObj) {
+		return _singleton != null && _singleton.containsKey(gpuObj);
+	}
+	public static boolean isCachedInDense(GPUObject gpuObj) {
+		return isCached(gpuObj) && _singleton._denseMap.containsKey(gpuObj);
+	}
+	public static boolean isCachedInSparse(GPUObject gpuObj) {
+		return isCached(gpuObj) && !isCachedInDense(gpuObj);
+	}
+	public static EvictedGPUData getCachedData(GPUObject gpuObj) {
+		if(!isCached(gpuObj))
+			throw new RuntimeException("No data cached for the corresponding gpu object.");
+		return _singleton.get(gpuObj);
+	}
+	public static void putCachedData(GPUObject key, EvictedGPUData value) {
+		if(!isCacheAvailable())
+			throw new RuntimeException("No cache is available.");
+		_singleton.put(key, value);
+	}
+	public static void removeCachedData(GPUObject key) {
+		if(!isCacheAvailable())
+			throw new RuntimeException("No cache is available.");
+		_singleton.remove(key);
+	}
+	
+	private EvictedGPUDataCache(long maxSize, Comparator<GPUObject> evictionPolicy) {
 		_maxSize = maxSize;
 		_currentSize = 0;
 		_allKeys = new HashSet<>();
 		_evictionPolicy = evictionPolicy;
 		_inMemoryMap = new HashMap<>();
 		_sizeMap = new HashMap<>();
+		_denseMap = new HashMap<>();
 	}
 	
 	private String getFilePath(Object key) {
@@ -68,6 +112,7 @@ public class EvictedGPUDataCache implements Map<GPUObject, EvictedGPUData> {
 		_inMemoryMap.clear();
 		_currentSize = 0;
 		_sizeMap.clear();
+		_denseMap.clear();
 	}
 
 	@Override
@@ -104,6 +149,9 @@ public class EvictedGPUDataCache implements Map<GPUObject, EvictedGPUData> {
 				throw new RuntimeException("Unable to get the object", e);
 			}
 		}
+		if(!_inMemoryMap.containsKey(key)) {
+			throw new RuntimeException("No key present in the evicted cache");
+		}
 		return _inMemoryMap.get(key);
 	}
 
@@ -123,6 +171,7 @@ public class EvictedGPUDataCache implements Map<GPUObject, EvictedGPUData> {
 		_inMemoryMap.put(key, value);
 		_allKeys.add(key);
 		_sizeMap.put(key, value.getSizeInBytes());
+		_denseMap.put(key, value.rowPtr == null);
 		return value;
 	}
 	
@@ -135,6 +184,7 @@ public class EvictedGPUDataCache implements Map<GPUObject, EvictedGPUData> {
 		}
 		_sizeMap.remove(key);
 		_allKeys.remove(key);
+		_denseMap.remove(key);
 	}
 	
 

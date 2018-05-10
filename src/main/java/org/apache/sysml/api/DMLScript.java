@@ -29,7 +29,6 @@ import java.net.URI;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -82,7 +81,6 @@ import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyze
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDHandler;
 import org.apache.sysml.runtime.instructions.gpu.context.EvictedGPUDataCache;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
-import org.apache.sysml.runtime.instructions.gpu.context.GPUObject;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.CleanupMR;
 import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
@@ -685,11 +683,7 @@ public class DMLScript
 		} catch(IllegalArgumentException e) {
             throw new RuntimeException("Unsupported eviction policy:" + evictionPolicy);
         }
-		double evictionFraction = dmlconf.getDoubleValue(DMLConfig.GPU_EVICTION_FRACTION);
-		if(evictionFraction > 0) {
-			Comparator<GPUObject> simpleEvictionPolicy = (GPUObject o1, GPUObject o2) -> 0;
-			GPUObject.evictedDataCache = new EvictedGPUDataCache((long) (Runtime.getRuntime().maxMemory()*evictionFraction), simpleEvictionPolicy);
-		}
+		EvictedGPUDataCache.initialize(dmlconf.getDoubleValue(DMLConfig.GPU_EVICTION_FRACTION));
 
 		//Step 2: set local/remote memory if requested (for compile in AM context) 
 		if( dmlconf.getBooleanValue(DMLConfig.YARN_APPMASTER) ){

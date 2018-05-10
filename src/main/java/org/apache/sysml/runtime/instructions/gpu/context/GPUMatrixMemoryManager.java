@@ -54,7 +54,7 @@ public class GPUMatrixMemoryManager {
 	long getWorstCaseContiguousMemorySize(GPUObject gpuObj) {
 		long ret = 0;
 		if(!gpuObj.isDensePointerNull()) {
-			if(GPUObject.evictedDataCache == null || GPUObject.evictedDataCache.containsKey(gpuObj))
+			if(EvictedGPUDataCache.isCached(gpuObj))
 				ret = 0;
 			else
 				ret = gpuManager.allPointers.get(gpuObj.getDensePointer()).getSizeInBytes();
