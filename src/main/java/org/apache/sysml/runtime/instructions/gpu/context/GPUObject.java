@@ -101,6 +101,38 @@ public class GPUObject {
 	
 	// ----------------------------------------------------------------------
 	// Methods used to access, set and check jcudaDenseMatrixPtr
+	static EvictedGPUDataCache evictedDataCache = null;
+	
+	private void loadEvictedGPUObject() {
+		if(evictedDataCache != null && evictedDataCache.containsKey(this)) {
+			EvictedGPUData data = evictedDataCache.get(this);
+			int numElems = LibMatrixCUDA.sizeOfDataType == jcuda.Sizeof.FLOAT ? data.floatVal.length : data.doubleVal.length;
+			long numBytes = numElems*LibMatrixCUDA.sizeOfDataType;
+			Pointer valPtr = null;
+			if(data.rowPtr == null) {
+				// Dense pointer
+				jcudaDenseMatrixPtr = gpuContext.allocate(numBytes);
+				valPtr = jcudaDenseMatrixPtr;
+			}
+			else {
+				// Sparse pointer
+				jcudaSparseMatrixPtr = CSRPointer.allocateEmpty(getGPUContext(), numElems, data.rowPtr.length);
+				valPtr = jcudaSparseMatrixPtr.val;
+				cudaMemcpy(jcudaSparseMatrixPtr.colInd, Pointer.to(data.colInd), numElems*jcuda.Sizeof.INT, jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice);
+				cudaMemcpy(jcudaSparseMatrixPtr.rowPtr, Pointer.to(data.rowPtr), data.rowPtr.length*jcuda.Sizeof.INT, jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice);
+			}
+			// Copy to valPtr
+			if(LibMatrixCUDA.sizeOfDataType == jcuda.Sizeof.FLOAT) {
+				cudaMemcpy(valPtr, Pointer.to(data.floatVal), numBytes, jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice);
+			}
+			else if(LibMatrixCUDA.sizeOfDataType == jcuda.Sizeof.DOUBLE) {
+				cudaMemcpy(valPtr, Pointer.to(data.doubleVal), numBytes, jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice);
+			}
+			else {
+				throw new RuntimeException("Unsupported datatype");
+			}
+		}
+	}
 	
 	/**
 	 * Pointer to dense matrix
@@ -108,6 +140,9 @@ public class GPUObject {
 	 * @return a pointer to the dense matrix
 	 */
 	public Pointer getDensePointer() {
+		if(jcudaDenseMatrixPtr == null && getJcudaSparseMatrixPtr() == null && evictedDataCache != null) {
+			loadEvictedGPUObject();
+		}
 		return jcudaDenseMatrixPtr;
 	}
 	
@@ -117,9 +152,9 @@ public class GPUObject {
 	 * @return if the state of dense pointer is null
 	 */
 	public boolean isDensePointerNull() {
-		return jcudaDenseMatrixPtr == null;
+		return jcudaDenseMatrixPtr == null && evictedDataCache != null && evictedDataCache.containsKey(this);
 	}
-	
+
 	/**
 	 * Removes the dense pointer and potential soft reference
 	 */
@@ -284,6 +319,9 @@ public class GPUObject {
 	 * @return CSR (compressed sparse row) pointer
 	 */
 	public CSRPointer getSparseMatrixCudaPointer() {
+		if(jcudaDenseMatrixPtr == null && getJcudaSparseMatrixPtr() == null && evictedDataCache != null) {
+			loadEvictedGPUObject();
+		}
 		return getJcudaSparseMatrixPtr();
 	}
 
@@ -454,7 +492,8 @@ public class GPUObject {
 	}
 
 	public boolean isAllocated() {
-		boolean eitherAllocated = (!isDensePointerNull() || getJcudaSparseMatrixPtr() != null);
+		boolean eitherAllocated = !isDensePointerNull() || getJcudaSparseMatrixPtr() != null || 
+				(evictedDataCache != null && evictedDataCache.containsKey(this));
 		return eitherAllocated;
 	}
 
@@ -916,7 +955,34 @@ public class GPUObject {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : copyFromDeviceToHost, on " + this + ", GPUContext=" + getGPUContext());
 		}
-		if (isDensePointerNull() && getJcudaSparseMatrixPtr() == null) {
+		if(isEviction && eagerDelete && evictedDataCache != null && !isDensePointerNull()) {
+			long start = DMLScript.STATISTICS ? System.nanoTime() : 0;
+			EvictedGPUData data = new EvictedGPUData();
+			int numElems = toIntExact(mat.getNumRows()*mat.getNumColumns());
+			if(LibMatrixCUDA.sizeOfDataType == jcuda.Sizeof.FLOAT) {
+				data.floatVal = new float[numElems];
+				cudaMemcpy(Pointer.to(data.floatVal), jcudaDenseMatrixPtr, numElems*LibMatrixCUDA.sizeOfDataType, jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost);
+			}
+			else if(LibMatrixCUDA.sizeOfDataType == jcuda.Sizeof.DOUBLE) {
+				data.doubleVal = new double[numElems];
+				cudaMemcpy(Pointer.to(data.doubleVal), jcudaDenseMatrixPtr, numElems*LibMatrixCUDA.sizeOfDataType, jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost);
+			}
+			else
+				throw new DMLRuntimeException("Unsupported datatype");
+			
+			getGPUContext().cudaFreeHelper(instName, jcudaDenseMatrixPtr, eagerDelete);
+			jcudaDenseMatrixPtr = null;
+			evictedDataCache.put(this, data);
+			if (DMLScript.STATISTICS) {
+				GPUStatistics.cudaFromDevTime.add(System.nanoTime() - start);
+				GPUStatistics.cudaFromDevCount.add(1);
+			}
+			return;
+		}
+//		else if(isEviction && eagerDelete && evictedDataCache != null ) {
+//			// TODO: Support sparse eviction
+//		}
+		else if (isDensePointerNull() && getJcudaSparseMatrixPtr() == null) {
 			throw new DMLRuntimeException(
 					"Cannot copy from device to host as JCuda dense/sparse pointer is not allocated");
 		}
@@ -991,6 +1057,7 @@ public class GPUObject {
 		}
 		clearDensePointer();
 		jcudaSparseMatrixPtr = null;
+		evictedDataCache.remove(this);
 		resetReadWriteLock();
 		getGPUContext().getMemoryManager().removeGPUObject(this);
 	}
