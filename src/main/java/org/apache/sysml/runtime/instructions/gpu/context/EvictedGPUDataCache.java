@@ -18,237 +18,160 @@
  */
 package org.apache.sysml.runtime.instructions.gpu.context;
 
-import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
-
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-/**
- * Wrapper class to store the dense and sparse data in a given format
- */
-class EvictedGPUData {
-	public float[] floatVal;
-	public double[] doubleVal;
-	public int[] rowPtr;
-	public int[] colInd;
-}
-
-/**
- * An access ordered LRU Cache Map which conforms to the {@link Map} interface
- * while also providing the ability to get the least recently used entry.
- * 
- * This cache is backed by the file system.
- */
-public class EvictedGPUDataCache extends LinkedHashMap<GPUObject, EvictedGPUData> {
-
-	private static final long serialVersionUID = 7078404374799241418L;
+public class EvictedGPUDataCache implements Map<GPUObject, EvictedGPUData> {
+	private final String _filePrefix = "evicted_";
+	private final String _fileSuffix = ".bin";
+	protected final long _maxSize;
 	
-	private final String filePrefix = "evicted_";
-	private final String fileSuffix = ".bin";
-	protected long _maxSize;
 	protected long _currentSize;
-	
-	// For faster lookup:
-	// Rather new File(...).exists() than _gpuObjects.contains(key) is much faster
-	protected HashSet<GPUObject> _gpuObjects = new HashSet<>();
+	protected final HashSet<GPUObject> _allKeys;
+	protected final Comparator<GPUObject> _evictionPolicy;
+	protected final HashMap<GPUObject, EvictedGPUData> _inMemoryMap;
+	protected final HashMap<GPUObject, Long> _sizeMap;
 
-	/**
-	 * Creates an access-ordered {@link EvictedGPUDataCache}
-	 */
-	public EvictedGPUDataCache(long maxSize) {
-		// An access-ordered LinkedHashMap is instantiated with the default
-		// initial capacity and load factors
-		super(16, 0.75f, true);
-		this._maxSize = maxSize;
-		this._currentSize = 0;
+	public EvictedGPUDataCache(long maxSize, Comparator<GPUObject> evictionPolicy) {
+		_maxSize = maxSize;
+		_currentSize = 0;
+		_allKeys = new HashSet<>();
+		_evictionPolicy = evictionPolicy;
+		_inMemoryMap = new HashMap<>();
+		_sizeMap = new HashMap<>();
 	}
 	
-	/**
-	 * Sabe the evicted data to the specified file
-	 * 
-	 * @param filePath the path where evicted data should be stored
-	 * @param data evicted data
-	 * @throws IOException if error occurs
-	 */
-	private void save(String filePath, EvictedGPUData data) throws IOException {
-		if(LibMatrixCUDA.sizeOfDataType == jcuda.Sizeof.FLOAT) {
-			try(DataOutputStream os = new DataOutputStream(new FileOutputStream(filePath))) {
-				os.writeChar(data.rowPtr == null ? 'd' : 's');
-				os.writeInt(data.floatVal.length);
-				for(float val : data.floatVal) {
-					os.writeFloat(val);
-				}
-				if(data.rowPtr != null) {
-					for(int val : data.colInd) {
-						os.writeInt(val);
-					}
-					os.writeInt(data.rowPtr.length);
-					for(int val : data.rowPtr) {
-						os.writeInt(val);
-					}
-				}
-			}
-		}
-		else if(LibMatrixCUDA.sizeOfDataType == jcuda.Sizeof.DOUBLE) {
-			try(DataOutputStream os = new DataOutputStream(new FileOutputStream(filePath))) {
-				os.writeChar(data.rowPtr == null ? 'd' : 's');
-				os.writeInt(data.doubleVal.length);
-				for(double val : data.doubleVal) {
-					os.writeDouble(val);
-				}
-				if(data.rowPtr != null) {
-					for(int val : data.colInd) {
-						os.writeInt(val);
-					}
-					os.writeInt(data.rowPtr.length);
-					for(int val : data.rowPtr) {
-						os.writeInt(val);
-					}
-				}
-			}
-		}
-		else {
-			throw new IllegalArgumentException("ERROR: Unsupported datatype");
-		}
-	}
-	
-	/**
-	 * Load the evicted data from the give file path
-	 * 
-	 * @param filePath path from where evicted data has to be loaded
-	 * @return evicted data
-	 * @throws FileNotFoundException if file not found
-	 * @throws IOException if error occurs
-	 */
-	private EvictedGPUData load(String filePath) throws FileNotFoundException, IOException {
-		EvictedGPUData ret = new EvictedGPUData();
-		try(DataInputStream is = new DataInputStream(new FileInputStream(filePath))) {
-			char type = is.readChar();
-			int numElems = is.readInt();
-			if(LibMatrixCUDA.sizeOfDataType == jcuda.Sizeof.FLOAT) {
-				ret.floatVal = new float[numElems];
-				for(int i = 0; i < numElems; i++) {
-					ret.floatVal[i] = is.readFloat();
-				}
-			}
-			else if(LibMatrixCUDA.sizeOfDataType == jcuda.Sizeof.DOUBLE) {
-				ret.doubleVal = new double[numElems];
-				for(int i = 0; i < numElems; i++) {
-					ret.doubleVal[i] = is.readDouble();
-				}
-			}
-			else {
-				throw new IllegalArgumentException("ERROR: Unsupported datatype");
-			}
-			if(type == 's') {
-				ret.colInd = new int[numElems];
-				for(int i = 0; i < numElems; i++) {
-					ret.colInd[i] = is.readInt();
-				}
-				ret.rowPtr = new int[is.readInt()];
-				for(int i = 0; i < ret.rowPtr.length; i++) {
-					ret.rowPtr[i] = is.readInt();
-				}
-			}
-			else if(type != 'd') {
-				throw new IOException("Incorrect format: " + filePath);
-			}
-		}
-		new File(filePath).delete(); // Delete the file after loading
-		return ret;
+	private String getFilePath(Object key) {
+		return _filePrefix + key.hashCode() + _fileSuffix;
 	}
 
-	@Override
-	protected boolean removeEldestEntry(Map.Entry<GPUObject, EvictedGPUData> eldest) {
-		if(_currentSize > _maxSize) {
-			try {
-				save(filePrefix + eldest.getKey().hashCode() + fileSuffix, eldest.getValue());
-				_currentSize -= getSizeInBytes(eldest.getValue());
-			} catch (IOException e) {
-				throw new RuntimeException("Unable to persist the evicted entry to the file system.", e);
-			}
-			return true;
-		}
-		return false;
-	}
-
-	@Override
-	public EvictedGPUData put(GPUObject k, EvictedGPUData v) {
-		if(k == null)
-			throw new IllegalArgumentException("ERROR: an entry with a null key was tried to be inserted in to the EvictedGPUObjectCache");
-		else if(containsKey(k) && get(k) != v)
-			throw new IllegalArgumentException("ERROR: Multiple Vs associated with the same key");
-		else if(containsKey(k))
-			return get(k);
-		EvictedGPUData ret = super.put(k, v);
-		_currentSize += (v.floatVal != null) ? v.floatVal.length*jcuda.Sizeof.FLOAT : 0;
-		_currentSize += (v.doubleVal != null) ? v.doubleVal.length*jcuda.Sizeof.DOUBLE : 0;
-		_currentSize += (v.rowPtr != null) ? v.rowPtr.length*jcuda.Sizeof.INT : 0;
-		_currentSize += (v.colInd != null) ? v.rowPtr.length*jcuda.Sizeof.INT : 0;
-		return ret;
-	}
-	
-	public EvictedGPUData get(GPUObject key) {
-		EvictedGPUData v = super.get(key);
-		if(v == null) {
-			String filePath = filePrefix + key.hashCode() + fileSuffix;
-			File f = new File(filePath);
-			if(f.exists()) {
-				try {
-					v = load(filePath);
-					_currentSize += getSizeInBytes(v);
-				} catch (IOException e) {
-					throw new RuntimeException("Unable to load the evicted entry from the file system.", e);
-				}
-			}
-		}
-        return v;
-    }
-	
-	@Override
-	public EvictedGPUData remove(Object key) {
-		EvictedGPUData ret = super.remove(key);
-		String filePath = filePrefix + key.hashCode() + fileSuffix;
-		File f = new File(filePath);
-		if(f.exists()) {
-			f.delete(); // Delete the file on removal
-		}
-		_gpuObjects.remove(key);
-		return ret;
-	}
-	
 	@Override
 	public void clear() {
-		super.clear();
-		for(GPUObject gpuObj : _gpuObjects) {
-			String filePath = filePrefix + gpuObj.hashCode() + fileSuffix;
-			File f = new File(filePath);
-			if(f.exists()) {
+		_allKeys.removeAll(_inMemoryMap.keySet());
+		for(GPUObject key : _allKeys) {
+			File f = new File(getFilePath(key));
+			if(!f.exists())
+				throw new RuntimeException("The evicted file is not present: " + getFilePath(key));
+			else
 				f.delete(); // Delete the file on removal
+		}
+		_allKeys.clear();
+		_inMemoryMap.clear();
+		_currentSize = 0;
+		_sizeMap.clear();
+	}
+
+	@Override
+	public boolean containsKey(Object key) {
+		return _allKeys.contains(key);
+	}
+	
+	private void ensureFreeSize(long size) {
+		if(_currentSize + size > _maxSize) {
+			List<GPUObject> toEvict = new ArrayList<>(_inMemoryMap.keySet());
+			Collections.sort(toEvict, _evictionPolicy);
+			while(toEvict.size() > 0 && _currentSize < _maxSize) {
+				if(_inMemoryMap.size() == 0)
+					throw new RuntimeException("Eviction not possible for " + _currentSize + ", max size:" + _maxSize);
+				GPUObject key = toEvict.get(toEvict.size()-1);
+				EvictedGPUData value = _inMemoryMap.remove(key);
+				try {
+					value.save(getFilePath(key));
+				} catch (IOException e) {
+					throw new RuntimeException("Error while evicting to file system", e);
+				}
+				_currentSize += value.getSizeInBytes();
 			}
 		}
-		_gpuObjects.clear();
+	}
+
+	@Override
+	public EvictedGPUData get(Object key) {
+		if(!_inMemoryMap.containsKey(key) && _allKeys.contains(key)) {	
+			try {
+				ensureFreeSize(_sizeMap.get(key));
+				put((GPUObject)key, EvictedGPUData.load(getFilePath(key)));
+			} catch (IOException e) {
+				throw new RuntimeException("Unable to get the object", e);
+			}
+		}
+		return _inMemoryMap.get(key);
+	}
+
+	@Override
+	public boolean isEmpty() {
+		return _allKeys.isEmpty();
+	}
+
+	@Override
+	public Set<GPUObject> keySet() {
+		return _allKeys;
+	}
+
+	@Override
+	public EvictedGPUData put(GPUObject key, EvictedGPUData value) {
+		ensureFreeSize(_sizeMap.get(key));
+		_inMemoryMap.put(key, value);
+		_allKeys.add(key);
+		_sizeMap.put(key, value.getSizeInBytes());
+		return value;
 	}
 	
-	
-	public boolean containsKey(GPUObject key) {
-		return super.containsKey(key) || _gpuObjects.contains(key);
+	public void clear(Object key) {
+		if(_inMemoryMap.containsKey(key)) {
+			_currentSize += _inMemoryMap.remove(key).getSizeInBytes(); 
+		}
+		else {
+			new File(getFilePath(key)).delete();
+		}
+		_sizeMap.remove(key);
+		_allKeys.remove(key);
 	}
 	
-	private long getSizeInBytes(EvictedGPUData v) {
-		long ret = (v.floatVal != null) ? v.floatVal.length*jcuda.Sizeof.FLOAT : 0;
-		ret += (v.doubleVal != null) ? v.doubleVal.length*jcuda.Sizeof.DOUBLE : 0;
-		ret += (v.rowPtr != null) ? v.rowPtr.length*jcuda.Sizeof.INT : 0;
-		ret += (v.colInd != null) ? v.rowPtr.length*jcuda.Sizeof.INT : 0;
-		return ret;
+
+	@Override
+	public void putAll(Map<? extends GPUObject, ? extends EvictedGPUData> m) {
+		long size = 0;
+		for(EvictedGPUData v : m.values()) {
+			size += v.getSizeInBytes();
+		}
+		ensureFreeSize(size);
+		for(java.util.Map.Entry<? extends GPUObject, ? extends EvictedGPUData> entry : m.entrySet()) {
+			put(entry.getKey(), entry.getValue());
+		}
+	}
+
+	@Override
+	public EvictedGPUData remove(Object key) {
+		throw new RuntimeException("Unsupported method"); // requires loading
+	}
+	
+	@Override
+	public int size() {
+		return _allKeys.size();
+	}
+
+	@Override
+	public Collection<EvictedGPUData> values() {
+		throw new RuntimeException("Unsupported method"); // requires loading
+	}
+	@Override
+	public boolean containsValue(Object value) {
+		throw new RuntimeException("Unsupported method"); // requires loading
+	}
+
+	@Override
+	public Set<java.util.Map.Entry<GPUObject, EvictedGPUData>> entrySet() {
+		throw new RuntimeException("Unsupported method"); // requires loading
 	}
 
 }

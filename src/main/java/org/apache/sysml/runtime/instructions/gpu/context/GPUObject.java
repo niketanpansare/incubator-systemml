@@ -101,7 +101,7 @@ public class GPUObject {
 	
 	// ----------------------------------------------------------------------
 	// Methods used to access, set and check jcudaDenseMatrixPtr
-	static EvictedGPUDataCache evictedDataCache = null;
+	public static EvictedGPUDataCache evictedDataCache = null;
 	
 	private void loadEvictedGPUObject() {
 		if(evictedDataCache != null && evictedDataCache.containsKey(this)) {

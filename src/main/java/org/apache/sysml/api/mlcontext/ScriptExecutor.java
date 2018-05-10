@@ -20,6 +20,7 @@
 package org.apache.sysml.api.mlcontext;
 
 import java.io.IOException;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -51,7 +52,9 @@ import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
+import org.apache.sysml.runtime.instructions.gpu.context.EvictedGPUDataCache;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUObject;
 import org.apache.sysml.utils.Explain;
 import org.apache.sysml.utils.Explain.ExplainCounts;
 import org.apache.sysml.utils.Explain.ExplainType;
@@ -255,6 +258,11 @@ public class ScriptExecutor {
 		} 
 		catch(IllegalArgumentException e) {
 			throw new RuntimeException("Unsupported eviction policy:" + evictionPolicy);
+		}
+		double evictionFraction = config.getDoubleValue(DMLConfig.GPU_EVICTION_FRACTION);
+		if(evictionFraction > 0) {
+			Comparator<GPUObject> simpleEvictionPolicy = (GPUObject o1, GPUObject o2) -> 0;
+			GPUObject.evictedDataCache = new EvictedGPUDataCache((long) (Runtime.getRuntime().maxMemory()*evictionFraction), simpleEvictionPolicy);
 		}
 	}
 	
