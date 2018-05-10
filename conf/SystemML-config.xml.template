@@ -104,4 +104,7 @@
    
    <!-- Advanced optimization: fraction of driver memory to use for caching (default: 0.15) -->
    <sysml.caching.bufferSize>0.15</sysml.caching.bufferSize>
+   
+   <!-- Advanced optimization: fraction of driver memory to use for eviction of GPU objects (default: 0.0). Hint: If you notice frequent eviction, set this to "16GB / size of driver JVM"  -->
+   <sysml.gpu.eviction.fraction>0.0</sysml.gpu.eviction.fraction>
 </root>
