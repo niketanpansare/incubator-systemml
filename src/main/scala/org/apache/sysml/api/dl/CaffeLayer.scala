@@ -1389,7 +1389,7 @@ class Convolution(val param: LayerParameter, val id: Int, val net: CaffeNetwork)
       else {
         invoke(dmlScript, "", List[String](dWeight), "conv2d_backward_filter", List[String](X, dout) ++ builtinParams, true)
         invoke(dmlScript, "", List[String]("dOut" + id), "conv2d_backward_data", List[String](weight, dout) ++ builtinParams, true)
-        assign(dmlScript, dBias, rowSums(matrix(colSums(dout), outputShape._1, int_add(outputShape._2, outputShape._3))))
+        assign(dmlScript, dBias, rowSums(matrix(colSums("dOut" + id), numKernels, int_add(outputShape._2, outputShape._3))))
         val bottomLayerIDs = net.getBottomLayers(param.getName).map(l => net.getCaffeLayer(l).id)
         dmlScript.append("; ")
         bottomLayerIDs.map(bottomLayerID => dmlScript.append(dX(bottomLayerID) + outSuffix + " = " + "dOut" + id + outSuffix + "; "))
