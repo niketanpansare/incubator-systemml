@@ -51,6 +51,7 @@ import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer
 import org.apache.sysml.hops.OptimizerUtils
+import org.apache.sysml.parser.ParserWrapper
 
 /***************************************************************************************
 DESIGN OF CAFFE2DML:
@@ -132,6 +133,8 @@ object Caffe2DML {
     val envFlagNesterovUDF = System.getenv("USE_NESTEROV_UDF")
     envFlagNesterovUDF != null && envFlagNesterovUDF.toBoolean
   }
+  
+  val READ_FROM_FS = ParserWrapper.canReadFromDistributedFS("nn/layers/batch_norm2d.dml", LOG) || ParserWrapper.canReadFromLocalFS("nn/layers/batch_norm2d.dml", LOG)
 
   def main(args: Array[String]): Unit = {
     // Arguments: [train_script | predict_script] $OUTPUT_DML_FILE $SOLVER_FILE $INPUT_CHANNELS $INPUT_HEIGHT $INPUT_WIDTH $NUM_ITER

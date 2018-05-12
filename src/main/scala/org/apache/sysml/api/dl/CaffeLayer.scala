@@ -111,6 +111,8 @@ trait CaffeLayer extends BaseDMLGenerator {
     invoke(dmlScript, sourceFileName + "::", returnVariables, "init", arguments.toList)
   def invokeForward(dmlScript: StringBuilder, returnVariables: List[String], arguments: String*): Unit =
     invoke(dmlScript, sourceFileName + "::", returnVariables, "forward", arguments.toList)
+  def invokeBuiltinForward(dmlScript: StringBuilder, builtinFn:String, returnVariables: List[String], arguments: List[String]): Unit =
+    invoke(dmlScript, "", returnVariables, builtinFn, arguments)
   // -----------------------------------------------------------------------------------
   // All the layers (with the exception of Concat) call one of the below methods in the backward function.
   // The preceding layer expects that 'dX(bottomLayerID) + outSuffix' is assigned.
@@ -126,6 +128,13 @@ trait CaffeLayer extends BaseDMLGenerator {
   // Assumption: the first variable of resultVariables is always dX
   def invokeBackward(dmlScript: StringBuilder, outSuffix: String, resultVariables: List[String], arguments: String*): Unit = {
     invoke(dmlScript, sourceFileName + "::", resultVariables.map(_ + outSuffix), "backward", arguments.toList, false)
+    val bottomLayerIDs = net.getBottomLayers(param.getName).map(l => net.getCaffeLayer(l).id)
+    dmlScript.append("; ")
+    bottomLayerIDs.map(bottomLayerID => dmlScript.append(dX(bottomLayerID) + outSuffix + " = " + resultVariables(0) + outSuffix + "; "))
+    dmlScript.append("\n")
+  }
+  def invokeBuiltinBackward(dmlScript: StringBuilder, builtinFn:String, outSuffix: String, resultVariables: List[String], arguments: List[String]): Unit = {
+    invoke(dmlScript, "", resultVariables.map(_ + outSuffix), builtinFn, arguments, false)
     val bottomLayerIDs = net.getBottomLayers(param.getName).map(l => net.getCaffeLayer(l).id)
     dmlScript.append("; ")
     bottomLayerIDs.map(bottomLayerID => dmlScript.append(dX(bottomLayerID) + outSuffix + " = " + resultVariables(0) + outSuffix + "; "))
@@ -282,21 +291,31 @@ class BatchNorm(val param: LayerParameter, val id: Int, val net: CaffeNetwork) e
    */
   def forward(dmlScript: StringBuilder, isPrediction: Boolean): Unit = {
     val mode = if (isPrediction) "\"test\"" else "\"train\""
-    invokeForward(
-      dmlScript,
-      List[String](out, withSuffix(ema_mean), withSuffix(ema_var), withSuffix(cache_mean), withSuffix(cache_var)),
-      X,
-      gamma,
-      beta,
-      numChannels,
-      Hin,
-      Win,
-      mode,
-      ema_mean,
-      ema_var,
-      ma_fraction,
-      eps
-    )
+    val retVar = List[String](out, withSuffix(ema_mean), withSuffix(ema_var), withSuffix(cache_mean), withSuffix(cache_var))
+    if(Caffe2DML.READ_FROM_FS) {
+      invokeForward(
+        dmlScript,
+        List[String](out, withSuffix(ema_mean), withSuffix(ema_var), withSuffix(cache_mean), withSuffix(cache_var)),
+        X,
+        gamma,
+        beta,
+        numChannels,
+        Hin,
+        Win,
+        mode,
+        ema_mean,
+        ema_var,
+        ma_fraction,
+        eps
+      )
+    }
+    else {
+      dmlScript.append(ema_mean + "_prev = " + ema_mean + "; " + ema_var + "_prev = " + ema_var + "; ");
+      invokeBuiltinForward(
+        dmlScript, "batch_norm2d", retVar,
+        List[String](X, gamma, beta, ema_mean+"_prev", ema_var+"_prev", mode, eps, ma_fraction)
+      )
+    }
   }
   /*
    * Computes the backward pass for a 2D (spatial) batch normalization
@@ -661,7 +680,15 @@ class ReLU(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extend
    * Outputs:
    *  - out: Outputs, of same shape as `X`.
    */
-  override def forward(dmlScript: StringBuilder, isPrediction: Boolean) = invokeForward(dmlScript, List[String](out), X)
+  override def forward(dmlScript: StringBuilder, isPrediction: Boolean) = {
+    val retVar = List[String](out)
+    if(Caffe2DML.READ_FROM_FS) {
+      invokeForward(dmlScript, List[String](out), X)
+    }
+    else {
+      invokeBuiltinForward(dmlScript, "max", retVar, List[String](X, "0"))
+    }
+  }
   /*
    * Computes the backward pass for a ReLU nonlinearity layer.
    *
@@ -675,7 +702,19 @@ class ReLU(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extend
    * Outputs:
    *  - dX: Gradient wrt `X`, of same shape as `X`.
    */
-  override def backward(dmlScript: StringBuilder, outSuffix: String) = invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id), dout, X)
+  override def backward(dmlScript: StringBuilder, outSuffix: String) = {
+    val retVar = List[String]("dOut" + id)
+    if(Caffe2DML.READ_FROM_FS) {
+      invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id), dout, X)
+    }
+    else {
+      assign(dmlScript, retVar(0), "(" + X + " > 0) * " + dout)
+      val bottomLayerIDs = net.getBottomLayers(param.getName).map(l => net.getCaffeLayer(l).id)
+      dmlScript.append("; ")
+      bottomLayerIDs.map(bottomLayerID => dmlScript.append(dX(bottomLayerID) + outSuffix + " = " + retVar(0) + outSuffix + "; "))
+      dmlScript.append("\n")
+    }
+  }
   override def weightShape(): Array[Int]                             = null
   override def biasShape(): Array[Int]                               = null
   // -------------------------------------------------
@@ -1034,8 +1073,23 @@ class MaxPooling(val param: LayerParameter, val id: Int, val net: CaffeNetwork) 
    *  - Hout: Output height.
    *  - Wout: Output width.
    */
-  override def forward(dmlScript: StringBuilder, isPrediction: Boolean) =
-    invokeForward(dmlScript, List[String](out, getIgnoreVarName("Hout"), getIgnoreVarName("Wout")), X, numChannels, Hin, Win, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w)
+  override def forward(dmlScript: StringBuilder, isPrediction: Boolean) = {
+    if(Caffe2DML.READ_FROM_FS) {
+      invokeForward(dmlScript, List[String](out, getIgnoreVarName("Hout"), getIgnoreVarName("Wout")), X, numChannels, Hin, Win, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w)
+    }
+    else {
+      invokeBuiltinForward(dmlScript, "max_pool", List[String](out),
+          List[String](X) ++ builtinParams)
+    }
+  }
+  
+  private def builtinParams():List[String] = {
+    List[String](toParameterizedArgument("input_shape", "nrow(" + X + ")", numChannels, Hin, Win),
+      toParameterizedArgument("pool_size", kernel_h, kernel_w),
+      toParameterizedArgument("stride", stride_h, stride_w),
+      toParameterizedArgument("padding", pad_h, pad_w))
+  }
+  
   /*
    * Computes the backward pass for a 2D spatial max pooling layer.
    * The input data has N examples, each represented as a 3D volume
@@ -1062,8 +1116,16 @@ class MaxPooling(val param: LayerParameter, val id: Int, val net: CaffeNetwork) 
    * Outputs:
    *  - dX: Gradient wrt `X`, of shape (N, C*Hin*Win).
    */
-  override def backward(dmlScript: StringBuilder, outSuffix: String) =
-    invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id), dout, Hout, Wout, X, numChannels, Hin, Win, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w)
+  override def backward(dmlScript: StringBuilder, outSuffix: String) = {
+    val retVar = List[String]("dOut" + id)
+    if(Caffe2DML.READ_FROM_FS) {
+      invokeBackward(dmlScript, outSuffix, retVar, dout, Hout, Wout, X, numChannels, Hin, Win, kernel_h, kernel_w, stride_h, stride_w, pad_h, pad_w)
+    }
+    else {
+      invokeBuiltinBackward(dmlScript, "max_pool_backward", outSuffix, retVar,
+        List[String](X, dout) ++ builtinParams)
+    }
+  }
   // n * c * h_o * w_o, where h_o and w_o are computed in the same way as convolution.
   override def outputShape = (numChannels, Hout, Wout)
   // -------------------------------------------------
