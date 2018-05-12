@@ -344,21 +344,29 @@ class BatchNorm(val param: LayerParameter, val id: Int, val net: CaffeNetwork) e
    *  - dbeta: Gradient wrt `b`, of shape (C, 1).
    *
    */
-  def backward(dmlScript: StringBuilder, outSuffix: String): Unit =
-    invokeBackward(
-      dmlScript,
-      outSuffix,
-      List[String]("dOut" + id, dgamma, dbeta),
-      dout,
-      cache_mean,
-      cache_var,
-      X,
-      gamma,
-      numChannels,
-      Hin,
-      Win,
-      eps
-    )
+  def backward(dmlScript: StringBuilder, outSuffix: String): Unit = {
+    val retVar = List[String]("dOut" + id, dgamma, dbeta)
+    if(Caffe2DML.READ_FROM_FS) {
+      invokeBackward(
+        dmlScript,
+        outSuffix,
+        retVar,
+        dout,
+        cache_mean,
+        cache_var,
+        X,
+        gamma,
+        numChannels,
+        Hin,
+        Win,
+        eps
+      )
+    }
+    else {
+      invokeBuiltinBackward(dmlScript, "batch_norm2d_backward", outSuffix, retVar, 
+          List[String](X, dout, gamma, eps, cache_mean, cache_var))
+    }
+  }
 
   private def withSuffix(str: String): String = if (update_mean_var) str else getIgnoreVarName(str)
   override def weightShape(): Array[Int]      = Array(numChannels.toInt, 1)
@@ -1264,21 +1272,38 @@ class Convolution(val param: LayerParameter, val id: Int, val net: CaffeNetwork)
         pad_h,
         pad_w
       )
-    else
-      invokeForward(dmlScript,
-                    List[String](out, getIgnoreVarName("Hout"), getIgnoreVarName("Wout")),
-                    X,
-                    weight,
-                    bias,
-                    numChannels,
-                    Hin,
-                    Win,
-                    kernel_h,
-                    kernel_w,
-                    stride_h,
-                    stride_w,
-                    pad_h,
-                    pad_w)
+    else {
+      if(Caffe2DML.READ_FROM_FS) {
+        invokeForward(dmlScript,
+                      List[String](out, getIgnoreVarName("Hout"), getIgnoreVarName("Wout")),
+                      X,
+                      weight,
+                      bias,
+                      numChannels,
+                      Hin,
+                      Win,
+                      kernel_h,
+                      kernel_w,
+                      stride_h,
+                      stride_w,
+                      pad_h,
+                      pad_w)
+      }
+      else {
+        invokeBuiltinForward(dmlScript, "conv2d", List[String](out),
+            List[String](X, weight) ++ builtinParams)
+        invokeBuiltinForward(dmlScript, "bias_add", List[String](out),
+            List[String](out, bias))
+      }
+    }
+  
+  private def builtinParams():List[String] = {
+    List[String](toParameterizedArgument("input_shape", nrow(X), numChannels, Hin, Win),
+      toParameterizedArgument("filter_shape", numKernels, numChannels, kernel_h, kernel_w),
+      toParameterizedArgument("stride", stride_h, stride_w),
+      toParameterizedArgument("padding", pad_h, pad_w))
+  }
+  
   /*
    * Computes the backward pass for a 2D spatial convolutional layer
    * with F filters.
@@ -1338,27 +1363,39 @@ class Convolution(val param: LayerParameter, val id: Int, val net: CaffeNetwork)
         pad_h,
         pad_w
       )
-    else
-      invokeBackward(
-        dmlScript,
-        outSuffix,
-        List[String]("dOut" + id, dWeight, dBias),
-        dout,
-        Hout,
-        Wout,
-        X,
-        weight,
-        bias,
-        numChannels,
-        Hin,
-        Win,
-        kernel_h,
-        kernel_w,
-        stride_h,
-        stride_w,
-        pad_h,
-        pad_w
-      )
+    else {
+      if(Caffe2DML.READ_FROM_FS) {
+        invokeBackward(
+          dmlScript,
+          outSuffix,
+          List[String]("dOut" + id, dWeight, dBias),
+          dout,
+          Hout,
+          Wout,
+          X,
+          weight,
+          bias,
+          numChannels,
+          Hin,
+          Win,
+          kernel_h,
+          kernel_w,
+          stride_h,
+          stride_w,
+          pad_h,
+          pad_w
+        )
+      }
+      else {
+        invoke(dmlScript, "", List[String](dWeight), "conv2d_backward_filter", List[String](X, dout) ++ builtinParams, true)
+        invoke(dmlScript, "", List[String]("dOut" + id), "conv2d_backward_data", List[String](weight, dout) ++ builtinParams, true)
+        assign(dmlScript, dBias, rowSums(matrix(colSums(dout), outputShape._1, int_add(outputShape._2, outputShape._3))))
+        val bottomLayerIDs = net.getBottomLayers(param.getName).map(l => net.getCaffeLayer(l).id)
+        dmlScript.append("; ")
+        bottomLayerIDs.map(bottomLayerID => dmlScript.append(dX(bottomLayerID) + outSuffix + " = " + "dOut" + id + outSuffix + "; "))
+        dmlScript.append("\n")
+      }
+    }
   // if not depthwise, n * c_o * h_o * w_o, where h_o = (h_i + 2 * pad_h - kernel_h) / stride_h + 1 and w_o likewise.
   // else (N, C*M*Hout*Wout)
   override def outputShape =
