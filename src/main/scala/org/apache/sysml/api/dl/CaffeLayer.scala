@@ -1364,37 +1364,37 @@ class Convolution(val param: LayerParameter, val id: Int, val net: CaffeNetwork)
         pad_w
       )
     else {
-      if(Caffe2DML.READ_FROM_FS) {
-        invokeBackward(
-          dmlScript,
-          outSuffix,
-          List[String]("dOut" + id, dWeight, dBias),
-          dout,
-          Hout,
-          Wout,
-          X,
-          weight,
-          bias,
-          numChannels,
-          Hin,
-          Win,
-          kernel_h,
-          kernel_w,
-          stride_h,
-          stride_w,
-          pad_h,
-          pad_w
-        )
-      }
-      else {
-        invoke(dmlScript, "", List[String](dWeight), "conv2d_backward_filter", List[String](X, dout) ++ builtinParams, true)
-        invoke(dmlScript, "", List[String]("dOut" + id), "conv2d_backward_data", List[String](weight, dout) ++ builtinParams, true)
-        assign(dmlScript, dBias, rowSums(matrix(colSums(dout), numKernels, int_add(outputShape._2, outputShape._3))))
-        val bottomLayerIDs = net.getBottomLayers(param.getName).map(l => net.getCaffeLayer(l).id)
-        dmlScript.append("; ")
-        bottomLayerIDs.map(bottomLayerID => dmlScript.append(dX(bottomLayerID) + outSuffix + " = " + "dOut" + id + outSuffix + "; "))
-        dmlScript.append("\n")
-      }
+//      if(Caffe2DML.READ_FROM_FS) {
+      invokeBackward(
+        dmlScript,
+        outSuffix,
+        List[String]("dOut" + id, dWeight, dBias),
+        dout,
+        Hout,
+        Wout,
+        X,
+        weight,
+        bias,
+        numChannels,
+        Hin,
+        Win,
+        kernel_h,
+        kernel_w,
+        stride_h,
+        stride_w,
+        pad_h,
+        pad_w
+      )
+//      }
+//      else {
+//        invoke(dmlScript, "", List[String](dWeight), "conv2d_backward_filter", List[String](X, dout) ++ builtinParams, true)
+//        invoke(dmlScript, "", List[String]("dOut" + id), "conv2d_backward_data", List[String](weight, dout) ++ builtinParams, true)
+//        assign(dmlScript, dBias, rowSums(matrix(colSums(dout), numKernels, int_add(outputShape._2, outputShape._3))))
+//        val bottomLayerIDs = net.getBottomLayers(param.getName).map(l => net.getCaffeLayer(l).id)
+//        dmlScript.append("; ")
+//        bottomLayerIDs.map(bottomLayerID => dmlScript.append(dX(bottomLayerID) + outSuffix + " = " + "dOut" + id + outSuffix + "; "))
+//        dmlScript.append("\n")
+//      }
     }
   // if not depthwise, n * c_o * h_o * w_o, where h_o = (h_i + 2 * pad_h - kernel_h) / stride_h + 1 and w_o likewise.
   // else (N, C*M*Hout*Wout)
