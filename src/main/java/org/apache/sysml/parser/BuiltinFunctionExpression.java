@@ -1311,45 +1311,61 @@ public class BuiltinFunctionExpression extends DataIdentifier
 					long stride_h = (long) getDoubleValue(_args[start++]);
 					long stride_w = (long) getDoubleValue(_args[start++]);
 					long pad_h = (long) getDoubleValue(_args[start++]);
-					long pad_w = (long) getDoubleValue(_args[start++]); 
-					long N = (long) getDoubleValue(_args[start++]);
-					long C = (long) getDoubleValue(_args[start++]);
-					long H = (long) getDoubleValue(_args[start++]);
-					long W = (long) getDoubleValue(_args[start++]);
-					long K = -1;
-					if(!(this.getOpCode() == BuiltinFunctionOp.MAX_POOL || this.getOpCode() == BuiltinFunctionOp.AVG_POOL)) {
-						K = (long) getDoubleValue(_args[start]);
+					long pad_w = (long) getDoubleValue(_args[start++]);
+					long N = -1;
+					try {
+						N = (long) getDoubleValue(_args[start++]);
+					} catch(Exception e1) {
+						if(this.getOpCode() == BuiltinFunctionOp.MAX_POOL || this.getOpCode() == BuiltinFunctionOp.AVG_POOL || 
+							this.getOpCode() == BuiltinFunctionOp.CONV2D || this.getOpCode() == BuiltinFunctionOp.CONV2D_BACKWARD_FILTER) {
+							N = input.getOutput().getDim1();
+						}
+						else if(this.getOpCode() == BuiltinFunctionOp.CONV2D_BACKWARD_DATA) {
+							N = input2.getOutput().getDim1();
+						}
 					}
-					start++; start++; // Increment index for K and C
-					long R = (long) getDoubleValue(_args[start++]);
-					long S = (long) getDoubleValue(_args[start++]);
-					
-					if(this.getOpCode() == BuiltinFunctionOp.CONV2D_BACKWARD_FILTER) {
-						output.setDimensions(K, C*R*S);
-					}
-					else if(this.getOpCode() == BuiltinFunctionOp.CONV2D_BACKWARD_DATA) {
-						output.setDimensions(N, C*H*W);
-					}
-					else if(H > 0 && W > 0 && stride_h > 0 && stride_w > 0 && pad_h >= 0 && pad_w >= 0 && R > 0 && S > 0) {
-						long P = ConvolutionUtils.getP(H, R, stride_h, pad_h);
-						long Q = ConvolutionUtils.getQ(W, S, stride_w, pad_w);
+					if(N > 0) {
+						long C = (long) getDoubleValue(_args[start++]);
+						long H = (long) getDoubleValue(_args[start++]);
+						long W = (long) getDoubleValue(_args[start++]);
+						long K = -1;
+						if(!(this.getOpCode() == BuiltinFunctionOp.MAX_POOL || this.getOpCode() == BuiltinFunctionOp.AVG_POOL)) {
+							K = (long) getDoubleValue(_args[start]);
+						}
+						start++; start++; // Increment index for K and C
+						long R = (long) getDoubleValue(_args[start++]);
+						long S = (long) getDoubleValue(_args[start++]);
 						
-						// Try to set both rows and columns
-						if(this.getOpCode() == BuiltinFunctionOp.CONV2D) 
-							output.setDimensions(N, K*P*Q);
-						else if(this.getOpCode() == BuiltinFunctionOp.MAX_POOL || this.getOpCode() == BuiltinFunctionOp.AVG_POOL)
-							output.setDimensions(N, C*P*Q);
-						else
-							throw new LanguageException("");
+						if(this.getOpCode() == BuiltinFunctionOp.CONV2D_BACKWARD_FILTER) {
+							output.setDimensions(K, C*R*S);
+						}
+						else if(this.getOpCode() == BuiltinFunctionOp.CONV2D_BACKWARD_DATA) {
+							output.setDimensions(N, C*H*W);
+						}
+						else if(H > 0 && W > 0 && stride_h > 0 && stride_w > 0 && pad_h >= 0 && pad_w >= 0 && R > 0 && S > 0) {
+							long P = ConvolutionUtils.getP(H, R, stride_h, pad_h);
+							long Q = ConvolutionUtils.getQ(W, S, stride_w, pad_w);
+							
+							// Try to set both rows and columns
+							if(this.getOpCode() == BuiltinFunctionOp.CONV2D) 
+								output.setDimensions(N, K*P*Q);
+							else if(this.getOpCode() == BuiltinFunctionOp.MAX_POOL || this.getOpCode() == BuiltinFunctionOp.AVG_POOL)
+								output.setDimensions(N, C*P*Q);
+							else
+								throw new LanguageException("");
+						}
+						else {
+							// Since columns cannot be computed, set only rows
+							if(this.getOpCode() == BuiltinFunctionOp.CONV2D) 
+								output.setDimensions(input.getOutput().getDim1(), -1);
+							else if(this.getOpCode() == BuiltinFunctionOp.MAX_POOL || this.getOpCode() == BuiltinFunctionOp.AVG_POOL)
+								output.setDimensions(input.getOutput().getDim1(), -1);
+							else
+								throw new LanguageException("");
+						}
 					}
 					else {
-						// Since columns cannot be computed, set only rows
-						if(this.getOpCode() == BuiltinFunctionOp.CONV2D) 
-							output.setDimensions(input.getOutput().getDim1(), -1);
-						else if(this.getOpCode() == BuiltinFunctionOp.MAX_POOL || this.getOpCode() == BuiltinFunctionOp.AVG_POOL)
-							output.setDimensions(input.getOutput().getDim1(), -1);
-						else
-							throw new LanguageException("");
+						output.setDimensions(-1, -1); // cannot compute N
 					}
 				}
 				catch(Exception e) {
