@@ -138,9 +138,25 @@ trait BaseDMLGenerator {
   def customAssert(cond: Boolean, msg: String)                 = if (!cond) throw new DMLRuntimeException(msg)
   def multiply(v1: String, v2: String): String                 = v1 + "*" + v2
   def colSums(m: String): String                               = "colSums(" + m + ")"
+  def rowSums(m: String): String                               = "rowSums(" + m + ")"
   def ifdef(cmdLineVar: String, defaultVal: String): String    = "ifdef(" + cmdLineVar + ", " + defaultVal + ")"
   def ifdef(cmdLineVar: String): String                        = ifdef(cmdLineVar, "\" \"")
   def read(filePathVar: String, format: String): String        = "read(" + filePathVar + ", format=\"" + format + "\")"
+  
+  def toParameterizedArgument(name:String, values1:String*):String = {
+    val values = values1.toList
+    if(values.length == 1)
+      name + "=" + values(0)
+    else {
+      val sb = new StringBuilder()
+      sb.append(name).append(" = [").append(values(0))
+      for(i <- 1 until values.length) {
+        sb.append(", ").append(values(i))
+      }
+      sb.append("]")
+      sb.toString()
+    }
+  }
 }
 
 trait TabbedDMLGenerator extends BaseDMLGenerator {

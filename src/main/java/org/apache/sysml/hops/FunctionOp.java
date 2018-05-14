@@ -304,6 +304,26 @@ public class FunctionOp extends Hop
 	public void refreshSizeInformation()
 	{
 		//do nothing
+		if(getFunctionName().equalsIgnoreCase("batch_norm2d")) {
+			setDimensions(0, 0);
+			setDimensions(3, 1);
+			setDimensions(3, 2);
+			setDimensions(3, 3);
+		}
+		else if(getFunctionName().equalsIgnoreCase("batch_norm2d_backward")) {
+			setDimensions(0, 0);
+			setDimensions(2, 1);
+			setDimensions(2, 2);
+		}
+	}
+	
+	private void setDimensions(int inputIndex, int outputIndex) {
+		if(!getOutputs().get(outputIndex).dimsKnown()) {
+			if(getOutputs().get(outputIndex)._dim1 < 0)
+				getOutputs().get(outputIndex).setDim1(getInput().get(inputIndex).getDim1());
+			if(getOutputs().get(outputIndex)._dim2 < 0)
+				getOutputs().get(outputIndex).setDim2(getInput().get(inputIndex).getDim2());
+		}
 	}
 	
 	@Override

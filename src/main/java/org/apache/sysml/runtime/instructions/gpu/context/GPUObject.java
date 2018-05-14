@@ -954,6 +954,7 @@ public class GPUObject {
 			if (DMLScript.STATISTICS) {
 				long memCopyTime = System.nanoTime() - start;
 				GPUStatistics.cudaEvictCPUFloatCopyTime.add(memCopyTime);
+				GPUStatistics.cudaEvictCPUFloatCopyCount.add(1);
 				GPUStatistics.cudaFromDevTime.add(memCopyTime);
 				GPUStatistics.cudaFromDevCount.add(1);
 			}

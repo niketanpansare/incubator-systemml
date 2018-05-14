@@ -315,8 +315,10 @@ public class GPUMemoryManager {
 					}
 					long t1 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 					A = cudaMallocNoWarn(tmpA, size); // Try malloc rather than check available memory to avoid fragmentation related issues
-					if(DMLScript.STATISTICS)
+					if(DMLScript.STATISTICS) {
 						GPUStatistics.cudaEvictMallocTime.add(System.nanoTime()-t1);
+						GPUStatistics.cudaEvictMallocCount.add(1);
+					}
 					
 					// ---------------------------------------------------------------
 					// Evict unlocked GPU objects one-by-one and try malloc
@@ -342,8 +344,10 @@ public class GPUMemoryManager {
 							}
 							t1 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 							A = cudaMallocNoWarn(tmpA, size); // Try malloc rather than check available memory to avoid fragmentation related issues
-							if(DMLScript.STATISTICS)
+							if(DMLScript.STATISTICS) {
 								GPUStatistics.cudaEvictMallocTime.add(System.nanoTime()-t1);
+								GPUStatistics.cudaEvictMallocCount.add(1);
+							}
 						}
 						if(DMLScript.PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled()) {
 							// greater than or equal to " + byteCountToDisplaySize(size)

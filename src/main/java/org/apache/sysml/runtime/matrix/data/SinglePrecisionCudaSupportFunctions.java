@@ -187,8 +187,10 @@ public class SinglePrecisionCudaSupportFunctions implements CudaSupportFunctions
 			for(int i = 0; i < dest.length; i++) {
 				dest[i] = floatData[i];
 			}
-			if(DMLScript.STATISTICS)
+			if(DMLScript.STATISTICS) {
 				GPUStatistics.cudaEvictCPUFloat2DoubleTime.add(System.nanoTime()-t0);
+				GPUStatistics.cudaEvictCPUFloat2DoubleCount.add(1);
+			}
 		}
 		if(DMLScript.FINEGRAINED_STATISTICS && instName != null) 
 			GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DEVICE_TO_HOST, System.nanoTime() - t1);
