@@ -227,15 +227,17 @@ public abstract class GPUInstruction extends Instruction {
 	/**
 	 * Helper method to get the output block (allocated on the GPU)
 	 * Also records performance information into {@link Statistics}
+	 * 
 	 * @param ec		active {@link ExecutionContext}
+	 * @param instName name of the instruction
 	 * @param name	name of input matrix (that the {@link ExecutionContext} is aware of)
 	 * @param numRows number of rows of matrix object
 	 * @param numCols number of columns of matrix object
 	 * @return	the matrix object
 	 */
-	protected MatrixObject getDenseMatrixOutputForGPUInstruction(ExecutionContext ec, String name, long numRows, long numCols) {
+	protected MatrixObject getDenseMatrixOutputForGPUInstruction(ExecutionContext ec, String instName, String name, long numRows, long numCols) {
 		long t0 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
-		Pair<MatrixObject, Boolean> mb = ec.getDenseMatrixOutputForGPUInstruction(name, numRows, numCols);
+		Pair<MatrixObject, Boolean> mb = ec.getDenseMatrixOutputForGPUInstruction(instName, name, numRows, numCols);
 		if (DMLScript.FINEGRAINED_STATISTICS && mb.getValue()) GPUStatistics.maintainCPMiscTimes(getExtendedOpcode(), GPUInstruction.MISC_TIMER_ALLOCATE_DENSE_OUTPUT, System.nanoTime() - t0);
 		return mb.getKey();
 	}

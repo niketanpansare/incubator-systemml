@@ -284,7 +284,7 @@ public class LibMatrixCUDA {
 	 */
 	protected static CSRPointer getSparsePointer(GPUContext gCtx, MatrixObject input, String instName) {
 		if(!isInSparseFormat(gCtx, input)) {
-			input.getGPUObject(gCtx).denseToSparse();
+			input.getGPUObject(gCtx).denseToSparse(instName);
 		}
 		return input.getGPUObject(gCtx).getJcudaSparseMatrixPtr();
 	}
@@ -1372,11 +1372,11 @@ public class LibMatrixCUDA {
 			MatrixObject out = ec.allocateGPUMatrixObject(outputName, outRLen, outCLen);
 			// When both inputs are empty, the output is empty too (except in the case of division)
 			if (op.fn instanceof Divide || op.fn instanceof IntegerDivide || op.fn instanceof Modulus) {
-				out.getGPUObject(gCtx).allocateAndFillDense(Double.NaN);
+				out.getGPUObject(gCtx).allocateAndFillDense(instName, Double.NaN);
 			} else if (op.fn instanceof Minus1Multiply) {
-				out.getGPUObject(gCtx).allocateAndFillDense(1.0);
+				out.getGPUObject(gCtx).allocateAndFillDense(instName, 1.0);
 			} else {
-				out.getGPUObject(gCtx).allocateSparseAndEmpty();
+				out.getGPUObject(gCtx).allocateSparseAndEmpty(instName);
 			}
 		}
 		// Check for M1 * M2 when M1 is empty; if M2 is a vector then fallback to general case
@@ -1631,7 +1631,7 @@ public class LibMatrixCUDA {
 			if (!isInSparseFormat(gCtx, in1)) {
 				if (DMLScript.FINEGRAINED_STATISTICS)
 					t0 = System.nanoTime();
-				in1.getGPUObject(gCtx).denseToSparse();
+				in1.getGPUObject(gCtx).denseToSparse(instName);
 				if (DMLScript.FINEGRAINED_STATISTICS)
 					GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DENSE_TO_SPARSE,
 							System.nanoTime() - t0);
@@ -1640,7 +1640,7 @@ public class LibMatrixCUDA {
 			if (!isInSparseFormat(gCtx, in2)) {
 				if (DMLScript.FINEGRAINED_STATISTICS)
 					t0 = System.nanoTime();
-				in2.getGPUObject(gCtx).denseToSparse();
+				in2.getGPUObject(gCtx).denseToSparse(instName);
 				if (DMLScript.FINEGRAINED_STATISTICS)
 					GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DENSE_TO_SPARSE,
 							System.nanoTime() - t0);
@@ -1653,7 +1653,7 @@ public class LibMatrixCUDA {
 				// Special case for transpose
 
 				int nnz = (int)A.nnz;
-				CSRPointer C = CSRPointer.allocateEmpty(gCtx, nnz, n);
+				CSRPointer C = CSRPointer.allocateEmpty(gCtx, instName, nnz, n);
 				out.getGPUObject(gCtx).setSparseMatrixCudaPointer(C);
 				cudaSupportFunctions.cusparsecsr2csc(getCusparseHandle(gCtx), m, n, nnz, A.val, A.rowPtr, A.colInd, C.val, C.colInd, C.rowPtr, cusparseAction.CUSPARSE_ACTION_NUMERIC, cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO);
 			} else {
@@ -2308,7 +2308,7 @@ public class LibMatrixCUDA {
 		if (isSparseAndEmpty) {
 			MatrixObject out = ec.getMatrixObject(outputName);
 			ec.allocateGPUMatrixObject(outputName, in1.getNumRows(), in1.getNumColumns());
-			out.getGPUObject(gCtx).allocateAndFillDense(sparseAndEmptyFillValue);
+			out.getGPUObject(gCtx).allocateAndFillDense(instName, sparseAndEmptyFillValue);
 		} else {
 			// Dense
 			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, in1.getNumRows(), in1.getNumColumns());
@@ -2454,7 +2454,7 @@ public class LibMatrixCUDA {
 		// step 4: compute QR factorization
 		Pointer work = gCtx.allocate(instName, lwork[0] * sizeOfDataType);
 		Pointer tau = gCtx.allocate(instName, m * sizeOfDataType);
-		Pointer devInfo = gCtx.allocate(Sizeof.INT);
+		Pointer devInfo = gCtx.allocate(instName, Sizeof.INT);
 		if (DMLScript.FINEGRAINED_STATISTICS) t0 = System.nanoTime();
 		cudaSupportFunctions.cusolverDngeqrf(gCtx.getCusolverDnHandle(), m, n, A, m, tau, work, lwork[0], devInfo);
 		if (DMLScript.FINEGRAINED_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_QR, System.nanoTime() - t0);
@@ -2515,7 +2515,7 @@ public class LibMatrixCUDA {
 	protected static MatrixObject getDenseMatrixOutputForGPUInstruction(ExecutionContext ec, String instName, String name, long numRows, long numCols) {
 		long t0=0;
 		if (DMLScript.FINEGRAINED_STATISTICS) t0 = System.nanoTime();
-		Pair<MatrixObject, Boolean> mb = ec.getDenseMatrixOutputForGPUInstruction(name, numRows, numCols);
+		Pair<MatrixObject, Boolean> mb = ec.getDenseMatrixOutputForGPUInstruction(instName, name, numRows, numCols);
 		if (mb.getValue())
 			if (DMLScript.FINEGRAINED_STATISTICS)
 				GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_ALLOCATE_DENSE_OUTPUT, System.nanoTime() - t0);
@@ -2536,7 +2536,7 @@ public class LibMatrixCUDA {
 	private static MatrixObject getSparseMatrixOutputForGPUInstruction(ExecutionContext ec, long numRows, long numCols, long nnz, String instName, String name) {
 		long t0=0;
 		if (DMLScript.FINEGRAINED_STATISTICS) t0 = System.nanoTime();
-		Pair<MatrixObject, Boolean> mb = ec.getSparseMatrixOutputForGPUInstruction(name, numRows, numCols, nnz);
+		Pair<MatrixObject, Boolean> mb = ec.getSparseMatrixOutputForGPUInstruction(instName, name, numRows, numCols, nnz);
 		if (mb.getValue())
 			if (DMLScript.FINEGRAINED_STATISTICS)
 				GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_ALLOCATE_SPARSE_OUTPUT, System.nanoTime() - t0);

@@ -264,11 +264,12 @@ public class CSRPointer {
 	 * Factory method to allocate an empty CSR Sparse matrix on the GPU
 	 *
 	 * @param gCtx a valid {@link GPUContext}
+	 * @param instName name of instruction
 	 * @param nnz2 number of non-zeroes
 	 * @param rows number of rows
 	 * @return a {@link CSRPointer} instance that encapsulates the CSR matrix on GPU
 	 */
-	public static CSRPointer allocateEmpty(GPUContext gCtx, long nnz2, long rows) {
+	public static CSRPointer allocateEmpty(GPUContext gCtx, String instName, long nnz2, long rows) {
 		LOG.trace("GPU : allocateEmpty from CSRPointer with nnz=" + nnz2 + " and rows=" + rows + ", GPUContext=" + gCtx);
 		if(nnz2 < 0) throw new DMLRuntimeException("Incorrect usage of internal API, number of non zeroes is less than 0 when trying to allocate sparse data on GPU");
 		if(rows <= 0) throw new DMLRuntimeException("Incorrect usage of internal API, number of rows is less than or equal to 0 when trying to allocate sparse data on GPU");
@@ -280,9 +281,9 @@ public class CSRPointer {
 			return r;
 		}
 		// increment the cudaCount by 1 for the allocation of all 3 arrays
-		r.val = gCtx.allocate(null, getDataTypeSizeOf(nnz2));
-		r.rowPtr = gCtx.allocate(null, getIntSizeOf(rows + 1));
-		r.colInd = gCtx.allocate(null, getIntSizeOf(nnz2));
+		r.val = gCtx.allocate(instName, getDataTypeSizeOf(nnz2));
+		r.rowPtr = gCtx.allocate(instName, getIntSizeOf(rows + 1));
+		r.colInd = gCtx.allocate(instName, getIntSizeOf(nnz2));
 		return r;
 	}
 
@@ -299,7 +300,7 @@ public class CSRPointer {
 		cusparseSetPointerMode(handle, cusparsePointerMode.CUSPARSE_POINTER_MODE_HOST);
 		//cudaDeviceSynchronize;
 		// Do not increment the cudaCount of allocations on GPU
-		C.rowPtr = gCtx.allocate(getIntSizeOf((long) rowsC + 1));
+		C.rowPtr = gCtx.allocate(null, getIntSizeOf((long) rowsC + 1));
 	}
 
 	/**
@@ -403,17 +404,17 @@ public class CSRPointer {
 		CSRPointer that = new CSRPointer(me.getGPUContext());
 		that.allocateMatDescrPointer();
 		that.nnz = me.nnz;
-		that.val = allocate(that.nnz * LibMatrixCUDA.sizeOfDataType);
-		that.rowPtr = allocate(rows * Sizeof.INT);
-		that.colInd = allocate(that.nnz * Sizeof.INT);
+		that.val = allocate(null, that.nnz * LibMatrixCUDA.sizeOfDataType);
+		that.rowPtr = allocate(null, rows * Sizeof.INT);
+		that.colInd = allocate(null, that.nnz * Sizeof.INT);
 		cudaMemcpy(that.val, me.val, that.nnz * LibMatrixCUDA.sizeOfDataType, cudaMemcpyDeviceToDevice);
 		cudaMemcpy(that.rowPtr, me.rowPtr, rows * Sizeof.INT, cudaMemcpyDeviceToDevice);
 		cudaMemcpy(that.colInd, me.colInd, that.nnz * Sizeof.INT, cudaMemcpyDeviceToDevice);
 		return that;
 	}
 
-	private Pointer allocate(long size) {
-		return getGPUContext().allocate(size);
+	private Pointer allocate(String instName, long size) {
+		return getGPUContext().allocate(instName, size);
 	}
 
 	private GPUContext getGPUContext() {
@@ -462,7 +463,7 @@ public class CSRPointer {
 		LOG.trace("GPU : sparse -> column major dense (inside CSRPointer) on " + this + ", GPUContext="
 				+ getGPUContext());
 		long size = ((long) rows) * getDataTypeSizeOf((long) cols);
-		Pointer A = allocate(size);
+		Pointer A = allocate(instName, size);
 		// If this sparse block is empty, the allocated dense matrix, initialized to zeroes, will be returned.
 		if (val != null && rowPtr != null && colInd != null && nnz > 0) {
 			// Note: cusparseDcsr2dense method cannot handle empty blocks

@@ -330,7 +330,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		GPUStatistics.incrementNoOfExecutedGPUInst();
 		MatrixObject input = getMatrixInputForGPUInstruction(ec, _input1.getName());
 		MatrixObject bias = getMatrixInputForGPUInstruction(ec, _input2.getName());
-		MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), input.getNumRows(), input.getNumColumns());
+		MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instOpcode, _output.getName(), input.getNumRows(), input.getNumColumns());
 		
 		if(instOpcode.equalsIgnoreCase("bias_add"))
 			LibMatrixCUDA.biasAdd(ec.getGPUContext(0), getExtendedOpcode(), input, bias, out);
@@ -353,14 +353,16 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		String phase = ec.getScalarInput(_input6.getName(), _input6.getValueType(), _input6.isLiteral()).getStringValue();
 		double epsilon = ec.getScalarInput(_input7.getName(), _input7.getValueType(), _input7.isLiteral()).getDoubleValue();
 		
-		MatrixObject ret = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), image.getNumRows(), image.getNumColumns());
+		String instName = getExtendedOpcode();
+		
+		MatrixObject ret = getDenseMatrixOutputForGPUInstruction(ec, instName, _output.getName(), image.getNumRows(), image.getNumColumns());
 		
 		if(phase.equalsIgnoreCase("train")) {
 			double exponentialAverageFactor = 1-ec.getScalarInput(_input8.getName(), _input8.getValueType(), _input8.isLiteral()).getDoubleValue();
-			MatrixObject retRunningMean = getDenseMatrixOutputForGPUInstruction(ec, _output2.getName(), runningMean.getNumRows(), runningMean.getNumColumns());
-			MatrixObject retRunningVar = getDenseMatrixOutputForGPUInstruction(ec, _output3.getName(), runningVar.getNumRows(), runningVar.getNumColumns());
-			MatrixObject resultSaveMean = getDenseMatrixOutputForGPUInstruction(ec, _output4.getName(), runningMean.getNumRows(), runningMean.getNumColumns());
-			MatrixObject resultSaveInvVariance = getDenseMatrixOutputForGPUInstruction(ec, _output5.getName(), runningVar.getNumRows(), runningVar.getNumColumns());
+			MatrixObject retRunningMean = getDenseMatrixOutputForGPUInstruction(ec, instName, _output2.getName(), runningMean.getNumRows(), runningMean.getNumColumns());
+			MatrixObject retRunningVar = getDenseMatrixOutputForGPUInstruction(ec, instName, _output3.getName(), runningVar.getNumRows(), runningVar.getNumColumns());
+			MatrixObject resultSaveMean = getDenseMatrixOutputForGPUInstruction(ec, instName, _output4.getName(), runningMean.getNumRows(), runningMean.getNumColumns());
+			MatrixObject resultSaveInvVariance = getDenseMatrixOutputForGPUInstruction(ec, instName, _output5.getName(), runningVar.getNumRows(), runningVar.getNumColumns());
 			LibMatrixCuDNN.batchNormalizationForwardTraining(ec.getGPUContext(0), getExtendedOpcode(), 
 				image, scale, bias, runningMean, runningVar, ret, 
 				retRunningMean, retRunningVar, epsilon, exponentialAverageFactor, resultSaveMean, resultSaveInvVariance);
@@ -399,9 +401,11 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		MatrixObject resultSaveMean = getMatrixInputForGPUInstruction(ec, _input5.getName());
 		MatrixObject resultSaveInvVariance = getMatrixInputForGPUInstruction(ec, _input6.getName());
 		
-		MatrixObject dX = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), image.getNumRows(), image.getNumColumns());
-		MatrixObject dScale = getDenseMatrixOutputForGPUInstruction(ec, _output2.getName(), scale.getNumRows(), scale.getNumColumns());
-		MatrixObject dBias = getDenseMatrixOutputForGPUInstruction(ec, _output3.getName(), scale.getNumRows(), scale.getNumColumns());
+		String instName = getExtendedOpcode();
+		
+		MatrixObject dX = getDenseMatrixOutputForGPUInstruction(ec, instName, _output.getName(), image.getNumRows(), image.getNumColumns());
+		MatrixObject dScale = getDenseMatrixOutputForGPUInstruction(ec, instName, _output2.getName(), scale.getNumRows(), scale.getNumColumns());
+		MatrixObject dBias = getDenseMatrixOutputForGPUInstruction(ec, instName, _output3.getName(), scale.getNumRows(), scale.getNumColumns());
 		
 		LibMatrixCuDNN.batchNormalizationBackward(ec.getGPUContext(0), getExtendedOpcode(), image, 
 				dout, scale, dX, dScale, dBias,
@@ -423,10 +427,11 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		GPUStatistics.incrementNoOfExecutedGPUInst();
 		MatrixObject input = getMatrixInputForGPUInstruction(ec, _input1.getName());
 		MatrixObject dout = getMatrixInputForGPUInstruction(ec, _input2.getName());
+		String instName = getExtendedOpcode();
 		
-		MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), input.getNumRows(), input.getNumColumns());
+		MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, _output.getName(), input.getNumRows(), input.getNumColumns());
 		
-		LibMatrixCUDA.reluBackward(ec.getGPUContext(0), getExtendedOpcode(), input, dout, out);
+		LibMatrixCUDA.reluBackward(ec.getGPUContext(0), instName, input, dout, out);
 		// release inputs/outputs
 		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
 		ec.releaseMatrixInputForGPUInstruction(_input2.getName());
@@ -435,15 +440,16 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 	
 	public void processChannelSumsInstruction(ExecutionContext ec) {
 		GPUStatistics.incrementNoOfExecutedGPUInst();
+		String instName = getExtendedOpcode();
 		MatrixObject input = getMatrixInputForGPUInstruction(ec, _input1.getName());
 		int C = (int) ec.getScalarInput(_input2.getName(), _input2.getValueType(), _input2.isLiteral()).getLongValue();
 		int HW = (int) ec.getScalarInput(_input3.getName(), _input3.getValueType(), _input3.isLiteral()).getLongValue();
 		if(C*HW != input.getNumColumns()) {
 			throw new DMLRuntimeException("Expected rows*cols " + C + "*" + HW + " to be equal to number of columns of input " + input.getNumColumns());
 		}
-		MatrixObject outputBlock = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), C, 1);
+		MatrixObject outputBlock = getDenseMatrixOutputForGPUInstruction(ec, instName, _output.getName(), C, 1);
 		
-		LibMatrixCUDA.channelSums(ec.getGPUContext(0), getExtendedOpcode(), input, outputBlock, C, HW);
+		LibMatrixCUDA.channelSums(ec.getGPUContext(0), instName, input, outputBlock, C, HW);
 		
 		// release inputs/outputs
 		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
@@ -570,6 +576,8 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		int P = (int) ConvolutionUtils.getP(H, R, stride_h, pad_h);
 		int Q = (int) ConvolutionUtils.getQ(W, S, stride_w, pad_w);
 		
+		String instName = getExtendedOpcode();
+		
 		if (instOpcode.equalsIgnoreCase("conv2d")) {
 			MatrixObject image = getMatrixInputForGPUInstruction(ec, _input1.getName());
 			MatrixObject filter = getMatrixInputForGPUInstruction(ec, _input2.getName());
@@ -579,7 +587,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 			if(filter.getNumRows() != K || filter.getNumColumns() != C*R*S) 
 				throw new DMLRuntimeException("Incorrect dimensions for filter in conv2d");
 			
-			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), N, K * P * Q);
+			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, _output.getName(), N, K * P * Q);
 			
 			LibMatrixCuDNN.conv2d(ec.getGPUContext(0), getExtendedOpcode(), image, filter, out, N, C, H, W,
 					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, _intermediateMemoryBudget);
@@ -594,7 +602,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 			if(filter.getNumRows() != K || filter.getNumColumns() != C*R*S) 
 				throw new DMLRuntimeException("Incorrect dimensions for filter in conv2d");
 			
-			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), N, K * P * Q);
+			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, _output.getName(), N, K * P * Q);
 			
 			LibMatrixCuDNN.conv2dBiasAdd(ec.getGPUContext(0), getExtendedOpcode(), image, bias, filter, out, N, C, H, W,
 						K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, _intermediateMemoryBudget);
@@ -609,7 +617,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 				throw new DMLRuntimeException("Incorrect dimensions for dout in conv2d_backward_filter: " + 
 						dout.getNumRows() + " != " +  N + " || " + dout.getNumColumns() + " != " + K*P*Q);
 			
-			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), K, C * R * S);
+			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, _output.getName(), K, C * R * S);
 			
 			LibMatrixCuDNN.conv2dBackwardFilter(ec.getGPUContext(0), getExtendedOpcode(), image, dout, out, N, C, H, W,
 					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, _intermediateMemoryBudget);
@@ -626,7 +634,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 				throw new DMLRuntimeException("Incorrect dimensions for dout in conv2d_backward_data: " + 
 						dout.getNumRows() + " != " +  N + " || " + dout.getNumColumns() + " != " + K*P*Q);
 			
-			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), N, C * H * W);
+			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, _output.getName(), N, C * H * W);
 			
 			LibMatrixCuDNN.conv2dBackwardData(ec.getGPUContext(0), getExtendedOpcode(), filter, dout, out, N, C, H, W,
 					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, _intermediateMemoryBudget);
@@ -638,7 +646,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 				throw new DMLRuntimeException("Incorrect dimensions for image in maxpooling: " + 
 						image.getNumRows() + " != " +  N + " || " + image.getNumColumns() + " != " + C*H*W);
 			
-			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), N, C * P * Q);
+			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, _output.getName(), N, C * P * Q);
 			PoolingType poolType = instOpcode.equalsIgnoreCase("maxpooling") ? PoolingType.MAX : PoolingType.AVG;
 			LibMatrixCuDNN.pooling(ec.getGPUContext(0), getExtendedOpcode(), image, out, N, C, H, W,
 					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, poolType, _intermediateMemoryBudget);
@@ -653,7 +661,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 				throw new DMLRuntimeException("Incorrect dimensions for image in maxpooling_backward: " + 
 						image.getNumRows() + " != " +  N + " || " + image.getNumColumns() + " != " + K*P*Q);
 			
-			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), N, C * H * W);
+			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, _output.getName(), N, C * H * W);
 			PoolingType poolType = instOpcode.equalsIgnoreCase("maxpooling_backward") ? PoolingType.MAX : PoolingType.AVG;
 			LibMatrixCuDNN.poolingBackward(ec.getGPUContext(0), getExtendedOpcode(), image, dout, maxPoolOutput, out, N, C, H, W,
 					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, poolType, _intermediateMemoryBudget);

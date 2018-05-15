@@ -77,7 +77,7 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 		JCudnn.cudnnDropoutGetStatesSize(gCtx.getCudnnHandle(), dropOutSizeInBytes);
 		Pointer dropOutStateSpace = new Pointer();
 		if (dropOutSizeInBytes[0] != 0)
-			dropOutStateSpace = gCtx.allocate(dropOutSizeInBytes[0]);
+			dropOutStateSpace = gCtx.allocate(instName, dropOutSizeInBytes[0]);
 		JCudnn.cudnnSetDropoutDescriptor(dropoutDesc, gCtx.getCudnnHandle(), 0, dropOutStateSpace, dropOutSizeInBytes[0], 12345);
 		
 		// Initialize RNN descriptor
@@ -98,11 +98,11 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 		workSpace = new Pointer(); reserveSpace = new Pointer();
 		sizeInBytes = getWorkspaceSize(T);
 		if(sizeInBytes != 0)
-			workSpace = gCtx.allocate(sizeInBytes);
+			workSpace = gCtx.allocate(instName, sizeInBytes);
 		if(isTraining) {
 			reserveSpaceSizeInBytes = getReservespaceSize(T);
 			if (reserveSpaceSizeInBytes != 0)
-				reserveSpace = gCtx.allocate(reserveSpaceSizeInBytes);
+				reserveSpace = gCtx.allocate(instName, reserveSpaceSizeInBytes);
 		}
 		
 		/*

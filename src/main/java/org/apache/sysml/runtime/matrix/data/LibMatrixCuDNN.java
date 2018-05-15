@@ -282,7 +282,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		Pointer srcPointer = getDensePointerForCuDNN(gCtx, in1, instName);
 		MatrixObject out = ec.getMatrixObject(outputName);
 		ec.allocateGPUMatrixObject(outputName, in1.getNumRows(), in1.getNumColumns());
-		out.getGPUObject(gCtx).allocateAndFillDense(0);
+		out.getGPUObject(gCtx).allocateAndFillDense(instName, 0);
 		Pointer dstPointer = getDensePointerForCuDNN(gCtx, out, instName);
 		JCudnn.cudnnSoftmaxForward(gCtx.getCudnnHandle(), CUDNN_SOFTMAX_ACCURATE, CUDNN_SOFTMAX_MODE_CHANNEL, 
                 one(), tensorDesc, srcPointer,
@@ -436,7 +436,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 					try(LibMatrixCuDNNInputRowFetcher imgFetcher = new LibMatrixCuDNNInputRowFetcher(gCtx, instName, image);
 						LibMatrixCuDNNInputRowFetcher doutFetcher = new LibMatrixCuDNNInputRowFetcher(gCtx, instName, dout)) {
 						// Perform one-input conv2dBackwardFilter
-						Pointer tempdwPointer = gCtx.allocate(KCRS*sizeOfDataType);
+						Pointer tempdwPointer = gCtx.allocate(instName, KCRS*sizeOfDataType);
 						for(int n = 0; n < N; n++) {
 							long t0 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 							cudaMemset(tempdwPointer, 0, KCRS*sizeOfDataType);
@@ -754,7 +754,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			if(!isMaxPoolOutputProvided) {
 				if (DMLScript.FINEGRAINED_STATISTICS) t1 = System.nanoTime();
 				long numBytes = N*C*P*Q*sizeOfDataType;
-				y = gCtx.allocate(numBytes);
+				y = gCtx.allocate(instName, numBytes);
 				if (DMLScript.FINEGRAINED_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CUDNN_INIT, System.nanoTime() - t1);
 				if (DMLScript.FINEGRAINED_STATISTICS) t2 = System.nanoTime();
 				status = cudnnPoolingForward(getCudnnHandle(gCtx), desc.poolingDesc, one(), desc.xDesc, x, zero(), desc.yDesc, y);
