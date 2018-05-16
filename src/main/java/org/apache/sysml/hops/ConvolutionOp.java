@@ -857,49 +857,49 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		
 		long ret = -1;
 		if(dimString.equals("K") && filter != null) {
-			ret = getNonNegative(ret, getNonNegative(_cachedParams.K, filter._dim1));
+			ret = getNonNegative(ret, getNonNegative(_cachedParams.K, filter._dim1, "Number of filters mismatched"), "Previous value mismatched");
 		}
 		else if(dimString.equals("CRS") && filter != null) {
-			ret = getNonNegative(ret, getNonNegative(nonNegativeMultiply(_cachedParams.C, _cachedParams.R, _cachedParams.S), filter._dim2));
+			ret = getNonNegative(ret, getNonNegative(nonNegativeMultiply(_cachedParams.C, _cachedParams.R, _cachedParams.S), filter._dim2, "Channels x filter height x filter width mismatched"), "Previous value mismatched");
 		}
 		else if(dimString.equals("N") && input != null) {
-			ret = getNonNegative(ret, getNonNegative(_cachedParams.N, input._dim1));
+			ret = getNonNegative(ret, getNonNegative(_cachedParams.N, input._dim1, "Input number of rows mismatched"), "Previous value mismatched");
 		}
 		else if(dimString.equals("CHW") && input != null) {
-			ret = getNonNegative(ret, getNonNegative(nonNegativeMultiply(_cachedParams.C, _cachedParams.H, _cachedParams.W), input._dim2));
+			ret = getNonNegative(ret, getNonNegative(nonNegativeMultiply(_cachedParams.C, _cachedParams.H, _cachedParams.W), input._dim2, "Channels x input height x input width mismatched"), "Previous value mismatched");
 		}
 		else if(dimString.equals("N") && dout != null) {
-			ret = getNonNegative(ret, getNonNegative(_cachedParams.N, dout._dim1));
+			ret = getNonNegative(ret, getNonNegative(_cachedParams.N, dout._dim1, "Number of rows of backprop error mismatched"), "Previous value mismatched");
 		}
 		else if(dimString.equals("KPQ") && dout != null) {
-			ret = getNonNegative(ret, getNonNegative(nonNegativeMultiply(_cachedParams.K, _cachedParams.P, _cachedParams.Q), dout._dim2));
+			ret = getNonNegative(ret, getNonNegative(nonNegativeMultiply(_cachedParams.K, _cachedParams.P, _cachedParams.Q), dout._dim2, "Number of filters x output height x output width mismatched"), "Previous value mismatched");
 		}
 		else if(dimString.equals("N") && dout1 != null) {
-			ret = getNonNegative(ret, getNonNegative(_cachedParams.N, dout1._dim1));
+			ret = getNonNegative(ret, getNonNegative(_cachedParams.N, dout1._dim1, "Number of rows of backprop error mismatched"), "Previous value mismatched");
 		}
 		else if(dimString.equals("CPQ") && dout1 != null) {
-			ret = getNonNegative(ret, getNonNegative(nonNegativeMultiply(_cachedParams.C, _cachedParams.P, _cachedParams.Q), dout1._dim2));
+			ret = getNonNegative(ret, getNonNegative(nonNegativeMultiply(_cachedParams.C, _cachedParams.P, _cachedParams.Q), dout1._dim2, "Number of channels x output height x output width mismatched"), "Previous value mismatched");
 		}
 		else if(dimString.equals("K")) {
-			ret = getNonNegative(ret, _cachedParams.K >= 0 ? _cachedParams.K : -1);
+			ret = getNonNegative(ret, _cachedParams.K >= 0 ? _cachedParams.K : -1, "Number of filters mismatched");
 		}
 		else if(dimString.equals("CRS")) {
-			ret = getNonNegative(ret, nonNegativeMultiply(_cachedParams.C, _cachedParams.R, _cachedParams.S));
+			ret = getNonNegative(ret, nonNegativeMultiply(_cachedParams.C, _cachedParams.R, _cachedParams.S), "Previous value mismatched");
 		}
 		else if(dimString.equals("N")) {
-			ret = getNonNegative(ret, _cachedParams.N >= 0 ? _cachedParams.N : -1);
+			ret = getNonNegative(ret, _cachedParams.N >= 0 ? _cachedParams.N : -1, "Input number of rows mismatched");
 		}
 		else if(dimString.equals("CHW")) {
-			ret = getNonNegative(ret, nonNegativeMultiply(_cachedParams.C, _cachedParams.H, _cachedParams.W));
+			ret = getNonNegative(ret, nonNegativeMultiply(_cachedParams.C, _cachedParams.H, _cachedParams.W), "Previous value mismatched");
 		}
 		else if(dimString.equals("KPQ")) {
-			ret = getNonNegative(ret, nonNegativeMultiply(_cachedParams.K, _cachedParams.P, _cachedParams.Q));
+			ret = getNonNegative(ret, nonNegativeMultiply(_cachedParams.K, _cachedParams.P, _cachedParams.Q), "Previous value mismatched");
 		}
 		else if(dimString.equals("PQ")) {
-			ret = getNonNegative(ret, nonNegativeMultiply(_cachedParams.P, _cachedParams.Q));
+			ret = getNonNegative(ret, nonNegativeMultiply(_cachedParams.P, _cachedParams.Q), "Previous value mismatched");
 		}
 		else if(dimString.equals("CPQ")) {
-			ret = getNonNegative(ret, nonNegativeMultiply(_cachedParams.C, _cachedParams.P, _cachedParams.Q));
+			ret = getNonNegative(ret, nonNegativeMultiply(_cachedParams.C, _cachedParams.P, _cachedParams.Q), "Previous value mismatched");
 		}
 		else {
 			throw new RuntimeException("Unsupported dimension:" + dimString + " for operator " + getOp().name());
@@ -915,22 +915,22 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		return ret;
 	}
 	
-	private static long nonNegativeMultiply(long val1, long val2, long val3) {
+	private long nonNegativeMultiply(long val1, long val2, long val3) {
 		if(val1 >= 0 && val2 >= 0 && val3 >= 0) {
 			return val1 * val2 * val3;
 		}
 		else return -1;
 	}
-	private static long nonNegativeMultiply(long val1, long val2) {
+	private long nonNegativeMultiply(long val1, long val2) {
 		if(val1 >= 0 && val2 >= 0) {
 			return val1 * val2;
 		}
 		else return -1;
 	}
-	private static long getNonNegative(long val1, long val2) {
+	private long getNonNegative(long val1, long val2, String message) {
 		if(val1 >= 0 && val2 >= 0) {
 			if(val1 == val2) return val1;
-			else throw new RuntimeException("Incorrect dimensions in Convolution Hop: " + val1 + " != " + val2);
+			else throw new RuntimeException("Incorrect dimensions in Convolution Hop: " + val1 + " != " + val2 + ". " + message + " " + getOp().name());
 		}
 		else if(val1 >= 0) return val1;
 		else if(val2 >= 0) return val2;
