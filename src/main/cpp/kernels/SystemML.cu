@@ -2166,14 +2166,27 @@ extern "C" __global__ void prepare_lstm_output_f(float* smlInput, float* cudnnIn
 template <typename T>
 __device__ void prepare_lstm_backward_gradients(T* smlDout, T* cudnnDhy, T* cudnnDy, int N, int T1, int M, int size, int return_sequences) {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
-	if(index < size) {
+	if(index < size && return_sequences != 0) {
+		// smlDout = [N, T, M]
 		int TM = T1*M;
 		int NT = T1*N;
 		int n = index / TM;
 		int tm = index % TM;
 		int t = tm / M;
 		int m = tm % M;
-		cudnnDhy[index] = smlDout[index];
+		T val = smlDout[index];
+		cudnnDy[t*N*M + n*M + m] = val;
+		if(t == T1-1) {
+			cudnnDhy[n*M + m] = val;
+		}
+	}
+	else if(index < size) {
+		// smlDout = [N, T, M]
+		int n = index / M;
+		int m = index % M;
+		T val = smlDout[index];
+		cudnnDhy[index] = val;
+		cudnnDy[(T1-1)*N*M + n*M + m] = val;
 	}
 }
 
@@ -2227,11 +2240,11 @@ __device__ void prepare_lstm_dweight(T* smldWeight, T* smldBias, T* cudnndWeight
   	// Fill bias
 	int tmpIndex = index - (D+M)*M4;
 	int smlColIndex = swap_co(tmpIndex/(M))*M + tmpIndex%M;
-	cudnnWeight[index] = smlBias[smlColIndex];
+	smlBias[smlColIndex] = cudnnWeight[index];
   }
   // __syncthreads();
   if(srcIndex != -1)
-  	cudnnWeight[destIndex] = smlWeight[srcIndex];
+  	smlWeight[srcIndex] = cudnnWeight[destIndex];
 }
 
 extern "C" __global__ void prepare_lstm_dweight_d(double* smldWeight, double* smldBias, double* cudnndWeight, int D, int M) {

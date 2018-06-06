@@ -1446,7 +1446,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				// always unconditional (because unsupported operation)
 				BuiltinFunctionOp op = getOpCode();
 				if( op==BuiltinFunctionOp.EIGEN || op==BuiltinFunctionOp.LU || op==BuiltinFunctionOp.QR || op==BuiltinFunctionOp.SVD 
-						|| op==BuiltinFunctionOp.LSTM || op==BuiltinFunctionOp.BATCH_NORM2D || op==BuiltinFunctionOp.BATCH_NORM2D_BACKWARD)
+						|| op==BuiltinFunctionOp.LSTM || op==BuiltinFunctionOp.LSTM_BACKWARD
+						|| op==BuiltinFunctionOp.BATCH_NORM2D || op==BuiltinFunctionOp.BATCH_NORM2D_BACKWARD)
 					raiseValidateError("Function "+op+" needs to be called with multi-return assignment.", false, LanguageErrorCodes.INVALID_PARAMETERS);
 				else
 					raiseValidateError("Unsupported function "+op, false, LanguageErrorCodes.INVALID_PARAMETERS);
@@ -1528,6 +1529,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case LU:
 		case EIGEN:
 		case LSTM:
+		case LSTM_BACKWARD:
 		case BATCH_NORM2D:
 		case BATCH_NORM2D_BACKWARD:
 		case SVD:
@@ -1941,6 +1943,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.EIGEN;
 		else if (functionName.equals("lstm"))
 			bifop = Expression.BuiltinFunctionOp.LSTM;
+		else if (functionName.equals("lstm_backward"))
+			bifop = Expression.BuiltinFunctionOp.LSTM_BACKWARD;
 		else if (functionName.equals("batch_norm2d"))
 			bifop = Expression.BuiltinFunctionOp.BATCH_NORM2D;
 		else if (functionName.equals("batch_norm2d_backward"))
