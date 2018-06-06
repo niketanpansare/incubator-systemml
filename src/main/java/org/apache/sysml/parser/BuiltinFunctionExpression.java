@@ -1658,13 +1658,17 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			raiseValidateError("Missing argument for function " + this.getOpCode(), false,
 					LanguageErrorCodes.INVALID_PARAMETERS);
 		}
-
+		
+		// Not sure the rationale for the first two if loops, but will keep them for backward compatibility
 		if (((count == 1) && (getSecondExpr() != null || getThirdExpr() != null))
 				|| ((count == 2) && (getThirdExpr() != null))) {
 			raiseValidateError("Invalid number of arguments for function " + this.getOpCode().toString().toLowerCase()
 					+ "(). This function only takes 1 or 2 arguments.", false);
 		} else if (((count == 2) && (getSecondExpr() == null))
 				|| ((count == 3) && (getSecondExpr() == null || getThirdExpr() == null))) {
+			raiseValidateError("Missing argument for function " + this.getOpCode(), false,
+					LanguageErrorCodes.INVALID_PARAMETERS);
+		} else if(count > 0 && (_args == null || _args.length < count)) {
 			raiseValidateError("Missing argument for function " + this.getOpCode(), false,
 					LanguageErrorCodes.INVALID_PARAMETERS);
 		}
