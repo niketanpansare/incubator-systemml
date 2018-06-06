@@ -55,7 +55,7 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 	long sizeInBytes; Pointer workSpace;
 	long reserveSpaceSizeInBytes; Pointer reserveSpace;
 	public LibMatrixCuDNNRnnAlgorithm(ExecutionContext ec, GPUContext gCtx, String instName, 
-			String rnnMode, int N, int T, int M, int D, boolean isTraining, Pointer w, String reserveSpaceName) throws DMLRuntimeException {
+			String rnnMode, int N, int T, int M, int D, boolean isTraining, Pointer w) throws DMLRuntimeException {
 		this.gCtx = gCtx;
 		this.instName = instName;
 		
@@ -104,12 +104,11 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 		if(isTraining) {
 			reserveSpaceSizeInBytes = getReservespaceSize(T);
 			if (reserveSpaceSizeInBytes != 0) {
-				int numCols =  (int) Math.ceil(((double)reserveSpaceSizeInBytes) / LibMatrixCUDA.sizeOfDataType);
-				reserveSpace = LibMatrixCuDNN.getDenseOutputPointer(ec, gCtx, instName, reserveSpaceName, 1, numCols);
+				reserveSpace = gCtx.allocate(reserveSpaceSizeInBytes);
 			}
 		}
 		if (reserveSpaceSizeInBytes == 0) {
-			reserveSpace = LibMatrixCuDNN.getDenseOutputPointer(ec, gCtx, instName, reserveSpaceName, 1, 1);
+			reserveSpace = gCtx.allocate(reserveSpaceSizeInBytes);
 		}
 		
 		/*

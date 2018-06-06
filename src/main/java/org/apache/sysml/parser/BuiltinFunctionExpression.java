@@ -102,6 +102,15 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	public Expression getSixthExpr() {
 		return (_args.length >= 6 ? _args[5] : null);
 	}
+	
+	public Expression getSeventhExpr() {
+		return (_args.length >= 7 ? _args[6] : null);
+	}
+
+	public Expression getEighthExpr() {
+		return (_args.length >= 8 ? _args[7] : null);
+	}
+
 
 	public Expression[] getAllExpr(){
 		return _args;
@@ -210,13 +219,12 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			checkMatrixParam(getFifthExpr());
 			
 			// setup output properties
-			if(getOutputs() == null || getOutputs().length != 3) {
+			if(getOutputs() == null || getOutputs().length != 2) {
 				int numOutputs = getOutputs() == null ? 0 : getOutputs().length;
-				raiseValidateError("The builtin function lstm has three outputs, but instead found: " + numOutputs, conditional);
+				raiseValidateError("The builtin function lstm has two outputs, but instead found: " + numOutputs, conditional);
 			}
 			DataIdentifier out = (DataIdentifier) getOutputs()[0];
 			DataIdentifier cy = (DataIdentifier) getOutputs()[1];
-			DataIdentifier reserveSpace = (DataIdentifier) getOutputs()[2];
 			
 			// Output1 - out: If `return_sequences` is True, outputs for all timesteps, else outputs for the final timestep.
 			out.setDataType(DataType.MATRIX);
@@ -230,12 +238,36 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			cy.setDimensions(getExpr(4).getOutput().getDim1(), getExpr(4).getOutput().getDim2());
 			cy.setBlockDimensions(getExpr(4).getOutput().getRowsInBlock(), getExpr(4).getOutput().getColumnsInBlock());
 			
-			// Output3 - reserve space.
-			reserveSpace.setDataType(DataType.MATRIX);
-			reserveSpace.setValueType(ValueType.DOUBLE);
-			reserveSpace.setDimensions(-1, -1);
-			reserveSpace.setBlockDimensions(getFirstExpr().getOutput().getRowsInBlock(), getFirstExpr().getOutput().getColumnsInBlock());
+			break;
+		}
+		case LSTM_BACKWARD:
+		{
+			// Input: X, W, b, out0, c0, return_sequences, dout, cy
+			checkNumParameters(8);
+			checkMatrixParam(getFirstExpr());
+			checkMatrixParam(getSecondExpr());
+			checkMatrixParam(getThirdExpr());
+			checkMatrixParam(getFourthExpr());
+			checkMatrixParam(getFifthExpr());
+			checkMatrixParam(getSeventhExpr());
+			checkMatrixParam(getEighthExpr());
 			
+			// Output: dx, dw, db, dout0, dc0
+			// setup output properties
+			if(getOutputs().length != 5)
+				raiseValidateError("lstm_backward has 5 outputs", false);
+			 
+			DataIdentifier dx = (DataIdentifier) getOutputs()[0];
+			DataIdentifier dw = (DataIdentifier) getOutputs()[1];
+			DataIdentifier db = (DataIdentifier) getOutputs()[2];
+			DataIdentifier dout0 = (DataIdentifier) getOutputs()[3];
+			DataIdentifier dc0 = (DataIdentifier) getOutputs()[4];
+			
+			setDimensions(dx, getFirstExpr());
+			setDimensions(dw, getSecondExpr());
+			setDimensions(db, getThirdExpr());
+			setDimensions(dout0, getFourthExpr());
+			setDimensions(dc0, getFifthExpr());
 			break;
 		}
 		case BATCH_NORM2D:
