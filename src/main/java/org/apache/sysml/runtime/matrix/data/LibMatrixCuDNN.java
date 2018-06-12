@@ -937,7 +937,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		Pointer yPointer = gCtx.allocate(instName, N*T*M*sizeOfDataType);
 		Pointer cudnnDwPointer = gCtx.allocate(instName, (D+M+2)*(4*M)*LibMatrixCUDA.sizeOfDataType);
 		
-		Pointer smlDxPointer = getDenseOutputPointer(ec, gCtx, instName, dxName, N, T*M);
+		Pointer smlDxPointer = getDenseOutputPointer(ec, gCtx, instName, dxName, N, T*D);
 		Pointer smlDout0Pointer = getDenseOutputPointer(ec, gCtx, instName, dhxName, N, M);
 		Pointer smlDc0Pointer = getDenseOutputPointer(ec, gCtx, instName, dcxName, N, M);
 		
