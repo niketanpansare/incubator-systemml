@@ -957,24 +957,24 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 					algo.hxDesc, hx, 
 					algo.yDesc, yPointer, 
 					algo.workSpace, algo.sizeInBytes, 
-					algo.wDesc, cudnnDwPointer, 
+					algo.dwDesc, cudnnDwPointer, 
 					algo.reserveSpace, algo.reserveSpaceSizeInBytes);
 			JCudnn.cudnnRNNBackwardData(gCtx.getCudnnHandle(), algo.rnnDesc, T, 
 					algo.yDesc, yPointer,
 					// ----------------------
 					// Additional inputs:
-					algo.yDesc, dy, 
-					algo.hyDesc, dhy, 
-					algo.cyDesc, getDenseInputPointer(ec, gCtx, instName, dcyName, N, M),
+					algo.dyDesc, dy, 
+					algo.dhyDesc, dhy, 
+					algo.dcyDesc, getDenseInputPointer(ec, gCtx, instName, dcyName, N, M),
 					// ----------------------
 					algo.wDesc, wPointer, 
 					algo.hxDesc, hx,
 					algo.cxDesc, cx,
 					// ----------------------
 					// Output:
-					algo.xDesc, smlDxPointer, 
-					algo.hxDesc, smlDout0Pointer, 
-					algo.cxDesc, smlDc0Pointer,
+					algo.dxDesc, smlDxPointer, 
+					algo.dhxDesc, smlDout0Pointer, 
+					algo.dcxDesc, smlDc0Pointer,
 					// ----------------------
 					algo.workSpace, algo.sizeInBytes, 
 					algo.reserveSpace, algo.reserveSpaceSizeInBytes);
