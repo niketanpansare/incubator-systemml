@@ -581,7 +581,6 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		ec.releaseMatrixInputForGPUInstruction(_input5.getName());
 		ec.releaseMatrixOutputForGPUInstruction(_output2.getName());
 		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
-		ec.releaseMatrixOutputForGPUInstruction(_output3.getName());
 	}
 	
 	@Override
