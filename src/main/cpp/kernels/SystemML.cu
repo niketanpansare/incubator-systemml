@@ -2167,7 +2167,7 @@ extern "C" __global__ void prepare_lstm_output_f(float* smlInput, float* cudnnIn
 }
 
 template <typename T>
-__device__ void prepare_lstm_backward_gradients(T* smlDout, T* cudnnDhy, T* cudnnDy, int N, int T1, int M, int size, int return_sequences) {
+__device__ void prepare_lstm_backward_gradients(T* smlDout, T* cudnnDy, int N, int T1, int M, int size, int return_sequences) {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	if(index < size && return_sequences != 0) {
 		// smlDout = [N, T, M]
@@ -2179,27 +2179,23 @@ __device__ void prepare_lstm_backward_gradients(T* smlDout, T* cudnnDhy, T* cudn
 		int m = tm % M;
 		T val = smlDout[index];
 		cudnnDy[t*N*M + n*M + m] = val;
-		if(t == T1-1) {
-			cudnnDhy[n*M + m] = val;
-		}
 	}
 	else if(index < size) {
 		// smlDout = [N, T, M]
 		int n = index / M;
 		int m = index % M;
 		T val = smlDout[index];
-		cudnnDhy[index] = val;
 		cudnnDy[(T1-1)*N*M + n*M + m] = val;
 	}
 }
 
 
-extern "C" __global__ void prepare_lstm_backward_gradients_d(double* smlInput, double* cudnnInput, double* cudnnDy, int N, int T, int M, int size, int return_sequences) {
-  prepare_lstm_backward_gradients(smlInput, cudnnInput, cudnnDy, N, T, M, size, return_sequences);
+extern "C" __global__ void prepare_lstm_backward_gradients_d(double* smlInput, double* cudnnDy, int N, int T, int M, int size, int return_sequences) {
+  prepare_lstm_backward_gradients(smlInput, cudnnDy, N, T, M, size, return_sequences);
 }
 
-extern "C" __global__ void prepare_lstm_backward_gradients_f(float* smlInput, float* cudnnInput, float* cudnnDy, int N, int T, int M, int size, int return_sequences) {
-  prepare_lstm_backward_gradients(smlInput, cudnnInput, cudnnDy, N, T, M, size, return_sequences);
+extern "C" __global__ void prepare_lstm_backward_gradients_f(float* smlInput, float* cudnnDy, int N, int T, int M, int size, int return_sequences) {
+  prepare_lstm_backward_gradients(smlInput, cudnnDy, N, T, M, size, return_sequences);
 }
 
 template <typename T>

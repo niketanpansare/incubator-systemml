@@ -12445,80 +12445,67 @@ BB105_2:
 .visible .entry prepare_lstm_backward_gradients_d(
 	.param .u64 prepare_lstm_backward_gradients_d_param_0,
 	.param .u64 prepare_lstm_backward_gradients_d_param_1,
-	.param .u64 prepare_lstm_backward_gradients_d_param_2,
+	.param .u32 prepare_lstm_backward_gradients_d_param_2,
 	.param .u32 prepare_lstm_backward_gradients_d_param_3,
 	.param .u32 prepare_lstm_backward_gradients_d_param_4,
 	.param .u32 prepare_lstm_backward_gradients_d_param_5,
-	.param .u32 prepare_lstm_backward_gradients_d_param_6,
-	.param .u32 prepare_lstm_backward_gradients_d_param_7
+	.param .u32 prepare_lstm_backward_gradients_d_param_6
 )
 {
-	.reg .pred 	%p<6>;
-	.reg .b32 	%r<22>;
+	.reg .pred 	%p<5>;
+	.reg .b32 	%r<20>;
 	.reg .f64 	%fd<3>;
-	.reg .b64 	%rd<17>;
+	.reg .b64 	%rd<11>;
 
 
-	ld.param.u64 	%rd4, [prepare_lstm_backward_gradients_d_param_0];
-	ld.param.u64 	%rd5, [prepare_lstm_backward_gradients_d_param_1];
-	ld.param.u64 	%rd6, [prepare_lstm_backward_gradients_d_param_2];
-	ld.param.u32 	%r4, [prepare_lstm_backward_gradients_d_param_3];
-	ld.param.u32 	%r5, [prepare_lstm_backward_gradients_d_param_4];
-	ld.param.u32 	%r6, [prepare_lstm_backward_gradients_d_param_5];
-	ld.param.u32 	%r7, [prepare_lstm_backward_gradients_d_param_6];
-	ld.param.u32 	%r8, [prepare_lstm_backward_gradients_d_param_7];
-	cvta.to.global.u64 	%rd1, %rd5;
-	cvta.to.global.u64 	%rd2, %rd6;
-	mov.u32 	%r9, %ntid.x;
-	mov.u32 	%r10, %ctaid.x;
-	mov.u32 	%r11, %tid.x;
-	mad.lo.s32 	%r1, %r9, %r10, %r11;
-	setp.lt.s32	%p1, %r1, %r7;
-	setp.ne.s32	%p2, %r8, 0;
+	ld.param.u64 	%rd3, [prepare_lstm_backward_gradients_d_param_0];
+	ld.param.u64 	%rd4, [prepare_lstm_backward_gradients_d_param_1];
+	ld.param.u32 	%r2, [prepare_lstm_backward_gradients_d_param_2];
+	ld.param.u32 	%r3, [prepare_lstm_backward_gradients_d_param_3];
+	ld.param.u32 	%r4, [prepare_lstm_backward_gradients_d_param_4];
+	ld.param.u32 	%r5, [prepare_lstm_backward_gradients_d_param_5];
+	ld.param.u32 	%r6, [prepare_lstm_backward_gradients_d_param_6];
+	cvta.to.global.u64 	%rd1, %rd4;
+	mov.u32 	%r7, %ntid.x;
+	mov.u32 	%r8, %ctaid.x;
+	mov.u32 	%r9, %tid.x;
+	mad.lo.s32 	%r1, %r7, %r8, %r9;
+	setp.lt.s32	%p1, %r1, %r5;
+	setp.ne.s32	%p2, %r6, 0;
 	and.pred  	%p3, %p1, %p2;
-	cvta.to.global.u64 	%rd7, %rd4;
-	mul.wide.s32 	%rd8, %r1, 8;
-	add.s64 	%rd3, %rd7, %rd8;
+	cvta.to.global.u64 	%rd5, %rd3;
+	mul.wide.s32 	%rd6, %r1, 8;
+	add.s64 	%rd2, %rd5, %rd6;
 	@%p3 bra 	BB106_3;
 	bra.uni 	BB106_1;
 
 BB106_3:
-	mul.lo.s32 	%r15, %r6, %r5;
-	div.s32 	%r2, %r1, %r15;
-	rem.s32 	%r16, %r1, %r15;
-	div.s32 	%r17, %r16, %r6;
-	rem.s32 	%r3, %r16, %r6;
-	ld.global.f64 	%fd1, [%rd3];
-	mad.lo.s32 	%r18, %r17, %r4, %r2;
-	mad.lo.s32 	%r19, %r18, %r6, %r3;
-	mul.wide.s32 	%rd13, %r19, 8;
-	add.s64 	%rd14, %rd2, %rd13;
-	st.global.f64 	[%rd14], %fd1;
-	add.s32 	%r20, %r5, -1;
-	setp.ne.s32	%p5, %r17, %r20;
-	@%p5 bra 	BB106_5;
-
-	mad.lo.s32 	%r21, %r2, %r6, %r3;
-	mul.wide.s32 	%rd15, %r21, 8;
-	add.s64 	%rd16, %rd1, %rd15;
-	st.global.f64 	[%rd16], %fd1;
-	bra.uni 	BB106_5;
+	mul.lo.s32 	%r13, %r4, %r3;
+	div.s32 	%r14, %r1, %r13;
+	rem.s32 	%r15, %r1, %r13;
+	div.s32 	%r16, %r15, %r4;
+	rem.s32 	%r17, %r15, %r4;
+	ld.global.f64 	%fd2, [%rd2];
+	mad.lo.s32 	%r18, %r16, %r2, %r14;
+	mad.lo.s32 	%r19, %r18, %r4, %r17;
+	mul.wide.s32 	%rd9, %r19, 8;
+	add.s64 	%rd10, %rd1, %rd9;
+	st.global.f64 	[%rd10], %fd2;
+	bra.uni 	BB106_4;
 
 BB106_1:
-	setp.ge.s32	%p4, %r1, %r7;
-	@%p4 bra 	BB106_5;
+	setp.ge.s32	%p4, %r1, %r5;
+	@%p4 bra 	BB106_4;
 
-	ld.global.f64 	%fd2, [%rd3];
-	add.s64 	%rd10, %rd1, %rd8;
-	st.global.f64 	[%rd10], %fd2;
-	add.s32 	%r12, %r5, -1;
-	mul.lo.s32 	%r13, %r12, %r4;
-	mad.lo.s32 	%r14, %r13, %r6, %r1;
-	mul.wide.s32 	%rd11, %r14, 8;
-	add.s64 	%rd12, %rd2, %rd11;
-	st.global.f64 	[%rd12], %fd2;
+	ld.global.f64 	%fd1, [%rd2];
+	add.s32 	%r10, %r3, -1;
+	mul.lo.s32 	%r11, %r10, %r2;
+	mad.lo.s32 	%r12, %r11, %r4, %r1;
+	mul.wide.s32 	%rd7, %r12, 8;
+	add.s64 	%rd8, %rd1, %rd7;
+	st.global.f64 	[%rd8], %fd1;
 
-BB106_5:
+BB106_4:
 	ret;
 }
 
@@ -12526,80 +12513,67 @@ BB106_5:
 .visible .entry prepare_lstm_backward_gradients_f(
 	.param .u64 prepare_lstm_backward_gradients_f_param_0,
 	.param .u64 prepare_lstm_backward_gradients_f_param_1,
-	.param .u64 prepare_lstm_backward_gradients_f_param_2,
+	.param .u32 prepare_lstm_backward_gradients_f_param_2,
 	.param .u32 prepare_lstm_backward_gradients_f_param_3,
 	.param .u32 prepare_lstm_backward_gradients_f_param_4,
 	.param .u32 prepare_lstm_backward_gradients_f_param_5,
-	.param .u32 prepare_lstm_backward_gradients_f_param_6,
-	.param .u32 prepare_lstm_backward_gradients_f_param_7
+	.param .u32 prepare_lstm_backward_gradients_f_param_6
 )
 {
-	.reg .pred 	%p<6>;
+	.reg .pred 	%p<5>;
 	.reg .f32 	%f<3>;
-	.reg .b32 	%r<22>;
-	.reg .b64 	%rd<17>;
+	.reg .b32 	%r<20>;
+	.reg .b64 	%rd<11>;
 
 
-	ld.param.u64 	%rd4, [prepare_lstm_backward_gradients_f_param_0];
-	ld.param.u64 	%rd5, [prepare_lstm_backward_gradients_f_param_1];
-	ld.param.u64 	%rd6, [prepare_lstm_backward_gradients_f_param_2];
-	ld.param.u32 	%r4, [prepare_lstm_backward_gradients_f_param_3];
-	ld.param.u32 	%r5, [prepare_lstm_backward_gradients_f_param_4];
-	ld.param.u32 	%r6, [prepare_lstm_backward_gradients_f_param_5];
-	ld.param.u32 	%r7, [prepare_lstm_backward_gradients_f_param_6];
-	ld.param.u32 	%r8, [prepare_lstm_backward_gradients_f_param_7];
-	cvta.to.global.u64 	%rd1, %rd5;
-	cvta.to.global.u64 	%rd2, %rd6;
-	mov.u32 	%r9, %ntid.x;
-	mov.u32 	%r10, %ctaid.x;
-	mov.u32 	%r11, %tid.x;
-	mad.lo.s32 	%r1, %r9, %r10, %r11;
-	setp.lt.s32	%p1, %r1, %r7;
-	setp.ne.s32	%p2, %r8, 0;
+	ld.param.u64 	%rd3, [prepare_lstm_backward_gradients_f_param_0];
+	ld.param.u64 	%rd4, [prepare_lstm_backward_gradients_f_param_1];
+	ld.param.u32 	%r2, [prepare_lstm_backward_gradients_f_param_2];
+	ld.param.u32 	%r3, [prepare_lstm_backward_gradients_f_param_3];
+	ld.param.u32 	%r4, [prepare_lstm_backward_gradients_f_param_4];
+	ld.param.u32 	%r5, [prepare_lstm_backward_gradients_f_param_5];
+	ld.param.u32 	%r6, [prepare_lstm_backward_gradients_f_param_6];
+	cvta.to.global.u64 	%rd1, %rd4;
+	mov.u32 	%r7, %ntid.x;
+	mov.u32 	%r8, %ctaid.x;
+	mov.u32 	%r9, %tid.x;
+	mad.lo.s32 	%r1, %r7, %r8, %r9;
+	setp.lt.s32	%p1, %r1, %r5;
+	setp.ne.s32	%p2, %r6, 0;
 	and.pred  	%p3, %p1, %p2;
-	cvta.to.global.u64 	%rd7, %rd4;
-	mul.wide.s32 	%rd8, %r1, 4;
-	add.s64 	%rd3, %rd7, %rd8;
+	cvta.to.global.u64 	%rd5, %rd3;
+	mul.wide.s32 	%rd6, %r1, 4;
+	add.s64 	%rd2, %rd5, %rd6;
 	@%p3 bra 	BB107_3;
 	bra.uni 	BB107_1;
 
 BB107_3:
-	mul.lo.s32 	%r15, %r6, %r5;
-	div.s32 	%r2, %r1, %r15;
-	rem.s32 	%r16, %r1, %r15;
-	div.s32 	%r17, %r16, %r6;
-	rem.s32 	%r3, %r16, %r6;
-	ld.global.f32 	%f1, [%rd3];
-	mad.lo.s32 	%r18, %r17, %r4, %r2;
-	mad.lo.s32 	%r19, %r18, %r6, %r3;
-	mul.wide.s32 	%rd13, %r19, 4;
-	add.s64 	%rd14, %rd2, %rd13;
-	st.global.f32 	[%rd14], %f1;
-	add.s32 	%r20, %r5, -1;
-	setp.ne.s32	%p5, %r17, %r20;
-	@%p5 bra 	BB107_5;
-
-	mad.lo.s32 	%r21, %r2, %r6, %r3;
-	mul.wide.s32 	%rd15, %r21, 4;
-	add.s64 	%rd16, %rd1, %rd15;
-	st.global.f32 	[%rd16], %f1;
-	bra.uni 	BB107_5;
+	mul.lo.s32 	%r13, %r4, %r3;
+	div.s32 	%r14, %r1, %r13;
+	rem.s32 	%r15, %r1, %r13;
+	div.s32 	%r16, %r15, %r4;
+	rem.s32 	%r17, %r15, %r4;
+	ld.global.f32 	%f2, [%rd2];
+	mad.lo.s32 	%r18, %r16, %r2, %r14;
+	mad.lo.s32 	%r19, %r18, %r4, %r17;
+	mul.wide.s32 	%rd9, %r19, 4;
+	add.s64 	%rd10, %rd1, %rd9;
+	st.global.f32 	[%rd10], %f2;
+	bra.uni 	BB107_4;
 
 BB107_1:
-	setp.ge.s32	%p4, %r1, %r7;
-	@%p4 bra 	BB107_5;
+	setp.ge.s32	%p4, %r1, %r5;
+	@%p4 bra 	BB107_4;
 
-	ld.global.f32 	%f2, [%rd3];
-	add.s64 	%rd10, %rd1, %rd8;
-	st.global.f32 	[%rd10], %f2;
-	add.s32 	%r12, %r5, -1;
-	mul.lo.s32 	%r13, %r12, %r4;
-	mad.lo.s32 	%r14, %r13, %r6, %r1;
-	mul.wide.s32 	%rd11, %r14, 4;
-	add.s64 	%rd12, %rd2, %rd11;
-	st.global.f32 	[%rd12], %f2;
+	ld.global.f32 	%f1, [%rd2];
+	add.s32 	%r10, %r3, -1;
+	mul.lo.s32 	%r11, %r10, %r2;
+	mad.lo.s32 	%r12, %r11, %r4, %r1;
+	mul.wide.s32 	%rd7, %r12, 4;
+	add.s64 	%rd8, %rd1, %rd7;
+	st.global.f32 	[%rd8], %f1;
 
-BB107_5:
+BB107_4:
 	ret;
 }
 
