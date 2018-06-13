@@ -964,6 +964,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			ec.releaseMatrixOutputForGPUInstruction(dbName);
 			// -------------------------------------------------------------------------------------------
 			
+			Pointer cudnnDx = gCtx.allocate(instName, N*T*D*LibMatrixCUDA.sizeOfDataType);
 			JCudnn.cudnnRNNBackwardData(gCtx.getCudnnHandle(), algo.rnnDesc, T, 
 					algo.yDesc, yPointer,
 					// ----------------------
@@ -977,7 +978,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 					algo.cxDesc, cx,
 					// ----------------------
 					// Output:
-					algo.dxDesc, getDenseOutputPointer(ec, gCtx, instName, dxName, N, T*D), 
+					algo.dxDesc, cudnnDx, 
 					algo.dhxDesc, getDenseOutputPointer(ec, gCtx, instName, dhxName, N, M), 
 					algo.dcxDesc, getDenseOutputPointer(ec, gCtx, instName, dcxName, N, M),
 					// ----------------------
@@ -986,9 +987,14 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			gCtx.cudaFreeHelper(instName, dy, DMLScript.EAGER_CUDA_FREE);
 			gCtx.cudaFreeHelper(instName, yPointer, DMLScript.EAGER_CUDA_FREE);
 			ec.releaseMatrixInputForGPUInstruction(dcyName);
-			ec.releaseMatrixOutputForGPUInstruction(dxName);
 			ec.releaseMatrixOutputForGPUInstruction(dhxName);
 			ec.releaseMatrixOutputForGPUInstruction(dcxName);
+			
+			Pointer smlDx = getDenseOutputPointer(ec, gCtx, instName, dxName, N, T*D);
+			LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("prepare_lstm_output",
+					ExecutionConfig.getConfigForSimpleVectorOperations(N*T*D),
+					smlDx, cudnnDx, N, T, D, N*T*D);
+			ec.releaseMatrixOutputForGPUInstruction(dxName);
 		}
 	}
 	
