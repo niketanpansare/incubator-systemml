@@ -59,6 +59,7 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
    *      shape (N, M).
    *  - c: Cell state for final timestep, of shape (N, M). 
    */
+  out = 0; c = c0;
   [out, c] = lstm(X, W, b, out0, c0, return_sequences)
 }
 
@@ -105,6 +106,7 @@ backward = function(matrix[double] dout, matrix[double] dc,
    *  - dout0: Gradient wrt `out0`, of shape (N, M).
    *  - dc0: Gradient wrt `c0`, of shape (N, M).
    */
+  dX = X; dW = W; db = b; dout0 = out0; dc0 = c0
   [dX, dW, db, dout0, dc0] = lstm_backward(X, W, b, out0, c0, given_sequences, dout, dc)
 }
 
