@@ -2206,7 +2206,7 @@ __device__ void prepare_lstm_dweight(T* smldWeight, T* smldBias, T* cudnndWeight
   if(index < (D+M)*M4) {
     int indexes[2];
     compute_lstm_weight_indexes(index, D, M, indexes);
-    smlWeight[indexes[0]] = cudnnWeight[indexes[1]];
+    smldWeight[indexes[0]] = cudnndWeight[indexes[1]];
   }
   else if(index < (D+M+1)*M4) {
   	// Fill bias
@@ -2214,14 +2214,36 @@ __device__ void prepare_lstm_dweight(T* smldWeight, T* smldBias, T* cudnndWeight
     // where W: [DxM], R: [MxM] and b: [1x1]
 	int tmpIndex = index - (D+M)*M4;
 	int smlColIndex = swap_co(tmpIndex/(M))*M + tmpIndex%M;
-	smlBias[smlColIndex] = cudnnWeight[index];
+	smldBias[smlColIndex] = cudnndWeight[index];
   }
 }
 
 extern "C" __global__ void prepare_lstm_dweight_d(double* smldWeight, double* smldBias, double* cudnndWeight, int D, int M) {
-  prepare_lstm_weight(smldWeight, smldBias, cudnndWeight, D, M);
+  prepare_lstm_dweight(smldWeight, smldBias, cudnndWeight, D, M);
 }
 
 extern "C" __global__ void prepare_lstm_dweight_f(float* smldWeight, float* smldBias, float* cudnndWeight, int D, int M) {
-  prepare_lstm_weight(smldWeight, smldBias, cudnndWeight, D, M);
+  prepare_lstm_dweight(smldWeight, smldBias, cudnndWeight, D, M);
 }
+
+template <typename T>
+__device__ void prepare_lstm_dinput(T* smlInput, T* cudnnInput, int N, int D, int TD, int size) {
+	int index = blockIdx.x * blockDim.x + threadIdx.x;
+	if(index < size) {
+		int n = index / TD;
+		int td = index % TD;
+		int t = td / D;
+		int d = td % D;
+		smlInput[index] = cudnnInput[t*N*D + n*D + d];
+	}
+}
+
+
+extern "C" __global__ void prepare_lstm_dinput_d(double* smlInput, double* cudnnInput, int N, int D, int TD, int size) {
+  prepare_lstm_dinput(smlInput, cudnnInput, N, D, TD, size);
+}
+
+extern "C" __global__ void prepare_lstm_dinput_f(float* smlInput, float* cudnnInput, int N, int D, int TD, int size) {
+  prepare_lstm_dinput(smlInput, cudnnInput, N, D, TD, size);
+}
+

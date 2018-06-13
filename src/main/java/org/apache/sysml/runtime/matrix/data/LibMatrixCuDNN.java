@@ -991,9 +991,9 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			ec.releaseMatrixOutputForGPUInstruction(dcxName);
 			
 			Pointer smlDx = getDenseOutputPointer(ec, gCtx, instName, dxName, N, T*D);
-			LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("prepare_lstm_output",
+			LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("prepare_lstm_dinput",
 					ExecutionConfig.getConfigForSimpleVectorOperations(N*T*D),
-					smlDx, cudnnDx, N, T, D, N*T*D);
+					smlDx, cudnnDx, N, D, T*D, N*T*D);
 			ec.releaseMatrixOutputForGPUInstruction(dxName);
 		}
 	}
