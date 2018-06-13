@@ -960,8 +960,8 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 					getDenseOutputPointer(ec, gCtx, instName, dwName, D+M, 4*M), 
 					getDenseOutputPointer(ec, gCtx, instName, dbName, 1, 4*M), cudnnDwPointer, D, M);
 			gCtx.cudaFreeHelper(instName, cudnnDwPointer, DMLScript.EAGER_CUDA_FREE);
-			ec.releaseMatrixInputForGPUInstruction(dwName);
-			ec.releaseMatrixInputForGPUInstruction(dbName);
+			ec.releaseMatrixOutputForGPUInstruction(dwName);
+			ec.releaseMatrixOutputForGPUInstruction(dbName);
 			// -------------------------------------------------------------------------------------------
 			
 			JCudnn.cudnnRNNBackwardData(gCtx.getCudnnHandle(), algo.rnnDesc, T, 
@@ -986,9 +986,9 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			gCtx.cudaFreeHelper(instName, dy, DMLScript.EAGER_CUDA_FREE);
 			gCtx.cudaFreeHelper(instName, yPointer, DMLScript.EAGER_CUDA_FREE);
 			ec.releaseMatrixInputForGPUInstruction(dcyName);
-			ec.releaseMatrixInputForGPUInstruction(dxName);
-			ec.releaseMatrixInputForGPUInstruction(dhxName);
-			ec.releaseMatrixInputForGPUInstruction(dcxName);
+			ec.releaseMatrixOutputForGPUInstruction(dxName);
+			ec.releaseMatrixOutputForGPUInstruction(dhxName);
+			ec.releaseMatrixOutputForGPUInstruction(dcxName);
 		}
 	}
 	

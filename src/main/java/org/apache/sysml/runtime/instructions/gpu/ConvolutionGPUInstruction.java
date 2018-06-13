@@ -527,11 +527,6 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		// release inputs/outputs
 		ec.releaseMatrixInputForGPUInstruction(_input4.getName());
 		ec.releaseMatrixInputForGPUInstruction(_input5.getName());
-		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
-		ec.releaseMatrixOutputForGPUInstruction(_output2.getName());
-		ec.releaseMatrixOutputForGPUInstruction(_output3.getName());
-		ec.releaseMatrixOutputForGPUInstruction(_output4.getName());
-		ec.releaseMatrixOutputForGPUInstruction(_output5.getName());
 	}
 	
 	private void processLstmInstruction(ExecutionContext ec) throws DMLRuntimeException {
