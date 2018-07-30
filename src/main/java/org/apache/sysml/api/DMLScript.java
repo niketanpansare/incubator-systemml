@@ -122,6 +122,7 @@ public class DMLScript
 	public static String            FLOATING_POINT_PRECISION = "double";                         // data type to use internally
 	public static EvictionPolicy    GPU_EVICTION_POLICY = EvictionPolicy.ALIGN_MEMORY;           // currently employed GPU eviction policy
 	public static boolean           PRINT_GPU_MEMORY_INFO = false;                               // whether to print GPU memory-related information
+	public static boolean           EVICTION_SHADOW_WRITE = true;                               // whether to enable shadow writing of float array
 
 	/**
 	 * Global variable indicating the script type (DML or PYDML). Can be used

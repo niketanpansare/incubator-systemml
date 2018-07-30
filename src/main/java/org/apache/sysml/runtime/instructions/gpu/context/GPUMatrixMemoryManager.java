@@ -54,7 +54,10 @@ public class GPUMatrixMemoryManager {
 	long getWorstCaseContiguousMemorySize(GPUObject gpuObj) {
 		long ret = 0;
 		if(!gpuObj.isDensePointerNull()) {
-			ret = gpuManager.allPointers.get(gpuObj.getDensePointer()).getSizeInBytes();
+			if(gpuObj.evictedDenseArr == null)
+				ret = gpuManager.allPointers.get(gpuObj.getDensePointer()).getSizeInBytes();
+			else
+				ret = 0; // evicted hence no contiguous memory on GPU
 		}
 		else if(gpuObj.getJcudaSparseMatrixPtr() != null) {
 			CSRPointer sparsePtr = gpuObj.getJcudaSparseMatrixPtr();
@@ -81,6 +84,7 @@ public class GPUMatrixMemoryManager {
 			LOG.warn("Matrix allocated in both dense and sparse format");
 		}
 		if(!gObj.isDensePointerNull()) {
+			// && gObj.evictedDenseArr == null - Ignore evicted array
 			ret.add(gObj.getDensePointer());
 		}
 		if(gObj.getSparseMatrixCudaPointer() != null) {

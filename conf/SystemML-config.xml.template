@@ -104,4 +104,7 @@
    
    <!-- Advanced optimization: fraction of driver memory to use for caching (default: 0.15) -->
    <sysml.caching.bufferSize>0.15</sysml.caching.bufferSize>
+   
+   <!-- Advanced optimization: enable shadow unlocked write optimization for GPU. Only applicable for single precision -->
+   <sysml.gpu.eviction.shadowWrite>true</sysml.gpu.eviction.shadowWrite>
 </root>
