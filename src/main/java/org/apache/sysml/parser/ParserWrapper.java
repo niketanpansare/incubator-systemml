@@ -78,6 +78,19 @@ public abstract class ParserWrapper {
 		return blk;
 	}
 	
+	public static boolean canReadFromDistributedFS(String script, Log LOG) throws IOException {
+		if( script.startsWith("hdfs:") || script.startsWith("gpfs:")
+				|| IOUtilFunctions.isObjectStoreFileScheme(new Path(script)) ) {
+			Path scriptPath = new Path(script);
+			FileSystem fs = IOUtilFunctions.getFileSystem(scriptPath);
+			return fs.exists(scriptPath);
+		}
+		return false;
+	}
+	
+	public static boolean canReadFromLocalFS(String script, Log LOG) throws IOException {
+		return Files.exists(Paths.get(script)) || Files.exists(Paths.get("scripts/" + script));
+	}
 	
 	public static String readDMLScript( String script, Log LOG) 
 			throws IOException, LanguageException

@@ -2246,4 +2246,3 @@ extern "C" __global__ void prepare_lstm_dinput_d(double* smlInput, double* cudnn
 extern "C" __global__ void prepare_lstm_dinput_f(float* smlInput, float* cudnnInput, int N, int D, int TD, int size) {
   prepare_lstm_dinput(smlInput, cudnnInput, N, D, TD, size);
 }
-

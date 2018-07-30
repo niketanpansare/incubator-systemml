@@ -306,14 +306,16 @@ public class ExecutionContext {
 
 	/**
 	 * Allocates a dense matrix on the GPU (for output)
+	 * 
+	 * @param instName name of the instruction
 	 * @param varName	name of the output matrix (known by this {@link ExecutionContext})
 	 * @param numRows number of rows of matrix object
 	 * @param numCols number of columns of matrix object
 	 * @return a pair containing the wrapping {@link MatrixObject} and a boolean indicating whether a cuda memory allocation took place (as opposed to the space already being allocated)
 	 */
-	public Pair<MatrixObject, Boolean> getDenseMatrixOutputForGPUInstruction(String varName, long numRows, long numCols) {
+	public Pair<MatrixObject, Boolean> getDenseMatrixOutputForGPUInstruction(String instName, String varName, long numRows, long numCols) {
 		MatrixObject mo = allocateGPUMatrixObject(varName, numRows, numCols);
-		boolean allocated = mo.getGPUObject(getGPUContext(0)).acquireDeviceModifyDense();
+		boolean allocated = mo.getGPUObject(getGPUContext(0)).acquireDeviceModifyDense(instName);
 		mo.getMatrixCharacteristics().setNonZeros(-1);
 		return new Pair<>(mo, allocated);
 	}
@@ -322,16 +324,17 @@ public class ExecutionContext {
 	 * Allocates a sparse matrix in CSR format on the GPU.
 	 * Assumes that mat.getNumRows() returns a valid number
 	 * 
+	 * @param instName instruction name
 	 * @param varName variable name
 	 * @param numRows number of rows of matrix object
 	 * @param numCols number of columns of matrix object
 	 * @param nnz number of non zeroes
 	 * @return matrix object
 	 */
-	public Pair<MatrixObject, Boolean> getSparseMatrixOutputForGPUInstruction(String varName, long numRows, long numCols, long nnz) {
+	public Pair<MatrixObject, Boolean> getSparseMatrixOutputForGPUInstruction(String instName, String varName, long numRows, long numCols, long nnz) {
 		MatrixObject mo = allocateGPUMatrixObject(varName, numRows, numCols);
 		mo.getMatrixCharacteristics().setNonZeros(nnz);
-				boolean allocated = mo.getGPUObject(getGPUContext(0)).acquireDeviceModifySparse();
+				boolean allocated = mo.getGPUObject(getGPUContext(0)).acquireDeviceModifySparse(instName);
 		return new Pair<>(mo, allocated);
 	}
 

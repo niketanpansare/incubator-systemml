@@ -51,6 +51,7 @@ import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer
 import org.apache.sysml.hops.OptimizerUtils
+import org.apache.sysml.parser.ParserWrapper
 
 /***************************************************************************************
 DESIGN OF CAFFE2DML:
@@ -132,6 +133,8 @@ object Caffe2DML {
     val envFlagNesterovUDF = System.getenv("USE_NESTEROV_UDF")
     envFlagNesterovUDF != null && envFlagNesterovUDF.toBoolean
   }
+  
+  val READ_FROM_FS = ParserWrapper.canReadFromDistributedFS("nn/layers/batch_norm2d.dml", LOG) || ParserWrapper.canReadFromLocalFS("nn/layers/batch_norm2d.dml", LOG)
 
   def main(args: Array[String]): Unit = {
     // Arguments: [train_script | predict_script] $OUTPUT_DML_FILE $SOLVER_FILE $INPUT_CHANNELS $INPUT_HEIGHT $INPUT_WIDTH $NUM_ITER
@@ -201,21 +204,27 @@ class Caffe2DML(val sc: SparkContext,
   def this(sc: SparkContext, solverPath: String, numChannels: String, height: String, width: String) {
     this(sc, Utils.readCaffeSolver(solverPath), numChannels, height, width)
   }
+  var inputNumRows = -1
   val uid: String = "caffe_classifier_" + (new Random).nextLong
   override def copy(extra: org.apache.spark.ml.param.ParamMap): Estimator[Caffe2DMLModel] = {
     val that = new Caffe2DML(sc, solverParam, solver, net, lrPolicy, numChannels, height, width)
     copyValues(that, extra)
   }
   def fit(X_file: String, y_file: String): Caffe2DMLModel = {
+    // Don't force computation of inputNumRows
+    inputNumRows = -1
     mloutput = baseFit(X_file, y_file, sc)
     new Caffe2DMLModel(this)
   }
   // Note: will update the y_mb as this will be called by Python mllearn
   def fit(X_mb: MatrixBlock, y_mb: MatrixBlock): Caffe2DMLModel = {
+    inputNumRows = X_mb.getNumRows
     mloutput = baseFit(X_mb, y_mb, sc)
     new Caffe2DMLModel(this)
   }
   def fit(df: ScriptsUtils.SparkDataType): Caffe2DMLModel = {
+    // Don't force computation of inputNumRows
+    inputNumRows = -1
     mloutput = baseFit(df, sc)
     new Caffe2DMLModel(this)
   }
@@ -250,18 +259,21 @@ class Caffe2DML(val sc: SparkContext,
   def getTrainAlgo(): String = if (inputs.containsKey("$train_algo")) inputs.get("$train_algo") else Caffe2DML.MINIBATCH_ALGORITHM
   def getTestAlgo(): String  = if (inputs.containsKey("$test_algo")) inputs.get("$test_algo") else Caffe2DML.MINIBATCH_ALGORITHM
 
-  // Prints the summary of network
-  def summary(sparkSession: org.apache.spark.sql.SparkSession): Unit = {
-    val layers = net.getLayers .map(l => (l, net.getCaffeLayer(l)))
-    val numDataLayers = layers.filter(l => l._2.isInstanceOf[Data]).length
-    val batchSizes = layers.filter(l => l._2.isInstanceOf[Data]).map(l => l._2.param.getDataParam.getBatchSize).distinct
+  def getBatchSize():Int = {
+    val batchSizes = net.getLayers.map(l => net.getCaffeLayer(l)).filter(l => l.isInstanceOf[Data]).map(l => l.param.getDataParam.getBatchSize).distinct
     if(batchSizes.size > 1) {
       Caffe2DML.LOG.warn("Multiple data layers with different batch sizes:" + batchSizes.mkString(",") + ". Using the batch size:" + batchSizes.get(0))
     }
     else if(batchSizes.size == 0) {
       Caffe2DML.LOG.warn("No data layers found and hence ignoring the memory computation.")
     }
-    val batchSize = if(batchSizes.size > 0) batchSizes.get(0) else -1 
+    return if(batchSizes.size > 0) batchSizes.get(0) else -1
+  }
+  // Prints the summary of network
+  def summary(sparkSession: org.apache.spark.sql.SparkSession): Unit = {
+    val layers = net.getLayers .map(l => (l, net.getCaffeLayer(l)))
+    val numDataLayers = layers.filter(l => l._2.isInstanceOf[Data]).length
+    val batchSize = getBatchSize() 
     val header = Seq("Name", "Type", "Output", "Weight", "Bias", "Top", "Bottom", "Memory* (train/test)")
     val entries = layers
       .map(l => {
@@ -342,7 +354,18 @@ class Caffe2DML(val sc: SparkContext,
         assign(tabDMLScript, "e", "0")
         assign(tabDMLScript, "max_iter", ifdef("$max_iter", solverParam.getMaxIter.toString))
         forBlock("iter", "1", "max_iter") {
-          getTrainingBatch(tabDMLScript)
+          val batchSizeValue = getBatchSize()
+          if(inputNumRows > 0 && batchSizeValue > 0 && inputNumRows % batchSizeValue == 0 && !shouldValidate) {
+            // Batch size multiple of input
+            val startIndex = "((iter-1)*" + batchSizeValue + "+1)"
+            val endIndex = "(iter*" + batchSizeValue + ")"
+            assign(tabDMLScript, "Xb", Caffe2DML.X + "[" + startIndex + ":" + endIndex + ",]")
+            assign(tabDMLScript, "yb", Caffe2DML.y + "[" + startIndex + ":" + endIndex + ",]")
+          }
+          else {
+            // General case:
+            getTrainingBatch(tabDMLScript)
+          }
           // -------------------------------------------------------
           // Perform forward, backward and update on minibatch
           forward; backward; update
