@@ -110,6 +110,12 @@ public class GPUObject {
 	 * @return a pointer to the dense matrix
 	 */
 	public Pointer getDensePointer() {
+		if(jcudaDenseMatrixPtr == null && evictedDenseArr != null && getJcudaSparseMatrixPtr() == null) {
+			long numBytes = evictedDenseArr.length*LibMatrixCUDA.sizeOfDataType;
+			jcudaDenseMatrixPtr = gpuContext.allocate(null, numBytes);
+			cudaMemcpy(jcudaDenseMatrixPtr, Pointer.to(evictedDenseArr), numBytes, jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice);
+			evictedDenseArr = null;
+		}
 		return jcudaDenseMatrixPtr;
 	}
 	
@@ -119,12 +125,6 @@ public class GPUObject {
 	 * @return if the state of dense pointer is null
 	 */
 	public boolean isDensePointerNull() {
-		if(jcudaDenseMatrixPtr == null && getJcudaSparseMatrixPtr() == null && evictedDenseArr != null) {
-			long numBytes = evictedDenseArr.length*LibMatrixCUDA.sizeOfDataType;
-			jcudaDenseMatrixPtr = gpuContext.allocate(null, numBytes);
-			cudaMemcpy(jcudaDenseMatrixPtr, Pointer.to(evictedDenseArr), numBytes, jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice);
-			evictedDenseArr = null;
-		}
 		return jcudaDenseMatrixPtr == null;
 	}
 	
@@ -463,7 +463,7 @@ public class GPUObject {
 	}
 
 	public boolean isAllocated() {
-		boolean eitherAllocated = (!(isDensePointerNull() && evictedDenseArr == null) || getJcudaSparseMatrixPtr() != null);
+		boolean eitherAllocated = evictedDenseArr != null || !isDensePointerNull() || getJcudaSparseMatrixPtr() != null;
 		return eitherAllocated;
 	}
 
