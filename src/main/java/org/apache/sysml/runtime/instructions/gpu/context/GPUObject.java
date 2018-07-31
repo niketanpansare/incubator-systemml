@@ -949,6 +949,7 @@ public class GPUObject {
 			else {
 				// If already copied to shadow buffer as part of previous eviction and this is not an eviction (i.e. bufferpool call for subsequent CP/Spark instruction),
 				// then copy from shadow buffer to MatrixObject.
+				long start = DMLScript.STATISTICS ? System.nanoTime() : 0;
 				MatrixBlock tmp = new MatrixBlock(toIntExact(mat.getNumRows()), toIntExact(mat.getNumColumns()), false);
 				tmp.allocateDenseBlock();
 				double [] tmpArr = tmp.getDenseBlockValues();
@@ -959,6 +960,14 @@ public class GPUObject {
 				mat.release();
 				clearShadowPointer();
 				dirty = false;
+				if (DMLScript.STATISTICS) {
+					long totalTime = System.nanoTime() - start;
+					GPUStatistics.cudaFromShadowToHostTime.add(totalTime);
+					GPUStatistics.cudaFromShadowToHostCount.increment();
+					// Part of dev -> host, not eviction
+					GPUStatistics.cudaFromDevTime.add(totalTime);
+					GPUStatistics.cudaFromDevCount.increment();
+				}
 				return;
 			}
 		}
@@ -972,9 +981,11 @@ public class GPUObject {
 			getGPUContext().cudaFreeHelper(instName, jcudaDenseMatrixPtr, eagerDelete);
 			jcudaDenseMatrixPtr = null;
 			if (DMLScript.STATISTICS) {
-				long memCopyTime = System.nanoTime() - start;
-				GPUStatistics.cudaFromDevTime.add(memCopyTime);
-				GPUStatistics.cudaFromDevCount.add(1);
+				// Eviction time measure in malloc
+				long totalTime = System.nanoTime() - start;
+				GPUStatistics.cudaFromDevToShadowTime.add(totalTime);
+				GPUStatistics.cudaFromDevToShadowCount.increment();
+				
 			}
 			return;
 		}
@@ -1021,10 +1032,11 @@ public class GPUObject {
 		}
 		mat.acquireModify(tmp);
 		mat.release();
-		if (DMLScript.STATISTICS)
-			GPUStatistics.cudaFromDevTime.add(System.nanoTime() - start);
-		if (DMLScript.STATISTICS) {
+		if (DMLScript.STATISTICS && !isEviction) {
+			// Eviction time measure in malloc
+			long totalTime = System.nanoTime() - start;
 			int count = !isDensePointerNull() ? 1 : 3;
+			GPUStatistics.cudaFromDevTime.add(totalTime);
 			GPUStatistics.cudaFromDevCount.add(count);
 		}
 		dirty = false;
