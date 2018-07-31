@@ -101,7 +101,7 @@ public class GPUObject {
 	protected MatrixObject mat = null;
 	
 	float[] shadowPointer = null;
-	public boolean isEligibleForShadowBuffering() {
+	public boolean canFitIntoShadowBuffer() {
 		int numBytes = toIntExact(mat.getNumRows()*mat.getNumColumns())*Sizeof.FLOAT;
 		return DMLScript.EVICTION_SHADOW_BUFFER_CURR_BYTES + numBytes >= DMLScript.EVICTION_SHADOW_BUFFER_MAX_BYTES;
 	}
@@ -942,7 +942,13 @@ public class GPUObject {
 			LOG.trace("GPU : copyFromDeviceToHost, on " + this + ", GPUContext=" + getGPUContext());
 		}
 		if(shadowPointer != null) {
-			if(!isEviction) {
+			if(isEviction) {
+				// If already copied to shadow buffer as part of previous eviction, do nothing.
+				return;
+			}
+			else {
+				// If already copied to shadow buffer as part of previous eviction and this is not an eviction (i.e. bufferpool call for subsequent CP/Spark instruction),
+				// then copy from shadow buffer to MatrixObject.
 				MatrixBlock tmp = new MatrixBlock(toIntExact(mat.getNumRows()), toIntExact(mat.getNumColumns()), false);
 				tmp.allocateDenseBlock();
 				double [] tmpArr = tmp.getDenseBlockValues();
@@ -953,10 +959,11 @@ public class GPUObject {
 				mat.release();
 				clearShadowPointer();
 				dirty = false;
+				return;
 			}
-			return;
 		}
-		else if(LibMatrixCUDA.sizeOfDataType == jcuda.Sizeof.FLOAT && isEviction && eagerDelete && !isDensePointerNull() && isEligibleForShadowBuffering()) {
+		else if(LibMatrixCUDA.sizeOfDataType == jcuda.Sizeof.FLOAT && isEviction && eagerDelete && !isDensePointerNull() && canFitIntoShadowBuffer()) {
+			// Perform shadow buffering if (1) single precision, (2) during eviction, (3) for dense matrices, and (4) if the given matrix can fit into the shadow buffer. 
 			long start = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			int numElems = toIntExact(mat.getNumRows()*mat.getNumColumns());
 			shadowPointer = new float[numElems];
