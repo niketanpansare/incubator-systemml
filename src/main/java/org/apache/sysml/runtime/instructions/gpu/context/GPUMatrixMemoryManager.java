@@ -18,20 +18,15 @@
  */
 package org.apache.sysml.runtime.instructions.gpu.context;
 
-import java.util.Comparator;
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.atomic.LongAdder;
 import java.util.stream.Collectors;
 
 import jcuda.Pointer;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.utils.GPUStatistics;
 
 public class GPUMatrixMemoryManager {
 	protected static final Log LOG = LogFactory.getLog(GPUMatrixMemoryManager.class.getName());
@@ -114,16 +109,6 @@ public class GPUMatrixMemoryManager {
 	HashSet<GPUObject> gpuObjects = new HashSet<>();
 	
 	/**
-	 * Get GPUObjects from the first memory sections "Matrix Memory"
-	 * @param locked return locked GPU objects if true
-	 * @param dirty return dirty GPU objects if true
-	 * @return set of GPU Objects
-	 */
-	Set<GPUObject> getGPUObjects(boolean locked, boolean dirty) {
-		return gpuObjects.stream().filter(gObj -> gObj.isLocked() == locked && gObj.isDirty() == dirty).collect(Collectors.toSet());
-	}
-	
-	/**
 	 * Return all pointers in the first section
 	 * @return all pointers in this section
 	 */
@@ -139,51 +124,6 @@ public class GPUMatrixMemoryManager {
 	 */
 	Set<Pointer> getPointers(boolean locked, boolean dirty) {
 		return gpuObjects.stream().filter(gObj -> gObj.isLocked() == locked && gObj.isDirty() == dirty).flatMap(gObj -> getPointers(gObj).stream()).collect(Collectors.toSet());
-	}
-	
-	/**
-	 * Clear the memory of the gpu object that matches the provided parameters
-	 * 
-	 * @param locked is locked
-	 * @param dirty is dirty
-	 * @param minSize of atleast given size
-	 * @param comparator sorting comparator in case there are more than one gpu object that matches above parameters
-	 * @param opcode instruction code
-	 * @param timer timer
-	 * @param counter counts the number invocation
-	 * @param debugPrintMessage message
-	 * @return true if a gpu object satisfies the above condition else false
-	 * @throws DMLRuntimeException if error occurs
-	 */
-	boolean clear(boolean locked, boolean dirty, long minSize, Comparator<GPUObject> comparator, String opcode, LongAdder timer, LongAdder counter, String debugPrintMessage) throws DMLRuntimeException {
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-		Optional<GPUObject> toClear = getGPUObjects(locked, dirty).stream()
-				.filter(gObj -> gObj.shadowPointer == null)
-				.filter(gObj -> getWorstCaseContiguousMemorySize(gObj) >= minSize)
-				.max(comparator);
-		if(toClear.isPresent()) {
-			GPUObject gObj = toClear.get();
-			if(gObj.dirty) 
-				gObj.copyFromDeviceToHost(opcode, true, true); // Perform eviction if dirty
-			else
-				gObj.clearData(opcode, true);
-			gpuObjects.remove(gObj);
-			if(DMLScript.STATISTICS) {
-				long totalTime = System.nanoTime() - t0; 
-				timer.add(totalTime);
-				counter.increment();
-				GPUStatistics.cudaEvictTime.add(totalTime);
-				GPUStatistics.cudaEvictCount.increment();
-			}
-			if(debugPrintMessage != null && (DMLScript.PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled())) 
-				LOG.info("Success: GPU Memory info after clear " + debugPrintMessage + ":" + toString());
-			return true;
-		}
-		else {
-			if(debugPrintMessage != null && (DMLScript.PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled()))
-				LOG.info("Failed: GPU Memory info after clear " + debugPrintMessage + ":" + toString());
-			return false;
-		}
 	}
 	
 	/**

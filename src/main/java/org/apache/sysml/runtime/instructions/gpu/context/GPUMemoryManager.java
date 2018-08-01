@@ -274,81 +274,36 @@ public class GPUMemoryManager {
 			}
 		}
 		
-		
-		// Step 5: Clear unlocked non-dirty matrix greater than or equal to size before eviction
-		if(A == null) {	
-			boolean success = matrixMemoryManager.clear(false, false, size, SIMPLE_COMPARATOR_SORT_BY_SIZE, opcode, 
-					GPUStatistics.cudaEvictClearNonDirtyTime, GPUStatistics.cudaEvictClearNonDirtyCount, "size-based clear");
-			if(success) {
-				A = cudaMallocNoWarn(tmpA, size, "alloc after clearing");
-				if(A == null) 
-					LOG.warn("cudaMalloc failed after clearing unlocked non-dirty matrix.");
-			}
-		}
-		
-		// Step 6: Try evicting a matrix based on the given policy
+		// Step 5: Try eviction/clearing one-by-one based on the given policy
 		if(A == null) {
-			boolean success = matrixMemoryManager.clear(false, true, size, new EvictionPolicyBasedComparator(size), opcode,
-					GPUStatistics.cudaEvictUsingPolicyTime, GPUStatistics.cudaEvictUsingPolicyCount, "using eviction policy");
-			if(success) {
-				A = cudaMallocNoWarn(tmpA, size, "alloc after eviction");
-				if(A == null) 
-					LOG.warn("cudaMalloc failed after successful eviction.");
-			}
-		}
-		
-		// Step 7 and 8 are required due to potential holes
-		long t0 =  0;
-		
-		// Step 7: Clear all unlocked non-dirty matrices and try malloc 
-		if(A == null) {
-			t0 =  DMLScript.STATISTICS ? System.nanoTime() : 0;
-			List<GPUObject> unlockedGPUObjects = matrixMemoryManager.gpuObjects.stream()
-					.filter(gpuObj -> !gpuObj.isLocked() && !gpuObj.isDirty()).collect(Collectors.toList());
-			matrixMemoryManager.gpuObjects.removeAll(unlockedGPUObjects);
-			for(GPUObject toBeRemoved : unlockedGPUObjects) {
-				toBeRemoved.clearData(opcode, true);
-			}
-			// This can fail in case of fragmented memory, so don't issue any warning
-			A = cudaMallocNoWarn(tmpA, size, "after clearing all unlocked non-dirty matrices");
-		}
-		
-		
-		// Step 8: Try eviction one-by-one based on the given policy
-		if(A == null) {
+			long t0 =  DMLScript.STATISTICS ? System.nanoTime() : 0;
 			// ---------------------------------------------------------------
 			// Evict unlocked GPU objects one-by-one and try malloc
 			List<GPUObject> unlockedGPUObjects = matrixMemoryManager.gpuObjects.stream()
-						.filter(gpuObj -> !gpuObj.isLocked() && gpuObj.isDirty()).collect(Collectors.toList());
+						.filter(gpuObj -> !gpuObj.isLocked()).collect(Collectors.toList());
 			Collections.sort(unlockedGPUObjects, new EvictionPolicyBasedComparator(size));
 			while(A == null && unlockedGPUObjects.size() > 0) {
-				if(DMLScript.GPU_EVICTION_POLICY == DMLScript.EvictionPolicy.ALIGN_MEMORY) {
-					// TODO: Optimize later using sliding window
-					// Evict as many sequential dense objects from back of the queue as possible
-					long neededSize = size;
-					while(neededSize >= 0 && unlockedGPUObjects.size() > 0) {
-						GPUObject gpuObj = unlockedGPUObjects.remove(unlockedGPUObjects.size()-1);
-						neededSize -= matrixMemoryManager.getWorstCaseContiguousMemorySize(gpuObj);
-						gpuObj.copyFromDeviceToHost(opcode, true, true);
-					}
+				GPUObject gpuObj = unlockedGPUObjects.remove(unlockedGPUObjects.size()-1);
+				boolean eagerDelete = true;
+				if(gpuObj.isDirty()) {
+					// Eviction
+					gpuObj.copyFromDeviceToHost(opcode, true, eagerDelete);
 				}
 				else {
-					GPUObject gpuObj = unlockedGPUObjects.remove(unlockedGPUObjects.size()-1);
-					gpuObj.copyFromDeviceToHost(opcode, true, true);
+					// Clear without copying
+					gpuObj.clearData(opcode, eagerDelete);
 				}
-				A = cudaMallocNoWarn(tmpA, size, null); // Try malloc rather than check available memory to avoid fragmentation related issues
+				A = cudaMallocNoWarn(tmpA, size, null);
+				GPUStatistics.cudaEvictCount.increment();
 			}
 			if(DMLScript.STATISTICS) {
 				long totalTime = System.nanoTime() - t0;
 				GPUStatistics.cudaEvictTime.add(totalTime);
-				GPUStatistics.cudaEvictCount.increment();
-				GPUStatistics.cudaEvictFragTime.add(totalTime);
-				GPUStatistics.cudaEvictFragCount.increment();
 			}
 		}
 		
 		
-		// Step 7: Handle defragmentation
+		// Step 6: Handle defragmentation
 		if(A == null) {
 			LOG.warn("Potential fragmentation of the GPU memory. Forcibly evicting all ...");
 			LOG.info("Before clearAllUnlocked, GPU Memory info:" + toString());
@@ -362,7 +317,7 @@ public class GPUMemoryManager {
 					+ toString());
 		}
 		
-		t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		cudaMemset(A, 0, size);
 		addMiscTime(opcode, GPUStatistics.cudaMemSet0Time, GPUStatistics.cudaMemSet0Count, GPUInstruction.MISC_TIMER_SET_ZERO, t0);
 		return A;
@@ -620,8 +575,6 @@ public class GPUMemoryManager {
 		return (long) (free[0] * GPU_MEMORY_UTILIZATION_FACTOR);
 	}
 	
-	private static Comparator<GPUObject> SIMPLE_COMPARATOR_SORT_BY_SIZE = (o1, o2) -> o1.getSizeOnDevice() < o2.getSizeOnDevice() ? -1 : 1;
-	
 	private static class CustomPointer extends Pointer {
 		public CustomPointer(Pointer p) {
 			super(p);
@@ -658,11 +611,11 @@ public class GPUMemoryManager {
 			if (p1.isLocked() && p2.isLocked()) {
 				// Both are locked, so don't sort
 				return 0;
-			} else if (p1.isLocked()) {
+			} else if (p1.isLocked() || p1.getSizeOnDevice() < neededSize) {
 				// Put the unlocked one to RHS
 				// a value less than 0 if x < y; and a value greater than 0 if x > y
 				return -1;
-			} else if (p2.isLocked()) {
+			} else if (p2.isLocked() || p2.getSizeOnDevice() < neededSize) {
 				// Put the unlocked one to RHS
 				// a value less than 0 if x < y; and a value greater than 0 if x > y
 				return 1;
