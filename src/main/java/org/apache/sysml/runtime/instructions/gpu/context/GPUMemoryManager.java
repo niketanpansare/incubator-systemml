@@ -290,10 +290,11 @@ public class GPUMemoryManager {
 		if(A == null) {
 			boolean success = matrixMemoryManager.clear(false, true, size, new EvictionPolicyBasedComparator(size), opcode,
 					GPUStatistics.cudaEvictUsingPolicyTime, GPUStatistics.cudaEvictUsingPolicyCount, "using eviction policy");
-			if(success)
+			if(success) {
 				A = cudaMallocNoWarn(tmpA, size, "alloc after eviction");
-			if(A == null) 
-				LOG.warn("cudaMalloc failed after successful eviction.");
+				if(A == null) 
+					LOG.warn("cudaMalloc failed after successful eviction.");
+			}
 		}
 		
 		// Step 7 and 8 are required due to potential holes

@@ -175,19 +175,15 @@ public class GPUMatrixMemoryManager {
 				GPUStatistics.cudaEvictTime.add(totalTime);
 				GPUStatistics.cudaEvictCount.increment();
 			}
-		}
-		
-		boolean ret = toClear.isPresent();
-		if(debugPrintMessage != null && (DMLScript.PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled())) {
-			if(ret) {
+			if(debugPrintMessage != null && (DMLScript.PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled())) 
 				LOG.info("Success: GPU Memory info after clear " + debugPrintMessage + ":" + toString());
-			}
-			else {
-				LOG.info("Failed: GPU Memory info after clear " + debugPrintMessage + ":" + toString());
-			}
-			
+			return true;
 		}
-		return ret;
+		else {
+			if(debugPrintMessage != null && (DMLScript.PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled()))
+				LOG.info("Failed: GPU Memory info after clear " + debugPrintMessage + ":" + toString());
+			return false;
+		}
 	}
 	
 	/**
