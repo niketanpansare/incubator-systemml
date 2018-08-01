@@ -22,13 +22,16 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.stream.Collectors;
 
 import jcuda.Pointer;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.utils.GPUStatistics;
 
 public class GPUMatrixMemoryManager {
 	protected static final Log LOG = LogFactory.getLog(GPUMatrixMemoryManager.class.getName());
@@ -146,10 +149,14 @@ public class GPUMatrixMemoryManager {
 	 * @param minSize of atleast given size
 	 * @param comparator sorting comparator in case there are more than one gpu object that matches above parameters
 	 * @param opcode instruction code
+	 * @param timer timer
+	 * @param counter counts the number invocation
+	 * @param debugPrintMessage message
 	 * @return true if a gpu object satisfies the above condition else false
 	 * @throws DMLRuntimeException if error occurs
 	 */
-	boolean clear(boolean locked, boolean dirty, long minSize, Comparator<GPUObject> comparator, String opcode) throws DMLRuntimeException {
+	boolean clear(boolean locked, boolean dirty, long minSize, Comparator<GPUObject> comparator, String opcode, LongAdder timer, LongAdder counter, String debugPrintMessage) throws DMLRuntimeException {
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		Optional<GPUObject> toClear = getGPUObjects(locked, dirty).stream()
 				.filter(gObj -> getWorstCaseContiguousMemorySize(gObj) >= minSize)
 					.max(comparator);
@@ -160,8 +167,26 @@ public class GPUMatrixMemoryManager {
 			else
 				gObj.clearData(opcode, true);
 			gpuObjects.remove(gObj);
+			if(DMLScript.STATISTICS) {
+				long totalTime = System.nanoTime() - t0; 
+				timer.add(totalTime);
+				counter.increment();
+				GPUStatistics.cudaEvictTime.add(totalTime);
+				GPUStatistics.cudaEvictCount.increment();
+			}
 		}
-		return toClear.isPresent();
+		
+		boolean ret = toClear.isPresent();
+		if(debugPrintMessage != null && (DMLScript.PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled())) {
+			if(ret) {
+				LOG.info("Success: GPU Memory info after clear " + debugPrintMessage + ":" + toString());
+			}
+			else {
+				LOG.info("Failed: GPU Memory info after clear " + debugPrintMessage + ":" + toString());
+			}
+			
+		}
+		return ret;
 	}
 	
 	/**

@@ -274,15 +274,7 @@ public class GPUObject {
 		//cudaDeviceSynchronize();
 		int[] nnzC = { -1 };
 
-		long t2 = 0;
-		if (DMLScript.STATISTICS)
-			t2 = System.nanoTime();
 		cudaMemcpy(Pointer.to(nnzC), nnzTotalDevHostPtr, getIntSizeOf(1), cudaMemcpyDeviceToHost);
-		if (DMLScript.STATISTICS)
-			GPUStatistics.cudaFromDevTime.add(System.nanoTime() - t2);
-		if (DMLScript.STATISTICS)
-			GPUStatistics.cudaFromDevCount.add(1);
-
 		if (nnzC[0] == -1) {
 			throw new DMLRuntimeException(
 					"cusparseDnnz did not calculate the correct number of nnz from the sparse-matrix vector mulitply on the GPU");
