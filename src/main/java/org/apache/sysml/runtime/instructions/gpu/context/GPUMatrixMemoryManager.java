@@ -158,8 +158,9 @@ public class GPUMatrixMemoryManager {
 	boolean clear(boolean locked, boolean dirty, long minSize, Comparator<GPUObject> comparator, String opcode, LongAdder timer, LongAdder counter, String debugPrintMessage) throws DMLRuntimeException {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		Optional<GPUObject> toClear = getGPUObjects(locked, dirty).stream()
+				.filter(gObj -> gObj.shadowPointer == null)
 				.filter(gObj -> getWorstCaseContiguousMemorySize(gObj) >= minSize)
-					.max(comparator);
+				.max(comparator);
 		if(toClear.isPresent()) {
 			GPUObject gObj = toClear.get();
 			if(gObj.dirty) 
