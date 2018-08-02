@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.stream.Collectors;
@@ -274,7 +275,28 @@ public class GPUMemoryManager {
 			}
 		}
 		
-		// Step 5: Try eviction/clearing one-by-one based on the given policy
+		// Step 5: Try eviction/clearing exactly one with size restriction
+		if(A == null) {
+			long t0 =  DMLScript.STATISTICS ? System.nanoTime() : 0;
+			Optional<GPUObject> sizeBasedUnlockedGPUObjects = matrixMemoryManager.gpuObjects.stream()
+						.filter(gpuObj -> !gpuObj.isLocked() && matrixMemoryManager.getWorstCaseContiguousMemorySize(gpuObj) >= size)
+						.min((o1, o2) -> worstCaseContiguousMemorySizeCompare(o1, o2));
+			if(sizeBasedUnlockedGPUObjects.isPresent()) {
+				evictOrClear(sizeBasedUnlockedGPUObjects.get(), opcode);
+				A = cudaMallocNoWarn(tmpA, size, null);
+				if(A == null)
+					LOG.warn("cudaMalloc failed after clearing/evicting based on size.");
+				if(DMLScript.STATISTICS) {
+					long totalTime = System.nanoTime() - t0;
+					GPUStatistics.cudaEvictTime.add(totalTime);
+					GPUStatistics.cudaEvictSizeTime.add(totalTime);
+					GPUStatistics.cudaEvictCount.increment();
+					GPUStatistics.cudaEvictSizeCount.increment();
+				}
+			}
+		}
+		
+		// Step 6: Try eviction/clearing one-by-one based on the given policy without size restriction
 		if(A == null) {
 			long t0 =  DMLScript.STATISTICS ? System.nanoTime() : 0;
 			// ---------------------------------------------------------------
@@ -283,16 +305,7 @@ public class GPUMemoryManager {
 						.filter(gpuObj -> !gpuObj.isLocked()).collect(Collectors.toList());
 			Collections.sort(unlockedGPUObjects, new EvictionPolicyBasedComparator(size));
 			while(A == null && unlockedGPUObjects.size() > 0) {
-				GPUObject gpuObj = unlockedGPUObjects.remove(unlockedGPUObjects.size()-1);
-				boolean eagerDelete = true;
-				if(gpuObj.isDirty()) {
-					// Eviction
-					gpuObj.copyFromDeviceToHost(opcode, true, eagerDelete);
-				}
-				else {
-					// Clear without copying
-					gpuObj.clearData(opcode, eagerDelete);
-				}
+				evictOrClear(unlockedGPUObjects.remove(unlockedGPUObjects.size()-1), opcode);
 				A = cudaMallocNoWarn(tmpA, size, null);
 				GPUStatistics.cudaEvictCount.increment();
 			}
@@ -303,7 +316,7 @@ public class GPUMemoryManager {
 		}
 		
 		
-		// Step 6: Handle defragmentation
+		// Step 7: Handle defragmentation
 		if(A == null) {
 			LOG.warn("Potential fragmentation of the GPU memory. Forcibly evicting all ...");
 			LOG.info("Before clearAllUnlocked, GPU Memory info:" + toString());
@@ -321,6 +334,23 @@ public class GPUMemoryManager {
 		cudaMemset(A, 0, size);
 		addMiscTime(opcode, GPUStatistics.cudaMemSet0Time, GPUStatistics.cudaMemSet0Count, GPUInstruction.MISC_TIMER_SET_ZERO, t0);
 		return A;
+	}
+	
+	private int worstCaseContiguousMemorySizeCompare(GPUObject o1, GPUObject o2) {
+		long ret = matrixMemoryManager.getWorstCaseContiguousMemorySize(o1) - matrixMemoryManager.getWorstCaseContiguousMemorySize(o2);
+		return ret < 0 ? -1 : (ret == 0 ? 0 : 1);
+	}
+	
+	private void evictOrClear(GPUObject gpuObj, String opcode) {
+		boolean eagerDelete = true;
+		if(gpuObj.isDirty()) {
+			// Eviction
+			gpuObj.copyFromDeviceToHost(opcode, true, eagerDelete);
+		}
+		else {
+			// Clear without copying
+			gpuObj.clearData(opcode, eagerDelete);
+		}
 	}
 	
 	// --------------- Developer Utilities to debug potential memory leaks ------------------------
@@ -611,11 +641,11 @@ public class GPUMemoryManager {
 			if (p1.isLocked() && p2.isLocked()) {
 				// Both are locked, so don't sort
 				return 0;
-			} else if (p1.isLocked() || p1.getSizeOnDevice() < neededSize) {
+			} else if (p1.isLocked()) {
 				// Put the unlocked one to RHS
 				// a value less than 0 if x < y; and a value greater than 0 if x > y
 				return -1;
-			} else if (p2.isLocked() || p2.getSizeOnDevice() < neededSize) {
+			} else if (p2.isLocked()) {
 				// Put the unlocked one to RHS
 				// a value less than 0 if x < y; and a value greater than 0 if x > y
 				return 1;
