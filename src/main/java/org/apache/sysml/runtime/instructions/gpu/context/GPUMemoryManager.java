@@ -307,7 +307,8 @@ public class GPUMemoryManager {
 			while(A == null && unlockedGPUObjects.size() > 0) {
 				evictOrClear(unlockedGPUObjects.remove(unlockedGPUObjects.size()-1), opcode);
 				A = cudaMallocNoWarn(tmpA, size, null);
-				GPUStatistics.cudaEvictCount.increment();
+				if(DMLScript.STATISTICS) 
+					GPUStatistics.cudaEvictCount.increment();
 			}
 			if(DMLScript.STATISTICS) {
 				long totalTime = System.nanoTime() - t0;
