@@ -101,9 +101,15 @@ public class GPUObject {
 	protected MatrixObject mat = null;
 	
 	float[] shadowPointer = null;
+	private static boolean _warnedAboutShadowBuffer = false;
 	public boolean canFitIntoShadowBuffer() {
 		int numBytes = toIntExact(mat.getNumRows()*mat.getNumColumns())*Sizeof.FLOAT;
-		return DMLScript.EVICTION_SHADOW_BUFFER_CURR_BYTES + numBytes <= DMLScript.EVICTION_SHADOW_BUFFER_MAX_BYTES;
+		boolean ret = DMLScript.EVICTION_SHADOW_BUFFER_CURR_BYTES + numBytes <= DMLScript.EVICTION_SHADOW_BUFFER_MAX_BYTES;
+		if(!ret && !_warnedAboutShadowBuffer) {
+			LOG.warn("Shadow buffer is full, so using CP bufferpool instead. Consider increasing sysml.gpu.eviction.shadow.bufferSize.");
+			_warnedAboutShadowBuffer = true;
+		}
+		return ret;
 	}
 	
 	// ----------------------------------------------------------------------
