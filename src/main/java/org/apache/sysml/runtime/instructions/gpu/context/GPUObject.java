@@ -103,7 +103,7 @@ public class GPUObject {
 	float[] shadowPointer = null;
 	public boolean canFitIntoShadowBuffer() {
 		int numBytes = toIntExact(mat.getNumRows()*mat.getNumColumns())*Sizeof.FLOAT;
-		return DMLScript.EVICTION_SHADOW_BUFFER_CURR_BYTES + numBytes >= DMLScript.EVICTION_SHADOW_BUFFER_MAX_BYTES;
+		return DMLScript.EVICTION_SHADOW_BUFFER_CURR_BYTES + numBytes <= DMLScript.EVICTION_SHADOW_BUFFER_MAX_BYTES;
 	}
 	
 	// ----------------------------------------------------------------------
