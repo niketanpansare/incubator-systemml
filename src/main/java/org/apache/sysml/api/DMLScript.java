@@ -125,7 +125,8 @@ public class DMLScript
 	public static long            	EVICTION_SHADOW_BUFFER_MAX_BYTES = 0;                         // maximum number of bytes to use for shadow buffer
 	public static long            	EVICTION_SHADOW_BUFFER_CURR_BYTES = 0;                        // number of bytes to use for shadow buffer
 	public static double 			GPU_MEMORY_UTILIZATION_FACTOR = 0.9; 						  // fraction of available GPU memory to use
-
+	public static String 			GPU_MEMORY_ALLOCATOR = "cuda"; 						  		  // GPU memory allocator to use
+	
 	/**
 	 * Global variable indicating the script type (DML or PYDML). Can be used
 	 * for DML/PYDML-specific tasks, such as outputting booleans in the correct

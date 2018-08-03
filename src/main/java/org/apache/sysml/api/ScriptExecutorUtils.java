@@ -90,7 +90,8 @@ public class ScriptExecutorUtils {
 			DMLScript.EAGER_CUDA_FREE = dmlconf.getBooleanValue(DMLConfig.EAGER_CUDA_FREE);
 			DMLScript.PRINT_GPU_MEMORY_INFO = dmlconf.getBooleanValue(DMLConfig.PRINT_GPU_MEMORY_INFO);
 			DMLScript.GPU_MEMORY_UTILIZATION_FACTOR = dmlconf.getDoubleValue(DMLConfig.GPU_MEMORY_UTILIZATION_FACTOR);
-			if(DMLScript.GPU_MEMORY_UTILIZATION_FACTOR < 0 || DMLScript.GPU_MEMORY_UTILIZATION_FACTOR > 1) {
+			DMLScript.GPU_MEMORY_ALLOCATOR = dmlconf.getTextValue(DMLConfig.GPU_MEMORY_ALLOCATOR);
+			if(DMLScript.GPU_MEMORY_UTILIZATION_FACTOR < 0) {
 				throw new RuntimeException("Incorrect value (" + DMLScript.GPU_MEMORY_UTILIZATION_FACTOR + ") for the configuration:" + DMLConfig.GPU_MEMORY_UTILIZATION_FACTOR);
 			}
 			

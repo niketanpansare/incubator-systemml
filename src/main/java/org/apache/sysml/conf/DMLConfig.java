@@ -92,6 +92,7 @@ public class DMLConfig
 	// Fraction of available memory to use. The available memory is computer when the GPUContext is created
 	// to handle the tradeoff on calling cudaMemGetInfo too often.
 	public static final String GPU_MEMORY_UTILIZATION_FACTOR = "sysml.gpu.memory.util.factor";
+	public static final String GPU_MEMORY_ALLOCATOR = "sysml.gpu.memory.allocator"; // String to specify the memory allocator to use. Supported values are: cuda, unified_memory
 	public static final String FLOATING_POINT_PRECISION = "sysml.floating.point.precision"; // String to specify the datatype to use internally: supported values are double, single
 	public static final String PRINT_GPU_MEMORY_INFO = "sysml.gpu.print.memoryInfo";
 	public static final String EVICTION_SHADOW_BUFFERSIZE = "sysml.gpu.eviction.shadow.bufferSize";
@@ -140,6 +141,7 @@ public class DMLConfig
 		_defaultVals.put(EVICTION_SHADOW_BUFFERSIZE,  "0.0" );
 		_defaultVals.put(STATS_MAX_WRAP_LEN,     "30" );
 		_defaultVals.put(GPU_MEMORY_UTILIZATION_FACTOR,      "0.9" );
+		_defaultVals.put(GPU_MEMORY_ALLOCATOR,	 "cuda");
 		_defaultVals.put(AVAILABLE_GPUS,         "-1");
 		_defaultVals.put(GPU_EVICTION_POLICY,    "align_memory");
 		_defaultVals.put(SYNCHRONIZE_GPU,        "false" );
