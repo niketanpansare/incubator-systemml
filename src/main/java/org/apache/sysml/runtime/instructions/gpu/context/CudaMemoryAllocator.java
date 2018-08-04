@@ -30,7 +30,7 @@ import jcuda.runtime.cudaError;
 import static jcuda.runtime.JCuda.cudaFree;
 
 public class CudaMemoryAllocator implements GPUMemoryAllocator {
-
+	
 	/**
 	 * Allocate memory on the device. 
 	 * 
@@ -43,7 +43,6 @@ public class CudaMemoryAllocator implements GPUMemoryAllocator {
 		if(status != cudaSuccess) {
 			throw new jcuda.CudaException("cudaMalloc failed:" + cudaError.stringFor(status));
 		}
-		
 	}
 
 	/**

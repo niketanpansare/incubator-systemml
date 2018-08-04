@@ -302,14 +302,26 @@ public class GPUMemoryManager {
 		// Step 6: Try eviction/clearing one-by-one based on the given policy without size restriction
 		if(A == null) {
 			long t0 =  DMLScript.STATISTICS ? System.nanoTime() : 0;
+			long currentAvailableMemory = allocator.getAvailableMemory();
+			boolean canFit = false;
 			// ---------------------------------------------------------------
 			// Evict unlocked GPU objects one-by-one and try malloc
 			List<GPUObject> unlockedGPUObjects = matrixMemoryManager.gpuObjects.stream()
 						.filter(gpuObj -> !gpuObj.isLocked()).collect(Collectors.toList());
 			Collections.sort(unlockedGPUObjects, new EvictionPolicyBasedComparator(size));
 			while(A == null && unlockedGPUObjects.size() > 0) {
-				evictOrClear(unlockedGPUObjects.remove(unlockedGPUObjects.size()-1), opcode);
-				A = cudaMallocNoWarn(tmpA, size, null);
+				GPUObject evictedGPUObject = unlockedGPUObjects.remove(unlockedGPUObjects.size()-1);
+				evictOrClear(evictedGPUObject, opcode);
+				if(!canFit) {
+					currentAvailableMemory += evictedGPUObject.getSizeOnDevice();
+					if(currentAvailableMemory >= size)
+						canFit = true;
+				}
+				if(canFit) {
+					// Checking before invoking cudaMalloc reduces the time spent in unnecessary cudaMalloc.
+					// This was the bottleneck for ResNet200 experiments with batch size > 32 on P100+Intel
+					A = cudaMallocNoWarn(tmpA, size, null); 
+				}
 				if(DMLScript.STATISTICS) 
 					GPUStatistics.cudaEvictCount.increment();
 			}
@@ -600,6 +612,10 @@ public class GPUMemoryManager {
 	private static class CustomPointer extends Pointer {
 		public CustomPointer(Pointer p) {
 			super(p);
+		}
+		
+		public CustomPointer() {
+			super();
 		}
 		
 		@Override
