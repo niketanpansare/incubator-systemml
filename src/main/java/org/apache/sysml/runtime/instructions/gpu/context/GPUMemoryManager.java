@@ -614,10 +614,6 @@ public class GPUMemoryManager {
 			super(p);
 		}
 		
-		public CustomPointer() {
-			super();
-		}
-		
 		@Override
 		public long getNativePointer() {
 			return super.getNativePointer();

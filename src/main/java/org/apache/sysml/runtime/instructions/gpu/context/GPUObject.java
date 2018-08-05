@@ -122,10 +122,16 @@ public class GPUObject {
 	 */
 	public Pointer getDensePointer() {
 		if(jcudaDenseMatrixPtr == null && shadowPointer != null && getJcudaSparseMatrixPtr() == null) {
+			long start = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			long numBytes = shadowPointer.length*LibMatrixCUDA.sizeOfDataType;
 			jcudaDenseMatrixPtr = gpuContext.allocate(null, numBytes);
 			cudaMemcpy(jcudaDenseMatrixPtr, Pointer.to(shadowPointer), numBytes, jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice);
 			clearShadowPointer();
+			if (DMLScript.STATISTICS) {
+				long totalTime = System.nanoTime() - start;
+				GPUStatistics.cudaFromShadowToDevTime.add(totalTime);
+				GPUStatistics.cudaFromShadowToDevCount.increment();
+			}
 		}
 		return jcudaDenseMatrixPtr;
 	}
