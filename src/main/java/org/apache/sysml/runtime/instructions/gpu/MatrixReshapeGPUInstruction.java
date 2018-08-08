@@ -64,7 +64,7 @@ public class MatrixReshapeGPUInstruction extends GPUInstruction {
 		Pointer outPtr = LibMatrixCUDA.getDensePointer(gCtx, out, instName);
 		LibMatrixCUDA.deviceCopy(instName, inPtr, outPtr, (int) mat.getNumRows(), (int) mat.getNumColumns());
 		if(!byRow.getBooleanValue()) {
-			out.getGPUObject(gCtx).denseRowMajorToColumnMajor();
+			out.getGPUObject(gCtx).denseColumnMajorToRowMajor();
 		}
 		ec.releaseMatrixInputForGPUInstruction(_input.getName());
 		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
