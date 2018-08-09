@@ -405,7 +405,8 @@ public class GPUMemoryManager {
 			allPointers.remove(toFree);
 			lazyCudaFreeMemoryManager.removeIfPresent(size, toFree);
 			allocator.free(toFree);
-			// JCuda.cudaDeviceSynchronize(); // Force a device synchronize after free-ing the pointer for debugging
+			if(DMLScript.SYNCHRONIZE_GPU)
+				jcuda.runtime.JCuda.cudaDeviceSynchronize(); // Force a device synchronize after free-ing the pointer for debugging
 		}
 		else {
 			throw new RuntimeException("Attempting to free an unaccounted pointer:" + toFree);
@@ -427,8 +428,6 @@ public class GPUMemoryManager {
 		if (eager) {
 			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			guardedCudaFree(toFree);
-			if(DMLScript.SYNCHRONIZE_GPU)
-				jcuda.runtime.JCuda.cudaDeviceSynchronize();
 			addMiscTime(opcode, GPUStatistics.cudaDeAllocTime, GPUStatistics.cudaDeAllocCount, GPUInstruction.MISC_TIMER_CUDA_FREE, t0);
 		}
 		else {
