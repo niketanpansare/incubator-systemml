@@ -427,6 +427,8 @@ public class GPUMemoryManager {
 		if (eager) {
 			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			guardedCudaFree(toFree);
+			if(DMLScript.SYNCHRONIZE_GPU)
+				jcuda.runtime.JCuda.cudaDeviceSynchronize();
 			addMiscTime(opcode, GPUStatistics.cudaDeAllocTime, GPUStatistics.cudaDeAllocCount, GPUInstruction.MISC_TIMER_CUDA_FREE, t0);
 		}
 		else {
