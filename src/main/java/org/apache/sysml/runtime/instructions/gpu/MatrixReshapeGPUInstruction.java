@@ -8,6 +8,7 @@ import org.apache.sysml.runtime.functionobjects.SwapIndex;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.BooleanObject;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
+import org.apache.sysml.runtime.instructions.gpu.context.ExecutionConfig;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.operators.Operator;
@@ -59,23 +60,23 @@ public class MatrixReshapeGPUInstruction extends GPUInstruction {
 		String instName = getExtendedOpcode();
 		GPUContext gCtx = ec.getGPUContext(0); 
 		MatrixObject mat = getMatrixInputForGPUInstruction(ec, _input.getName());
+		if(rows*cols != mat.getNumRows()*mat.getNumColumns()) {
+			throw new DMLRuntimeException("Incorrect number of rows and cols in rshape instruction");
+		}
 		Pointer inPtr = LibMatrixCUDA.getDensePointer(gCtx, mat, instName);
 		MatrixObject out = LibMatrixCUDA.getDenseMatrixOutputForGPUInstruction(ec, instName, _output.getName(), rows, cols);
 		Pointer outPtr = LibMatrixCUDA.getDensePointer(gCtx, out, instName);
 		if(byRow.getBooleanValue()) {
 			// byrow = TRUE
-			LibMatrixCUDA.deviceCopy(instName, inPtr, outPtr, (int) mat.getNumRows(), (int) mat.getNumColumns());
+			LibMatrixCUDA.deviceCopy(instName, inPtr, outPtr, LibMatrixCUDA.toInt(mat.getNumRows()), LibMatrixCUDA.toInt(mat.getNumColumns()));
 		}
-		else if(rows == 1 || cols == 1) {
-			// byrow = TRUE and vector
-			LibMatrixCUDA.deviceCopy(instName, inPtr, outPtr, (int) mat.getNumRows(), (int) mat.getNumColumns());
-			out.getGPUObject(gCtx).denseColumnMajorToRowMajor();
-		}
-		else {
-			mat.getGPUObject(gCtx).denseRowMajorToColumnMajor();
-			inPtr = LibMatrixCUDA.getDensePointer(gCtx, mat, instName);
-			LibMatrixCUDA.deviceCopy(instName, inPtr, outPtr, (int) mat.getNumRows(), (int) mat.getNumColumns());
-			mat.getGPUObject(gCtx).denseColumnMajorToRowMajor();
+		else  {
+			// byrow = FALSE 
+			LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("colwise_reshape", 
+				ExecutionConfig.getConfigForSimpleVectorOperations(LibMatrixCUDA.toInt(rows*cols)),
+				inPtr, outPtr, LibMatrixCUDA.toInt(rows*cols), 
+				LibMatrixCUDA.toInt(mat.getNumRows()), LibMatrixCUDA.toInt(mat.getNumColumns()),
+				rows, cols);
 		}
 		ec.releaseMatrixInputForGPUInstruction(_input.getName());
 		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
