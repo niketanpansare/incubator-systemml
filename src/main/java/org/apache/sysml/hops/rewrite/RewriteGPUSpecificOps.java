@@ -739,18 +739,24 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 				Hop v_prev = getSecondInput(tmp);
 				Hop v = getSecondInput(getSecondInput(hi));
 				Hop X = getFirstInput(getFirstInput(hi));
-				ArrayList<Hop> inHops = new ArrayList<Hop>();
-				inHops.add(X);
-				inHops.add(v);
-				inHops.add(v_prev);
-				inHops.add(mu);
-				LOG.debug("Applied updateNesterovX rewrite.");
-				Hop newHop = new DnnOp(hi.getName(), hi.getDataType(), hi.getValueType(),
-						OpOpDnn.UPDATE_NESTEROV_X, inHops);
-				return HopRewriteUtils.rewireAllParentChildReferences(hi, newHop);
+				if(hasSameDimensions(X, v) && hasSameDimensions(X, v_prev)) {
+					ArrayList<Hop> inHops = new ArrayList<Hop>();
+					inHops.add(X);
+					inHops.add(v);
+					inHops.add(v_prev);
+					inHops.add(mu);
+					LOG.debug("Applied updateNesterovX rewrite.");
+					Hop newHop = new DnnOp(hi.getName(), hi.getDataType(), hi.getValueType(),
+							OpOpDnn.UPDATE_NESTEROV_X, inHops);
+					return HopRewriteUtils.rewireAllParentChildReferences(hi, newHop);
+				}
 			}
 		}
 		return hi;
+	}
+	
+	private static boolean hasSameDimensions(Hop x, Hop y) {
+		return x.dimsKnown() && y.dimsKnown() && (x.getDim1() == y.getDim1()) && (x.getDim2() == y.getDim2());
 	}
 	
 	private static boolean isOnePlusMu(Hop onePlusMu, Hop mu) {
