@@ -52,16 +52,6 @@ public class ReshapeTest extends GPUTests {
 	}
 	
 	@Test
-	public void testDenseReshape3() {
-		testReshape(10, 1, 10, 1, true, 0.9);
-	}
-	
-	@Test
-	public void testDenseReshape4() {
-		testReshape(10, 1, 10, 1, false, 0.9);
-	}
-	
-	@Test
 	public void testDenseReshape5() {
 		testReshape(10, 3, 3, 10, true, 0.9);
 	}
@@ -72,12 +62,12 @@ public class ReshapeTest extends GPUTests {
 	}
 	
 	@Test
-	public void testDenseReshape7() {
+	public void testDenseReshape3() {
 		testReshape(10, 3, 15, 2, true, 0.9);
 	}
 	
 	@Test
-	public void testDenseReshape8() {
+	public void testDenseReshape4() {
 		testReshape(10, 3, 15, 2, false, 0.9);
 	}
 	
@@ -92,6 +82,7 @@ public class ReshapeTest extends GPUTests {
 	}
 	
 	private void testReshape(int inRows, int inCols, int outRows, int outCols, boolean byrow, double sparsity) {
+		System.out.println("Starting testReshape:" + inRows + " " + inCols + " " + outRows + " " + outCols + " " + byrow + " " + sparsity);
 		String scriptStr = "output = matrix(x, rows=" + outRows + ", cols=" + outCols +  ", byrow=" +  (byrow ? "TRUE" : "FALSE") + ");" ;
 		HashMap<String, Object> inputs = new HashMap<>();
 		inputs.put("x", generateInputMatrix(spark, inRows, inCols, 0, 10, sparsity, seed));
