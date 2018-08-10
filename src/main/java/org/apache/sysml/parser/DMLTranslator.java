@@ -2274,13 +2274,20 @@ public class DMLTranslator
 			case BATCH_NORM2D:
 			case BATCH_NORM2D_BACKWARD:
 			case SVD:
-				
+			{
 				// Number of outputs = size of targetList = #of identifiers in source.getOutputs
-				String[] outputNames = new String[targetList.size()]; 
-				for ( int i=0; i < targetList.size(); i++ ) {
-					outputNames[i] = ((DataIdentifier)targetList.get(i)).getName();
-					Hop output = new DataOp(outputNames[i], DataType.MATRIX, ValueType.DOUBLE, inputs.get(0), DataOpTypes.FUNCTIONOUTPUT, inputs.get(0).getFilename());
-					outputs.add(output);
+				String[] outputNames = new String[targetList.size()];
+				if(source.getOpCode() == BuiltinFunctionOp.BATCH_NORM2D || 
+					source.getOpCode() == BuiltinFunctionOp.BATCH_NORM2D_BACKWARD) {
+					outputNames[0] = addOutput(targetList, inputs, outputs, 0, inputs.get(0).getDim1(), inputs.get(0).getDim2());
+					long C = inputs.get(2).getDim1();
+					for ( int i=1; i < targetList.size(); i++ )
+						outputNames[i] = addOutput(targetList, inputs, outputs, i, C, 1);
+				}
+				else {
+					for ( int i=0; i < targetList.size(); i++ ) {
+						outputNames[i] = addOutput(targetList, inputs, outputs,  i);
+					}
 				}
 				
 				// Create the hop for current function call
@@ -2288,7 +2295,7 @@ public class DMLTranslator
 				currBuiltinOp = fcall;
 				
 				break;
-				
+			}
 			default:
 				throw new ParseException("Invaid Opcode in DMLTranslator:processMultipleReturnBuiltinFunctionExpression(): " + source.getOpCode());
 		}
@@ -2301,6 +2308,24 @@ public class DMLTranslator
 		currBuiltinOp.setParseInfo(source);
 
 		return currBuiltinOp;
+	}
+	
+	private String addOutput(ArrayList<DataIdentifier> targetList, ArrayList<Hop> inputs, ArrayList<Hop> outputs, int i) {
+		String outputName = ((DataIdentifier)targetList.get(i)).getName();
+		Hop output = new DataOp(outputName, DataType.MATRIX, ValueType.DOUBLE, inputs.get(i), 
+				DataOpTypes.FUNCTIONOUTPUT, inputs.get(i).getFilename());
+		outputs.add(output);
+		return outputName;
+	}
+	
+	private String addOutput(ArrayList<DataIdentifier> targetList, ArrayList<Hop> inputs, ArrayList<Hop> outputs, int i, long rows, long cols) {
+		String outputName = ((DataIdentifier)targetList.get(i)).getName();
+		Hop output = new DataOp(outputName, DataType.MATRIX, ValueType.DOUBLE, inputs.get(i), 
+				DataOpTypes.FUNCTIONOUTPUT, inputs.get(i).getFilename());
+		outputs.add(output);
+		output.setDim1(rows);
+		output.setDim2(cols);
+		return outputName;
 	}
 	
 	/**
