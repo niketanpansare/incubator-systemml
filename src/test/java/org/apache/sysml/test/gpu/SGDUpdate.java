@@ -88,4 +88,21 @@ public class SGDUpdate extends GPUTests {
 		assertHeavyHitterNotPresent("gpu_update_nesterov_x");
 		assertEqualObjects(outCPU.get(0), outGPU.get(0));
 	}
+	
+	@Test
+	public void testAdagradRewrite() {
+		String scriptStr = "epsilon=1e-5; lr=0.1; output = x - (lr * dX / (sqrt(cache)+epsilon));" ;
+		int inRows = 10;
+		int inCols = 30;
+		HashMap<String, Object> inputs = new HashMap<>();
+		inputs.put("x", generateInputMatrix(spark, inRows, inCols, 0, 10, 0.9, seed));
+		inputs.put("dX", generateInputMatrix(spark, inRows, inCols, 0, 10, 0.9, seed));
+		inputs.put("cache", generateInputMatrix(spark, inRows, inCols, 0, 10, 0.9, seed));
+		List<String> outputs = Arrays.asList("output");
+		List<Object> outCPU = runOnCPU(spark, scriptStr, inputs, outputs);
+		List<Object> outGPU = runOnGPU(spark, scriptStr, inputs, outputs);
+		assertHeavyHitterPresent("gpu_update_adagrad_x");
+		assertEqualObjects(outCPU.get(0), outGPU.get(0));
+	}
+
 }

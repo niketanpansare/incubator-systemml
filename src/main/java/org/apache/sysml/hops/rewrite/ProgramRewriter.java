@@ -122,9 +122,9 @@ public class ProgramRewriter
 		// DYNAMIC REWRITES (which do require size information)
 		if( dynamicRewrites )
 		{
-			if ( DMLScript.USE_ACCELERATOR ){
+			//if ( DMLScript.USE_ACCELERATOR ){
 				_dagRuleSet.add( new RewriteGPUSpecificOps() );	// gpu-specific rewrites
-			}
+			//}
 			if ( OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES) {
 				_dagRuleSet.add( new RewriteMatrixMultChainOptimization()         ); //dependency: cse
 				_dagRuleSet.add( new RewriteElementwiseMultChainOptimization()    ); //dependency: cse

@@ -125,6 +125,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 			hi = batchNormTest(hop, hi, i); 
 			hi = channelSums(hop, hi, i); 
 			hi = updateNesterovX(hop, hi, i);
+			hi = updateAdagradX(hop, hi, i);
 	
 			if( !descendFirst )
 				rule_GPUKernels(roots, hi, descendFirst);
@@ -277,8 +278,18 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 				&& OptimizerUtils.rEvalSimpleDoubleExpression(getSecondInput(h), new HashMap<>()) == expectedValue;
 	}
 	
+	private static boolean isBinaryMSAdd(Hop h) {
+		return h instanceof BinaryOp && ((BinaryOp)h).getOp() == OpOp2.PLUS 
+				&& getFirstInput(h).getDataType() == DataType.MATRIX && getSecondInput(h).getDataType() == DataType.SCALAR;
+	}
+	
 	private static boolean isBinaryMMAdd(Hop h) {
 		return h instanceof BinaryOp && ((BinaryOp)h).getOp() == OpOp2.PLUS 
+				&& getFirstInput(h).getDataType() == DataType.MATRIX && getSecondInput(h).getDataType() == DataType.MATRIX;
+	}
+	
+	private static boolean isBinaryMMDiv(Hop h) {
+		return h instanceof BinaryOp && ((BinaryOp)h).getOp() == OpOp2.DIV 
 				&& getFirstInput(h).getDataType() == DataType.MATRIX && getSecondInput(h).getDataType() == DataType.MATRIX;
 	}
 	
@@ -327,6 +338,11 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	private static boolean isBinarySMMult(Hop h) {
 		return h instanceof BinaryOp && ((BinaryOp)h).getOp() == OpOp2.MULT 
 				&& getSecondInput(h).getDataType() == DataType.MATRIX && getFirstInput(h).getDataType() == DataType.SCALAR;
+	}
+	
+	private static boolean isBinaryMSDiv(Hop h) {
+		return h instanceof BinaryOp && ((BinaryOp)h).getOp() == OpOp2.DIV 
+				&& getFirstInput(h).getDataType() == DataType.MATRIX && getSecondInput(h).getDataType() == DataType.SCALAR;
 	}
 	
 	private static boolean isBinarySMMult(Hop h, double expectedVal) {
@@ -750,6 +766,45 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 							OpOpDnn.UPDATE_NESTEROV_X, inHops);
 					return HopRewriteUtils.rewireAllParentChildReferences(hi, newHop);
 				}
+			}
+		}
+		return hi;
+	}
+	
+	private static boolean isSqrt(Hop X) {
+		return X instanceof UnaryOp && ((UnaryOp)X).getOp() == OpOp1.SQRT;
+	}
+	
+	/**
+	 * Checks for the update_adagrad_x pattern (output = X - (lr * dX / (sqrt(cache)+eps)))
+	 * and returns a new DnnOp if matched
+	 * 
+	 * @param parent parent of the input
+	 * @param hi input to be matched
+	 * @param pos position
+	 * @return a new DnnOp or hi
+	 */
+	private static Hop updateAdagradX(Hop parent, Hop hi, int pos) {
+		if(fitsOnGPU(hi, 4) && isBinaryMMMinus(hi) && isBinaryMMDiv(getSecondInput(hi)) &&
+			isBinarySMMult(getFirstInput(getSecondInput(hi))) && 
+			isBinaryMSAdd(getSecondInput(getSecondInput(hi))) &&
+			isSqrt(getSecondInput(getSecondInput(getSecondInput(hi))))) {
+			Hop X = getFirstInput(hi);
+			Hop lr = getFirstInput(getFirstInput(getSecondInput(hi)));
+			Hop dX = getSecondInput(getFirstInput(getSecondInput(hi)));
+			Hop eps = getFirstInput(getSecondInput(getSecondInput(hi)));
+			Hop cache = getFirstInput(getSecondInput(getSecondInput(getSecondInput(hi))));
+			if(hasSameDimensions(X, dX) && hasSameDimensions(X, cache)) {
+				ArrayList<Hop> inHops = new ArrayList<Hop>();
+				inHops.add(X);
+				inHops.add(dX);
+				inHops.add(cache);
+				inHops.add(lr);
+				inHops.add(eps);
+				LOG.debug("Applied updateAdagradX rewrite.");
+				Hop newHop = new DnnOp(hi.getName(), hi.getDataType(), hi.getValueType(),
+						OpOpDnn.UPDATE_ADAGRAD_X, inHops);
+				return HopRewriteUtils.rewireAllParentChildReferences(hi, newHop);
 			}
 		}
 		return hi;

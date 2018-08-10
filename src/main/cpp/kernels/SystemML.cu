@@ -2290,3 +2290,20 @@ extern "C" __global__ void update_nesterov_x_d(double *X, double *v, double *v_p
 extern "C" __global__ void update_nesterov_x_f(float *X, float *v, float *v_prev, double mu, float *out, unsigned int size) {
   update_nesterov_x(X, v, v_prev, mu, out, size);
 }
+
+// Performs the operation: output = X - (lr * dX / (sqrt(cache)+eps))
+template <typename T>
+__device__ void update_adagrad_x(T *X, T *dX, T *cache, double lr, double eps, T *out, unsigned int size) {
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  if (index < size) {
+	out[index] = X[index] - (lr * dX[index] / (sqrt(cache[index])+eps));
+  }
+}
+
+extern "C" __global__ void update_adagrad_x_d(double *X, double *dX, double *cache, double lr, double eps, double *out, unsigned int size) {
+  update_adagrad_x(X, dX, cache, lr, eps, out, size);
+}
+
+extern "C" __global__ void update_adagrad_x_f(float *X, float *dX, float *cache, double lr, double eps, float *out, unsigned int size) {
+  update_adagrad_x(X, dX, cache, lr, eps, out, size);
+}

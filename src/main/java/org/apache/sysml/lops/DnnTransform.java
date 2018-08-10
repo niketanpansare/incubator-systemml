@@ -32,7 +32,7 @@ public class DnnTransform extends Lop
 		RELU_MAX_POOLING, RELU_MAX_POOLING_BACKWARD, RELU_BACKWARD,
 		CONV2D, CONV2D_BACKWARD_FILTER, CONV2D_BACKWARD_DATA,
 		BIAS_ADD, CONV2D_BIAS_ADD, BIAS_MULTIPLY, CHANNEL_SUMS, BATCH_NORM2D_TEST, 
-		UPDATE_NESTEROV_X
+		UPDATE_NESTEROV_X, UPDATE_ADAGRAD_X
 	}
 	
 	private OperationTypes operation;
@@ -170,6 +170,9 @@ public class DnnTransform extends Lop
 		case UPDATE_NESTEROV_X:
 			return "update_nesterov_x";
 			
+		case UPDATE_ADAGRAD_X:
+			return "update_adam_x";
+			
 		case BATCH_NORM2D_TEST:
 			return "batch_norm2d_test";
 			
@@ -251,6 +254,35 @@ public class DnnTransform extends Lop
 			sb.append( getInputs().get(2).prepInputOperand(input3));
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( getInputs().get(3).prepInputOperand(input4));
+			//output
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( this.prepOutputOperand(output));
+			
+			return sb.toString();
+		}
+		else {
+			throw new LopsException("The operation is not supported with three operands:" + operation.name());
+		}
+	}
+	
+	@Override
+	public String getInstructions(String input1, String input2, String input3, String input4,  String input5, String output) {
+		if(operation == OperationTypes.UPDATE_ADAGRAD_X) {
+			StringBuilder sb = new StringBuilder();
+			sb.append( getExecType() );
+			
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( getOpcode() );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( getInputs().get(0).prepInputOperand(input1));
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( getInputs().get(1).prepInputOperand(input2));
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( getInputs().get(2).prepInputOperand(input3));
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( getInputs().get(3).prepInputOperand(input4));
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( getInputs().get(4).prepInputOperand(input5));
 			//output
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( this.prepOutputOperand(output));

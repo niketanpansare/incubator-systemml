@@ -137,6 +137,7 @@ public class DnnOp extends MultiThreadedHop
 			case BATCH_NORM2D_TEST:
 			case CHANNEL_SUMS:
 			case UPDATE_NESTEROV_X:
+			case UPDATE_ADAGRAD_X:
 			{	
 				if(et == ExecType.GPU) {
 					setLops(constructDnnLops(et, inputs));
@@ -178,6 +179,8 @@ public class DnnOp extends MultiThreadedHop
 				return 3;
 			case UPDATE_NESTEROV_X:
 				return 4;
+			case UPDATE_ADAGRAD_X:
+				return 5;
 			default:
 				return 13;
 		}
@@ -532,7 +535,7 @@ public class DnnOp extends MultiThreadedHop
 		long[] ret = new long[3];
 		
 		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT || op == OpOpDnn.BATCH_NORM2D_TEST ||
-			op == OpOpDnn.UPDATE_NESTEROV_X) {
+			op == OpOpDnn.UPDATE_NESTEROV_X || op == OpOpDnn.UPDATE_ADAGRAD_X) {
 			// Same dimension as the first input
 			MatrixCharacteristics[] mc = memo.getAllInputStats(getInput());
 			ret[0] = mc[0].rowsKnown() ? mc[0].getRows() : -1;
@@ -739,7 +742,8 @@ public class DnnOp extends MultiThreadedHop
 	@Override
 	public void refreshSizeInformation()
 	{
-		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT || op == OpOpDnn.BATCH_NORM2D_TEST || op == OpOpDnn.UPDATE_NESTEROV_X) {
+		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT || op == OpOpDnn.BATCH_NORM2D_TEST 
+				|| op == OpOpDnn.UPDATE_NESTEROV_X || op == OpOpDnn.UPDATE_ADAGRAD_X) {
 			// Same dimension as the first input
 			Hop input1 = getInput().get(0);
 			setDim1(input1.getDim1());
@@ -847,7 +851,7 @@ public class DnnOp extends MultiThreadedHop
 	 */
 	private long getDim(String dimString) {
 		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT || op == OpOpDnn.BATCH_NORM2D_TEST || op == OpOpDnn.CHANNEL_SUMS ||
-			op == OpOpDnn.UPDATE_NESTEROV_X) {
+			op == OpOpDnn.UPDATE_NESTEROV_X || op == OpOpDnn.UPDATE_ADAGRAD_X) {
 			throw new RuntimeException("getDim method should not be invoked for " + op.name());
 		}
 		try {
