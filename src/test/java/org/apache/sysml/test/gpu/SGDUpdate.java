@@ -42,7 +42,7 @@ public class SGDUpdate extends GPUTests {
 	}
 
 	@Test
-	private void testNesterovRewrite() {
+	public void testNesterovRewrite() {
 		String scriptStr = "mu=0.99; output = x - mu*v_prev + (1+mu)*v;" ;
 		int inRows = 10;
 		int inCols = 30;
@@ -58,22 +58,7 @@ public class SGDUpdate extends GPUTests {
 	}
 	
 	@Test
-	private void testNoNesterovRewrite1() {
-		String scriptStr = "mu=0.99; output = x - mu*v_prev + (1+mu)*v;" ;
-		int inRows = 10;
-		int inCols = 30;
-		HashMap<String, Object> inputs = new HashMap<>();
-		inputs.put("x", generateInputMatrix(spark, inRows, inCols, 0, 10, 0.9, seed));
-		inputs.put("v_prev", generateInputMatrix(spark, inRows, 1, 0, 10, 0.9, seed));
-		inputs.put("v", generateInputMatrix(spark, inRows, inCols, 0, 10, 0.9, seed));
-		List<String> outputs = Arrays.asList("output");
-		List<Object> outCPU = runOnCPU(spark, scriptStr, inputs, outputs);
-		List<Object> outGPU = runOnGPU(spark, scriptStr, inputs, outputs);
-		assertEqualObjects(outCPU.get(0), outGPU.get(0));
-	}
-	
-	@Test
-	private void testNoNesterovRewrite2() {
+	public void testNoNesterovRewrite1() {
 		String scriptStr = "mu=0.99; output = x - mu*v_prev + (1+mu)*v;" ;
 		int inRows = 10;
 		int inCols = 30;
@@ -84,11 +69,12 @@ public class SGDUpdate extends GPUTests {
 		List<String> outputs = Arrays.asList("output");
 		List<Object> outCPU = runOnCPU(spark, scriptStr, inputs, outputs);
 		List<Object> outGPU = runOnGPU(spark, scriptStr, inputs, outputs);
+		assertHeavyHitterNotPresent("gpu_update_nesterov_x");
 		assertEqualObjects(outCPU.get(0), outGPU.get(0));
 	}
 	
 	@Test
-	private void testNoNesterovRewrite3() {
+	public void testNoNesterovRewrite2() {
 		String scriptStr = "mu=0.99; output = x - mu*v_prev + mu*v;" ;
 		int inRows = 10;
 		int inCols = 30;
@@ -99,6 +85,7 @@ public class SGDUpdate extends GPUTests {
 		List<String> outputs = Arrays.asList("output");
 		List<Object> outCPU = runOnCPU(spark, scriptStr, inputs, outputs);
 		List<Object> outGPU = runOnGPU(spark, scriptStr, inputs, outputs);
+		assertHeavyHitterNotPresent("gpu_update_nesterov_x");
 		assertEqualObjects(outCPU.get(0), outGPU.get(0));
 	}
 }
