@@ -122,6 +122,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 			if(roots != null) {
 				//hi = batchNormTrain(roots, hop, hi, i);
 			}
+			hi = batchNormUpdatedMean(hop, hi, i);
 			hi = batchNormTest(hop, hi, i); 
 			hi = channelSums(hop, hi, i); 
 			hi = updateNesterovX(hop, hi, i);
@@ -762,6 +763,40 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	private static boolean isOnePlusMu(Hop onePlusMu, Hop mu) {
 		return (isBinarySMMult(onePlusMu, 1.0) && getSecondInput(onePlusMu) == mu) ||
 				getValue(onePlusMu) == getValue(mu) + 1;
+	}
+	
+	/**
+	 * Checks for the updated mean pattern for batch norm
+	 * and returns a new DnnOp if matched
+	 * 
+	 * mean = rowMeans(subgrp_means)
+	 * ema_mean_upd = mu*ema_mean + (1-mu)*mean
+	 * 
+	 * @param parent parent of the input
+	 * @param hi input to be matched
+	 * @param pos position
+	 * @return a new DnnOp or hi
+	 */
+	private static Hop batchNormUpdatedMean(Hop parent, Hop hi, int pos) {
+		if(isBinaryMMAdd(hi) && isBinarySMMult(getFirstInput(hi)) && isBinarySMMult(getSecondInput(hi))
+			&& isRowMeans(getSecondInput(getSecondInput(hi)))) {
+			Hop muHop = getFirstInput(getFirstInput(hi));
+			double mu = getValue(muHop);
+			double oneMinus = getValue(getFirstInput(getSecondInput(hi)));
+			Hop ema_mean = getSecondInput(getFirstInput(hi));
+			Hop subgrp_means = getFirstInput(getSecondInput(getSecondInput(hi)));
+			if(oneMinus == (1-mu) && fitsOnGPU(subgrp_means, 2)) {
+				LOG.debug("Applied batchNormUpdatedMean rewrite.");
+				ArrayList<Hop> inHops = new ArrayList<Hop>();
+				inHops.add(ema_mean);
+				inHops.add(subgrp_means);
+				inHops.add(muHop);
+				Hop newHop = new DnnOp(hi.getName(), hi.getDataType(), hi.getValueType(),
+						OpOpDnn.UPDATE_EMA_MEAN, inHops);
+				return HopRewriteUtils.rewireAllParentChildReferences(hi, newHop);
+			}
+		}
+		return hi;
 	}
 	
 	/**

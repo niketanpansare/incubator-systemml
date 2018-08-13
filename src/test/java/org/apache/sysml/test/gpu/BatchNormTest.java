@@ -73,13 +73,10 @@ public class BatchNormTest extends GPUTests {
 			}
 		}
 		else {
-			//assertHeavyHitterPresent("gpu_batch_norm2d_train");
-			double [] threshold = new double[outputs.size()];
-			Arrays.fill(threshold, getTHRESHOLD());
-			// Handle loss of precision in CuDNN kernel 
-			threshold[2] = 1e-3;
+			assertHeavyHitterPresent("gpu_batch_norm2d_test");
+			assertHeavyHitterPresent("gpu_update_ema_mean");
 			for(int i = 0; i < outputs.size()-1; i++) {
-				assertEqualObjects(outCPU.get(i), outGPU.get(i), threshold[i]);
+				assertEqualObjects(outCPU.get(i), outGPU.get(i));
 			}
 		}
 	}

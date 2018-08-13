@@ -113,8 +113,8 @@ public class DnnGPUInstruction extends GPUInstruction {
 	public DnnGPUInstruction(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr, 
 			double intermediateMemoryBudget) throws DMLRuntimeException {
 		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), opcode, istr);
-		if( !opcode.equals("channel_sums") ) {
-			throw new DMLRuntimeException("Incorrect usage. Expected the opcode to be channel_sums, but found " + opcode);
+		if( !(opcode.equals("channel_sums") || opcode.equals("update_ema_mean") ) ) {
+			throw new DMLRuntimeException("Incorrect usage. Expected the opcode to be channel_sums or update_ema_mean, but found " + opcode);
 		}
 		_input1 = in1;
 		_input2 = in2;
@@ -127,7 +127,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 	public DnnGPUInstruction(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4, CPOperand out, String opcode, String istr, 
 			double intermediateMemoryBudget) throws DMLRuntimeException {
 		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), opcode, istr);
-		if( !opcode.equals("update_nesterov_x") ) {
+		if( !( opcode.equals("update_nesterov_x")) ) {
 			throw new DMLRuntimeException("Incorrect opcode: " + opcode);
 		}
 		_input1 = in1;
@@ -305,7 +305,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 			CPOperand out = new CPOperand(parts[3]);
 			return new DnnGPUInstruction(in1, in2, out, opcode, str, Double.parseDouble(parts[4]));
 		}
-		else if (opcode.equalsIgnoreCase("channel_sums")) {
+		else if (opcode.equalsIgnoreCase("channel_sums") || opcode.equalsIgnoreCase("update_ema_mean")) {
 			InstructionUtils.checkNumFields(parts, 4);
 			CPOperand in = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
@@ -576,8 +576,31 @@ public class DnnGPUInstruction extends GPUInstruction {
 		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
 	}
 	
+	private void processUpdateEMAMeanInstruction(ExecutionContext ec) {
+		GPUStatistics.incrementNoOfExecutedGPUInst();
+		MatrixObject ema_mean = getMatrixInputForGPUInstruction(ec, _input1.getName());
+		MatrixObject subgrp_means = getMatrixInputForGPUInstruction(ec, _input2.getName());
+		double mu = (int) ec.getScalarInput(_input3.getName(), _input3.getValueType(), _input3.isLiteral()).getDoubleValue();
+		GPUContext gCtx = ec.getGPUContext(0);
+		String instName = getExtendedOpcode();
+		int C = LibMatrixCUDA.toInt(ema_mean.getNumRows());
+		int HW = LibMatrixCUDA.toInt(ema_mean.getNumColumns());
+		
+		
+		Pointer subGrpMeanPtr =  LibMatrixCUDA.getDensePointer(gCtx, subgrp_means, instName);
+		MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), C, HW);
+		Pointer outPtr = LibMatrixCUDA.getDensePointer(gCtx, out, instName);
+		
+		// TODO:
+		
+		// release inputs/outputs
+		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
+		ec.releaseMatrixInputForGPUInstruction(_input2.getName());
+		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
+	}
+	
 	private void processNesterovUpdateInstruction(ExecutionContext ec) {
-		GPUStatistics.incrementNoOfExecutedGPUInst();;
+		GPUStatistics.incrementNoOfExecutedGPUInst();
 		MatrixObject input = getMatrixInputForGPUInstruction(ec, _input1.getName());
 		MatrixObject v = getMatrixInputForGPUInstruction(ec, _input2.getName());
 		MatrixObject v_prev = getMatrixInputForGPUInstruction(ec, _input3.getName());
@@ -751,6 +774,10 @@ public class DnnGPUInstruction extends GPUInstruction {
 		}
 		else if (instOpcode.equalsIgnoreCase("update_nesterov_x")) {
 			processNesterovUpdateInstruction(ec);
+			return;
+		}
+		else if (instOpcode.equalsIgnoreCase("update_ema_mean")) {
+			processUpdateEMAMeanInstruction(ec);
 			return;
 		}
 		else if (instOpcode.equalsIgnoreCase("lstm")) {

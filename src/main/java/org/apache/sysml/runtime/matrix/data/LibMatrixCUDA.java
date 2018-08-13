@@ -207,7 +207,7 @@ public class LibMatrixCUDA {
 		return gCtx.getCusparseHandle();
 	}
 
-	protected static cublasHandle getCublasHandle(GPUContext gCtx) {
+	public static cublasHandle getCublasHandle(GPUContext gCtx) {
 		return gCtx.getCublasHandle();
 	}
 
@@ -301,7 +301,7 @@ public class LibMatrixCUDA {
 		}
 	}
 	
-	protected static Pointer dataTypePointerTo(double value) {
+	public static Pointer dataTypePointerTo(double value) {
 		if(value == 1) {
 			return one();
 		}
@@ -312,7 +312,6 @@ public class LibMatrixCUDA {
 			return _dataTypePointerTo(value);
 		}
 	}
-	
 
 	/**
 	 * This method computes the backpropagation errors for previous layer of relu operation

@@ -137,6 +137,7 @@ public class DnnOp extends MultiThreadedHop
 			case BATCH_NORM2D_TEST:
 			case CHANNEL_SUMS:
 			case UPDATE_NESTEROV_X:
+			case UPDATE_EMA_MEAN:
 			{	
 				if(et == ExecType.GPU) {
 					setLops(constructDnnLops(et, inputs));
@@ -175,6 +176,7 @@ public class DnnOp extends MultiThreadedHop
 			case BATCH_NORM2D_TEST:
 				return 6;
 			case CHANNEL_SUMS:
+			case UPDATE_EMA_MEAN:
 				return 3;
 			case UPDATE_NESTEROV_X:
 				return 4;
@@ -540,7 +542,7 @@ public class DnnOp extends MultiThreadedHop
 			ret[2] = -1;
 			return (ret[0]>=0 && ret[1]>=0) ? ret : null;
 		}
-		else if(op == OpOpDnn.CHANNEL_SUMS) {
+		else if(op == OpOpDnn.CHANNEL_SUMS || op == OpOpDnn.UPDATE_EMA_MEAN) {
 			long numChannels = Hop.computeSizeInformation(getInput().get(1));
 			ret[0] = numChannels;
 			ret[1] = 1;
@@ -739,7 +741,8 @@ public class DnnOp extends MultiThreadedHop
 	@Override
 	public void refreshSizeInformation()
 	{
-		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT || op == OpOpDnn.BATCH_NORM2D_TEST || op == OpOpDnn.UPDATE_NESTEROV_X) {
+		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT || op == OpOpDnn.BATCH_NORM2D_TEST 
+			|| op == OpOpDnn.UPDATE_NESTEROV_X) {
 			// Same dimension as the first input
 			Hop input1 = getInput().get(0);
 			setDim1(input1.getDim1());
@@ -747,7 +750,7 @@ public class DnnOp extends MultiThreadedHop
 			_nnz = -1; // cannot infer stats
 			return;
 		}
-		else if(op == OpOpDnn.CHANNEL_SUMS) {
+		else if(op == OpOpDnn.CHANNEL_SUMS || op == OpOpDnn.UPDATE_EMA_MEAN) {
 			long numChannels = Hop.computeSizeInformation(getInput().get(1));
 			setDim1(numChannels);
 			setDim2(1);
@@ -847,7 +850,7 @@ public class DnnOp extends MultiThreadedHop
 	 */
 	private long getDim(String dimString) {
 		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT || op == OpOpDnn.BATCH_NORM2D_TEST || op == OpOpDnn.CHANNEL_SUMS ||
-			op == OpOpDnn.UPDATE_NESTEROV_X) {
+			op == OpOpDnn.UPDATE_NESTEROV_X || op == OpOpDnn.UPDATE_EMA_MEAN) {
 			throw new RuntimeException("getDim method should not be invoked for " + op.name());
 		}
 		try {
