@@ -45,6 +45,7 @@ import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
+import static org.apache.sysml.hops.rewrite.HopRewritePredicate.*;
 
 /*
  * This class contains GPU-specific rewrites for following patterns:
@@ -799,6 +800,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 		return hi;
 	}
 	
+	private static HopRewritePredicate batchNormTest = null;
 	/**
 	 * Checks for the batch norm (mode="test") pattern using the helper isBatchNormTrainMean and isBatchNormTrainVar
 	 * and returns a new DnnOp if matched
@@ -809,57 +811,39 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	 * @return a new DnnOp or hi
 	 */
 	private static Hop batchNormTest(Hop parent, Hop hi, int pos) {
-		// norm = bias_multiply(bias_add(X, -mean), 1/sqrt(var+eps))
-		// hi = bias_add(bias_multiply(norm, gamma), beta)
-		// 2x for input and output and 1x for overhead
-		if(hasFirstInput(hi) && isBiasAdd(hi) && isBiasMultiply(getFirstInput(hi)) && fitsOnGPU(hi, 3) ) {
-			Hop norm = getFirstInput(getFirstInput(hi));
-			if(hasSecondInput(norm) && isBiasMultiply(norm) && isBiasAdd(getFirstInput(norm)) 
-					&& isUnaryMinus(getSecondInput(getFirstInput(norm)))
-					&& isOneDivideBySqrt(getSecondInput(norm))) {
-				double eps = 0;
-				Hop var = getFirstInput(getSecondInput(getSecondInput(norm)));
-				if( HopRewriteUtils.isBinary(var, OpOp2.PLUS) &&
-					(getFirstInput(var) instanceof LiteralOp || getSecondInput(var) instanceof LiteralOp)) {
-					// eps + ema_var
-					if(getFirstInput(var) instanceof LiteralOp) {
-						eps = OptimizerUtils.rEvalSimpleDoubleExpression(getFirstInput(var), new HashMap<>());
-						var = getSecondInput(var);
-					}
-					else {
-						eps = OptimizerUtils.rEvalSimpleDoubleExpression(getSecondInput(var), new HashMap<>());
-						var = getFirstInput(var);
-					}
-				}
-				// Generate batch norm test op
-				Hop X = getFirstInput(getFirstInput(norm));
-				Hop mean = getSecondInput(getSecondInput(getFirstInput(norm)));
-				
-				// This guard disallows eager fusion of train batch normalization into test batch normalization
-				boolean potentialForBatchNormTrain = !X.rowsKnown() && isBatchNormTrainMean(mean , X) && isBatchNormTrainVar(mean, var, X, getFirstInput(mean), true);
-				if(!potentialForBatchNormTrain) {
-					Hop gamma = getSecondInput(getFirstInput(hi));
-					Hop beta = getSecondInput(hi);
-					ArrayList<Hop> inHops = new ArrayList<Hop>();
-					inHops.add(X);
-					inHops.add(gamma);
-					inHops.add(beta);
-					inHops.add(mean);
-					inHops.add(var);
-					inHops.add(new LiteralOp(eps));
-					if(fitsOnGPU(inHops, true)) {
-						LOG.debug("Applied batchNormTest rewrite.");
-						Hop newHop = new DnnOp(hi.getName(), hi.getDataType(), hi.getValueType(),
-								OpOpDnn.BATCH_NORM2D_TEST, inHops);
-						return HopRewriteUtils.rewireAllParentChildReferences(hi, newHop);
-					}
-				}
-				else {
-					LOG.debug("Skipping batchNormTest rewrite as there is potential for batch normalization train rewrite after recompilation.");
-				}
-			}
+		if(batchNormTest == null) {
+			HopRewritePredicate X = new HopRewritePredicate().isMatrix();
+			HopRewritePredicate mean = new HopRewritePredicate().isMatrix();
+			HopRewritePredicate var = new HopRewritePredicate().isMatrix();
+			HopRewritePredicate eps = new HopRewritePredicate().isScalar();
+			HopRewritePredicate gamma = new HopRewritePredicate().isMatrix();
+			HopRewritePredicate beta = new HopRewritePredicate().isMatrix();
+			// norm = bias_multiply(bias_add(X, -mean), 1/sqrt(var+eps))
+			HopRewritePredicate norm = bias_multiply(bias_add(X, unaryMinus(mean)), div(1, sqrt(plus(var, eps))));
+			// hi = bias_add(bias_multiply(norm, gamma), beta)
+			batchNormTest = bias_add(bias_multiply(norm,gamma), beta)
+				.addFilter(HopRewritePredicate.fitsOnGPU(3)); // 2x for input and output and 1x for overhead
+			batchNormTest.registerHop("X", X)
+				.registerHop("mean", mean)
+				.registerHop("var", var)
+				.registerHop("eps", eps)
+				.registerHop("gamma", gamma)
+				.registerHop("beta", beta);
 		}
 		
+		if(batchNormTest.matches(hi)) {
+			ArrayList<Hop> inHops = new ArrayList<Hop>();
+			inHops.add(batchNormTest.getHop("X"));
+			inHops.add(batchNormTest.getHop("gamma"));
+			inHops.add(batchNormTest.getHop("beta"));
+			inHops.add(batchNormTest.getHop("mean"));
+			inHops.add(batchNormTest.getHop("var"));
+			inHops.add(batchNormTest.getHop("eps"));
+			LOG.debug("Applied batchNormTest rewrite.");
+			Hop newHop = new DnnOp(hi.getName(), hi.getDataType(), hi.getValueType(),
+					OpOpDnn.BATCH_NORM2D_TEST, inHops);
+			return HopRewriteUtils.rewireAllParentChildReferences(hi, newHop);
+		}
 		return hi;
 	}
 }
