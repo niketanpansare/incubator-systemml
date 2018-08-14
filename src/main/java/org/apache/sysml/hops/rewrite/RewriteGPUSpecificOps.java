@@ -822,7 +822,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 			HopRewritePredicate norm = bias_multiply(bias_add(X, unaryMinus(mean)), div(1, sqrt(plus(var, eps))));
 			// hi = bias_add(bias_multiply(norm, gamma), beta)
 			batchNormTest = bias_add(bias_multiply(norm,gamma), beta)
-				.addFilter(HopRewritePredicate.fitsOnGPU(3)); // 2x for input and output and 1x for overhead
+				.addFilter("fitsOnGPU", HopRewritePredicate.fitsOnGPU(3)); // 2x for input and output and 1x for overhead
 			batchNormTest.registerHop("X", X)
 				.registerHop("mean", mean)
 				.registerHop("var", var)
