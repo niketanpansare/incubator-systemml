@@ -812,12 +812,12 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	 */
 	private static Hop batchNormTest(Hop parent, Hop hi, int pos) {
 		if(batchNormTest == null) {
-			HopRewritePredicate X = new HopRewritePredicate().isMatrix();
-			HopRewritePredicate mean = new HopRewritePredicate().isMatrix();
-			HopRewritePredicate var = new HopRewritePredicate().isMatrix();
+			HopRewritePredicate X = new HopRewritePredicate();
+			HopRewritePredicate mean = new HopRewritePredicate();
+			HopRewritePredicate var = new HopRewritePredicate();
 			HopRewritePredicate eps = new HopRewritePredicate().isScalar();
-			HopRewritePredicate gamma = new HopRewritePredicate().isMatrix();
-			HopRewritePredicate beta = new HopRewritePredicate().isMatrix();
+			HopRewritePredicate gamma = new HopRewritePredicate();
+			HopRewritePredicate beta = new HopRewritePredicate();
 			// norm = bias_multiply(bias_add(X, -mean), 1/sqrt(var+eps))
 			HopRewritePredicate norm = bias_multiply(bias_add(X, unaryMinus(mean)), div(1, sqrt(plus(var, eps))));
 			// hi = bias_add(bias_multiply(norm, gamma), beta)
