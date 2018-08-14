@@ -85,10 +85,10 @@ public class HopRewritePredicate {
 	}
 	public boolean matches(Hop h) {
 		current = h;
-		if(h == null || h.getInput().size() < _children.size()) {
+		if(h == null || (_children.size() > 0 && h.getInput().size() < _children.size())) {
 			if(DEBUG_REWRITES) {
-				String hStr = h == null ? "null" : Explain.explain(h);
-				System.out.println("The expected number of children (" + _children.size() + ") didnot match the number of inputs for hop:" + hStr);
+				String suffix = ( _predicates.size() == 1 ? _predicates.get(0) : "" ) + " for hop:" + Explain.explain(h);
+				System.out.println("The expected number of children (" + _children.size() + ") didnot match the number of inputs (" + h.getInput().size() + ") " + suffix);
 			}
 			return false;
 		}
