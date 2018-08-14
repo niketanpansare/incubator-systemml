@@ -117,6 +117,7 @@ public class HopRewritePredicate {
 	}
 	
 	// Factory methods:
+	public static HopRewritePredicate dummy = new HopRewritePredicate();
 	public static HopRewritePredicate empty() {
 		return new HopRewritePredicate();
 	}
@@ -131,7 +132,7 @@ public class HopRewritePredicate {
 	public static HopRewritePredicate unaryMinus(HopRewritePredicate child) {
 		return new HopRewritePredicate().addFilter("unaryMinus", h -> HopRewriteUtils.isBinary(h, OpOp2.MINUS)
 				&& HopRewriteUtils.isLiteralOfValue(h.getInput().get(0), 0))
-				.addChild(child);
+				.addChild(dummy, child);
 	}
 	public static HopRewritePredicate sqrt(HopRewritePredicate child) {
 		return new HopRewritePredicate().addFilter("sqrt", h -> HopRewriteUtils.isUnary(h, OpOp1.SQRT))
@@ -147,12 +148,12 @@ public class HopRewritePredicate {
 	public static HopRewritePredicate div(double child1, HopRewritePredicate child2) {
 		return new HopRewritePredicate().addFilter("div", h -> HopRewriteUtils.isBinary(h, OpOp2.DIV) && 
 				HopRewriteUtils.isLiteralOfValue(h.getInput().get(0), child1))
-				.addChild(child2);
+				.addChild(dummy, child2);
 	}
 	public static HopRewritePredicate div(HopRewritePredicate child1, double child2) {
 		return new HopRewritePredicate().addFilter("div", h -> HopRewriteUtils.isBinary(h, OpOp2.DIV) && 
 				HopRewriteUtils.isLiteralOfValue(h.getInput().get(1), child2))
-				.addChild(child1);
+				.addChild(child1, dummy);
 	}
 	
 	public static HopRewritePredicate plus(HopRewritePredicate child1, HopRewritePredicate child2) {
@@ -162,12 +163,12 @@ public class HopRewritePredicate {
 	public static HopRewritePredicate plus(double child1, HopRewritePredicate child2) {
 		return new HopRewritePredicate().addFilter("plus", h -> HopRewriteUtils.isBinary(h, OpOp2.PLUS) && 
 				HopRewriteUtils.isLiteralOfValue(h.getInput().get(0), child1))
-				.addChild(child2);
+				.addChild(dummy, child2);
 	}
 	public static HopRewritePredicate plus(HopRewritePredicate child1, double child2) {
 		return new HopRewritePredicate().addFilter("plus", h -> HopRewriteUtils.isBinary(h, OpOp2.PLUS) && 
 				HopRewriteUtils.isLiteralOfValue(h.getInput().get(1), child2))
-				.addChild(child1);
+				.addChild(child1, dummy);
 	}
 	
 	public static HopRewritePredicate minus(HopRewritePredicate child1, HopRewritePredicate child2) {
@@ -177,12 +178,12 @@ public class HopRewritePredicate {
 	public static HopRewritePredicate minus(double child1, HopRewritePredicate child2) {
 		return new HopRewritePredicate().addFilter("minus", h -> HopRewriteUtils.isBinary(h, OpOp2.MINUS) && 
 				HopRewriteUtils.isLiteralOfValue(h.getInput().get(0), child1))
-				.addChild(child2);
+				.addChild(dummy, child2);
 	}
 	public static HopRewritePredicate minus(HopRewritePredicate child1, double child2) {
 		return new HopRewritePredicate().addFilter("minus", h -> HopRewriteUtils.isBinary(h, OpOp2.MINUS) && 
 				HopRewriteUtils.isLiteralOfValue(h.getInput().get(1), child2))
-				.addChild(child1);
+				.addChild(child1, dummy);
 	}
 	
 	public static HopRewritePredicate mult(HopRewritePredicate child1, HopRewritePredicate child2) {
@@ -192,12 +193,12 @@ public class HopRewritePredicate {
 	public static HopRewritePredicate mult(double child1, HopRewritePredicate child2) {
 		return new HopRewritePredicate().addFilter("mult", h -> HopRewriteUtils.isBinary(h, OpOp2.MULT) && 
 				HopRewriteUtils.isLiteralOfValue(h.getInput().get(0), child1))
-				.addChild(child2);
+				.addChild(dummy, child2);
 	}
 	public static HopRewritePredicate mult(HopRewritePredicate child1, double child2) {
 		return new HopRewritePredicate().addFilter("mult", h -> HopRewriteUtils.isBinary(h, OpOp2.MULT) && 
 				HopRewriteUtils.isLiteralOfValue(h.getInput().get(1), child2))
-				.addChild(child1);
+				.addChild(child1, dummy);
 	}
 	
 	private static boolean _fitsOnGPU(Hop h, double multiplier) {
