@@ -215,7 +215,7 @@ public class DnnTransform extends Lop
 	
 	@Override
 	public String getInstructions(String input, String C, String HW, String output) {
-		if(operation == OperationTypes.CHANNEL_SUMS) {
+		if(operation == OperationTypes.CHANNEL_SUMS || operation == OperationTypes.UPDATE_EMA_MEAN) {
 			StringBuilder sb = new StringBuilder();
 			sb.append( getExecType() );
 			
@@ -240,7 +240,7 @@ public class DnnTransform extends Lop
 	
 	@Override
 	public String getInstructions(String input1, String input2, String input3, String input4, String output) {
-		if(operation == OperationTypes.UPDATE_NESTEROV_X || operation == OperationTypes.UPDATE_EMA_MEAN) {
+		if(operation == OperationTypes.UPDATE_NESTEROV_X) {
 			StringBuilder sb = new StringBuilder();
 			sb.append( getExecType() );
 			
