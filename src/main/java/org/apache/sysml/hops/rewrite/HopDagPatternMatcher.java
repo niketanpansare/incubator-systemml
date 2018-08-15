@@ -162,8 +162,11 @@ public class HopDagPatternMatcher {
 	
 
 	// Simple helper utilities for adding predicates
-	public static Function<Hop, Boolean> fitsOnGPU(double constant) {
-		return h -> _fitsOnGPU(h, constant);
+	public HopDagPatternMatcher isScalar() {
+		return this.addPredicate("isScalar", h -> h.getDataType() == DataType.SCALAR);
+	}
+	public HopDagPatternMatcher fitsOnGPU(double constant) {
+		return this.addPredicate("fitsOnGPU", h -> _fitsOnGPU(h, constant));
 	}
 	
 	// Factory methods:
@@ -172,9 +175,6 @@ public class HopDagPatternMatcher {
 		return new HopDagPatternMatcher().addPredicate("rowMeans", h -> 
 			h instanceof AggUnaryOp && ((AggUnaryOp)h).getOp() == AggOp.MEAN && ((AggUnaryOp)h).getDirection() == Direction.Row)
 			.addChildMatcher(child1);
-	}
-	public HopDagPatternMatcher isScalar() {
-		return this.addPredicate("isScalar", h -> h.getDataType() == DataType.SCALAR);
 	}
 	public static HopDagPatternMatcher leaf(String _variableName) {
 		HopDagPatternMatcher ret = new HopDagPatternMatcher();
@@ -190,6 +190,11 @@ public class HopDagPatternMatcher {
 	public static HopDagPatternMatcher colSums(HopDagPatternMatcher child1) {
 		return new HopDagPatternMatcher().addPredicate("colSums", h -> 
 			h instanceof AggUnaryOp && ((AggUnaryOp)h).getOp() == AggOp.SUM && ((AggUnaryOp)h).getDirection() == Direction.Col)
+			.addChildMatcher(child1);
+	}
+	public static HopDagPatternMatcher colMeans(HopDagPatternMatcher child1) {
+		return new HopDagPatternMatcher().addPredicate("colSums", h -> 
+			h instanceof AggUnaryOp && ((AggUnaryOp)h).getOp() == AggOp.MEAN && ((AggUnaryOp)h).getDirection() == Direction.Col)
 			.addChildMatcher(child1);
 	}
 	public static HopDagPatternMatcher matrix(HopDagPatternMatcher X, HopDagPatternMatcher rows, HopDagPatternMatcher cols) {

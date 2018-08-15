@@ -1100,7 +1100,7 @@ public abstract class Hop implements ParseInfo
 		MAX_POOL, MAX_POOL_BACKWARD, AVG_POOL, AVG_POOL_BACKWARD,
 		CONV2D, CONV2D_BACKWARD_FILTER, CONV2D_BACKWARD_DATA,
 		BIASADD, BIASMULT, BATCH_NORM2D_TEST, CHANNEL_SUMS,
-		UPDATE_NESTEROV_X, UPDATE_EMA_MEAN
+		UPDATE_NESTEROV_X, UPDATE_EMA_MEAN, RESHAPE_COLMEANS
 	}
 	
 	public enum DataGenMethod {
@@ -1177,6 +1177,7 @@ public abstract class Hop implements ParseInfo
 		HopsConv2Lops.put(OpOpDnn.UPDATE_EMA_MEAN, org.apache.sysml.lops.DnnTransform.OperationTypes.UPDATE_EMA_MEAN);
 		HopsConv2Lops.put(OpOpDnn.CHANNEL_SUMS, org.apache.sysml.lops.DnnTransform.OperationTypes.CHANNEL_SUMS);
 		HopsConv2Lops.put(OpOpDnn.UPDATE_NESTEROV_X, org.apache.sysml.lops.DnnTransform.OperationTypes.UPDATE_NESTEROV_X);
+		HopsConv2Lops.put(OpOpDnn.CHANNEL_SUMS, org.apache.sysml.lops.DnnTransform.OperationTypes.RESHAPE_COLMEANS);
 	}
 
 	protected static final HashMap<Hop.Direction, org.apache.sysml.lops.PartialAggregate.DirectionTypes> HopsDirection2Lops;

@@ -41,6 +41,9 @@ import static org.apache.sysml.hops.rewrite.HopDagPatternMatcher.*;
  * 4. updateNesterovX:
  * X = X - mu*v_prev + (1+mu)*v
  * 
+ * 5. reshapeColMeans:
+ * subgrp_means = matrix(colMeans(X), rows=C, cols=Hin*Win)
+ * 
  */
 public class RewriteGPUSpecificOps extends HopRewriteRule {
 	
@@ -57,7 +60,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 		_batchNormTest = bias_add(
 				bias_multiply(norm, leaf("gamma")), 
 				leaf("beta"))
-			.addPredicate("fitsOnGPU", fitsOnGPU(3)); // 2x for input and output and 1x for overhead
+			.fitsOnGPU(3); // 2x for input and output and 1x for overhead
 	}
 	
 	// Pattern 2:
@@ -66,15 +69,14 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 		plus(	mult(leaf("mu").isScalar(), leaf("ema_mean")),  
 				mult(leaf("oneMinusMu").isScalar(), 
 						rowMeans(
-						leaf("subgrp_means").addPredicate("fitsOnGPU", fitsOnGPU(2))
+						leaf("subgrp_means").fitsOnGPU(2)
 						)));
-	
 	
 	// Pattern 3:
 	// rowSums(matrix(colSums(X), rows=C, cols=HW))
 	private static final HopDagPatternMatcher _channelSums = 
 		rowSums(matrix(	colSums(
-						leaf("X").addPredicate("fitsOnGPU", fitsOnGPU(2))), 
+						leaf("X").fitsOnGPU(2)), 
 						leaf("C").isScalar(), 
 						leaf("HW").isScalar()));
 	
@@ -83,8 +85,13 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	private static final HopDagPatternMatcher _updateNesterovX = 
 		plus(	minus(leaf("X"), mult(leaf("mu").isScalar(), leaf("v_prev"))), 	// X - mu*v_prev
 			mult(leaf("onePlusMu").isScalar(), leaf("v")))						// (1+mu)*v
-		.addPredicate("fitsOnGPU", fitsOnGPU(3)); // 2x for input and output and 1x for overhead;
+		.fitsOnGPU(3); // 2x for input and output and 1x for overhead;
 	
+	// Pattern 5:
+	// matrix(colMeans(X), rows=C, cols=Hin*Win)
+	// This avoids unnecessary copy by the reshape operator
+	private static final HopDagPatternMatcher _reshapeColMeans = 
+			matrix(colMeans(leaf("X").fitsOnGPU(2)), leaf("C").isScalar(), leaf("HW").isScalar());
 	// -------------------------------------------------------------------------------------------
 	
 	@Override
@@ -145,6 +152,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 			hi = batchNormTest(hop, hi, i); 
 			hi = channelSums(hop, hi, i); 
 			hi = updateNesterovX(hop, hi, i);
+			hi = reshapeColMeans(hop, hi, i);
 	
 			if( !descendFirst )
 				rule_GPUKernels(roots, hi, descendFirst);
@@ -205,6 +213,32 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 		}
 		return hi;
 	}
+	
+	/**
+	 * Checks for the reshapeColMeans pattern (matrix(colMeans(X), rows=C, cols=Hin*Win))
+	 * and returns a new DnnOp if matched
+	 * 
+	 * @param parent parent of the input
+	 * @param hi input to be matched
+	 * @param pos position
+	 * @return a new DnnOp or hi
+	 */
+	private static Hop reshapeColMeans(Hop parent, Hop hi, int pos) {
+		if(_reshapeColMeans.matches(hi)) {
+			ArrayList<Hop> inHops = new ArrayList<Hop>();
+			inHops.add(_reshapeColMeans.getMatchedHop("X"));
+			inHops.add(_reshapeColMeans.getMatchedHop("C"));
+			inHops.add(_reshapeColMeans.getMatchedHop("HW"));
+			LOG.debug("Applied reshapeColMeans rewrite.");
+			Hop newHop = new DnnOp(hi.getName(), hi.getDataType(), hi.getValueType(),
+					OpOpDnn.RESHAPE_COLMEANS, inHops);
+			return HopRewriteUtils.rewireAllParentChildReferences(hi, newHop);
+		}
+		return hi;
+	}
+	
+	
+	
 	
 	private static boolean hasSameDimensions(Hop x, Hop y) {
 		return x.dimsKnown() && y.dimsKnown() && (x.getDim1() == y.getDim1()) && (x.getDim2() == y.getDim2());

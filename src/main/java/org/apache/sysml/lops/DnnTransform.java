@@ -32,7 +32,7 @@ public class DnnTransform extends Lop
 		RELU_MAX_POOLING, RELU_MAX_POOLING_BACKWARD, RELU_BACKWARD,
 		CONV2D, CONV2D_BACKWARD_FILTER, CONV2D_BACKWARD_DATA,
 		BIAS_ADD, CONV2D_BIAS_ADD, BIAS_MULTIPLY, CHANNEL_SUMS, BATCH_NORM2D_TEST, 
-		UPDATE_NESTEROV_X, UPDATE_EMA_MEAN
+		UPDATE_NESTEROV_X, UPDATE_EMA_MEAN, RESHAPE_COLMEANS
 	}
 	
 	private OperationTypes operation;
@@ -176,6 +176,9 @@ public class DnnTransform extends Lop
 		case UPDATE_EMA_MEAN:
 			return "update_ema_mean";
 			
+		case RESHAPE_COLMEANS:
+			return "reshape_colmeans";
+			
 		default:
 			throw new UnsupportedOperationException(this.printErrorLocation() + "Instruction is not defined for Transform operation " + operation);
 				
@@ -215,7 +218,7 @@ public class DnnTransform extends Lop
 	
 	@Override
 	public String getInstructions(String input, String C, String HW, String output) {
-		if(operation == OperationTypes.CHANNEL_SUMS || operation == OperationTypes.UPDATE_EMA_MEAN) {
+		if(operation == OperationTypes.CHANNEL_SUMS || operation == OperationTypes.UPDATE_EMA_MEAN || operation == OperationTypes.RESHAPE_COLMEANS) {
 			StringBuilder sb = new StringBuilder();
 			sb.append( getExecType() );
 			

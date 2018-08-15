@@ -75,8 +75,9 @@ public class BatchNormTest extends GPUTests {
 		else {
 			assertHeavyHitterPresent("gpu_batch_norm2d_test");
 			assertHeavyHitterPresent("gpu_update_ema_mean");
+			assertHeavyHitterPresent("gpu_reshape_colmeans");
 			for(int i = 0; i < outputs.size()-1; i++) {
-				assertEqualObjects(outCPU.get(i), outGPU.get(i));
+				assertEqualObjects(outCPU.get(i), outGPU.get(i), 1e-3);
 			}
 		}
 	}

@@ -995,7 +995,7 @@ public class LibMatrixCUDA {
 	 * @param rows						number of rows in input matrix
 	 * @param cols						number of columns in input matrix
 	 */
-	private static void reduceCol(GPUContext gCtx, String instName, String kernelFunction, Pointer in, Pointer out, int rows, int cols) {
+	public static void reduceCol(GPUContext gCtx, String instName, String kernelFunction, Pointer in, Pointer out, int rows, int cols) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : reduceCol for " + kernelFunction + ", GPUContext=" + gCtx);
 		}

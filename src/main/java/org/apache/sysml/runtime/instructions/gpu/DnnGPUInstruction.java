@@ -113,8 +113,8 @@ public class DnnGPUInstruction extends GPUInstruction {
 	public DnnGPUInstruction(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr, 
 			double intermediateMemoryBudget) throws DMLRuntimeException {
 		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), opcode, istr);
-		if( !(opcode.equals("channel_sums") || opcode.equals("update_ema_mean") ) ) {
-			throw new DMLRuntimeException("Incorrect usage. Expected the opcode to be channel_sums or update_ema_mean, but found " + opcode);
+		if( !(opcode.equals("channel_sums") || opcode.equals("update_ema_mean") ||  opcode.equals("reshape_colmeans") ) ) {
+			throw new DMLRuntimeException("Incorrect usage. Expected the opcode to be channel_sums or update_ema_mean or reshape_colmeans, but found " + opcode);
 		}
 		_input1 = in1;
 		_input2 = in2;
@@ -305,7 +305,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 			CPOperand out = new CPOperand(parts[3]);
 			return new DnnGPUInstruction(in1, in2, out, opcode, str, Double.parseDouble(parts[4]));
 		}
-		else if (opcode.equalsIgnoreCase("channel_sums") || opcode.equalsIgnoreCase("update_ema_mean")) {
+		else if (opcode.equalsIgnoreCase("channel_sums") || opcode.equalsIgnoreCase("update_ema_mean") || opcode.equals("reshape_colmeans")) {
 			InstructionUtils.checkNumFields(parts, 4);
 			CPOperand in = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
@@ -576,6 +576,30 @@ public class DnnGPUInstruction extends GPUInstruction {
 		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
 	}
 	
+	private void processReshapeColMeansInstruction(ExecutionContext ec) {
+		GPUStatistics.incrementNoOfExecutedGPUInst();
+		MatrixObject input = getMatrixInputForGPUInstruction(ec, _input1.getName());
+		int C = (int) ec.getScalarInput(_input2.getName(), _input2.getValueType(), _input2.isLiteral()).getLongValue();
+		int HW = (int) ec.getScalarInput(_input3.getName(), _input3.getValueType(), _input3.isLiteral()).getLongValue();
+		if(C*HW != input.getNumColumns()) {
+			throw new DMLRuntimeException("Expected rows*cols" + C + "*" + HW + " to be equal to number of columns of input " + input.getNumColumns());
+		}
+		MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), C, HW);
+		
+		// output = matrix(colMeans(X), rows=C, cols=Hin*Win)
+		GPUContext gCtx = ec.getGPUContext(0);
+		String instName = getExtendedOpcode();
+		int rows = LibMatrixCUDA.toInt(input.getNumRows());
+		int cols = LibMatrixCUDA.toInt(input.getNumColumns());
+		LibMatrixCUDA.reduceCol(gCtx, instName, "reduce_col_mean", 
+				LibMatrixCUDA.getDensePointer(gCtx, input, instName), 
+				LibMatrixCUDA.getDensePointer(gCtx, out, instName), rows, cols);
+		
+		// release inputs/outputs
+		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
+		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
+	}
+	
 	private void processUpdateEMAMeanInstruction(ExecutionContext ec) {
 		GPUStatistics.incrementNoOfExecutedGPUInst();
 		MatrixObject emaMean = getMatrixInputForGPUInstruction(ec, _input1.getName());
@@ -775,6 +799,10 @@ public class DnnGPUInstruction extends GPUInstruction {
 		}
 		else if (instOpcode.equalsIgnoreCase("channel_sums")) {
 			processChannelSumsInstruction(ec);
+			return;
+		}
+		else if (instOpcode.equalsIgnoreCase("reshape_colmeans")) {
+			processReshapeColMeansInstruction(ec);
 			return;
 		}
 		else if (instOpcode.equalsIgnoreCase("update_nesterov_x")) {

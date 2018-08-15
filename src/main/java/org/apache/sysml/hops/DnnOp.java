@@ -138,6 +138,7 @@ public class DnnOp extends MultiThreadedHop
 			case CHANNEL_SUMS:
 			case UPDATE_NESTEROV_X:
 			case UPDATE_EMA_MEAN:
+			case RESHAPE_COLMEANS:
 			{	
 				if(et == ExecType.GPU) {
 					setLops(constructDnnLops(et, inputs));
@@ -175,6 +176,7 @@ public class DnnOp extends MultiThreadedHop
 				return 2;
 			case BATCH_NORM2D_TEST:
 				return 6;
+			case RESHAPE_COLMEANS:
 			case CHANNEL_SUMS:
 			case UPDATE_EMA_MEAN:
 				return 3;
@@ -549,6 +551,14 @@ public class DnnOp extends MultiThreadedHop
 			ret[2] = -1;
 			return ret;
 		}
+		else if(op == OpOpDnn.RESHAPE_COLMEANS) {
+			long numChannels = Hop.computeSizeInformation(getInput().get(1));
+			long HW = Hop.computeSizeInformation(getInput().get(2));
+			ret[0] = numChannels;
+			ret[1] = HW;
+			ret[2] = -1;
+			return ret;
+		}
 		
 		refreshSizeInformation();
 		ret[0] = _dim1; ret[1] = _dim2; ret[2] = _nnz;
@@ -757,6 +767,14 @@ public class DnnOp extends MultiThreadedHop
 			_nnz = -1; // cannot infer stats
 			return;
 		}
+		else if(op == OpOpDnn.RESHAPE_COLMEANS) {
+			long numChannels = Hop.computeSizeInformation(getInput().get(1));
+			long HW = Hop.computeSizeInformation(getInput().get(2));
+			setDim1(numChannels);
+			setDim2(HW);
+			_nnz = -1; // cannot infer stats
+			return;
+		}
 		
 		// Reset the _cachedParams to avoid incorrect sizes
 		_cachedParams = new DnnParameters(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, _maxNumThreads);
@@ -850,7 +868,7 @@ public class DnnOp extends MultiThreadedHop
 	 */
 	private long getDim(String dimString) {
 		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT || op == OpOpDnn.BATCH_NORM2D_TEST || op == OpOpDnn.CHANNEL_SUMS ||
-			op == OpOpDnn.UPDATE_NESTEROV_X || op == OpOpDnn.UPDATE_EMA_MEAN) {
+			op == OpOpDnn.UPDATE_NESTEROV_X || op == OpOpDnn.UPDATE_EMA_MEAN || op == OpOpDnn.RESHAPE_COLMEANS) {
 			throw new RuntimeException("getDim method should not be invoked for " + op.name());
 		}
 		try {
