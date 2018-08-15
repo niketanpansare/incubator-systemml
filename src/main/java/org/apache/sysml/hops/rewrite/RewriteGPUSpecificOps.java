@@ -196,7 +196,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 			Hop v_prev = _updateNesterovX.getMatchedHop("v_prev");
 			if(hasSameDimensions(X, v) && hasSameDimensions(X, v_prev)) {
 				LOG.debug("Applied updateNesterovX rewrite.");
-				Hop newHop = HopRewriteUtils.createDnnOp(_updateNesterovX, OpOpDnn.UPDATE_NESTEROV_X, "X", "v", "v_prev");
+				Hop newHop = HopRewriteUtils.createDnnOp(_updateNesterovX, OpOpDnn.UPDATE_NESTEROV_X, "X", "v", "v_prev", "mu");
 				return HopRewriteUtils.rewireAllParentChildReferences(hi, newHop);
 			}
 		}
