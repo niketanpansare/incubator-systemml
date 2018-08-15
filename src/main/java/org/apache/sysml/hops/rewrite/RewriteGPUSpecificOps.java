@@ -25,7 +25,7 @@ import java.util.HashMap;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.OpOpDnn;
 import org.apache.sysml.hops.DnnOp;
-import static org.apache.sysml.hops.rewrite.HopDagPatternMatcher.*;
+import static org.apache.sysml.hops.rewrite.SimpleHopDagPatternMatcher.*;
 
 /*
  * This class contains GPU-specific rewrites for following patterns:
@@ -47,10 +47,10 @@ import static org.apache.sysml.hops.rewrite.HopDagPatternMatcher.*;
 public class RewriteGPUSpecificOps extends HopRewriteRule {
 	
 
-	private static HopDagPatternMatcher _batchNormUpdatedMean = null;
-	private static HopDagPatternMatcher _batchNormTest = null;
-	private static HopDagPatternMatcher _channelSums = null;
-	private static HopDagPatternMatcher _updateNesterovX = null;
+	private static SimpleHopDagPatternMatcher _batchNormUpdatedMean = null;
+	private static SimpleHopDagPatternMatcher _batchNormTest = null;
+	private static SimpleHopDagPatternMatcher _channelSums = null;
+	private static SimpleHopDagPatternMatcher _updateNesterovX = null;
 	
 	@Override
 	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) {
@@ -118,13 +118,22 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 		hop.setVisited();
 	}
 	
+	/**
+	 * Checks for the channelSums pattern (output = rowSums(matrix(colSums(x), rows=numChannels, cols=imgSize*imgSize)))
+	 * and returns a new DnnOp if matched
+	 * 
+	 * @param parent parent of the input
+	 * @param hi input to be matched
+	 * @param pos position
+	 * @return a new DnnOp or hi
+	 */
 	private static Hop channelSums(Hop parent, Hop hi, int pos) {
 		if(_channelSums == null) {
 			// 1. Create placeholders for the input variables
-			HashMap<String, HopDagPatternMatcher> in = createPlaceholders("X", "C", "HW");
-			in.get("X").addPredicate("fitsOnGPU", HopDagPatternMatcher.fitsOnGPU(2));
-			in.get("C").isScalar();
-			in.get("HW").isScalar();
+			HashMap<String, SimpleHopDagPatternMatcher> in = createPlaceholders("X", "C", "HW");
+			in.get("X").addPredicate("fitsOnGPU", fitsOnGPU(2));
+			in.get("C").addPredicate("isScalar", isScalar());
+			in.get("HW").addPredicate("isScalar", isScalar());
 			
 			// 2. Create the pattern matcher
 			// output = rowSums(matrix(colSums(x), rows=numChannels, cols=imgSize*imgSize))
@@ -136,9 +145,9 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 		
 		if(_channelSums.matches(hi)) {
 			ArrayList<Hop> inHops = new ArrayList<Hop>();
-			inHops.add(_channelSums.getHop("X"));
-			inHops.add(_channelSums.getHop("C"));
-			inHops.add(_channelSums.getHop("HW"));
+			inHops.add(_channelSums.getMatchedHop("X"));
+			inHops.add(_channelSums.getMatchedHop("C"));
+			inHops.add(_channelSums.getMatchedHop("HW"));
 			LOG.debug("Applied channelSums rewrite.");
 			Hop newHop = new DnnOp(hi.getName(), hi.getDataType(), hi.getValueType(),
 					OpOpDnn.CHANNEL_SUMS, inHops);
@@ -159,17 +168,16 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	private static Hop updateNesterovX(Hop parent, Hop hi, int pos) {
 		if(_updateNesterovX == null) {
 			// 1. Create placeholders for the input variables
-			HashMap<String, HopDagPatternMatcher> in = createPlaceholders("X", "v", "v_prev", "mu", "onePlusMu");
-			in.get("mu").isScalar();
-			in.get("onePlusMu").isScalar();
+			HashMap<String, SimpleHopDagPatternMatcher> in = createPlaceholders("X", "v", "v_prev", "mu", "onePlusMu");
+			in.get("mu").addPredicate("isScalar", isScalar());
+			in.get("onePlusMu").addPredicate("isScalar", isScalar());
 			
 			// 2. Create the pattern matcher
 			// X = X - mu*v_prev + (1+mu)*v
 			_updateNesterovX = 
-					plus(
-							minus(in.get("X"), mult(in.get("mu"), in.get("v_prev"))), 	// X - mu*v_prev
+					plus(	minus(in.get("X"), mult(in.get("mu"), in.get("v_prev"))), 	// X - mu*v_prev
 							mult(in.get("onePlusMu"), in.get("v")))						// (1+mu)*v
-					.addPredicate("fitsOnGPU", HopDagPatternMatcher.fitsOnGPU(3)); // 2x for input and output and 1x for overhead
+					.addPredicate("fitsOnGPU", fitsOnGPU(3)); // 2x for input and output and 1x for overhead
 					
 			
 			// 3. Register the placeholders to fetch the Hop if the pattern matches
@@ -178,15 +186,15 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 		
 		if(_updateNesterovX.matches(hi) && 
 				(1+_updateNesterovX.getLiteralValue("mu")) == _updateNesterovX.getLiteralValue("onePlusMu")) {
-			Hop X = _updateNesterovX.getHop("X");
-			Hop v = _updateNesterovX.getHop("v");
-			Hop v_prev = _updateNesterovX.getHop("v_prev");
+			Hop X = _updateNesterovX.getMatchedHop("X");
+			Hop v = _updateNesterovX.getMatchedHop("v");
+			Hop v_prev = _updateNesterovX.getMatchedHop("v_prev");
 			if(hasSameDimensions(X, v) && hasSameDimensions(X, v_prev)) {
 				ArrayList<Hop> inHops = new ArrayList<Hop>();
 				inHops.add(X);
 				inHops.add(v);
 				inHops.add(v_prev);
-				inHops.add(_updateNesterovX.getHop("mu"));
+				inHops.add(_updateNesterovX.getMatchedHop("mu"));
 				LOG.debug("Applied updateNesterovX rewrite.");
 				Hop newHop = new DnnOp(hi.getName(), hi.getDataType(), hi.getValueType(),
 						OpOpDnn.UPDATE_NESTEROV_X, inHops);
@@ -215,10 +223,10 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	private static Hop batchNormUpdatedMean(Hop parent, Hop hi, int pos) {
 		if(_batchNormUpdatedMean == null) {
 			// 1. Create placeholders for the input variables
-			HashMap<String, HopDagPatternMatcher> in = createPlaceholders("ema_mean", "subgrp_means", "mu", "oneMinusMu");
-			in.get("subgrp_means").addPredicate("fitsOnGPU", HopDagPatternMatcher.fitsOnGPU(2));
-			in.get("mu").isScalar();
-			in.get("oneMinusMu").isScalar();
+			HashMap<String, SimpleHopDagPatternMatcher> in = createPlaceholders("ema_mean", "subgrp_means", "mu", "oneMinusMu");
+			in.get("subgrp_means").addPredicate("fitsOnGPU", fitsOnGPU(2));
+			in.get("mu").addPredicate("isScalar", isScalar());
+			in.get("oneMinusMu").addPredicate("isScalar", isScalar());
 			
 			// 2. Create the pattern matcher
 			// ema_mean_upd = mu*ema_mean + (1-mu)*rowMeans(subgrp_means)
@@ -234,9 +242,9 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 				(1-_batchNormUpdatedMean.getLiteralValue("mu")) == _batchNormUpdatedMean.getLiteralValue("oneMinusMu")) {
 			LOG.debug("Applied batchNormUpdatedMean rewrite.");
 			ArrayList<Hop> inHops = new ArrayList<Hop>();
-			inHops.add(_batchNormUpdatedMean.getHop("ema_mean"));
-			inHops.add(_batchNormUpdatedMean.getHop("subgrp_means"));
-			inHops.add(_batchNormUpdatedMean.getHop("mu"));
+			inHops.add(_batchNormUpdatedMean.getMatchedHop("ema_mean"));
+			inHops.add(_batchNormUpdatedMean.getMatchedHop("subgrp_means"));
+			inHops.add(_batchNormUpdatedMean.getMatchedHop("mu"));
 			Hop newHop = new DnnOp(hi.getName(), hi.getDataType(), hi.getValueType(),
 					OpOpDnn.UPDATE_EMA_MEAN, inHops);
 			return HopRewriteUtils.rewireAllParentChildReferences(hi, newHop);
@@ -256,12 +264,12 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	private static Hop batchNormTest(Hop parent, Hop hi, int pos) {
 		if(_batchNormTest == null) {
 			// 1. Create placeholders for the input variables
-			HashMap<String, HopDagPatternMatcher> in = createPlaceholders("X", "mean", "var", "eps", "gamma", "beta");
-			in.get("eps").isScalar();
+			HashMap<String, SimpleHopDagPatternMatcher> in = createPlaceholders("X", "mean", "var", "eps", "gamma", "beta");
+			in.get("eps").addPredicate("isScalar", isScalar());
 			
 			// 2. Create the pattern matcher
 			// norm = bias_multiply(bias_add(X, -mean), 1/sqrt(var+eps))
-			HopDagPatternMatcher norm = 
+			SimpleHopDagPatternMatcher norm = 
 					bias_multiply(
 							bias_add(in.get("X"), unaryMinus(in.get("mean"))), 
 							div(1, sqrt(plus(in.get("var"), in.get("eps")))));
@@ -269,7 +277,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 			_batchNormTest = bias_add(
 					bias_multiply(norm, in.get("gamma")), 
 					in.get("beta"))
-				.addPredicate("fitsOnGPU", HopDagPatternMatcher.fitsOnGPU(3)); // 2x for input and output and 1x for overhead
+				.addPredicate("fitsOnGPU", fitsOnGPU(3)); // 2x for input and output and 1x for overhead
 			
 			// 3. Register the placeholders to fetch the Hop if the pattern matches
 			_batchNormTest.register(in); 
@@ -278,12 +286,12 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 		
 		if(_batchNormTest.matches(hi)) {
 			ArrayList<Hop> inHops = new ArrayList<Hop>();
-			inHops.add(_batchNormTest.getHop("X"));
-			inHops.add(_batchNormTest.getHop("gamma"));
-			inHops.add(_batchNormTest.getHop("beta"));
-			inHops.add(_batchNormTest.getHop("mean"));
-			inHops.add(_batchNormTest.getHop("var"));
-			inHops.add(_batchNormTest.getHop("eps"));
+			inHops.add(_batchNormTest.getMatchedHop("X"));
+			inHops.add(_batchNormTest.getMatchedHop("gamma"));
+			inHops.add(_batchNormTest.getMatchedHop("beta"));
+			inHops.add(_batchNormTest.getMatchedHop("mean"));
+			inHops.add(_batchNormTest.getMatchedHop("var"));
+			inHops.add(_batchNormTest.getMatchedHop("eps"));
 			LOG.debug("Applied batchNormTest rewrite.");
 			Hop newHop = new DnnOp(hi.getName(), hi.getDataType(), hi.getValueType(),
 					OpOpDnn.BATCH_NORM2D_TEST, inHops);
