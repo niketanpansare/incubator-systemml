@@ -1177,7 +1177,7 @@ public abstract class Hop implements ParseInfo
 		HopsConv2Lops.put(OpOpDnn.UPDATE_EMA_MEAN, org.apache.sysml.lops.DnnTransform.OperationTypes.UPDATE_EMA_MEAN);
 		HopsConv2Lops.put(OpOpDnn.CHANNEL_SUMS, org.apache.sysml.lops.DnnTransform.OperationTypes.CHANNEL_SUMS);
 		HopsConv2Lops.put(OpOpDnn.UPDATE_NESTEROV_X, org.apache.sysml.lops.DnnTransform.OperationTypes.UPDATE_NESTEROV_X);
-		HopsConv2Lops.put(OpOpDnn.CHANNEL_SUMS, org.apache.sysml.lops.DnnTransform.OperationTypes.RESHAPE_COLMEANS);
+		HopsConv2Lops.put(OpOpDnn.RESHAPE_COLMEANS, org.apache.sysml.lops.DnnTransform.OperationTypes.RESHAPE_COLMEANS);
 	}
 
 	protected static final HashMap<Hop.Direction, org.apache.sysml.lops.PartialAggregate.DirectionTypes> HopsDirection2Lops;
