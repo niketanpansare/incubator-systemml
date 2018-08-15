@@ -172,13 +172,8 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	 */
 	private static Hop channelSums(Hop parent, Hop hi, int pos) {
 		if(_channelSums.matches(hi)) {
-			ArrayList<Hop> inHops = new ArrayList<Hop>();
-			inHops.add(_channelSums.getMatchedHop("X"));
-			inHops.add(_channelSums.getMatchedHop("C"));
-			inHops.add(_channelSums.getMatchedHop("HW"));
 			LOG.debug("Applied channelSums rewrite.");
-			Hop newHop = new DnnOp(hi.getName(), hi.getDataType(), hi.getValueType(),
-					OpOpDnn.CHANNEL_SUMS, inHops);
+			Hop newHop = HopRewriteUtils.createDnnOp(_channelSums, OpOpDnn.CHANNEL_SUMS, "X", "C", "HW");
 			return HopRewriteUtils.rewireAllParentChildReferences(hi, newHop);
 		}
 		return hi;
@@ -200,14 +195,8 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 			Hop v = _updateNesterovX.getMatchedHop("v");
 			Hop v_prev = _updateNesterovX.getMatchedHop("v_prev");
 			if(hasSameDimensions(X, v) && hasSameDimensions(X, v_prev)) {
-				ArrayList<Hop> inHops = new ArrayList<Hop>();
-				inHops.add(X);
-				inHops.add(v);
-				inHops.add(v_prev);
-				inHops.add(_updateNesterovX.getMatchedHop("mu"));
 				LOG.debug("Applied updateNesterovX rewrite.");
-				Hop newHop = new DnnOp(hi.getName(), hi.getDataType(), hi.getValueType(),
-						OpOpDnn.UPDATE_NESTEROV_X, inHops);
+				Hop newHop = HopRewriteUtils.createDnnOp(_updateNesterovX, OpOpDnn.UPDATE_NESTEROV_X, "X", "v", "v_prev");
 				return HopRewriteUtils.rewireAllParentChildReferences(hi, newHop);
 			}
 		}
@@ -225,13 +214,8 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	 */
 	private static Hop reshapeColMeans(Hop parent, Hop hi, int pos) {
 		if(_reshapeColMeans.matches(hi)) {
-			ArrayList<Hop> inHops = new ArrayList<Hop>();
-			inHops.add(_reshapeColMeans.getMatchedHop("X"));
-			inHops.add(_reshapeColMeans.getMatchedHop("C"));
-			inHops.add(_reshapeColMeans.getMatchedHop("HW"));
 			LOG.debug("Applied reshapeColMeans rewrite.");
-			Hop newHop = new DnnOp(hi.getName(), hi.getDataType(), hi.getValueType(),
-					OpOpDnn.RESHAPE_COLMEANS, inHops);
+			Hop newHop = HopRewriteUtils.createDnnOp(_reshapeColMeans, OpOpDnn.RESHAPE_COLMEANS, "X", "C", "HW");
 			return HopRewriteUtils.rewireAllParentChildReferences(hi, newHop);
 		}
 		return hi;
@@ -260,12 +244,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 		if(_batchNormUpdatedMean.matches(hi) && 
 				(1-_batchNormUpdatedMean.getLiteralValue("mu")) == _batchNormUpdatedMean.getLiteralValue("oneMinusMu")) {
 			LOG.debug("Applied batchNormUpdatedMean rewrite.");
-			ArrayList<Hop> inHops = new ArrayList<Hop>();
-			inHops.add(_batchNormUpdatedMean.getMatchedHop("ema_mean"));
-			inHops.add(_batchNormUpdatedMean.getMatchedHop("subgrp_means"));
-			inHops.add(_batchNormUpdatedMean.getMatchedHop("mu"));
-			Hop newHop = new DnnOp(hi.getName(), hi.getDataType(), hi.getValueType(),
-					OpOpDnn.UPDATE_EMA_MEAN, inHops);
+			Hop newHop = HopRewriteUtils.createDnnOp(_batchNormUpdatedMean, OpOpDnn.UPDATE_EMA_MEAN, "ema_mean", "subgrp_means", "mu");
 			return HopRewriteUtils.rewireAllParentChildReferences(hi, newHop);
 		}
 		return hi;
@@ -282,16 +261,8 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	 */
 	private static Hop batchNormTest(Hop parent, Hop hi, int pos) {
 		if(_batchNormTest.matches(hi)) {
-			ArrayList<Hop> inHops = new ArrayList<Hop>();
-			inHops.add(_batchNormTest.getMatchedHop("X"));
-			inHops.add(_batchNormTest.getMatchedHop("gamma"));
-			inHops.add(_batchNormTest.getMatchedHop("beta"));
-			inHops.add(_batchNormTest.getMatchedHop("mean"));
-			inHops.add(_batchNormTest.getMatchedHop("var"));
-			inHops.add(_batchNormTest.getMatchedHop("eps"));
 			LOG.debug("Applied batchNormTest rewrite.");
-			Hop newHop = new DnnOp(hi.getName(), hi.getDataType(), hi.getValueType(),
-					OpOpDnn.BATCH_NORM2D_TEST, inHops);
+			Hop newHop = HopRewriteUtils.createDnnOp(_batchNormTest, OpOpDnn.BATCH_NORM2D_TEST, "X", "gamma", "beta", "mean", "var", "eps");
 			return HopRewriteUtils.rewireAllParentChildReferences(hi, newHop);
 		}
 		return hi;
