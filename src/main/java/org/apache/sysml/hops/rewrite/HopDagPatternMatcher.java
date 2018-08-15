@@ -18,8 +18,6 @@
  */
 package org.apache.sysml.hops.rewrite;
 
-import static org.apache.sysml.hops.rewrite.SimpleHopDagPatternMatcher.isScalar;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -40,13 +38,13 @@ import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.utils.Explain;
 
-public class SimpleHopDagPatternMatcher {
+public class HopDagPatternMatcher {
 	private static final boolean DEBUG_REWRITES = false;
 	
 	// Predicates for the current HOP
 	List<HopPredicate> _predicates = new ArrayList<>();
 	// Child matchers
-	List<SimpleHopDagPatternMatcher> _children = new ArrayList<>();
+	List<HopDagPatternMatcher> _children = new ArrayList<>();
 	private boolean isLeaf = false;
 	
 	// Simple utility for debugging the rewrites
@@ -74,7 +72,7 @@ public class SimpleHopDagPatternMatcher {
 	 * @param pred higher order function that takes as an input a hop and returns true if the pattern matches else false
 	 * @return this
 	 */
-	public SimpleHopDagPatternMatcher addPredicate(String name, Function<Hop, Boolean> pred) {
+	public HopDagPatternMatcher addPredicate(String name, Function<Hop, Boolean> pred) {
 		_predicates.add(new HopPredicate(name, pred));
 		return this;
 	}
@@ -84,7 +82,7 @@ public class SimpleHopDagPatternMatcher {
 	 * @param children list of childer
 	 * @return this
 	 */
-	public SimpleHopDagPatternMatcher addChildMatcher(SimpleHopDagPatternMatcher... children) {
+	public HopDagPatternMatcher addChildMatcher(HopDagPatternMatcher... children) {
 		for(int i = 0; i < children.length; i++) {
 			_children.add(children[i]);
 		}
@@ -131,7 +129,7 @@ public class SimpleHopDagPatternMatcher {
 	
 	private HashMap<String, Hop> matchedHops;
 	private String variableName;
-	private boolean matchHelper(SimpleHopDagPatternMatcher root, Hop h) {
+	private boolean matchHelper(HopDagPatternMatcher root, Hop h) {
 		if(h == null || (_children.size() > 0 && h.getInput().size() < _children.size())) {
 			if(DEBUG_REWRITES) {
 				System.out.println("The expected number of children (" + _children.size() + ") didnot match the number of inputs (" + h.getInput().size() + ") " + this);
@@ -147,7 +145,7 @@ public class SimpleHopDagPatternMatcher {
 			}
 		}
 		int index = 0;
-		for(SimpleHopDagPatternMatcher child : _children) {
+		for(HopDagPatternMatcher child : _children) {
 			if(!child.matchHelper(root, h.getInput().get(index))) {
 				return false;
 			}
@@ -169,106 +167,106 @@ public class SimpleHopDagPatternMatcher {
 	}
 	
 	// Factory methods:
-	public static SimpleHopDagPatternMatcher dummy = new SimpleHopDagPatternMatcher();
-	public static SimpleHopDagPatternMatcher rowMeans(SimpleHopDagPatternMatcher child1) {
-		return new SimpleHopDagPatternMatcher().addPredicate("rowMeans", h -> 
+	public static HopDagPatternMatcher dummy = new HopDagPatternMatcher();
+	public static HopDagPatternMatcher rowMeans(HopDagPatternMatcher child1) {
+		return new HopDagPatternMatcher().addPredicate("rowMeans", h -> 
 			h instanceof AggUnaryOp && ((AggUnaryOp)h).getOp() == AggOp.MEAN && ((AggUnaryOp)h).getDirection() == Direction.Row)
 			.addChildMatcher(child1);
 	}
-	public SimpleHopDagPatternMatcher isScalar() {
+	public HopDagPatternMatcher isScalar() {
 		return this.addPredicate("isScalar", h -> h.getDataType() == DataType.SCALAR);
 	}
-	public static SimpleHopDagPatternMatcher leaf(String _variableName) {
-		SimpleHopDagPatternMatcher ret = new SimpleHopDagPatternMatcher();
+	public static HopDagPatternMatcher leaf(String _variableName) {
+		HopDagPatternMatcher ret = new HopDagPatternMatcher();
 		ret.isLeaf = true;
 		ret.variableName = _variableName;
 		return ret;
 	}
-	public static SimpleHopDagPatternMatcher rowSums(SimpleHopDagPatternMatcher child1) {
-		return new SimpleHopDagPatternMatcher().addPredicate("rowSums", h -> 
+	public static HopDagPatternMatcher rowSums(HopDagPatternMatcher child1) {
+		return new HopDagPatternMatcher().addPredicate("rowSums", h -> 
 			h instanceof AggUnaryOp && ((AggUnaryOp)h).getOp() == AggOp.SUM && ((AggUnaryOp)h).getDirection() == Direction.Row)
 			.addChildMatcher(child1);
 	}
-	public static SimpleHopDagPatternMatcher colSums(SimpleHopDagPatternMatcher child1) {
-		return new SimpleHopDagPatternMatcher().addPredicate("colSums", h -> 
+	public static HopDagPatternMatcher colSums(HopDagPatternMatcher child1) {
+		return new HopDagPatternMatcher().addPredicate("colSums", h -> 
 			h instanceof AggUnaryOp && ((AggUnaryOp)h).getOp() == AggOp.SUM && ((AggUnaryOp)h).getDirection() == Direction.Col)
 			.addChildMatcher(child1);
 	}
-	public static SimpleHopDagPatternMatcher matrix(SimpleHopDagPatternMatcher X, SimpleHopDagPatternMatcher rows, SimpleHopDagPatternMatcher cols) {
-		return new SimpleHopDagPatternMatcher().addPredicate("matrix_reshape", h -> HopRewriteUtils.isReorg(h, ReOrgOp.RESHAPE))
+	public static HopDagPatternMatcher matrix(HopDagPatternMatcher X, HopDagPatternMatcher rows, HopDagPatternMatcher cols) {
+		return new HopDagPatternMatcher().addPredicate("matrix_reshape", h -> HopRewriteUtils.isReorg(h, ReOrgOp.RESHAPE))
 				.addChildMatcher(X, rows, cols);
 	}
 	
-	public static SimpleHopDagPatternMatcher bias_add(SimpleHopDagPatternMatcher child1, SimpleHopDagPatternMatcher child2) {
-		return new SimpleHopDagPatternMatcher().addPredicate("bias_add", h -> HopRewriteUtils.isDnn(h, OpOpDnn.BIASADD))
+	public static HopDagPatternMatcher bias_add(HopDagPatternMatcher child1, HopDagPatternMatcher child2) {
+		return new HopDagPatternMatcher().addPredicate("bias_add", h -> HopRewriteUtils.isDnn(h, OpOpDnn.BIASADD))
 				.addChildMatcher(child1, child2);
 	}
-	public static SimpleHopDagPatternMatcher bias_multiply(SimpleHopDagPatternMatcher child1, SimpleHopDagPatternMatcher child2) {
-		return new SimpleHopDagPatternMatcher().addPredicate("bias_multiply", h -> HopRewriteUtils.isDnn(h, OpOpDnn.BIASMULT))
+	public static HopDagPatternMatcher bias_multiply(HopDagPatternMatcher child1, HopDagPatternMatcher child2) {
+		return new HopDagPatternMatcher().addPredicate("bias_multiply", h -> HopRewriteUtils.isDnn(h, OpOpDnn.BIASMULT))
 				.addChildMatcher(child1, child2);
 	}
-	public static SimpleHopDagPatternMatcher unaryMinus(SimpleHopDagPatternMatcher child) {
-		return new SimpleHopDagPatternMatcher().addPredicate("unaryMinus", h -> HopRewriteUtils.isBinary(h, OpOp2.MINUS)
+	public static HopDagPatternMatcher unaryMinus(HopDagPatternMatcher child) {
+		return new HopDagPatternMatcher().addPredicate("unaryMinus", h -> HopRewriteUtils.isBinary(h, OpOp2.MINUS)
 				&& HopRewriteUtils.isLiteralOfValue(h.getInput().get(0), 0))
 				.addChildMatcher(dummy, child);
 	}
-	public static SimpleHopDagPatternMatcher sqrt(SimpleHopDagPatternMatcher child) {
-		return new SimpleHopDagPatternMatcher().addPredicate("sqrt", h -> HopRewriteUtils.isUnary(h, OpOp1.SQRT))
+	public static HopDagPatternMatcher sqrt(HopDagPatternMatcher child) {
+		return new HopDagPatternMatcher().addPredicate("sqrt", h -> HopRewriteUtils.isUnary(h, OpOp1.SQRT))
 				.addChildMatcher(child);
 	}
-	public static SimpleHopDagPatternMatcher div(SimpleHopDagPatternMatcher child1, SimpleHopDagPatternMatcher child2) {
-		return new SimpleHopDagPatternMatcher().addPredicate("div", h -> HopRewriteUtils.isBinary(h, OpOp2.DIV))
+	public static HopDagPatternMatcher div(HopDagPatternMatcher child1, HopDagPatternMatcher child2) {
+		return new HopDagPatternMatcher().addPredicate("div", h -> HopRewriteUtils.isBinary(h, OpOp2.DIV))
 				.addChildMatcher(child1, child2);
 	}
-	public static SimpleHopDagPatternMatcher div(double child1, SimpleHopDagPatternMatcher child2) {
-		return new SimpleHopDagPatternMatcher().addPredicate("div", h -> HopRewriteUtils.isBinary(h, OpOp2.DIV) && 
+	public static HopDagPatternMatcher div(double child1, HopDagPatternMatcher child2) {
+		return new HopDagPatternMatcher().addPredicate("div", h -> HopRewriteUtils.isBinary(h, OpOp2.DIV) && 
 				HopRewriteUtils.isLiteralOfValue(h.getInput().get(0), child1))
 				.addChildMatcher(dummy, child2);
 	}
-	public static SimpleHopDagPatternMatcher div(SimpleHopDagPatternMatcher child1, double child2) {
-		return new SimpleHopDagPatternMatcher().addPredicate("div", h -> HopRewriteUtils.isBinary(h, OpOp2.DIV) && 
+	public static HopDagPatternMatcher div(HopDagPatternMatcher child1, double child2) {
+		return new HopDagPatternMatcher().addPredicate("div", h -> HopRewriteUtils.isBinary(h, OpOp2.DIV) && 
 				HopRewriteUtils.isLiteralOfValue(h.getInput().get(1), child2))
 				.addChildMatcher(child1, dummy);
 	}
-	public static SimpleHopDagPatternMatcher plus(SimpleHopDagPatternMatcher child1, SimpleHopDagPatternMatcher child2) {
-		return new SimpleHopDagPatternMatcher().addPredicate("plus", h -> HopRewriteUtils.isBinary(h, OpOp2.PLUS))
+	public static HopDagPatternMatcher plus(HopDagPatternMatcher child1, HopDagPatternMatcher child2) {
+		return new HopDagPatternMatcher().addPredicate("plus", h -> HopRewriteUtils.isBinary(h, OpOp2.PLUS))
 				.addChildMatcher(child1, child2);
 	}
-	public static SimpleHopDagPatternMatcher plus(double child1, SimpleHopDagPatternMatcher child2) {
-		return new SimpleHopDagPatternMatcher().addPredicate("plus", h -> HopRewriteUtils.isBinary(h, OpOp2.PLUS) && 
+	public static HopDagPatternMatcher plus(double child1, HopDagPatternMatcher child2) {
+		return new HopDagPatternMatcher().addPredicate("plus", h -> HopRewriteUtils.isBinary(h, OpOp2.PLUS) && 
 				HopRewriteUtils.isLiteralOfValue(h.getInput().get(0), child1))
 				.addChildMatcher(dummy, child2);
 	}
-	public static SimpleHopDagPatternMatcher plus(SimpleHopDagPatternMatcher child1, double child2) {
-		return new SimpleHopDagPatternMatcher().addPredicate("plus", h -> HopRewriteUtils.isBinary(h, OpOp2.PLUS) && 
+	public static HopDagPatternMatcher plus(HopDagPatternMatcher child1, double child2) {
+		return new HopDagPatternMatcher().addPredicate("plus", h -> HopRewriteUtils.isBinary(h, OpOp2.PLUS) && 
 				HopRewriteUtils.isLiteralOfValue(h.getInput().get(1), child2))
 				.addChildMatcher(child1, dummy);
 	}
-	public static SimpleHopDagPatternMatcher minus(SimpleHopDagPatternMatcher child1, SimpleHopDagPatternMatcher child2) {
-		return new SimpleHopDagPatternMatcher().addPredicate("minus", h -> HopRewriteUtils.isBinary(h, OpOp2.MINUS))
+	public static HopDagPatternMatcher minus(HopDagPatternMatcher child1, HopDagPatternMatcher child2) {
+		return new HopDagPatternMatcher().addPredicate("minus", h -> HopRewriteUtils.isBinary(h, OpOp2.MINUS))
 				.addChildMatcher(child1, child2);
 	}
-	public static SimpleHopDagPatternMatcher minus(double child1, SimpleHopDagPatternMatcher child2) {
-		return new SimpleHopDagPatternMatcher().addPredicate("minus", h -> HopRewriteUtils.isBinary(h, OpOp2.MINUS) && 
+	public static HopDagPatternMatcher minus(double child1, HopDagPatternMatcher child2) {
+		return new HopDagPatternMatcher().addPredicate("minus", h -> HopRewriteUtils.isBinary(h, OpOp2.MINUS) && 
 				HopRewriteUtils.isLiteralOfValue(h.getInput().get(0), child1))
 				.addChildMatcher(dummy, child2);
 	}
-	public static SimpleHopDagPatternMatcher minus(SimpleHopDagPatternMatcher child1, double child2) {
-		return new SimpleHopDagPatternMatcher().addPredicate("minus", h -> HopRewriteUtils.isBinary(h, OpOp2.MINUS) && 
+	public static HopDagPatternMatcher minus(HopDagPatternMatcher child1, double child2) {
+		return new HopDagPatternMatcher().addPredicate("minus", h -> HopRewriteUtils.isBinary(h, OpOp2.MINUS) && 
 				HopRewriteUtils.isLiteralOfValue(h.getInput().get(1), child2))
 				.addChildMatcher(child1, dummy);
 	}
-	public static SimpleHopDagPatternMatcher mult(SimpleHopDagPatternMatcher child1, SimpleHopDagPatternMatcher child2) {
-		return new SimpleHopDagPatternMatcher().addPredicate("mult", h -> HopRewriteUtils.isBinary(h, OpOp2.MULT))
+	public static HopDagPatternMatcher mult(HopDagPatternMatcher child1, HopDagPatternMatcher child2) {
+		return new HopDagPatternMatcher().addPredicate("mult", h -> HopRewriteUtils.isBinary(h, OpOp2.MULT))
 				.addChildMatcher(child1, child2);
 	}
-	public static SimpleHopDagPatternMatcher mult(double child1, SimpleHopDagPatternMatcher child2) {
-		return new SimpleHopDagPatternMatcher().addPredicate("mult", h -> HopRewriteUtils.isBinary(h, OpOp2.MULT) && 
+	public static HopDagPatternMatcher mult(double child1, HopDagPatternMatcher child2) {
+		return new HopDagPatternMatcher().addPredicate("mult", h -> HopRewriteUtils.isBinary(h, OpOp2.MULT) && 
 				HopRewriteUtils.isLiteralOfValue(h.getInput().get(0), child1))
 				.addChildMatcher(dummy, child2);
 	}
-	public static SimpleHopDagPatternMatcher mult(SimpleHopDagPatternMatcher child1, double child2) {
-		return new SimpleHopDagPatternMatcher().addPredicate("mult", h -> HopRewriteUtils.isBinary(h, OpOp2.MULT) && 
+	public static HopDagPatternMatcher mult(HopDagPatternMatcher child1, double child2) {
+		return new HopDagPatternMatcher().addPredicate("mult", h -> HopRewriteUtils.isBinary(h, OpOp2.MULT) && 
 				HopRewriteUtils.isLiteralOfValue(h.getInput().get(1), child2))
 				.addChildMatcher(child1, dummy);
 	}

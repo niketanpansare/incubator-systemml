@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.OpOpDnn;
 import org.apache.sysml.hops.DnnOp;
-import static org.apache.sysml.hops.rewrite.SimpleHopDagPatternMatcher.*;
+import static org.apache.sysml.hops.rewrite.HopDagPatternMatcher.*;
 
 /*
  * This class contains GPU-specific rewrites for following patterns:
@@ -46,10 +46,10 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	
 	// -------------------------------------------------------------------------------------------
 	// Pattern 1:
-	private static final SimpleHopDagPatternMatcher _batchNormTest;
+	private static final HopDagPatternMatcher _batchNormTest;
 	static {
 		// norm = bias_multiply(bias_add(X, -mean), 1/sqrt(var+eps))
-		SimpleHopDagPatternMatcher norm = 
+		HopDagPatternMatcher norm = 
 				bias_multiply(
 						bias_add(leaf("X"), unaryMinus(leaf("mean"))), 
 						div(1, sqrt(plus(leaf("var"), leaf("eps")))));
@@ -62,7 +62,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	
 	// Pattern 2:
 	// ema_mean_upd = mu*ema_mean + (1-mu)*rowMeans(subgrp_means)
-	private static final SimpleHopDagPatternMatcher _batchNormUpdatedMean = 
+	private static final HopDagPatternMatcher _batchNormUpdatedMean = 
 		plus(	mult(leaf("mu").isScalar(), leaf("ema_mean")),  
 				mult(leaf("oneMinusMu").isScalar(), 
 						rowMeans(
@@ -72,7 +72,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	
 	// Pattern 3:
 	// rowSums(matrix(colSums(X), rows=C, cols=HW))
-	private static final SimpleHopDagPatternMatcher _channelSums = 
+	private static final HopDagPatternMatcher _channelSums = 
 		rowSums(matrix(	colSums(
 						leaf("X").addPredicate("fitsOnGPU", fitsOnGPU(2))), 
 						leaf("C").isScalar(), 
@@ -80,7 +80,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	
 	// Pattern 4:
 	// X - mu*v_prev + (1+mu)*v
-	private static final SimpleHopDagPatternMatcher _updateNesterovX = 
+	private static final HopDagPatternMatcher _updateNesterovX = 
 		plus(	minus(leaf("X"), mult(leaf("mu").isScalar(), leaf("v_prev"))), 	// X - mu*v_prev
 			mult(leaf("onePlusMu").isScalar(), leaf("v")))						// (1+mu)*v
 		.addPredicate("fitsOnGPU", fitsOnGPU(3)); // 2x for input and output and 1x for overhead;
