@@ -578,20 +578,25 @@ public class DnnGPUInstruction extends GPUInstruction {
 	
 	private void processUpdateEMAMeanInstruction(ExecutionContext ec) {
 		GPUStatistics.incrementNoOfExecutedGPUInst();
-		MatrixObject ema_mean = getMatrixInputForGPUInstruction(ec, _input1.getName());
-		MatrixObject subgrp_means = getMatrixInputForGPUInstruction(ec, _input2.getName());
+		MatrixObject emaMean = getMatrixInputForGPUInstruction(ec, _input1.getName());
+		MatrixObject subgrpMeans = getMatrixInputForGPUInstruction(ec, _input2.getName());
 		double mu = (int) ec.getScalarInput(_input3.getName(), _input3.getValueType(), _input3.isLiteral()).getDoubleValue();
 		GPUContext gCtx = ec.getGPUContext(0);
 		String instName = getExtendedOpcode();
-		int C = LibMatrixCUDA.toInt(ema_mean.getNumRows());
-		int HW = LibMatrixCUDA.toInt(ema_mean.getNumColumns());
+		int C = LibMatrixCUDA.toInt(subgrpMeans.getNumRows());
+		int HW = LibMatrixCUDA.toInt(subgrpMeans.getNumColumns());
 		
 		
-		Pointer subGrpMeanPtr =  LibMatrixCUDA.getDensePointer(gCtx, subgrp_means, instName);
-		MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), C, HW);
+		Pointer subGrpMeanPtr =  LibMatrixCUDA.getDensePointer(gCtx, subgrpMeans, instName);
+		MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), C, 1);
 		Pointer outPtr = LibMatrixCUDA.getDensePointer(gCtx, out, instName);
+		Pointer emaMeanPtr =  LibMatrixCUDA.getDensePointer(gCtx, emaMean, instName);
 		
-		// TODO:
+		// ema_mean_upd = mu*ema_mean + (1-mu)*rowMeans(subgrp_means)
+		LibMatrixCUDA.reduceRow(gCtx, instName, "reduce_row_mean", subGrpMeanPtr, outPtr, C, HW);
+		LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("aXplusbC", 
+				ExecutionConfig.getConfigForSimpleVectorOperations(C),
+				emaMeanPtr, outPtr, mu, (1-mu), C);
 		
 		// release inputs/outputs
 		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
