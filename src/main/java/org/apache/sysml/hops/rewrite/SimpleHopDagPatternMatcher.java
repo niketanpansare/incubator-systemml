@@ -18,6 +18,8 @@
  */
 package org.apache.sysml.hops.rewrite;
 
+import static org.apache.sysml.hops.rewrite.SimpleHopDagPatternMatcher.isScalar;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -45,10 +47,7 @@ public class SimpleHopDagPatternMatcher {
 	List<HopPredicate> _predicates = new ArrayList<>();
 	// Child matchers
 	List<SimpleHopDagPatternMatcher> _children = new ArrayList<>();
-	// HOP that matched to the current DAG
-	Hop matchedHOP = null;
-	// Cache to fetch the placeholder HOP
-	HashMap<String, SimpleHopDagPatternMatcher> _placeholders = null;
+	private boolean isLeaf = false;
 	
 	// Simple utility for debugging the rewrites
 	public static class HopPredicate implements Predicate<Hop> {
@@ -66,20 +65,6 @@ public class SimpleHopDagPatternMatcher {
 	    public String toString() {
 	        return _name;
 	    }
-	}
-	
-	/**
-	 * Create placeholder map
-	 * 
-	 * @param varNames list of variables
-	 * @return hashmap of variable names to pattern matcher
-	 */
-	public static HashMap<String, SimpleHopDagPatternMatcher> createPlaceholders(String... varNames) {
-		HashMap<String, SimpleHopDagPatternMatcher> ret = new HashMap<>();
-		for(String varName : varNames) {
-			ret.put(varName, new SimpleHopDagPatternMatcher());
-		}
-		return ret;
 	}
 	
 	/**
@@ -107,30 +92,16 @@ public class SimpleHopDagPatternMatcher {
 	}
 	
 	/**
-	 * Register the placeholders
-	 * 
-	 * @param placeholders given hashmap
-	 * @return this
-	 */
-	public SimpleHopDagPatternMatcher register(HashMap<String, SimpleHopDagPatternMatcher> placeholders) {
-		_placeholders = placeholders;
-		return this;
-	}
-	
-	/**
 	 * Get the matched HOP DAGs
 	 * @param varName variable names
 	 * @return matched HOP
 	 */
 	public Hop getMatchedHop(String varName) {
-		if(_placeholders == null || !_placeholders.containsKey(varName)) {
+		
+		if(matchedHops == null || !matchedHops.containsKey(varName)) {
 			throw new RuntimeException("Incorrect usage: the variable " + varName + " is not registered as input.");
 		}
-		SimpleHopDagPatternMatcher val = _placeholders.get(varName);
-		if(val.matchedHOP == null) {
-			throw new RuntimeException("getHop should be called only if evaluate succeeds.");
-		}
-		return val.matchedHOP;
+		return matchedHops.get(varName);
 	}
 	
 	/**
@@ -145,7 +116,7 @@ public class SimpleHopDagPatternMatcher {
 	
 	@Override
     public String toString() {
-        return ( _predicates.size() == 1 ? _predicates.get(0).toString() : "" ) + ( matchedHOP == null ? "" : " for hop:" +  Explain.explain(matchedHOP));
+        return _predicates.size() >= 1 ? _predicates.get(0).toString() : "";
     }
 	
 	/**
@@ -155,7 +126,12 @@ public class SimpleHopDagPatternMatcher {
 	 * @return true if HOP DAG matches
 	 */
 	public boolean matches(Hop h) {
-		matchedHOP = h;
+		return matchHelper(this, h);
+	}
+	
+	private HashMap<String, Hop> matchedHops;
+	private String variableName;
+	private boolean matchHelper(SimpleHopDagPatternMatcher root, Hop h) {
 		if(h == null || (_children.size() > 0 && h.getInput().size() < _children.size())) {
 			if(DEBUG_REWRITES) {
 				System.out.println("The expected number of children (" + _children.size() + ") didnot match the number of inputs (" + h.getInput().size() + ") " + this);
@@ -172,10 +148,16 @@ public class SimpleHopDagPatternMatcher {
 		}
 		int index = 0;
 		for(SimpleHopDagPatternMatcher child : _children) {
-			if(!child.matches(h.getInput().get(index))) {
+			if(!child.matchHelper(root, h.getInput().get(index))) {
 				return false;
 			}
 			index++;
+		}
+		if(isLeaf) {
+			if(root.matchedHops == null) {
+				root.matchedHops = new HashMap<>();
+			}
+			root.matchedHops.put(variableName, h);
 		}
 		return true;
 	}
@@ -185,9 +167,6 @@ public class SimpleHopDagPatternMatcher {
 	public static Function<Hop, Boolean> fitsOnGPU(double constant) {
 		return h -> _fitsOnGPU(h, constant);
 	}
-	public static Function<Hop, Boolean> isScalar() {
-		return h -> h.getDataType() == DataType.SCALAR;
-	}
 	
 	// Factory methods:
 	public static SimpleHopDagPatternMatcher dummy = new SimpleHopDagPatternMatcher();
@@ -195,6 +174,15 @@ public class SimpleHopDagPatternMatcher {
 		return new SimpleHopDagPatternMatcher().addPredicate("rowMeans", h -> 
 			h instanceof AggUnaryOp && ((AggUnaryOp)h).getOp() == AggOp.MEAN && ((AggUnaryOp)h).getDirection() == Direction.Row)
 			.addChildMatcher(child1);
+	}
+	public SimpleHopDagPatternMatcher isScalar() {
+		return this.addPredicate("isScalar", h -> h.getDataType() == DataType.SCALAR);
+	}
+	public static SimpleHopDagPatternMatcher leaf(String _variableName) {
+		SimpleHopDagPatternMatcher ret = new SimpleHopDagPatternMatcher();
+		ret.isLeaf = true;
+		ret.variableName = _variableName;
+		return ret;
 	}
 	public static SimpleHopDagPatternMatcher rowSums(SimpleHopDagPatternMatcher child1) {
 		return new SimpleHopDagPatternMatcher().addPredicate("rowSums", h -> 
