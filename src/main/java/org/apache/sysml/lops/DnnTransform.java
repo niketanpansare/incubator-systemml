@@ -32,7 +32,7 @@ public class DnnTransform extends Lop
 		RELU_MAX_POOLING, RELU_MAX_POOLING_BACKWARD, RELU_BACKWARD,
 		CONV2D, CONV2D_BACKWARD_FILTER, CONV2D_BACKWARD_DATA,
 		BIAS_ADD, CONV2D_BIAS_ADD, BIAS_MULTIPLY, CHANNEL_SUMS, BATCH_NORM2D_TEST, 
-		UPDATE_NESTEROV_X, UPDATE_EMA_MEAN, RESHAPE_COLMEANS
+		UPDATE_NESTEROV_X, UPDATE_EMA_MEAN, RESHAPE_COLMEANS, UPDATE_EMA_VAR
 	}
 	
 	private OperationTypes operation;
@@ -175,6 +175,9 @@ public class DnnTransform extends Lop
 			
 		case UPDATE_EMA_MEAN:
 			return "update_ema_mean";
+		
+		case UPDATE_EMA_VAR:
+			return "update_ema_var";
 			
 		case RESHAPE_COLMEANS:
 			return "reshape_colmeans";
@@ -302,6 +305,38 @@ public class DnnTransform extends Lop
 			sb.append( getInputs().get(4).prepInputOperand(input5));
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( getInputs().get(5).prepInputOperand(input6));
+			//output
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( this.prepOutputOperand(output));
+			
+			return sb.toString();
+		}
+		else {
+			throw new LopsException("The operation is not supported with six operands:" + operation.name());
+		}
+	}
+	
+	public String getInstructions(String input1, String input2, String input3, String input4, String input5, String input6, String input7, String output) {
+		if(operation == OperationTypes.UPDATE_EMA_VAR) {
+			StringBuilder sb = new StringBuilder();
+			sb.append( getExecType() );
+			
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( getOpcode() );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( getInputs().get(0).prepInputOperand(input1));
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( getInputs().get(1).prepInputOperand(input2));
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( getInputs().get(2).prepInputOperand(input3));
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( getInputs().get(3).prepInputOperand(input4));
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( getInputs().get(4).prepInputOperand(input5));
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( getInputs().get(5).prepInputOperand(input6));
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( getInputs().get(6).prepInputOperand(input7));
 			//output
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( this.prepOutputOperand(output));

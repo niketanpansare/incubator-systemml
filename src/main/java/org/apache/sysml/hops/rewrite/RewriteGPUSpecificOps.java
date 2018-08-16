@@ -22,7 +22,6 @@ package org.apache.sysml.hops.rewrite;
 import java.util.ArrayList;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.OpOpDnn;
-import org.apache.sysml.hops.DnnOp;
 import static org.apache.sysml.hops.rewrite.HopDagPatternMatcher.*;
 
 /*
@@ -49,6 +48,21 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	
 	// -------------------------------------------------------------------------------------------
 	// Pattern 1:
+	// subgrp_vars = matrix(colVars(X) * ((N-1)/N), rows=C, cols=Hin*Win)
+	// var = rowMeans(subgrp_vars) + rowVars(subgrp_means)*(((Hin*Win)-1)/(Hin*Win))
+	// ema_var_upd = mu*ema_var + (1-mu)*var
+	private static final HopDagPatternMatcher _batchNormUpdatedVar; 
+	static {
+		HopDagPatternMatcher subgrp_vars = matrix( 
+				mult(colVars(leaf("X")), leaf("varConst1").isScalar()), 
+				leaf("C").isScalar(),  
+				leaf("HW").isScalar());
+		HopDagPatternMatcher var = plus( rowMeans(subgrp_vars), mult(rowVars(leaf("subgrp_means")),  leaf("varConst2").isScalar()));
+		_batchNormUpdatedVar = plus(	mult(leaf("mu").isScalar(), leaf("ema_var")),
+										mult(leaf("oneMinusMu").isScalar(), var));
+	}
+		
+	// Pattern 2:
 	private static final HopDagPatternMatcher _batchNormTest;
 	static {
 		// norm = bias_multiply(bias_add(X, -mean), 1/sqrt(var+eps))
@@ -63,7 +77,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 			.fitsOnGPU(3); // 2x for input and output and 1x for overhead
 	}
 	
-	// Pattern 2:
+	// Pattern 3:
 	// ema_mean_upd = mu*ema_mean + (1-mu)*rowMeans(subgrp_means)
 	private static final HopDagPatternMatcher _batchNormUpdatedMean = 
 		plus(	mult(leaf("mu").isScalar(), leaf("ema_mean")),  
@@ -72,7 +86,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 						leaf("subgrp_means").fitsOnGPU(2)
 						)));
 	
-	// Pattern 3:
+	// Pattern 4:
 	// rowSums(matrix(colSums(X), rows=C, cols=HW))
 	private static final HopDagPatternMatcher _channelSums = 
 		rowSums(matrix(	colSums(
@@ -80,18 +94,19 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 						leaf("C").isScalar(), 
 						leaf("HW").isScalar()));
 	
-	// Pattern 4:
+	// Pattern 5:
 	// X - mu*v_prev + (1+mu)*v
 	private static final HopDagPatternMatcher _updateNesterovX = 
 		plus(	minus(leaf("X"), mult(leaf("mu").isScalar(), leaf("v_prev"))), 	// X - mu*v_prev
 			mult(leaf("onePlusMu").isScalar(), leaf("v")))						// (1+mu)*v
 		.fitsOnGPU(3); // 2x for input and output and 1x for overhead;
 	
-	// Pattern 5:
+	// Pattern 6:
 	// matrix(colMeans(X), rows=C, cols=Hin*Win)
 	// This avoids unnecessary copy by the reshape operator
 	private static final HopDagPatternMatcher _reshapeColMeans = 
 			matrix(colMeans(leaf("X").fitsOnGPU(2)), leaf("C").isScalar(), leaf("HW").isScalar());
+	
 	// -------------------------------------------------------------------------------------------
 	
 	@Override
@@ -148,6 +163,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 			if( descendFirst )
 				rule_GPUKernels(roots, hi, descendFirst); //see below
 			
+			hi = batchNormUpdatedVars(hop, hi, i);
 			hi = batchNormUpdatedMean(hop, hi, i);
 			hi = batchNormTest(hop, hi, i); 
 			hi = channelSums(hop, hi, i); 
@@ -246,6 +262,34 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 			LOG.debug("Applied batchNormUpdatedMean rewrite.");
 			Hop newHop = HopRewriteUtils.createDnnOp(_batchNormUpdatedMean, OpOpDnn.UPDATE_EMA_MEAN, "ema_mean", "subgrp_means", "mu");
 			return HopRewriteUtils.rewireAllParentChildReferences(hi, newHop);
+		}
+		return hi;
+	}
+	
+	/**
+	 * Checks for the updated variance pattern for batch norm
+	 * and returns a new DnnOp if matched
+	 * 
+	 * subgrp_vars = matrix(colVars(X) * ((N-1)/N), rows=C, cols=Hin*Win)
+	 * var = rowMeans(subgrp_vars) + rowVars(subgrp_means)*(((Hin*Win)-1)/(Hin*Win))
+	 * ema_var_upd = mu*ema_var + (1-mu)*var
+	 * 
+	 * @param parent parent of the input
+	 * @param hi input to be matched
+	 * @param pos position
+	 * @return a new DnnOp or hi
+	 */
+	private static Hop batchNormUpdatedVars(Hop parent, Hop hi, int pos) {
+		if(_batchNormUpdatedVar.matches(hi) && 
+				(1-_batchNormUpdatedVar.getLiteralValue("mu")) == _batchNormUpdatedVar.getLiteralValue("oneMinusMu")) {
+			double HW = _batchNormUpdatedVar.getLiteralValue("HW");
+			if(_batchNormUpdatedVar.getLiteralValue("varConst2") == ((HW-1)/HW)) {
+				LOG.debug("Applied batchNormUpdatedVar rewrite.");
+				Hop newHop = HopRewriteUtils.createDnnOp(_batchNormUpdatedVar, OpOpDnn.UPDATE_EMA_VAR, 
+						// varConst1 => ((N-1)/N)
+						"ema_var", "X", "subgrp_means", "mu", "C", "HW", "varConst1");
+				return HopRewriteUtils.rewireAllParentChildReferences(hi, newHop);
+			}
 		}
 		return hi;
 	}

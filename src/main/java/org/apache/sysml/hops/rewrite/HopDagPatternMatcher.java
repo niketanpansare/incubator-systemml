@@ -176,6 +176,16 @@ public class HopDagPatternMatcher {
 			h instanceof AggUnaryOp && ((AggUnaryOp)h).getOp() == AggOp.MEAN && ((AggUnaryOp)h).getDirection() == Direction.Row)
 			.addChildMatcher(child1);
 	}
+	public static HopDagPatternMatcher rowVars(HopDagPatternMatcher child1) {
+		return new HopDagPatternMatcher().addPredicate("rowVars", h -> 
+			h instanceof AggUnaryOp && ((AggUnaryOp)h).getOp() == AggOp.VAR && ((AggUnaryOp)h).getDirection() == Direction.Row)
+			.addChildMatcher(child1);
+	}
+	public static HopDagPatternMatcher colVars(HopDagPatternMatcher child1) {
+		return new HopDagPatternMatcher().addPredicate("colVars", h -> 
+			h instanceof AggUnaryOp && ((AggUnaryOp)h).getOp() == AggOp.VAR && ((AggUnaryOp)h).getDirection() == Direction.Col)
+			.addChildMatcher(child1);
+	}
 	public static HopDagPatternMatcher leaf(String _variableName) {
 		HopDagPatternMatcher ret = new HopDagPatternMatcher();
 		ret.isLeaf = true;
