@@ -276,8 +276,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	 * @return a new DnnOp or hi
 	 */
 	private static Hop batchNormUpdatedVars(Hop parent, Hop hi, int pos) {
-		if(_batchNormUpdatedVar.matches(hi) && 
-				(1-_batchNormUpdatedVar.getLiteralValue("mu")) == _batchNormUpdatedVar.getLiteralValue("oneMinusMu")) {
+		if(_batchNormUpdatedVar.matches(hi)) {
 			double HW = _batchNormUpdatedVar.getLiteralValue("HW");
 			if(_batchNormUpdatedVar.getLiteralValue("varConst2") == ((HW-1)/HW)) {
 				LOG.debug("Applied batchNormUpdatedVar rewrite.");
