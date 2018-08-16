@@ -517,7 +517,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 					fetcher.getInputPointer("v"),
 					fetcher.getInputPointer("v_prev"),
 					fetcher.getDouble("mu"), 
-					fetcher.getOutputMatrixObject(rows, cols),
+					fetcher.getOutputPointer(rows, cols),
 					rows*cols);
 		}
 	}
