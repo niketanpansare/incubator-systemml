@@ -438,7 +438,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 			int rows = LibMatrixCUDA.toInt(fetcher.getInputNumRows("X"));
 			int cols = LibMatrixCUDA.toInt(fetcher.getInputNumColumns("X"));
 			// output = matrix(colMeans(X), rows=C, cols=Hin*Win)
-			LibMatrixCUDA.reduceCol(gCtx, instName, "reduce_col_mean", 
+			LibMatrixCUDA.colMeans(gCtx, instName,  
 					fetcher.getInputPointer("X"), 
 					fetcher.getOutputPointer(C, HW), rows, cols);
 		}
@@ -454,7 +454,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 			Pointer emaMeanPtr = fetcher.getInputPointer("ema_mean");
 			Pointer outPtr = fetcher.getOutputPointer(C, 1);
 			// ema_mean_upd = mu*ema_mean + (1-mu)*rowMeans(subgrp_means)
-			LibMatrixCUDA.reduceRow(gCtx, instName, "reduce_row_mean", subGrpMeanPtr, outPtr, C, HW);
+			LibMatrixCUDA.rowMeans(gCtx, instName, subGrpMeanPtr, outPtr, C, HW);
 			LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("aXplusbC", 
 					ExecutionConfig.getConfigForSimpleVectorOperations(C),
 					emaMeanPtr, outPtr, mu, (1-mu), C);
@@ -467,15 +467,37 @@ public class DnnGPUInstruction extends GPUInstruction {
 			fetcher.add("ema_var", _input1).add("X", _input2).add("subgrp_means", _input3)
 			.addScalar("mu", _input4).addScalar("C", _input5).addScalar("HW", _input6).addScalar("varConst1", _output2);
 			
-			// subgrp_vars = matrix(colVars(X) * varConst1, rows=C, cols=HW)
-			// var = rowMeans(subgrp_vars) + rowVars(subgrp_means)*((HW-1)/HW)
-			//ema_var_upd = mu*ema_var + (1-mu)*var  
+			// subgrp_vars = matrix(colVars(X), rows=C, cols=HW)
+			// var = rowMeans(subgrp_vars)*varConst1 + rowVars(subgrp_means)*((HW-1)/HW)
+			// ema_var_upd = mu*ema_var + (1-mu)*var  
 			int C = fetcher.getInteger("C");
 			int HW = fetcher.getInteger("HW");
 			double varConst1 = fetcher.getDouble("varConst1");
+			double mu = fetcher.getDouble("mu");
 			fetcher.validateDimensions("subgrp_means", C, 1);
 			fetcher.validateDimensions("X", -1, C*HW);
-			// TODO:
+			
+			
+			Pointer subgrp_vars = gCtx.allocate(instName, C*HW*LibMatrixCUDA.sizeOfDataType);
+			// subgrp_vars <- colVars(X)
+			LibMatrixCUDA.colVars(gCtx, instName, fetcher.getInputPointer("X"), subgrp_vars, 
+					LibMatrixCUDA.toInt(fetcher.getInputNumRows("X")), C*HW);
+			
+			// tmp1 <- rowMeans(subgrp_vars)
+			Pointer tmp1 = gCtx.allocate(instName, C*LibMatrixCUDA.sizeOfDataType);
+			LibMatrixCUDA.colVars(gCtx, instName, subgrp_vars, tmp1, C, HW);
+			gCtx.cudaFreeHelper(instName, subgrp_vars, DMLScript.EAGER_CUDA_FREE);
+			
+			// tmp2 <- rowVars(subgrp_means)
+			Pointer out = fetcher.getOutputPointer(C, 1);
+			LibMatrixCUDA.colVars(gCtx, instName, fetcher.getInputPointer("subgrp_means"), out, C, HW);
+			
+			// ema_var_upd = mu*ema_var + (1-mu)*tmp1*varConst1 + (1-mu)*out*((HW-1)/HW)
+			LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("aXplusbYpluscC", 
+					ExecutionConfig.getConfigForSimpleVectorOperations(C),
+					fetcher.getInputPointer("ema_var"), tmp1, out,
+					mu, (1-mu)*varConst1, (1-mu)*((HW-1)/HW), C);
+			gCtx.cudaFreeHelper(instName, tmp1, DMLScript.EAGER_CUDA_FREE);
 		}
 	}
 	
