@@ -113,8 +113,8 @@ public class DnnGPUInstruction extends GPUInstruction {
 	public DnnGPUInstruction(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr, 
 			double intermediateMemoryBudget) throws DMLRuntimeException {
 		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), opcode, istr);
-		if( !(opcode.equals("channel_sums") || opcode.equals("update_ema_mean") ||  opcode.equals("reshape_colmeans") ) ) {
-			throw new DMLRuntimeException("Incorrect usage. Expected the opcode to be channel_sums or update_ema_mean or reshape_colmeans, but found " + opcode);
+		if( !(opcode.equals("channel_sums") || opcode.equals("reshape_colmeans") ) ) {
+			throw new DMLRuntimeException("Incorrect usage. Expected the opcode to be channel_sums or reshape_colmeans, but found " + opcode);
 		}
 		_input1 = in1;
 		_input2 = in2;
@@ -321,7 +321,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 			CPOperand out = new CPOperand(parts[3]);
 			return new DnnGPUInstruction(in1, in2, out, opcode, str, Double.parseDouble(parts[4]));
 		}
-		else if (opcode.equalsIgnoreCase("channel_sums") || opcode.equalsIgnoreCase("update_ema_mean") || opcode.equals("reshape_colmeans")) {
+		else if (opcode.equalsIgnoreCase("channel_sums") || opcode.equals("reshape_colmeans")) {
 			InstructionUtils.checkNumFields(parts, 4);
 			CPOperand in = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
@@ -455,23 +455,6 @@ public class DnnGPUInstruction extends GPUInstruction {
 			LibMatrixCUDA.colMeans(gCtx, instName,  
 					fetcher.getInputPointer("X"), 
 					fetcher.getOutputPointer(C, HW), rows, cols);
-		}
-	}
-	
-	private void processUpdateEMAMeanInstruction(ExecutionContext ec) {
-		try(GPUDenseInputPointerFetcher fetcher = new GPUDenseInputPointerFetcher(ec, gCtx, instName, _output)) {
-			fetcher.add("ema_mean", _input1).add("subgrp_means", _input2).addScalar("mu", _input3);
-			int C = LibMatrixCUDA.toInt(fetcher.getInputNumRows("subgrp_means"));
-			int HW = LibMatrixCUDA.toInt(fetcher.getInputNumColumns("subgrp_means"));
-			double mu = fetcher.getDouble("mu");
-			Pointer subGrpMeanPtr = fetcher.getInputPointer("subgrp_means");
-			Pointer emaMeanPtr = fetcher.getInputPointer("ema_mean");
-			Pointer outPtr = fetcher.getOutputPointer(C, 1);
-			// ema_mean_upd = mu*ema_mean + (1-mu)*rowMeans(subgrp_means)
-			LibMatrixCUDA.rowMeans(gCtx, instName, subGrpMeanPtr, outPtr, C, HW);
-			LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("aXplusbC", 
-					ExecutionConfig.getConfigForSimpleVectorOperations(C),
-					emaMeanPtr, outPtr, mu, (1-mu), C);
 		}
 	}
 	
@@ -672,10 +655,6 @@ public class DnnGPUInstruction extends GPUInstruction {
 		}
 		else if (instOpcode.equalsIgnoreCase("update_nesterov_x")) {
 			processNesterovUpdateInstruction(ec);
-			return;
-		}
-		else if (instOpcode.equalsIgnoreCase("update_ema_mean")) {
-			processUpdateEMAMeanInstruction(ec);
 			return;
 		}
 		else if (instOpcode.equalsIgnoreCase("update_ema_var")) {
