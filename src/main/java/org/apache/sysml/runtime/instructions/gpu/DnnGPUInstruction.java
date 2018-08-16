@@ -467,16 +467,18 @@ public class DnnGPUInstruction extends GPUInstruction {
 			fetcher.add("ema_var", _input1).add("X", _input2).add("subgrp_means", _input3)
 			.addScalar("mu", _input4).addScalar("C", _input5).addScalar("HW", _input6).addScalar("varConst1", _output2);
 			
+			// subgrp_vars = matrix(colVars(X) * varConst1, rows=C, cols=Hin*Win)
+			// var = rowMeans(subgrp_vars) + rowVars(subgrp_means)*(((Hin*Win)-1)/(Hin*Win))
+			// ema_var_upd = mu*ema_var + (1-mu)*var
+			// --->
 			// subgrp_vars = matrix(colVars(X), rows=C, cols=HW)
-			// var = rowMeans(subgrp_vars)*varConst1 + rowVars(subgrp_means)*((HW-1)/HW)
-			// ema_var_upd = mu*ema_var + (1-mu)*var  
+			// ema_var_upd = mu*ema_var + (1-mu)*rowMeans(subgrp_vars)*varConst1 + (1-mu)*rowVars(subgrp_means)*((HW-1)/HW)  
 			int C = fetcher.getInteger("C");
 			int HW = fetcher.getInteger("HW");
 			double varConst1 = fetcher.getDouble("varConst1");
 			double mu = fetcher.getDouble("mu");
 			fetcher.validateDimensions("subgrp_means", C, HW);
 			fetcher.validateDimensions("X", -1, C*HW);
-			
 			
 			Pointer subgrp_vars = gCtx.allocate(instName, C*HW*LibMatrixCUDA.sizeOfDataType);
 			// subgrp_vars <- colVars(X)
@@ -488,7 +490,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 			LibMatrixCUDA.rowMeans(gCtx, instName, subgrp_vars, tmp1, C, HW);
 			gCtx.cudaFreeHelper(instName, subgrp_vars, DMLScript.EAGER_CUDA_FREE);
 			
-			// tmp2 <- rowVars(subgrp_means)
+			// out <- rowVars(subgrp_means)
 			Pointer out = fetcher.getOutputPointer(C, 1);
 			LibMatrixCUDA.rowVars(gCtx, instName, fetcher.getInputPointer("subgrp_means"), out, C, HW);
 			
@@ -496,7 +498,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 			LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("aXplusbYpluscC", 
 					ExecutionConfig.getConfigForSimpleVectorOperations(C),
 					fetcher.getInputPointer("ema_var"), tmp1, out,
-					mu, (1-mu)*varConst1, (1-mu)*((HW-1)/HW), C);
+					mu, (1-mu)*varConst1, (1-mu)*(((double)HW-1)/HW), C);
 			gCtx.cudaFreeHelper(instName, tmp1, DMLScript.EAGER_CUDA_FREE);
 		}
 	}
