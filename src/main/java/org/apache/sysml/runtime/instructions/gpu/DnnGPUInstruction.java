@@ -485,12 +485,12 @@ public class DnnGPUInstruction extends GPUInstruction {
 			
 			// tmp1 <- rowMeans(subgrp_vars)
 			Pointer tmp1 = gCtx.allocate(instName, C*LibMatrixCUDA.sizeOfDataType);
-			LibMatrixCUDA.colVars(gCtx, instName, subgrp_vars, tmp1, C, HW);
+			LibMatrixCUDA.rowMeans(gCtx, instName, subgrp_vars, tmp1, C, HW);
 			gCtx.cudaFreeHelper(instName, subgrp_vars, DMLScript.EAGER_CUDA_FREE);
 			
 			// tmp2 <- rowVars(subgrp_means)
 			Pointer out = fetcher.getOutputPointer(C, 1);
-			LibMatrixCUDA.colVars(gCtx, instName, fetcher.getInputPointer("subgrp_means"), out, C, HW);
+			LibMatrixCUDA.rowVars(gCtx, instName, fetcher.getInputPointer("subgrp_means"), out, C, HW);
 			
 			// ema_var_upd = mu*ema_var + (1-mu)*tmp1*varConst1 + (1-mu)*out*((HW-1)/HW)
 			LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("aXplusbYpluscC", 
