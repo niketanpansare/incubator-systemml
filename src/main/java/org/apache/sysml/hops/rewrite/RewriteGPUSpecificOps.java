@@ -57,8 +57,8 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 				mult(colVars(leaf("X")), leaf("varConst1").isScalar()), 
 				leaf("C").isScalar(),  
 				leaf("HW").isScalar());
-		HopDagPatternMatcher var = plus( rowMeans(subgrp_vars), mult(rowVars(leaf("subgrp_means")),  leaf("varConst2").isScalar()));
-		_batchNormUpdatedVar = plus(	mult(leaf("mu").isScalar(), leaf("ema_var")),
+		HopDagPatternMatcher var = mm_plus( rowMeans(subgrp_vars), mult(rowVars(leaf("subgrp_means")),  leaf("varConst2").isScalar()));
+		_batchNormUpdatedVar = mm_plus(	mult(leaf("mu").isScalar(), leaf("ema_var")),
 										mult(leaf("oneMinusMu").isScalar(), var));
 	}
 		
@@ -80,8 +80,8 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	// Pattern 3:
 	// ema_mean_upd = mu*ema_mean + (1-mu)*rowMeans(subgrp_means)
 	private static final HopDagPatternMatcher _batchNormUpdatedMean = 
-		plus(	mult(leaf("mu").isScalar(), leaf("ema_mean")),  
-				mult(leaf("oneMinusMu").isScalar(), 
+		mm_plus(	mult(leaf("mu").isScalar(), leaf("ema_mean")),  
+					mult(leaf("oneMinusMu").isScalar(), 
 						rowMeans(
 						leaf("subgrp_means").fitsOnGPU(2)
 						)));
@@ -97,7 +97,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	// Pattern 5:
 	// X - mu*v_prev + (1+mu)*v
 	private static final HopDagPatternMatcher _updateNesterovX = 
-		plus(	minus(leaf("X"), mult(leaf("mu").isScalar(), leaf("v_prev"))), 	// X - mu*v_prev
+		mm_plus(	minus(leaf("X"), mult(leaf("mu").isScalar(), leaf("v_prev"))), 	// X - mu*v_prev
 			mult(leaf("onePlusMu").isScalar(), leaf("v")))						// (1+mu)*v
 		.fitsOnGPU(3); // 2x for input and output and 1x for overhead;
 	

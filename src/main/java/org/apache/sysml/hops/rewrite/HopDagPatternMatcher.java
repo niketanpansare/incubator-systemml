@@ -243,6 +243,14 @@ public class HopDagPatternMatcher {
 				HopRewriteUtils.isLiteralOfValue(h.getInput().get(1), child2))
 				.addChildMatcher(child1, dummy);
 	}
+	private static boolean matchDimensions(Hop h1, Hop h2) {
+		return h1.getDim1() == h2.getDim1() && h1.getDim2() == h2.getDim2();
+	}
+	public static HopDagPatternMatcher mm_plus(HopDagPatternMatcher child1, HopDagPatternMatcher child2) {
+		return new HopDagPatternMatcher().addPredicate("plus", h -> HopRewriteUtils.isBinary(h, OpOp2.PLUS)
+				&& matchDimensions(h.getInput().get(0), h.getInput().get(1)))
+				.addChildMatcher(child1, child2);
+	}
 	public static HopDagPatternMatcher plus(HopDagPatternMatcher child1, HopDagPatternMatcher child2) {
 		return new HopDagPatternMatcher().addPredicate("plus", h -> HopRewriteUtils.isBinary(h, OpOp2.PLUS))
 				.addChildMatcher(child1, child2);
