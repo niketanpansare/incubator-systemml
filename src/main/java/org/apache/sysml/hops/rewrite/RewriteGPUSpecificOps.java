@@ -50,16 +50,13 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	// Pattern 1:
 	// subgrp_vars = matrix(colVars(X) * ((N-1)/N), rows=C, cols=Hin*Win)
 	// var = rowMeans(subgrp_vars) + rowVars(subgrp_means)*(((Hin*Win)-1)/(Hin*Win))
-	// ema_var_upd = mu*ema_var + (1-mu)*var
 	private static final HopDagPatternMatcher _batchNormUpdatedVar; 
 	static {
 		HopDagPatternMatcher subgrp_vars = matrix( 
 				mult(colVars(leaf("X")), leaf("varConst1").isScalar()), 
 				leaf("C").isScalar(),  
 				leaf("HW").isScalar());
-		HopDagPatternMatcher var = mm_plus( rowMeans(subgrp_vars), mult(rowVars(leaf("subgrp_means")),  leaf("varConst2").isScalar()));
-		_batchNormUpdatedVar = mm_plus(	mult(leaf("mu").isScalar(), leaf("ema_var")),
-										mult(leaf("oneMinusMu").isScalar(), var));
+		_batchNormUpdatedVar = mm_plus( rowMeans(subgrp_vars), mult(rowVars(leaf("subgrp_means")),  leaf("varConst2").isScalar()));
 	}
 		
 	// Pattern 2:
@@ -272,7 +269,6 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	 * 
 	 * subgrp_vars = matrix(colVars(X) * ((N-1)/N), rows=C, cols=Hin*Win)
 	 * var = rowMeans(subgrp_vars) + rowVars(subgrp_means)*(((Hin*Win)-1)/(Hin*Win))
-	 * ema_var_upd = mu*ema_var + (1-mu)*var
 	 * 
 	 * @param parent parent of the input
 	 * @param hi input to be matched
@@ -287,7 +283,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 				LOG.debug("Applied batchNormUpdatedVar rewrite.");
 				Hop newHop = HopRewriteUtils.createDnnOp(_batchNormUpdatedVar, OpOpDnn.UPDATE_EMA_VAR, 
 						// varConst1 => ((N-1)/N)
-						"ema_var", "X", "subgrp_means", "mu", "C", "HW", "varConst1");
+						"subgrp_means", "X", "C", "HW", "varConst1");
 				return HopRewriteUtils.rewireAllParentChildReferences(hi, newHop);
 			}
 		}

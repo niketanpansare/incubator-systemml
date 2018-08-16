@@ -183,6 +183,22 @@ public class DnnGPUInstruction extends GPUInstruction {
 		_intermediateMemoryBudget = intermediateMemoryBudget;
 	}
 	
+	public DnnGPUInstruction(CPOperand in, CPOperand in2, CPOperand in3, CPOperand in4, CPOperand in5, 
+			CPOperand out, String opcode, String istr, double intermediateMemoryBudget) {
+		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), opcode, istr);
+		if( !opcode.equals("update_ema_var") ) {
+			throw new DMLRuntimeException("Incorrect usage. Expected the opcode to be update_ema_var, but found " + opcode);
+		}
+		_input1 = in;
+		_input2 = in2;
+		_input3 = in3;
+		_input4 = in4;
+		_input5 = in5;
+		_gputype = GPUINSTRUCTION_TYPE.Dnn;
+		_output = out;
+		_intermediateMemoryBudget = intermediateMemoryBudget;
+	}
+	
 	public static DnnGPUInstruction parseInstruction(String str) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
@@ -363,16 +379,14 @@ public class DnnGPUInstruction extends GPUInstruction {
 			return new DnnGPUInstruction(in, in2, in3, in4, in5, in6, out, opcode, str, 0);
 		}
 		else if (opcode.equalsIgnoreCase("update_ema_var")) {
-			InstructionUtils.checkNumFields(parts, 8);
+			InstructionUtils.checkNumFields(parts, 6);
 			CPOperand in = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
 			CPOperand in3 = new CPOperand(parts[3]);
 			CPOperand in4 = new CPOperand(parts[4]);
 			CPOperand in5 = new CPOperand(parts[5]);
-			CPOperand in6 = new CPOperand(parts[6]);
-			CPOperand in7 = new CPOperand(parts[7]);
-			CPOperand out = new CPOperand(parts[8]);
-			return new DnnGPUInstruction(in, in2, in3, in4, in5, in6, out, in7, opcode, str, 0);
+			CPOperand out = new CPOperand(parts[6]);
+			return new DnnGPUInstruction(in, in2, in3, in4, in5, out, opcode, str, 0);
 		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode while parsing a DnnGPUInstruction: " + str);	
@@ -463,16 +477,15 @@ public class DnnGPUInstruction extends GPUInstruction {
 	
 	private void processUpdateEMAVarInstruction(ExecutionContext ec) {
 		try(GPUDenseInputPointerFetcher fetcher = new GPUDenseInputPointerFetcher(ec, gCtx, instName, _output)) {
-			// "ema_var", "X", "subgrp_means", "mu", "C", "HW", "varConst1"
-			fetcher.add("ema_var", _input1).add("X", _input2).add("subgrp_means", _input3)
-			.addScalar("mu", _input4).addScalar("C", _input5).addScalar("HW", _input6).addScalar("varConst1", _output2);
+			// "subgrp_means", "X", "C", "HW", "varConst1"
+			fetcher.add("subgrp_means", _input1).add("X", _input2).addScalar("C", _input3)
+				.addScalar("HW", _input4).addScalar("varConst1", _input5);
 			
 			// subgrp_vars = matrix(colVars(X) * varConst1, rows=C, cols=Hin*Win)
 			// var = rowMeans(subgrp_vars) + rowVars(subgrp_means)*(((Hin*Win)-1)/(Hin*Win))
-			// ema_var_upd = mu*ema_var + (1-mu)*var
 			// --->
 			// subgrp_vars = matrix(colVars(X), rows=C, cols=HW)
-			// ema_var_upd = mu*ema_var + (1-mu)*rowMeans(subgrp_vars)*varConst1 + (1-mu)*rowVars(subgrp_means)*((HW-1)/HW)  
+			// var = rowMeans(subgrp_vars)*varConst1 + rowVars(subgrp_means)*((HW-1)/HW)  
 			int C = fetcher.getInteger("C");
 			int HW = fetcher.getInteger("HW");
 			double varConst1 = fetcher.getDouble("varConst1");
@@ -494,11 +507,11 @@ public class DnnGPUInstruction extends GPUInstruction {
 			Pointer out = fetcher.getOutputPointer(C, 1);
 			LibMatrixCUDA.rowVars(gCtx, instName, fetcher.getInputPointer("subgrp_means"), out, C, HW);
 			
-			// ema_var_upd = mu*ema_var + (1-mu)*tmp1*varConst1 + (1-mu)*out*((HW-1)/HW)
-			LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("aXplusbYpluscC", 
+			// var = mu*ema_var + (1-mu)*tmp1*varConst1 + (1-mu)*out*((HW-1)/HW)
+			LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("aXplusbC", 
 					ExecutionConfig.getConfigForSimpleVectorOperations(C),
-					fetcher.getInputPointer("ema_var"), tmp1, out,
-					mu, (1-mu)*varConst1, (1-mu)*(((double)HW-1)/HW), C);
+					tmp1, out,
+					varConst1, (((double)HW-1)/HW), C);
 			gCtx.cudaFreeHelper(instName, tmp1, DMLScript.EAGER_CUDA_FREE);
 		}
 	}

@@ -316,7 +316,7 @@ public class DnnTransform extends Lop
 		}
 	}
 	
-	public String getInstructions(String input1, String input2, String input3, String input4, String input5, String input6, String input7, String output) {
+	public String getInstructions(String input1, String input2, String input3, String input4, String input5, String output) {
 		if(operation == OperationTypes.UPDATE_EMA_VAR) {
 			StringBuilder sb = new StringBuilder();
 			sb.append( getExecType() );
@@ -333,10 +333,6 @@ public class DnnTransform extends Lop
 			sb.append( getInputs().get(3).prepInputOperand(input4));
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( getInputs().get(4).prepInputOperand(input5));
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( getInputs().get(5).prepInputOperand(input6));
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( getInputs().get(6).prepInputOperand(input7));
 			//output
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( this.prepOutputOperand(output));

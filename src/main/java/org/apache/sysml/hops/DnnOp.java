@@ -172,7 +172,7 @@ public class DnnOp extends MultiThreadedHop
 			case BATCH_NORM2D_TEST:
 				return 6;
 			case UPDATE_EMA_VAR:
-				return 7;
+				return 5;
 			case RESHAPE_COLMEANS:
 			case CHANNEL_SUMS:
 			case UPDATE_EMA_MEAN:
