@@ -110,8 +110,6 @@ public class DnnOp extends MultiThreadedHop
 		if( getLops() != null )
 			return getLops();
 		
-		ExecType et = optFindExecType();
-		
 		ArrayList<Hop> inputs = getInput();
 		switch( op )
 		{
@@ -125,6 +123,7 @@ public class DnnOp extends MultiThreadedHop
 			case BIASADD:
 			case BIASMULT:
 			{	
+				ExecType et = optFindExecType();
 				if(et == ExecType.CP || et == ExecType.GPU) {
 					setLops(constructDnnLops(et, inputs));
 					break;
@@ -141,14 +140,9 @@ public class DnnOp extends MultiThreadedHop
 			case UPDATE_EMA_VAR:
 			case RESHAPE_COLMEANS:
 			{	
-				if(et == ExecType.GPU) {
-					setLops(constructDnnLops(et, inputs));
-					break;
-				}
-				else {
-					throw new HopsException("Unimplemented DnnOp for execution type: " + et.name());
-				}
-				// break;
+				// GPU-specific operators
+				setLops(constructDnnLops(ExecType.GPU, inputs));
+				break;
 			}
 			default: 
 				throw new HopsException("Unsupported lops construction for operation type '"+op+"'.");
