@@ -83,7 +83,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	// mu*ema_mean + (1-mu)*mean
 	private static final HopDagPatternMatcher _updateEMA = 
 		mm_plus( 	mult(leaf("mu").isScalar(), leaf("ema_mean")), 
-					mult(leaf("oneMinus").isScalar(), leaf("mean")))
+					mult(leaf("oneMinusMu").isScalar(), leaf("mean")))
 		.fitsOnGPU(3); // 2x for input and output and 1x for overhead;
 	
 	// -------------------------------------------------------------------------------------------
