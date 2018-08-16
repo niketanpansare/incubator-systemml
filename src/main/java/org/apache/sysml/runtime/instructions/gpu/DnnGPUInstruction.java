@@ -113,8 +113,8 @@ public class DnnGPUInstruction extends GPUInstruction {
 	public DnnGPUInstruction(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr, 
 			double intermediateMemoryBudget) throws DMLRuntimeException {
 		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), opcode, istr);
-		if( !(opcode.equals("channel_sums") || opcode.equals("reshape_colmeans") ) ) {
-			throw new DMLRuntimeException("Incorrect usage. Expected the opcode to be channel_sums or reshape_colmeans, but found " + opcode);
+		if( !(opcode.equals("channel_sums") || opcode.equals("reshape_colmeans") || opcode.equals("update_ema") ) ) {
+			throw new DMLRuntimeException("Incorrect usage. Expected the opcode to be channel_sums or reshape_colmeans or update_ema, but found " + opcode);
 		}
 		_input1 = in1;
 		_input2 = in2;
