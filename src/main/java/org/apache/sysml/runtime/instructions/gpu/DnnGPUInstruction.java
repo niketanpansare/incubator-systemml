@@ -474,7 +474,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 			int HW = fetcher.getInteger("HW");
 			double varConst1 = fetcher.getDouble("varConst1");
 			double mu = fetcher.getDouble("mu");
-			fetcher.validateDimensions("subgrp_means", C, 1);
+			fetcher.validateDimensions("subgrp_means", C, HW);
 			fetcher.validateDimensions("X", -1, C*HW);
 			
 			
