@@ -321,7 +321,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 			CPOperand out = new CPOperand(parts[3]);
 			return new DnnGPUInstruction(in1, in2, out, opcode, str, Double.parseDouble(parts[4]));
 		}
-		else if (opcode.equalsIgnoreCase("channel_sums") || opcode.equals("reshape_colmeans")) {
+		else if (opcode.equalsIgnoreCase("channel_sums") || opcode.equals("reshape_colmeans") || opcode.equals("update_ema")) {
 			InstructionUtils.checkNumFields(parts, 4);
 			CPOperand in = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
@@ -440,6 +440,24 @@ public class DnnGPUInstruction extends GPUInstruction {
 			LibMatrixCUDA.channelSums(gCtx, instName, 
 					fetcher.getInputMatrixObject("X"), 
 					fetcher.getOutputMatrixObject(C, 1), C, HW);
+		}
+	}
+	
+	private void processEMAInstruction(ExecutionContext ec) {
+		// "ema_mean", "mean", "mu"
+		try(GPUDenseInputPointerFetcher fetcher = new GPUDenseInputPointerFetcher(ec, gCtx, instName, _output)) {
+			fetcher.add("ema_mean", _input1).add("mean", _input2).addScalar("mu", _input3);
+			double mu = fetcher.getInteger("mu");
+			
+			int rows = LibMatrixCUDA.toInt(fetcher.getInputNumRows("ema_mean"));
+			int cols = LibMatrixCUDA.toInt(fetcher.getInputNumColumns("ema_mean"));
+			
+			// aXplusbY(X, Y, C, a, b, size);
+			LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("aXplusbC", 
+					ExecutionConfig.getConfigForSimpleVectorOperations(rows*cols),
+					fetcher.getInputPointer("ema_mean"), fetcher.getInputPointer("mean"), 
+					fetcher.getOutputPointer(rows, cols),
+					mu, (1-mu), rows*cols);
 		}
 	}
 	
@@ -647,6 +665,10 @@ public class DnnGPUInstruction extends GPUInstruction {
 		}
 		else if (instOpcode.equalsIgnoreCase("channel_sums")) {
 			processChannelSumsInstruction(ec);
+			return;
+		}
+		else if (instOpcode.equalsIgnoreCase("update_ema")) {
+			processEMAInstruction(ec);
 			return;
 		}
 		else if (instOpcode.equalsIgnoreCase("reshape_colmeans")) {

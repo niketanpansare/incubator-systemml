@@ -2309,20 +2309,20 @@ extern "C" __global__ void aXplusbC_f(float *X, float *C, double a, double b, un
 }
 
 
-// Performs the operation: C = a*X + b*Y + c*C
+// Performs the operation: C = a*X + b*Y
 template <typename T>
-__device__ void aXplusbYpluscC(T *X, T* Y, T *C, double a, double b, double c, unsigned int size) {
+__device__ void aXplusbY(T *X, T* Y, T *C, double a, double b, unsigned int size) {
   int index = blockIdx.x * blockDim.x + threadIdx.x;
   if (index < size) {
-	C[index] = a*X[index] + b*Y[index] + c*C[index];
+	C[index] = a*X[index] + b*Y[index];
   }
 }
 
-extern "C" __global__ void aXplusbYpluscC_d(double *X, double* Y, double *C, double a, double b, double c, unsigned int size) {
-  aXplusbYpluscC(X, Y, C, a, b, c, size);
+extern "C" __global__ void aXplusbYpluscC_d(double *X, double* Y, double *C, double a, double b, unsigned int size) {
+  aXplusbY(X, Y, C, a, b, size);
 }
 
-extern "C" __global__ void aXplusbYpluscC_f(float *X, float* Y, float *C, double a, double b, double c, unsigned int size) {
-  aXplusbYpluscC(X, Y, C, a, b, c, size);
+extern "C" __global__ void aXplusbYpluscC_f(float *X, float* Y, float *C, double a, double b, unsigned int size) {
+  aXplusbY(X, Y, C, a, b, size);
 }
 

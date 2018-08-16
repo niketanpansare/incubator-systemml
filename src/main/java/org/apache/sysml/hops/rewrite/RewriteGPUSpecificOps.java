@@ -36,7 +36,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	private static final HopDagPatternMatcher _batchNormUpdatedVar; 
 	static {
 		HopDagPatternMatcher subgrp_vars = matrix( 
-				mult(colVars(leaf("X")), leaf("varConst1").isScalar()), 
+				mult(colVars(leaf("X").fitsOnGPU(2)), leaf("varConst1").isScalar()), 
 				leaf("C").isScalar(),  
 				leaf("HW").isScalar());
 		_batchNormUpdatedVar = mm_plus( rowMeans(subgrp_vars), mult(rowVars(leaf("subgrp_means")),  leaf("varConst2").isScalar()));
@@ -77,6 +77,14 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	// This avoids unnecessary copy by the reshape operator
 	private static final HopDagPatternMatcher _reshapeColMeans = 
 			matrix(colMeans(leaf("X").fitsOnGPU(2)), leaf("C").isScalar(), leaf("HW").isScalar());
+	
+	
+	// Pattern 6:
+	// mu*ema_mean + (1-mu)*mean
+	private static final HopDagPatternMatcher _updateEMA = 
+		mm_plus( 	mult(leaf("mu").isScalar(), leaf("ema_mean")), 
+					mult(leaf("oneMinus").isScalar(), leaf("mean")))
+		.fitsOnGPU(3); // 2x for input and output and 1x for overhead;
 	
 	// -------------------------------------------------------------------------------------------
 	
@@ -139,6 +147,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 			hi = channelSums(hop, hi, i); 
 			hi = updateNesterovX(hop, hi, i);
 			hi = reshapeColMeans(hop, hi, i);
+			hi = updateEMA(hop, hi, i);
 	
 			if( !descendFirst )
 				rule_GPUKernels(roots, hi, descendFirst);
@@ -160,6 +169,25 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 		if(_channelSums.matches(hi)) {
 			LOG.debug("Applied channelSums rewrite.");
 			Hop newHop = HopRewriteUtils.createDnnOp(_channelSums, OpOpDnn.CHANNEL_SUMS, "X", "C", "HW");
+			return HopRewriteUtils.rewireAllParentChildReferences(hi, newHop);
+		}
+		return hi;
+	}
+	
+	/**
+	 * Checks for the updateEMA pattern (ema_mean_upd = mu*ema_mean + (1-mu)*mean)
+	 * and returns a new DnnOp if matched
+	 * 
+	 * @param parent parent of the input
+	 * @param hi input to be matched
+	 * @param pos position
+	 * @return a new DnnOp or hi
+	 */
+	private static Hop updateEMA(Hop parent, Hop hi, int pos) {
+		if(_updateEMA.matches(hi) && 
+				(1-_updateEMA.getLiteralValue("mu")) == _updateEMA.getLiteralValue("oneMinusMu")) {
+			LOG.debug("Applied updateNesterovX rewrite.");
+			Hop newHop = HopRewriteUtils.createDnnOp(_updateEMA, OpOpDnn.UPDATE_EMA, "ema_mean", "mean", "mu");
 			return HopRewriteUtils.rewireAllParentChildReferences(hi, newHop);
 		}
 		return hi;

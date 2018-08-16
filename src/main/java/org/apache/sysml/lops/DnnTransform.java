@@ -32,7 +32,7 @@ public class DnnTransform extends Lop
 		RELU_MAX_POOLING, RELU_MAX_POOLING_BACKWARD, RELU_BACKWARD,
 		CONV2D, CONV2D_BACKWARD_FILTER, CONV2D_BACKWARD_DATA,
 		BIAS_ADD, CONV2D_BIAS_ADD, BIAS_MULTIPLY, CHANNEL_SUMS, BATCH_NORM2D_TEST, 
-		UPDATE_NESTEROV_X, RESHAPE_COLMEANS, UPDATE_EMA_VAR
+		UPDATE_NESTEROV_X, RESHAPE_COLMEANS, UPDATE_EMA_VAR, UPDATE_EMA
 	}
 	
 	private OperationTypes operation;
@@ -176,6 +176,9 @@ public class DnnTransform extends Lop
 		case UPDATE_EMA_VAR:
 			return "update_ema_var";
 			
+		case UPDATE_EMA:
+			return "update_ema";
+			
 		case RESHAPE_COLMEANS:
 			return "reshape_colmeans";
 			
@@ -218,7 +221,7 @@ public class DnnTransform extends Lop
 	
 	@Override
 	public String getInstructions(String input, String C, String HW, String output) {
-		if(operation == OperationTypes.CHANNEL_SUMS || operation == OperationTypes.RESHAPE_COLMEANS) {
+		if(operation == OperationTypes.CHANNEL_SUMS || operation == OperationTypes.RESHAPE_COLMEANS || operation == OperationTypes.UPDATE_EMA) {
 			StringBuilder sb = new StringBuilder();
 			sb.append( getExecType() );
 			
