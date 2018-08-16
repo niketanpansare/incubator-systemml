@@ -489,7 +489,6 @@ public class DnnGPUInstruction extends GPUInstruction {
 			int C = fetcher.getInteger("C");
 			int HW = fetcher.getInteger("HW");
 			double varConst1 = fetcher.getDouble("varConst1");
-			double mu = fetcher.getDouble("mu");
 			fetcher.validateDimensions("subgrp_means", C, HW);
 			fetcher.validateDimensions("X", -1, C*HW);
 			
@@ -507,7 +506,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 			Pointer out = fetcher.getOutputPointer(C, 1);
 			LibMatrixCUDA.rowVars(gCtx, instName, fetcher.getInputPointer("subgrp_means"), out, C, HW);
 			
-			// var = mu*ema_var + (1-mu)*tmp1*varConst1 + (1-mu)*out*((HW-1)/HW)
+			// var = tmp1*varConst1 + out*((HW-1)/HW)
 			LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("aXplusbC", 
 					ExecutionConfig.getConfigForSimpleVectorOperations(C),
 					tmp1, out,
