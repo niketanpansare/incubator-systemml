@@ -2318,11 +2318,11 @@ __device__ void aXplusbY(T *X, T* Y, T *C, double a, double b, unsigned int size
   }
 }
 
-extern "C" __global__ void aXplusbYpluscC_d(double *X, double* Y, double *C, double a, double b, unsigned int size) {
+extern "C" __global__ void aXplusbY_d(double *X, double* Y, double *C, double a, double b, unsigned int size) {
   aXplusbY(X, Y, C, a, b, size);
 }
 
-extern "C" __global__ void aXplusbYpluscC_f(float *X, float* Y, float *C, double a, double b, unsigned int size) {
+extern "C" __global__ void aXplusbY_f(float *X, float* Y, float *C, double a, double b, unsigned int size) {
   aXplusbY(X, Y, C, a, b, size);
 }
 

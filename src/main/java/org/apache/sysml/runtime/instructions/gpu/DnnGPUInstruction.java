@@ -453,7 +453,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 			int cols = LibMatrixCUDA.toInt(fetcher.getInputNumColumns("ema_mean"));
 			
 			// aXplusbY(X, Y, C, a, b, size);
-			LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("aXplusbC", 
+			LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("aXplusbY", 
 					ExecutionConfig.getConfigForSimpleVectorOperations(rows*cols),
 					fetcher.getInputPointer("ema_mean"), fetcher.getInputPointer("mean"), 
 					fetcher.getOutputPointer(rows, cols),

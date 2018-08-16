@@ -13172,14 +13172,14 @@ BB117_2:
 	ret;
 }
 
-	// .globl	aXplusbYpluscC_d
-.visible .entry aXplusbYpluscC_d(
-	.param .u64 aXplusbYpluscC_d_param_0,
-	.param .u64 aXplusbYpluscC_d_param_1,
-	.param .u64 aXplusbYpluscC_d_param_2,
-	.param .f64 aXplusbYpluscC_d_param_3,
-	.param .f64 aXplusbYpluscC_d_param_4,
-	.param .u32 aXplusbYpluscC_d_param_5
+	// .globl	aXplusbY_d
+.visible .entry aXplusbY_d(
+	.param .u64 aXplusbY_d_param_0,
+	.param .u64 aXplusbY_d_param_1,
+	.param .u64 aXplusbY_d_param_2,
+	.param .f64 aXplusbY_d_param_3,
+	.param .f64 aXplusbY_d_param_4,
+	.param .u32 aXplusbY_d_param_5
 )
 {
 	.reg .pred 	%p<2>;
@@ -13188,12 +13188,12 @@ BB117_2:
 	.reg .b64 	%rd<11>;
 
 
-	ld.param.u64 	%rd1, [aXplusbYpluscC_d_param_0];
-	ld.param.u64 	%rd2, [aXplusbYpluscC_d_param_1];
-	ld.param.u64 	%rd3, [aXplusbYpluscC_d_param_2];
-	ld.param.f64 	%fd1, [aXplusbYpluscC_d_param_3];
-	ld.param.f64 	%fd2, [aXplusbYpluscC_d_param_4];
-	ld.param.u32 	%r2, [aXplusbYpluscC_d_param_5];
+	ld.param.u64 	%rd1, [aXplusbY_d_param_0];
+	ld.param.u64 	%rd2, [aXplusbY_d_param_1];
+	ld.param.u64 	%rd3, [aXplusbY_d_param_2];
+	ld.param.f64 	%fd1, [aXplusbY_d_param_3];
+	ld.param.f64 	%fd2, [aXplusbY_d_param_4];
+	ld.param.u32 	%r2, [aXplusbY_d_param_5];
 	mov.u32 	%r3, %ctaid.x;
 	mov.u32 	%r4, %ntid.x;
 	mov.u32 	%r5, %tid.x;
@@ -13218,14 +13218,14 @@ BB118_2:
 	ret;
 }
 
-	// .globl	aXplusbYpluscC_f
-.visible .entry aXplusbYpluscC_f(
-	.param .u64 aXplusbYpluscC_f_param_0,
-	.param .u64 aXplusbYpluscC_f_param_1,
-	.param .u64 aXplusbYpluscC_f_param_2,
-	.param .f64 aXplusbYpluscC_f_param_3,
-	.param .f64 aXplusbYpluscC_f_param_4,
-	.param .u32 aXplusbYpluscC_f_param_5
+	// .globl	aXplusbY_f
+.visible .entry aXplusbY_f(
+	.param .u64 aXplusbY_f_param_0,
+	.param .u64 aXplusbY_f_param_1,
+	.param .u64 aXplusbY_f_param_2,
+	.param .f64 aXplusbY_f_param_3,
+	.param .f64 aXplusbY_f_param_4,
+	.param .u32 aXplusbY_f_param_5
 )
 {
 	.reg .pred 	%p<2>;
@@ -13235,12 +13235,12 @@ BB118_2:
 	.reg .b64 	%rd<11>;
 
 
-	ld.param.u64 	%rd1, [aXplusbYpluscC_f_param_0];
-	ld.param.u64 	%rd2, [aXplusbYpluscC_f_param_1];
-	ld.param.u64 	%rd3, [aXplusbYpluscC_f_param_2];
-	ld.param.f64 	%fd1, [aXplusbYpluscC_f_param_3];
-	ld.param.f64 	%fd2, [aXplusbYpluscC_f_param_4];
-	ld.param.u32 	%r2, [aXplusbYpluscC_f_param_5];
+	ld.param.u64 	%rd1, [aXplusbY_f_param_0];
+	ld.param.u64 	%rd2, [aXplusbY_f_param_1];
+	ld.param.u64 	%rd3, [aXplusbY_f_param_2];
+	ld.param.f64 	%fd1, [aXplusbY_f_param_3];
+	ld.param.f64 	%fd2, [aXplusbY_f_param_4];
+	ld.param.u32 	%r2, [aXplusbY_f_param_5];
 	mov.u32 	%r3, %ctaid.x;
 	mov.u32 	%r4, %ntid.x;
 	mov.u32 	%r5, %tid.x;
