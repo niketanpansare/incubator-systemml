@@ -34,12 +34,18 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	// subgrp_vars = matrix(colVars(X) * ((N-1)/N), rows=C, cols=Hin*Win)
 	// var = rowMeans(subgrp_vars) + rowVars(subgrp_means)*(((Hin*Win)-1)/(Hin*Win))
 	private static final HopDagPatternMatcher _batchNormUpdatedVar; 
+	private static final boolean IS_MATRIX = true;
+	private static final boolean IS_SCALAR = false;
 	static {
-		HopDagPatternMatcher subgrp_vars = matrix( 
-				mult(colVars(leaf("X").fitsOnGPU(2)), leaf("varConst1").isScalar()), 
-				leaf("C").isScalar(),  
-				leaf("HW").isScalar());
-		_batchNormUpdatedVar = mm_plus( rowMeans(subgrp_vars), mult(rowVars(leaf("subgrp_means")),  leaf("varConst2").isScalar()));
+		HopDagPatternMatcher subgrp_vars = 
+			matrix( 
+					mult(colVars(leaf("X", IS_MATRIX).fitsOnGPU(2)), leaf("varConst1", IS_SCALAR)), // colVars(X) * ((N-1)/N)
+					leaf("C", IS_SCALAR),  	// rows=C
+					leaf("HW", IS_SCALAR)); // cols=Hin*Win
+		_batchNormUpdatedVar = 
+			mm_plus( 
+					rowMeans(subgrp_vars), 
+					mult(rowVars(leaf("subgrp_means", IS_MATRIX)),  leaf("varConst2", IS_SCALAR))); // rowVars(subgrp_means)*varConst2
 	}
 		
 	// Pattern 2:
@@ -47,44 +53,69 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	static {
 		// norm = bias_multiply(bias_add(X, -mean), 1/sqrt(var+eps))
 		HopDagPatternMatcher norm = 
-				bias_multiply(
-						bias_add(leaf("X"), unaryMinus(leaf("mean"))), 
-						div(1, sqrt(plus(leaf("var"), leaf("eps")))));
+			bias_multiply(
+					bias_add(leaf("X", IS_MATRIX), unaryMinus(leaf("mean", IS_MATRIX))), // bias_add(X, -mean)
+					div(1, sqrt(plus(leaf("var", IS_MATRIX), leaf("eps", IS_SCALAR))))); // 1/sqrt(var+eps)
 		// hi = bias_add(bias_multiply(norm, gamma), beta)
-		_batchNormTest = bias_add(
-				bias_multiply(norm, leaf("gamma")), 
-				leaf("beta"))
-			.fitsOnGPU(3); // 2x for input and output and 1x for overhead
+		_batchNormTest = 
+			bias_add(
+					bias_multiply(norm, leaf("gamma", IS_MATRIX)), 
+					leaf("beta", IS_MATRIX))
+			.fitsOnGPU(3);
 	}
 	
 	// Pattern 3:
 	// rowSums(matrix(colSums(X), rows=C, cols=HW))
 	private static final HopDagPatternMatcher _channelSums = 
-		rowSums(matrix(	colSums(
-						leaf("X").fitsOnGPU(2)), 
-						leaf("C").isScalar(), 
-						leaf("HW").isScalar()));
+		rowSums(
+			matrix(	colSums(leaf("X", IS_MATRIX).fitsOnGPU(2)), 
+					leaf("C", IS_SCALAR), 
+					leaf("HW", IS_SCALAR)));
 	
 	// Pattern 4:
-	// X - mu*v_prev + (1+mu)*v
+	// (X - mu*v_prev) + (1+mu)*v
 	private static final HopDagPatternMatcher _updateNesterovX = 
-		mm_plus(	minus(leaf("X"), mult(leaf("mu").isScalar(), leaf("v_prev"))), 	// X - mu*v_prev
-			mult(leaf("onePlusMu").isScalar(), leaf("v")))						// (1+mu)*v
-		.fitsOnGPU(3); // 2x for input and output and 1x for overhead;
+		mm_plus(
+				minus(	// X - mu*v_prev
+						leaf("X", IS_MATRIX), 
+						mult(	// mu*v_prev
+								leaf("mu", IS_SCALAR), 
+								leaf("v_prev", IS_MATRIX))),
+				mult(	// (1+mu)*v
+						leaf("onePlusMu", IS_SCALAR), 
+						leaf("v", IS_MATRIX)))						
+		.fitsOnGPU(3); 
 	
 	// Pattern 5:
 	// matrix(colMeans(X), rows=C, cols=Hin*Win)
 	// This avoids unnecessary copy by the reshape operator
 	private static final HopDagPatternMatcher _reshapeColMeans = 
-			matrix(colMeans(leaf("X").fitsOnGPU(2)), leaf("C").isScalar(), leaf("HW").isScalar());
+		matrix(
+				colMeans(leaf("X", IS_MATRIX).fitsOnGPU(2)), // colMeans(X)
+				leaf("C", IS_SCALAR), 
+				leaf("HW", IS_SCALAR));
 	
 	
 	// Pattern 6:
 	// mu*ema_mean + (1-mu)*mean
 	private static final HopDagPatternMatcher _updateEMA = 
-		mm_plus( 	mult(leaf("mu").isScalar(), leaf("ema_mean")), 
-					mult(leaf("oneMinusMu").isScalar(), leaf("mean")))
-		.fitsOnGPU(3); // 2x for input and output and 1x for overhead;
+		mm_plus( 	
+				mult(	// mu*ema_mean
+						leaf("mu", IS_SCALAR), 
+						leaf("ema_mean", IS_MATRIX)), 
+				mult(	// (1-mu)*mean
+						leaf("oneMinusMu", IS_SCALAR), 
+						leaf("mean", IS_MATRIX)))
+		.fitsOnGPU(3); 
+	
+	// Pattern 7:
+	// 1/sqrt(var+epsilon)
+	private static final HopDagPatternMatcher _invVar = 
+		div(1, 
+				sqrt(	// var+epsilon
+						plus(	leaf("var", IS_MATRIX), 
+								leaf("eps", IS_SCALAR) )))
+		.fitsOnGPU(2);
 	
 	// -------------------------------------------------------------------------------------------
 	
@@ -148,6 +179,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 			hi = updateNesterovX(hop, hi, i);
 			hi = reshapeColMeans(hop, hi, i);
 			hi = updateEMA(hop, hi, i);
+			hi = computeInverseVariance(hop, hi, i);
 	
 			if( !descendFirst )
 				rule_GPUKernels(roots, hi, descendFirst);
@@ -175,6 +207,24 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	}
 	
 	/**
+	 * Checks for the invVar pattern (cache_inv_var = 1/sqrt(var+epsilon))
+	 * and returns a new DnnOp if matched
+	 * 
+	 * @param parent parent of the input
+	 * @param hi input to be matched
+	 * @param pos position
+	 * @return a new DnnOp or hi
+	 */
+	private static Hop computeInverseVariance(Hop parent, Hop hi, int pos) {
+		if(_invVar.matches(hi)) {
+			LOG.debug("Applied computeInverseVariance rewrite.");
+			Hop newHop = HopRewriteUtils.createDnnOp(_invVar, OpOpDnn.INV_VAR, "var", "eps");
+			return HopRewriteUtils.rewireAllParentChildReferences(hi, newHop);
+		}
+		return hi;
+	}
+	
+	/**
 	 * Checks for the updateEMA pattern (ema_mean_upd = mu*ema_mean + (1-mu)*mean)
 	 * and returns a new DnnOp if matched
 	 * 
@@ -186,7 +236,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	private static Hop updateEMA(Hop parent, Hop hi, int pos) {
 		if(_updateEMA.matches(hi) && 
 				(1-_updateEMA.getLiteralValue("mu")) == _updateEMA.getLiteralValue("oneMinusMu")) {
-			LOG.debug("Applied updateNesterovX rewrite.");
+			LOG.debug("Applied updateEMA rewrite.");
 			Hop newHop = HopRewriteUtils.createDnnOp(_updateEMA, OpOpDnn.UPDATE_EMA, "ema_mean", "mean", "mu");
 			return HopRewriteUtils.rewireAllParentChildReferences(hi, newHop);
 		}

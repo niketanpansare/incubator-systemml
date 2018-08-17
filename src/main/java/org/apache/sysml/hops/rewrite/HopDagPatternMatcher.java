@@ -162,8 +162,11 @@ public class HopDagPatternMatcher {
 	
 
 	// Simple helper utilities for adding predicates
-	public HopDagPatternMatcher isScalar() {
+	private HopDagPatternMatcher isScalar() {
 		return this.addPredicate("isScalar", h -> h.getDataType() == DataType.SCALAR);
+	}
+	private HopDagPatternMatcher isMatrix() {
+		return this.addPredicate("isMatrix", h -> h.getDataType() == DataType.MATRIX);
 	}
 	public HopDagPatternMatcher fitsOnGPU(double constant) {
 		return this.addPredicate("fitsOnGPU", h -> _fitsOnGPU(h, constant));
@@ -186,11 +189,11 @@ public class HopDagPatternMatcher {
 			h instanceof AggUnaryOp && ((AggUnaryOp)h).getOp() == AggOp.VAR && ((AggUnaryOp)h).getDirection() == Direction.Col)
 			.addChildMatcher(child1);
 	}
-	public static HopDagPatternMatcher leaf(String _variableName) {
+	public static HopDagPatternMatcher leaf(String _variableName, boolean isMatrix) {
 		HopDagPatternMatcher ret = new HopDagPatternMatcher();
 		ret.isLeaf = true;
 		ret.variableName = _variableName;
-		return ret;
+		return isMatrix ? ret.isMatrix() : ret.isScalar();
 	}
 	public static HopDagPatternMatcher rowSums(HopDagPatternMatcher child1) {
 		return new HopDagPatternMatcher().addPredicate("rowSums", h -> 

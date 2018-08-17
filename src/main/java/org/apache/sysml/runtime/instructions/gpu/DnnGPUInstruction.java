@@ -61,9 +61,9 @@ public class DnnGPUInstruction extends GPUInstruction {
 	
 	public DnnGPUInstruction(CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr, double intermediateMemoryBudget) {
 		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), opcode, istr);
-		if (!(opcode.equals("bias_add") || opcode.equals("bias_multiply") || opcode.equals("relu_backward"))) {
+		if (!(opcode.equals("bias_add") || opcode.equals("bias_multiply") || opcode.equals("relu_backward") || opcode.equals("inv_var") )) {
 			throw new DMLRuntimeException(
-					"Incorrect usage. Expected the opcode to be bias_add or bias_multiply or relu_backward, but found "
+					"Incorrect usage. Expected the opcode to be bias_add or bias_multiply or relu_backward or inv_var, but found "
 							+ opcode);
 		}
 		_input1 = in1;
@@ -314,7 +314,8 @@ public class DnnGPUInstruction extends GPUInstruction {
 			return new DnnGPUInstruction(in1, null, out, opcode, str, stride,
 					padding, input_shape, filter_shape, Double.parseDouble(parts[15]));
 		}
-		else if( opcode.equalsIgnoreCase("bias_add") || opcode.equalsIgnoreCase("relu_backward") || opcode.equalsIgnoreCase("bias_multiply")  ) {
+		else if( opcode.equalsIgnoreCase("bias_add") || opcode.equalsIgnoreCase("relu_backward") || opcode.equalsIgnoreCase("bias_multiply") 
+				|| opcode.equalsIgnoreCase("inv_var") ) {
 			InstructionUtils.checkNumFields(parts, 4);
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
@@ -405,6 +406,21 @@ public class DnnGPUInstruction extends GPUInstruction {
 				LibMatrixCUDA.biasAdd(gCtx, instName, input, bias, out);
 			else if(instOpcode.equalsIgnoreCase("bias_multiply"))
 				LibMatrixCUDA.biasMultiply(gCtx, instName, input, bias, out);
+		}
+	}
+	
+	private void processInverseVarianceInstruction(String instOpcode, ExecutionContext ec) {
+		try(GPUDenseInputPointerFetcher fetcher = new GPUDenseInputPointerFetcher(ec, gCtx, instName, _output)) {
+			fetcher.add("X", _input1).addScalar("eps", _input2);
+			
+			int rows = LibMatrixCUDA.toInt(fetcher.getInputNumRows("X"));
+			int cols = LibMatrixCUDA.toInt(fetcher.getInputNumColumns("X"));
+			
+			// invVar(X, C, eps, size);
+			LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("invVar", 
+					ExecutionConfig.getConfigForSimpleVectorOperations(rows*cols),
+					fetcher.getInputPointer("X"), fetcher.getOutputPointer(rows, cols),
+					fetcher.getDouble("eps"), rows*cols);
 		}
 	}
 	
@@ -659,6 +675,10 @@ public class DnnGPUInstruction extends GPUInstruction {
 		instName = getExtendedOpcode();
 		if (instOpcode.equalsIgnoreCase("bias_add") || instOpcode.equalsIgnoreCase("bias_multiply")) {
 			processBiasInstruction(instOpcode, ec);
+			return;
+		}
+		else if (instOpcode.equalsIgnoreCase("inv_var")) {
+			processInverseVarianceInstruction(instOpcode, ec);
 			return;
 		}
 		else if (instOpcode.equalsIgnoreCase("relu_backward")) {
