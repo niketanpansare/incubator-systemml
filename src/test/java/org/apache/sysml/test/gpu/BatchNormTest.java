@@ -68,17 +68,16 @@ public class BatchNormTest extends GPUTests {
 		List<Object> outGPU = runOnGPU(spark, scriptStr, inputs, outputs);
 		if(mode.equals("test")) {
 			assertHeavyHitterPresent("gpu_batch_norm2d_test");
-			for(int i = 0; i < outputs.size(); i++) {
-				assertEqualObjects(outCPU.get(i), outGPU.get(i));
-			}
 		}
 		else {
 			assertHeavyHitterPresent("gpu_batch_norm2d_test");
 			assertHeavyHitterPresent("gpu_reshape_colmeans");
 			assertHeavyHitterPresent("gpu_update_ema_var");
-			for(int i = 0; i < outputs.size()-1; i++) {
-				assertEqualObjects(outCPU.get(i), outGPU.get(i), 1e-3);
-			}
 		}
+		assertEqualObjects(outCPU.get(0), outGPU.get(0));
+		assertEqualObjects(outCPU.get(1), outGPU.get(1));
+		assertEqualObjects(outCPU.get(2), outGPU.get(2));
+		assertEqualObjects(outCPU.get(3), outGPU.get(3));
+		assertEqualObjects(outCPU.get(4), outGPU.get(4));
 	}
 }
