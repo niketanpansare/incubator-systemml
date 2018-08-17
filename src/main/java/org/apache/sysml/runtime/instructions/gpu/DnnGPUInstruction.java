@@ -447,10 +447,12 @@ public class DnnGPUInstruction extends GPUInstruction {
 		// "ema_mean", "mean", "mu"
 		try(GPUDenseInputPointerFetcher fetcher = new GPUDenseInputPointerFetcher(ec, gCtx, instName, _output)) {
 			fetcher.add("ema_mean", _input1).add("mean", _input2).addScalar("mu", _input3);
-			double mu = fetcher.getInteger("mu");
+			double mu = fetcher.getDouble("mu");
 			
 			int rows = LibMatrixCUDA.toInt(fetcher.getInputNumRows("ema_mean"));
 			int cols = LibMatrixCUDA.toInt(fetcher.getInputNumColumns("ema_mean"));
+			
+			fetcher.validateDimensions("mean", rows, cols);
 			
 			// aXplusbY(X, Y, C, a, b, size);
 			LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("aXplusbY", 
