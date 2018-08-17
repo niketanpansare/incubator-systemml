@@ -203,7 +203,7 @@ public class DnnTransform extends Lop
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( getInputs().get(0).prepInputOperand(input));
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( getInputs().get(0).prepInputOperand(bias));
+			sb.append( getInputs().get(1).prepInputOperand(bias));
 			//output
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( this.prepOutputOperand(output));
