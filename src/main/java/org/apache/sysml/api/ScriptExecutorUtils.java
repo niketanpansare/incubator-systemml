@@ -19,12 +19,27 @@
 
 package org.apache.sysml.api;
 
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
+import org.apache.sysml.api.jmlc.JMLCUtils;
+import org.apache.sysml.api.mlcontext.MLContextUtil;
+import org.apache.sysml.api.mlcontext.ScriptType;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.codegen.SpoofCompiler;
+import org.apache.sysml.hops.rewrite.ProgramRewriter;
+import org.apache.sysml.hops.rewrite.RewriteRemovePersistentReadWrite;
+import org.apache.sysml.parser.DMLProgram;
+import org.apache.sysml.parser.DMLTranslator;
+import org.apache.sysml.parser.LanguageException;
+import org.apache.sysml.parser.ParseException;
+import org.apache.sysml.parser.ParserFactory;
+import org.apache.sysml.parser.ParserWrapper;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.Program;
@@ -35,7 +50,13 @@ import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUObject;
+import org.apache.sysml.runtime.util.UtilFunctions;
+import org.apache.sysml.utils.Explain;
 import org.apache.sysml.utils.Statistics;
+import org.apache.sysml.utils.Explain.ExplainCounts;
+import org.apache.sysml.utils.Explain.ExplainType;
+import org.apache.sysml.yarn.DMLAppMasterUtils;
+import org.apache.sysml.yarn.DMLYarnClientProxy;
 
 public class ScriptExecutorUtils {
 	
@@ -64,6 +85,162 @@ public class ScriptExecutorUtils {
 		}
 		GPUContextPool.freeAllGPUContexts();
 		gCtxs = null;
+	}
+	
+	public static Program compileRuntimeProgram(String script, Map<String,String> nsscripts, Map<String, String> args, 
+			String[] inputs, String[] outputs, ScriptType scriptType, DMLConfig dmlconf, SystemMLAPI api) {
+		return compileRuntimeProgram(script, nsscripts, args, null, null, inputs, outputs, 
+				scriptType, dmlconf, api, true, false);
+	}
+	
+	public static Program compileRuntimeProgram(String script, Map<String, String> args, String[] allArgs,
+			ScriptType scriptType, DMLConfig dmlconf, SystemMLAPI api) {
+		return compileRuntimeProgram(script, Collections.emptyMap(), args, allArgs, null, null, null, 
+				scriptType, dmlconf, api, true, false);
+	}
+	
+	/**
+	 * Compile a runtime program
+	 * 
+	 * @param script string representing of the DML or PyDML script
+	 * @param nsscripts map (name, script) of the DML or PyDML namespace scripts
+	 * @param args map of input parameters ($) and their values
+	 * @param allArgs commandline arguments
+	 * @param symbolTable symbol table associated with MLContext
+	 * @param inputs string array of input variables to register
+	 * @param outputs string array of output variables to register
+	 * @param parsePyDML {@code true} if PyDML, {@code false} if DML
+	 * @param dmlconf configuration provided by the user
+	 * @param api API used to execute the runtime program
+	 * @param performHOPRewrites should perform hop rewrites
+	 * @param maintainSymbolTable whether or not all values should be maintained in the symbol table after execution.
+	 * @return compiled runtime program
+	 */
+	public static Program compileRuntimeProgram(String script, Map<String,String> nsscripts, Map<String, String> args, String[] allArgs,
+			// Input/Outputs registered in MLContext and JMLC. These are set to null by DMLScript
+			LocalVariableMap symbolTable, String[] inputs, String[] outputs, 
+			ScriptType scriptType, DMLConfig dmlconf, SystemMLAPI api, 
+			// MLContext-specific flags
+			boolean performHOPRewrites, boolean maintainSymbolTable) {
+		DMLScript.SCRIPT_TYPE = scriptType;
+		
+		Program rtprog = null;
+		
+		if(api == SystemMLAPI.JMLC) {
+			//check for valid names of passed arguments
+			String[] invalidArgs = args.keySet().stream()
+				.filter(k -> k==null || !k.startsWith("$")).toArray(String[]::new);
+			if( invalidArgs.length > 0 )
+				throw new LanguageException("Invalid argument names: "+Arrays.toString(invalidArgs));
+			
+			//check for valid names of input and output variables
+			String[] invalidVars = UtilFunctions.asSet(inputs, outputs).stream()
+				.filter(k -> k==null || k.startsWith("$")).toArray(String[]::new);
+			if( invalidVars.length > 0 )
+				throw new LanguageException("Invalid variable names: "+Arrays.toString(invalidVars));
+		}
+		
+		String dmlParserFilePath = (api == SystemMLAPI.JMLC) ? null : DMLScript.DML_FILE_PATH_ANTLR_PARSER;
+		
+		try {
+			//Step 1: set local/remote memory if requested (for compile in AM context) 
+			if(api == SystemMLAPI.DMLScript && dmlconf.getBooleanValue(DMLConfig.YARN_APPMASTER) ){
+				DMLAppMasterUtils.setupConfigRemoteMaxMemory(dmlconf); 
+			}
+			
+			// Start timer (disabled for JMLC)
+			if(api != SystemMLAPI.JMLC) 
+				Statistics.startCompileTimer();
+			
+			//Step 2: parse dml script
+			ParserWrapper parser = ParserFactory.createParser(scriptType, nsscripts);
+			DMLProgram prog = parser.parse(dmlParserFilePath, script, args);
+			
+			//Step 3: construct HOP DAGs (incl LVA, validate, and setup)
+			DMLTranslator dmlt = new DMLTranslator(prog);
+			dmlt.liveVariableAnalysis(prog);
+			dmlt.validateParseTree(prog);
+			dmlt.constructHops(prog);
+			
+			//init working directories (before usage by following compilation steps)
+			if(api != SystemMLAPI.JMLC)
+				DMLScript.initHadoopExecution( dmlconf );
+			
+			
+			//Step 4: rewrite HOP DAGs (incl IPA and memory estimates)
+			if(performHOPRewrites)
+				dmlt.rewriteHopsDAG(prog);
+			
+			//Step 5: Remove Persistent Read/Writes
+			if(api == SystemMLAPI.JMLC) {
+				//rewrite persistent reads/writes
+				RewriteRemovePersistentReadWrite rewrite = new RewriteRemovePersistentReadWrite(inputs, outputs);
+				ProgramRewriter rewriter2 = new ProgramRewriter(rewrite);
+				rewriter2.rewriteProgramHopDAGs(prog);
+			}
+			else if(api == SystemMLAPI.MLContext) {
+				//rewrite persistent reads/writes
+				RewriteRemovePersistentReadWrite rewrite = new RewriteRemovePersistentReadWrite(inputs, outputs, symbolTable);
+				ProgramRewriter rewriter2 = new ProgramRewriter(rewrite);
+				rewriter2.rewriteProgramHopDAGs(prog);
+			}
+			
+			//Step 6: construct lops (incl exec type and op selection)
+			dmlt.constructLops(prog);
+			
+			if(DMLScript.LOG.isDebugEnabled()) {
+				DMLScript.LOG.debug("\n********************** LOPS DAG *******************");
+				dmlt.printLops(prog);
+				dmlt.resetLopsDAGVisitStatus(prog);
+			}
+			
+			//Step 7: generate runtime program, incl codegen
+			rtprog = dmlt.getRuntimeProgram(prog, dmlconf);
+			
+			// Step 8: Cleanup/post-processing
+			if(api == SystemMLAPI.JMLC) {
+				JMLCUtils.cleanupRuntimeProgram(rtprog, outputs);
+			}
+			else if(api == SystemMLAPI.DMLScript) {
+				//launch SystemML appmaster (if requested and not already in launched AM)
+				if( dmlconf.getBooleanValue(DMLConfig.YARN_APPMASTER) ){
+					if( !DMLScript.isActiveAM() && DMLYarnClientProxy.launchDMLYarnAppmaster(script, dmlconf, allArgs, rtprog) )
+						return null; //if AM launch unsuccessful, fall back to normal execute
+					if( DMLScript.isActiveAM() ) //in AM context (not failed AM launch)
+						DMLAppMasterUtils.setupProgramMappingRemoteMaxMemory(rtprog);
+				}
+			}
+			else if(api == SystemMLAPI.MLContext) {
+				if (maintainSymbolTable) {
+					MLContextUtil.deleteRemoveVariableInstructions(rtprog);
+				} else {
+					JMLCUtils.cleanupRuntimeProgram(rtprog, outputs);
+				}
+			}
+			
+			//Step 9: prepare statistics [and optional explain output]
+			//count number compiled MR jobs / SP instructions
+			if(api != SystemMLAPI.JMLC) {
+				ExplainCounts counts = Explain.countDistributedOperations(rtprog);
+				Statistics.resetNoOfCompiledJobs( counts.numJobs );
+				//explain plan of program (hops or runtime)
+				if( DMLScript.EXPLAIN != ExplainType.NONE )
+					System.out.println(Explain.display(prog, rtprog, DMLScript.EXPLAIN, counts));
+				
+				Statistics.stopCompileTimer();
+			}
+		}
+		catch(ParseException pe) {
+			// don't chain ParseException (for cleaner error output)
+			throw pe;
+		}
+		catch(IOException ex) {
+			throw new DMLException(ex);
+		}
+		catch(Exception ex) {
+			throw new DMLException(ex);
+		}
+		return rtprog;
 	}
 
 	/**

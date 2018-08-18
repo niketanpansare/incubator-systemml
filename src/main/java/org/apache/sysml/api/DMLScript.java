@@ -81,13 +81,9 @@ import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.runtime.util.MapReduceTool;
-import org.apache.sysml.utils.Explain;
 import org.apache.sysml.utils.NativeHelper;
-import org.apache.sysml.utils.Explain.ExplainCounts;
 import org.apache.sysml.utils.Explain.ExplainType;
 import org.apache.sysml.utils.Statistics;
-import org.apache.sysml.yarn.DMLAppMasterUtils;
-import org.apache.sysml.yarn.DMLYarnClientProxy;
 
 
 public class DMLScript 
@@ -155,7 +151,7 @@ public class DMLScript
 	public static boolean VALIDATOR_IGNORE_ISSUES = false;
 
 	public static String _uuid = IDHandler.createDistributedUniqueID();
-	private static final Log LOG = LogFactory.getLog(DMLScript.class.getName());
+	static final Log LOG = LogFactory.getLog(DMLScript.class.getName());
 	
 	///////////////////////////////
 	// public external interface
@@ -425,58 +421,7 @@ public class DMLScript
 		setGlobalFlags(dmlconf);
 		List<GPUContext> gCtxs = ScriptExecutorUtils.reserveAllGPUContexts();
 
-		//Step 2: set local/remote memory if requested (for compile in AM context) 
-		if( dmlconf.getBooleanValue(DMLConfig.YARN_APPMASTER) ){
-			DMLAppMasterUtils.setupConfigRemoteMaxMemory(dmlconf); 
-		}
-		
-		//Step 3: parse dml script
-		Statistics.startCompileTimer();
-		ParserWrapper parser = ParserFactory.createParser(scriptType);
-		DMLProgram prog = parser.parse(DML_FILE_PATH_ANTLR_PARSER, dmlScriptStr, argVals);
-		
-		//Step 4: construct HOP DAGs (incl LVA, validate, and setup)
-		DMLTranslator dmlt = new DMLTranslator(prog);
-		dmlt.liveVariableAnalysis(prog);
-		dmlt.validateParseTree(prog);
-		dmlt.constructHops(prog);
-		
-		//init working directories (before usage by following compilation steps)
-		initHadoopExecution( dmlconf );
-	
-		//Step 5: rewrite HOP DAGs (incl IPA and memory estimates)
-		dmlt.rewriteHopsDAG(prog);
-		
-		//Step 6: construct lops (incl exec type and op selection)
-		dmlt.constructLops(prog);
-
-		if (LOG.isDebugEnabled()) {
-			LOG.debug("\n********************** LOPS DAG *******************");
-			dmlt.printLops(prog);
-			dmlt.resetLopsDAGVisitStatus(prog);
-		}
-		
-		//Step 7: generate runtime program, incl codegen
-		Program rtprog = dmlt.getRuntimeProgram(prog, dmlconf);
-		
-		//launch SystemML appmaster (if requested and not already in launched AM)
-		if( dmlconf.getBooleanValue(DMLConfig.YARN_APPMASTER) ){
-			if( !isActiveAM() && DMLYarnClientProxy.launchDMLYarnAppmaster(dmlScriptStr, dmlconf, allArgs, rtprog) )
-				return; //if AM launch unsuccessful, fall back to normal execute
-			if( isActiveAM() ) //in AM context (not failed AM launch)
-				DMLAppMasterUtils.setupProgramMappingRemoteMaxMemory(rtprog);
-		}
-		
-		//Step 9: prepare statistics [and optional explain output]
-		//count number compiled MR jobs / SP instructions	
-		ExplainCounts counts = Explain.countDistributedOperations(rtprog);
-		Statistics.resetNoOfCompiledJobs( counts.numJobs );
-		
-		//explain plan of program (hops or runtime)
-		if( EXPLAIN != ExplainType.NONE )
-			System.out.println(Explain.display(prog, rtprog, EXPLAIN, counts));
-		
-		Statistics.stopCompileTimer();
+		Program rtprog = ScriptExecutorUtils.compileRuntimeProgram(dmlScriptStr, argVals, allArgs, scriptType, dmlconf, SystemMLAPI.DMLScript);
 		
 		//double costs = CostEstimationWrapper.getTimeEstimate(rtprog, ExecutionContextFactory.createContext());
 		//System.out.println("Estimated costs: "+costs);

@@ -20,6 +20,7 @@
 package org.apache.sysml.api.mlcontext;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -283,27 +284,22 @@ public class ScriptExecutor {
 	 */
 	public void compile(Script script, boolean performHOPRewrites) {
 
-		// main steps in script execution
 		setup(script);
-		if (statistics) {
-			Statistics.startCompileTimer();
+		
+		LocalVariableMap symbolTable = script.getSymbolTable();
+		String[] inputs = null; String[] outputs = null;
+		if (symbolTable != null) {
+			inputs = (script.getInputVariables() == null) ? new String[0]
+					: script.getInputVariables().toArray(new String[0]);
+			outputs = (script.getOutputVariables() == null) ? new String[0]
+					: script.getOutputVariables().toArray(new String[0]);
 		}
-		parseScript();
-		liveVariableAnalysis();
-		validateScript();
-		constructHops();
-		if(performHOPRewrites)
-			rewriteHops();
-		rewritePersistentReadsAndWrites();
-		constructLops();
-		generateRuntimeProgram();
-		showExplanation();
-		countCompiledMRJobsAndSparkInstructions();
-		initializeCachingAndScratchSpace();
-		cleanupRuntimeProgram();
-		if (statistics) {
-			Statistics.stopCompileTimer();
-		}
+		
+		Map<String, String> args = MLContextUtil
+				.convertInputParametersForParser(script.getInputParameters(), script.getScriptType());
+		ScriptExecutorUtils.compileRuntimeProgram(script.getScriptExecutionString(), Collections.emptyMap(), 
+				args, null, symbolTable, inputs, outputs, script.getScriptType(), config, SystemMLAPI.MLContext, 
+				performHOPRewrites, isMaintainSymbolTable());
 	}
 
 
@@ -355,8 +351,17 @@ public class ScriptExecutor {
 	 */
 	protected void setup(Script script) {
 		this.script = script;
-		checkScriptHasTypeAndString();
+		if (script == null) {
+			throw new MLContextException("Script is null");
+		} else if (script.getScriptType() == null) {
+			throw new MLContextException("ScriptType (DML or PYDML) needs to be specified");
+		} else if (script.getScriptString() == null) {
+			throw new MLContextException("Script string is null");
+		} else if (StringUtils.isBlank(script.getScriptString())) {
+			throw new MLContextException("Script string is blank");
+		}
 		script.setScriptExecutor(this);
+		
 		// Set global variable indicating the script type
 		DMLScript.SCRIPT_TYPE = script.getScriptType();
 		setGlobalFlags();
@@ -364,6 +369,7 @@ public class ScriptExecutor {
 		Statistics.resetNoOfExecutedJobs();
 		if (statistics)
 			Statistics.reset();
+		DMLScript.EXPLAIN = (explainLevel != null) ? explainLevel.getExplainType() : ExplainType.RUNTIME;
 	}
 
 	/**
@@ -434,12 +440,9 @@ public class ScriptExecutor {
 	protected void parseScript() {
 		try {
 			ParserWrapper parser = ParserFactory.createParser(script.getScriptType());
-			Map<String, Object> inputParameters = script.getInputParameters();
-			Map<String, String> inputParametersStringMaps = MLContextUtil
-					.convertInputParametersForParser(inputParameters, script.getScriptType());
-
-			String scriptExecutionString = script.getScriptExecutionString();
-			dmlProgram = parser.parse(null, scriptExecutionString, inputParametersStringMaps);
+			Map<String, String> args = MLContextUtil
+					.convertInputParametersForParser(script.getInputParameters(), script.getScriptType());
+			dmlProgram = parser.parse(null, script.getScriptExecutionString(), args);
 		} catch (ParseException e) {
 			throw new MLContextException("Exception occurred while parsing script", e);
 		}
@@ -507,21 +510,6 @@ public class ScriptExecutor {
 		}
 	}
 
-	/**
-	 * Check that the Script object has a type (DML or PYDML) and a string
-	 * representing the content of the Script.
-	 */
-	protected void checkScriptHasTypeAndString() {
-		if (script == null) {
-			throw new MLContextException("Script is null");
-		} else if (script.getScriptType() == null) {
-			throw new MLContextException("ScriptType (DML or PYDML) needs to be specified");
-		} else if (script.getScriptString() == null) {
-			throw new MLContextException("Script string is null");
-		} else if (StringUtils.isBlank(script.getScriptString())) {
-			throw new MLContextException("Script string is blank");
-		}
-	}
 
 	/**
 	 * Obtain the program
