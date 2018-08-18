@@ -19,17 +19,18 @@
 
 package org.apache.sysml.api;
 
+import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
-import org.apache.sysml.api.mlcontext.ScriptExecutor;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.codegen.SpoofCompiler;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
@@ -37,22 +38,32 @@ import org.apache.sysml.runtime.instructions.gpu.context.GPUObject;
 import org.apache.sysml.utils.Statistics;
 
 public class ScriptExecutorUtils {
-
-	/**
-	 * Execute the runtime program. This involves execution of the program
-	 * blocks that make up the runtime program and may involve dynamic
-	 * recompilation.
-	 * 
-	 * @param se
-	 *            script executor
-	 * @param statisticsMaxHeavyHitters
-	 *            maximum number of statistics to print
-	 */
-	public static void executeRuntimeProgram(ScriptExecutor se, int statisticsMaxHeavyHitters) {
-		Program prog = se.getRuntimeProgram();
-		ExecutionContext ec = se.getExecutionContext();
-		DMLConfig config = se.getConfig();
-		executeRuntimeProgram(prog, ec, config, statisticsMaxHeavyHitters, se.getScript().getOutputVariables());
+	
+	public static enum SystemMLAPI {
+		DMLScript,
+		MLContext,
+		JMLC
+	}
+	
+	private static List<GPUContext> gCtxs = null;
+	public static List<GPUContext> reserveAllGPUContexts() {
+		gCtxs = GPUContextPool.reserveAllGPUContexts();
+		if (gCtxs == null) {
+			throw new DMLRuntimeException(
+					"Could not create GPUContext, either no GPU or all GPUs currently in use");
+		}
+		return gCtxs;
+	}
+	
+	public static void freeAllGPUContexts() {
+		if(gCtxs == null) {
+			throw new DMLRuntimeException("Trying to free GPUs without reserving them first.");
+		}
+		for(GPUContext gCtx : gCtxs) {
+			gCtx.clearTemporaryMemory();
+		}
+		GPUContextPool.freeAllGPUContexts();
+		gCtxs = null;
 	}
 
 	/**
@@ -62,30 +73,40 @@ public class ScriptExecutorUtils {
 	 * 
 	 * @param rtprog
 	 *            runtime program
-	 * @param ec
-	 *            execution context
 	 * @param dmlconf
 	 *            dml configuration
 	 * @param statisticsMaxHeavyHitters
 	 *            maximum number of statistics to print
+	 * @param symbolTable
+	 *            symbol table (that were registered as input as part of MLContext)
 	 * @param outputVariables
-	 *            output variables that were registered as part of MLContext
+	 *            output variables (that were registered as output as part of MLContext)
+	 * @param api
+	 * 			  API used to execute the runtime program
+	 * @param gCtxs
+	 * 			  list of GPU contexts
+	 * @return execution context
 	 */
-	public static void executeRuntimeProgram(Program rtprog, ExecutionContext ec, DMLConfig dmlconf, int statisticsMaxHeavyHitters, Set<String> outputVariables) {
+	public static ExecutionContext executeRuntimeProgram(Program rtprog, DMLConfig dmlconf, int statisticsMaxHeavyHitters, 
+			LocalVariableMap symbolTable, HashSet<String> outputVariables, SystemMLAPI api, List<GPUContext> gCtxs) {
 		boolean exceptionThrown = false;
-
-		Statistics.startRunTimer();
+		// Start timer (disabled for JMLC)
+		if(api != SystemMLAPI.JMLC)
+			Statistics.startRunTimer();
+		
+		// Create execution context and attach registered outputs
+		ExecutionContext ec = ExecutionContextFactory.createContext(symbolTable, rtprog);
+		if(outputVariables != null)
+			ec.getVariables().setRegisteredOutputs(outputVariables);
+		
+		// Assign GPUContext to the current ExecutionContext
+		if(gCtxs != null) {
+			gCtxs.get(0).initializeThread();
+			ec.setGPUContexts(gCtxs);
+		}
+		
 		try {
 			// run execute (w/ exception handling to ensure proper shutdown)
-			if (DMLScript.USE_ACCELERATOR && ec != null) {
-				List<GPUContext> gCtxs = GPUContextPool.reserveAllGPUContexts();
-				if (gCtxs == null) {
-					throw new DMLRuntimeException(
-							"GPU : Could not create GPUContext, either no GPU or all GPUs currently in use");
-				}
-				gCtxs.get(0).initializeThread();
-				ec.setGPUContexts(gCtxs);
-			}
 			rtprog.execute(ec);
 		} catch (Throwable e) {
 			exceptionThrown = true;
@@ -111,20 +132,22 @@ public class ScriptExecutorUtils {
 					}
 				}
 				// -----------------------------------------------------------------
-				for(GPUContext gCtx : ec.getGPUContexts()) {
-					gCtx.clearTemporaryMemory();
-				}
-				GPUContextPool.freeAllGPUContexts();
 			}
 			if( ConfigurationManager.isCodegenEnabled() )
 				SpoofCompiler.cleanupCodeGenerator();
 			
-			// display statistics (incl caching stats if enabled)
-			Statistics.stopRunTimer();
-			(exceptionThrown ? System.err : System.out)
-				.println(Statistics.display(statisticsMaxHeavyHitters > 0 ?
-					statisticsMaxHeavyHitters : DMLScript.STATISTICS_COUNT));
+			//cleanup unnecessary outputs
+			symbolTable.removeAllNotIn(outputVariables);
+			
+			// Display statistics (disabled for JMLC)
+			if(api != SystemMLAPI.JMLC) {
+				Statistics.stopRunTimer();
+				(exceptionThrown ? System.err : System.out)
+					.println(Statistics.display(statisticsMaxHeavyHitters > 0 ?
+						statisticsMaxHeavyHitters : DMLScript.STATISTICS_COUNT));
+			}
 		}
+		return ec;
 	}
 
 }

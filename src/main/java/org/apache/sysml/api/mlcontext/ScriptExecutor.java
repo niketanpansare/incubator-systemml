@@ -21,6 +21,7 @@ package org.apache.sysml.api.mlcontext;
 
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -28,6 +29,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLOptions;
 import org.apache.sysml.api.ScriptExecutorUtils;
+import org.apache.sysml.api.ScriptExecutorUtils.SystemMLAPI;
 import org.apache.sysml.api.jmlc.JMLCUtils;
 import org.apache.sysml.api.mlcontext.MLContext.ExecutionType;
 import org.apache.sysml.api.mlcontext.MLContext.ExplainLevel;
@@ -49,7 +51,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.utils.Explain;
 import org.apache.sysml.utils.Explain.ExplainCounts;
 import org.apache.sysml.utils.Explain.ExplainType;
@@ -113,6 +115,7 @@ public class ScriptExecutor {
 	protected ExecutionType executionType;
 	protected int statisticsMaxHeavyHitters = 10;
 	protected boolean maintainSymbolTable = false;
+	protected List<GPUContext> gCtxs = null;
 
 	/**
 	 * ScriptExecutor constructor.
@@ -208,20 +211,6 @@ public class ScriptExecutor {
 	}
 
 	/**
-	 * Create an execution context and set its variables to be the symbol table
-	 * of the script.
-	 */
-	protected void createAndInitializeExecutionContext() {
-		executionContext = ExecutionContextFactory.createContext(runtimeProgram);
-		LocalVariableMap symbolTable = script.getSymbolTable();
-		if (symbolTable != null)
-			executionContext.setVariables(symbolTable);
-		//attach registered outputs (for dynamic recompile)
-		executionContext.getVariables().setRegisteredOutputs(
-			new HashSet<String>(script.getOutputVariables()));
-	}
-
-	/**
 	 * Set the global flags (for example: statistics, gpu, etc).
 	 */
 	protected void setGlobalFlags() {
@@ -245,6 +234,7 @@ public class ScriptExecutor {
 		}
 
 		DMLScript.setGlobalFlags(config);
+		gCtxs = ScriptExecutorUtils.reserveAllGPUContexts();
 	}
 	
 
@@ -338,8 +328,11 @@ public class ScriptExecutor {
 		compile(script);
 
 		try {
-			createAndInitializeExecutionContext();
-			executeRuntimeProgram();
+			executionContext = ScriptExecutorUtils.executeRuntimeProgram(getRuntimeProgram(), getConfig(), 
+					statistics ? statisticsMaxHeavyHitters : 0, script.getSymbolTable(), 
+					new HashSet<String>(getScript().getOutputVariables()), SystemMLAPI.MLContext, gCtxs);
+		} catch (DMLRuntimeException e) {
+			throw new MLContextException("Exception occurred while executing runtime program", e);
 		} finally {
 			cleanupAfterExecution();
 		}
@@ -377,6 +370,7 @@ public class ScriptExecutor {
 	 * Perform any necessary cleanup operations after program execution.
 	 */
 	protected void cleanupAfterExecution() {
+		ScriptExecutorUtils.freeAllGPUContexts();
 		restoreInputsInSymbolTable();
 		resetGlobalFlags();
 	}
@@ -411,19 +405,6 @@ public class ScriptExecutor {
 		} else {
 			JMLCUtils.cleanupRuntimeProgram(runtimeProgram, (script.getOutputVariables() == null) ? new String[0]
 					: script.getOutputVariables().toArray(new String[0]));
-		}
-	}
-
-	/**
-	 * Execute the runtime program. This involves execution of the program
-	 * blocks that make up the runtime program and may involve dynamic
-	 * recompilation.
-	 */
-	protected void executeRuntimeProgram() {
-		try {
-			ScriptExecutorUtils.executeRuntimeProgram(this, statistics ? statisticsMaxHeavyHitters : 0);
-		} catch (DMLRuntimeException e) {
-			throw new MLContextException("Exception occurred while executing runtime program", e);
 		}
 	}
 

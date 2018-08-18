@@ -32,6 +32,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -48,6 +49,7 @@ import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.apache.sysml.api.ScriptExecutorUtils.SystemMLAPI;
 import org.apache.sysml.api.mlcontext.ScriptType;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -64,13 +66,14 @@ import org.apache.sysml.parser.ParserFactory;
 import org.apache.sysml.parser.ParserWrapper;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLScriptException;
+import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDHandler;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.CleanupMR;
@@ -420,6 +423,7 @@ public class DMLScript
 		LOG.debug("\nDML config: \n" + dmlconf.getConfigInfo());
 		
 		setGlobalFlags(dmlconf);
+		List<GPUContext> gCtxs = ScriptExecutorUtils.reserveAllGPUContexts();
 
 		//Step 2: set local/remote memory if requested (for compile in AM context) 
 		if( dmlconf.getBooleanValue(DMLConfig.YARN_APPMASTER) ){
@@ -480,10 +484,11 @@ public class DMLScript
 		//Step 10: execute runtime program
 		ExecutionContext ec = null;
 		try {
-			ec = ExecutionContextFactory.createContext(rtprog);
-			ScriptExecutorUtils.executeRuntimeProgram(rtprog, ec, dmlconf, STATISTICS ? STATISTICS_COUNT : 0, null);
+			ec = ScriptExecutorUtils.executeRuntimeProgram(rtprog, dmlconf, STATISTICS ? STATISTICS_COUNT : 0, 
+					new LocalVariableMap(), new HashSet<String>(), SystemMLAPI.DMLScript, gCtxs);
 		}
 		finally {
+			ScriptExecutorUtils.freeAllGPUContexts();
 			if(ec != null && ec instanceof SparkExecutionContext)
 				((SparkExecutionContext) ec).close();
 			LOG.info("END DML run " + getDateTime() );
@@ -498,7 +503,6 @@ public class DMLScript
 	 * @param dmlconf user provided configuration
 	 */
 	public static void setGlobalFlags(DMLConfig dmlconf) {
-		// Sets the GPUs to use for this process (a range, all GPUs, comma separated list or a specific GPU)
 		GPUContextPool.AVAILABLE_GPUS = dmlconf.getTextValue(DMLConfig.AVAILABLE_GPUS);
 		
 		String evictionPolicy = dmlconf.getTextValue(DMLConfig.GPU_EVICTION_POLICY).toUpperCase();

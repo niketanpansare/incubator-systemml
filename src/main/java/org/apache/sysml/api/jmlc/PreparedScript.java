@@ -19,6 +19,7 @@
 
 package org.apache.sysml.api.jmlc;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -30,6 +31,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.ConfigurableAPI;
 import org.apache.sysml.api.DMLException;
+import org.apache.sysml.api.ScriptExecutorUtils;
+import org.apache.sysml.api.ScriptExecutorUtils.SystemMLAPI;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
@@ -44,14 +47,13 @@ import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
-import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.instructions.cp.BooleanObject;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.DoubleObject;
 import org.apache.sysml.runtime.instructions.cp.IntObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
@@ -79,6 +81,7 @@ public class PreparedScript implements ConfigurableAPI
 	private final LocalVariableMap _vars;
 	private final DMLConfig _dmlconf;
 	private final CompilerConfig _cconf;
+	private List<GPUContext> _gCtxs;
 	
 	private PreparedScript(PreparedScript that) {
 		//shallow copy, except for a separate symbol table
@@ -157,6 +160,15 @@ public class PreparedScript implements ConfigurableAPI
 	 */
 	public CompilerConfig getCompilerConfig() {
 		return _cconf;
+	}
+	
+	/**
+	 * Set the GPU context associated with the available GPU
+	 * @param gCtx GPU context 
+	 */
+	public void setGPUContext(GPUContext gCtx) {
+		_gCtxs = new ArrayList<GPUContext>();
+		_gCtxs.add(gCtx);
 	}
 	
 	/**
@@ -429,13 +441,7 @@ public class PreparedScript implements ConfigurableAPI
 		ConfigurationManager.setLocalConfig(_cconf);
 		
 		//create and populate execution context
-		ExecutionContext ec = ExecutionContextFactory.createContext(_vars, _prog);
-		
-		//core execute runtime program
-		_prog.execute(ec);
-		
-		//cleanup unnecessary outputs
-		_vars.removeAllNotIn(_outVarnames);
+		ScriptExecutorUtils.executeRuntimeProgram(_prog, _dmlconf, 0, _vars, _outVarnames, SystemMLAPI.JMLC, _gCtxs);
 		
 		//construct results
 		ResultVariables rvars = new ResultVariables();
