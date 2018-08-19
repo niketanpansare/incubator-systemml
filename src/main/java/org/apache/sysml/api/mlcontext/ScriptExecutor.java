@@ -53,6 +53,7 @@ import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.utils.Explain;
 import org.apache.sysml.utils.Explain.ExplainCounts;
 import org.apache.sysml.utils.Explain.ExplainType;
@@ -235,7 +236,7 @@ public class ScriptExecutor {
 		}
 
 		DMLScript.setGlobalFlags(config);
-		gCtxs = ScriptExecutorUtils.reserveAllGPUContexts();
+		gCtxs = DMLScript.USE_ACCELERATOR ? GPUContextPool.getAllGPUContexts() : null;
 	}
 	
 
@@ -376,7 +377,6 @@ public class ScriptExecutor {
 	 * Perform any necessary cleanup operations after program execution.
 	 */
 	protected void cleanupAfterExecution() {
-		ScriptExecutorUtils.freeAllGPUContexts();
 		restoreInputsInSymbolTable();
 		resetGlobalFlags();
 	}

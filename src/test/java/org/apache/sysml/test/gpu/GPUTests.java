@@ -106,7 +106,7 @@ public abstract class GPUTests extends AutomatedTestBase {
 			int freeCount = GPUContextPool.getAvailableCount();
 			Assert.assertTrue("All GPUContexts have not been returned to the GPUContextPool", count == freeCount);
 
-			List<GPUContext> gCtxs = GPUContextPool.reserveAllGPUContexts();
+			List<GPUContext> gCtxs = GPUContextPool.getAllGPUContexts();
 			for (GPUContext gCtx : gCtxs) {
 				gCtx.initializeThread();
 				try {
@@ -116,7 +116,6 @@ public abstract class GPUTests extends AutomatedTestBase {
 						throw e;
 				}
 			}
-			GPUContextPool.freeAllGPUContexts();
 
 
 		} catch (DMLRuntimeException e) {

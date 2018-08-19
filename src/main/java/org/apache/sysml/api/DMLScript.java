@@ -204,6 +204,7 @@ public class DMLScript
 			System.err.println(e.getMessage());
 		}
 	}
+	
 
 	/**
 	 * Single entry point for all public invocation alternatives (e.g.,
@@ -228,7 +229,7 @@ public class DMLScript
 			STATISTICS          = dmlOptions.stats;
 			STATISTICS_COUNT    = dmlOptions.statsCount;
 			JMLC_MEM_STATISTICS = dmlOptions.memStats;
-			USE_ACCELERATOR     = dmlOptions.gpu;
+			USE_ACCELERATOR 	= dmlOptions.gpu;
 			FORCE_ACCELERATOR   = dmlOptions.forceGPU;
 			EXPLAIN             = dmlOptions.explainType;
 			ENABLE_DEBUG_MODE   = dmlOptions.debug;
@@ -419,7 +420,7 @@ public class DMLScript
 		LOG.debug("\nDML config: \n" + dmlconf.getConfigInfo());
 		
 		setGlobalFlags(dmlconf);
-		List<GPUContext> gCtxs = ScriptExecutorUtils.reserveAllGPUContexts();
+		List<GPUContext> gCtxs = DMLScript.USE_ACCELERATOR ? GPUContextPool.getAllGPUContexts() : null; 
 
 		Program rtprog = ScriptExecutorUtils.compileRuntimeProgram(dmlScriptStr, argVals, allArgs, scriptType, dmlconf, SystemMLAPI.DMLScript);
 		
@@ -433,7 +434,6 @@ public class DMLScript
 					new LocalVariableMap(), new HashSet<String>(), SystemMLAPI.DMLScript, gCtxs);
 		}
 		finally {
-			ScriptExecutorUtils.freeAllGPUContexts();
 			if(ec != null && ec instanceof SparkExecutionContext)
 				((SparkExecutionContext) ec).close();
 			LOG.info("END DML run " + getDateTime() );

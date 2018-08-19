@@ -19,7 +19,6 @@
 
 package org.apache.sysml.api.jmlc;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -81,7 +80,6 @@ public class PreparedScript implements ConfigurableAPI
 	private final LocalVariableMap _vars;
 	private final DMLConfig _dmlconf;
 	private final CompilerConfig _cconf;
-	private List<GPUContext> _gCtxs;
 	
 	private PreparedScript(PreparedScript that) {
 		//shallow copy, except for a separate symbol table
@@ -160,15 +158,6 @@ public class PreparedScript implements ConfigurableAPI
 	 */
 	public CompilerConfig getCompilerConfig() {
 		return _cconf;
-	}
-	
-	/**
-	 * Set the GPU context associated with the available GPU
-	 * @param gCtx GPU context 
-	 */
-	public void setGPUContext(GPUContext gCtx) {
-		_gCtxs = new ArrayList<GPUContext>();
-		_gCtxs.add(gCtx);
 	}
 	
 	/**
@@ -427,6 +416,11 @@ public class PreparedScript implements ConfigurableAPI
 	}
 	
 	/**
+	 * GPU Context to use for execution
+	 */
+	List<GPUContext> _gpuCtx = null;
+	
+	/**
 	 * Executes the prepared script over the bound inputs, creating the
 	 * result variables according to bound and registered outputs.
 	 * 
@@ -441,7 +435,7 @@ public class PreparedScript implements ConfigurableAPI
 		ConfigurationManager.setLocalConfig(_cconf);
 		
 		//create and populate execution context
-		ScriptExecutorUtils.executeRuntimeProgram(_prog, _dmlconf, 0, _vars, _outVarnames, SystemMLAPI.JMLC, _gCtxs);
+		ScriptExecutorUtils.executeRuntimeProgram(_prog, _dmlconf, 0, _vars, _outVarnames, SystemMLAPI.JMLC, _gpuCtx);
 		
 		//construct results
 		ResultVariables rvars = new ResultVariables();

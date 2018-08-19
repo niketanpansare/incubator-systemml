@@ -40,7 +40,6 @@ import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.parser.ParserFactory;
 import org.apache.sysml.parser.ParserWrapper;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -48,7 +47,6 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
-import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUObject;
 import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.utils.Explain;
@@ -64,27 +62,6 @@ public class ScriptExecutorUtils {
 		DMLScript,
 		MLContext,
 		JMLC
-	}
-	
-	private static List<GPUContext> gCtxs = null;
-	public static List<GPUContext> reserveAllGPUContexts() {
-		gCtxs = GPUContextPool.reserveAllGPUContexts();
-		if (gCtxs == null) {
-			throw new DMLRuntimeException(
-					"Could not create GPUContext, either no GPU or all GPUs currently in use");
-		}
-		return gCtxs;
-	}
-	
-	public static void freeAllGPUContexts() {
-		if(gCtxs == null) {
-			throw new DMLRuntimeException("Trying to free GPUs without reserving them first.");
-		}
-		for(GPUContext gCtx : gCtxs) {
-			gCtx.clearTemporaryMemory();
-		}
-		GPUContextPool.freeAllGPUContexts();
-		gCtxs = null;
 	}
 	
 	public static Program compileRuntimeProgram(String script, Map<String,String> nsscripts, Map<String, String> args, 
@@ -307,6 +284,11 @@ public class ScriptExecutorUtils {
 							}
 						}
 					}
+				}
+				
+				// TODO: Anthony: Revisit this logic to cache weights on the GPU for JMLC.
+				for(GPUContext gCtx : gCtxs) {
+					gCtx.clearTemporaryMemory();
 				}
 				// -----------------------------------------------------------------
 			}

@@ -25,7 +25,9 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.hadoop.fs.FileSystem;
@@ -44,6 +46,8 @@ import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.runtime.io.FrameReader;
 import org.apache.sysml.runtime.io.FrameReaderFactory;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
@@ -239,14 +243,104 @@ public class Connection implements Closeable
 	 * @return PreparedScript object representing the precompiled script
 	 */
 	public PreparedScript prepareScript(String script, Map<String,String> nsscripts, Map<String, String> args, String[] inputs, String[] outputs, boolean parsePyDML) {
+		return prepareScript(script, nsscripts, args, inputs, outputs, parsePyDML, false, false, -1);
+	}
+	
+	static final boolean IS_JCUDA_AVAILABLE;
+	static {
+		// Early detection of JCuda libraries avoids synchronization overhead for common JMLC scenario:
+		// i.e. CPU-only multi-threaded execution
+		boolean isJCudaAvailable = false;
+		try {
+			Class.forName("jcuda.Pointer");
+			isJCudaAvailable = true;
+		}
+		catch (ClassNotFoundException e) { }
+		IS_JCUDA_AVAILABLE = isJCudaAvailable;
+	}
+	/**
+	 * List of available GPU contexts:
+	 */
+	static GPUContext [] AVAILABLE_GPU_CONTEXTS;
+	
+	
+	/**
+	 * Prepares (precompiles) a script, sets input parameter values, and registers input and output variables.
+	 * 
+	 * @param script string representing of the DML or PyDML script
+	 * @param nsscripts map (name, script) of the DML or PyDML namespace scripts
+	 * @param args map of input parameters ($) and their values
+	 * @param inputs string array of input variables to register
+	 * @param outputs string array of output variables to register
+	 * @param parsePyDML {@code true} if PyDML, {@code false} if DML
+	 * @param useGPU {@code true} if prepare the script with GPU support, {@code false}
+	 * @param forceGPU {@code true} if prepare the script with forced GPU support, {@code false}
+	 * @param gpuIndex the GPU to use to execute the given prepared script
+	 * @return PreparedScript object representing the precompiled script
+	 */
+	public PreparedScript prepareScript(String script, Map<String,String> nsscripts, Map<String, String> args, String[] inputs, String[] outputs, 
+			boolean parsePyDML, boolean useGPU, boolean forceGPU, int gpuIndex) {
 		
 		setLocalConfigs();
 		
-		Program rtprog = ScriptExecutorUtils.compileRuntimeProgram(script, nsscripts, args, inputs, outputs, 
-				parsePyDML ? ScriptType.PYDML : ScriptType.DML, _dmlconf, SystemMLAPI.JMLC);
-	
+		Program rtprog = null;
+		List<GPUContext> _gpuCtx = null;
+		if(!IS_JCUDA_AVAILABLE) {
+			// Most common case: JMLC used for compiling CPU-only plans without JCuda libraries.
+			// If JCuda is not available, there is no need to synchronize the compilation of runtime program.
+			if(useGPU)
+				throw new RuntimeException("Cannot use the GPU backend without JCuda libraries");
+			rtprog = ScriptExecutorUtils.compileRuntimeProgram(script, nsscripts, args, inputs, outputs, 
+					parsePyDML ? ScriptType.PYDML : ScriptType.DML, _dmlconf, SystemMLAPI.JMLC);
+		}
+		else {
+			if(!useGPU && forceGPU)
+				throw new RuntimeException("Cannot force a GPU-execution without useGPU flag enabled");
+			// Since the user has included JCuda libraries in the pipeline, he/she might want to use GPU as well as CPU prepared scripts.
+			// The current code bases uses static flags USE_ACCELERATOR and FORCE_ACCELERATOR to do conditional compilation.
+			// Hence, it is important to synchronize the compilation process so as not to generate incorrect plans.
+			// This will be fixed in future version by removing the dependency on the static flags.
+			// Anyways, for now, synchronizing is not that bad in most scenarios as the script is prepared only during initialization 
+			// and reused for every prediction request.
+			synchronized(Connection.class) {
+				boolean oldUseAccelerator = DMLScript.USE_ACCELERATOR;
+				boolean oldForceAccelerator = DMLScript.FORCE_ACCELERATOR;
+				String oldAvailableGPUs = GPUContextPool.AVAILABLE_GPUS;
+				DMLScript.USE_ACCELERATOR = useGPU;
+				DMLScript.FORCE_ACCELERATOR = forceGPU;
+				GPUContextPool.AVAILABLE_GPUS = "-1"; // use all the GPUs in JMLC mode
+				try {
+					if(useGPU && AVAILABLE_GPU_CONTEXTS == null) {
+						// Initialize the GPUs if not already
+						List<GPUContext> availableCtx = GPUContextPool.getAllGPUContexts();
+						AVAILABLE_GPU_CONTEXTS = availableCtx.toArray(new GPUContext[availableCtx.size()]);
+					}
+					if(useGPU) {
+						if(AVAILABLE_GPU_CONTEXTS == null || AVAILABLE_GPU_CONTEXTS.length == 0)
+							throw new DMLRuntimeException("No GPU Context in available");
+						else if(gpuIndex < 0 || gpuIndex >= AVAILABLE_GPU_CONTEXTS.length)
+							throw new DMLRuntimeException("Cannot use the GPU " + gpuIndex + 
+									". Valid values: [0, " + (AVAILABLE_GPU_CONTEXTS.length-1) + "]");
+						// For simplicity of the API, the initial version statically associates a GPU to the prepared script.
+						// We can revisit this assumption if it turns out to be the overhead.
+						_gpuCtx = new ArrayList<GPUContext>();
+						_gpuCtx.add(AVAILABLE_GPU_CONTEXTS[gpuIndex]);
+					}
+					rtprog = ScriptExecutorUtils.compileRuntimeProgram(script, nsscripts, args, inputs, outputs, 
+						parsePyDML ? ScriptType.PYDML : ScriptType.DML, _dmlconf, SystemMLAPI.JMLC);
+				} finally {
+					// Reset after compiling the runtime program
+					DMLScript.USE_ACCELERATOR = oldUseAccelerator;
+					DMLScript.FORCE_ACCELERATOR = oldForceAccelerator;
+					GPUContextPool.AVAILABLE_GPUS = oldAvailableGPUs;
+				}
+			}
+		}
+		
 		//return newly create precompiled script 
-		return new PreparedScript(rtprog, inputs, outputs, _dmlconf, _cconf);
+		PreparedScript ret = new PreparedScript(rtprog, inputs, outputs, _dmlconf, _cconf);
+		ret._gpuCtx = _gpuCtx;
+		return ret;
 	}
 	
 	/**
