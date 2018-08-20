@@ -63,12 +63,10 @@ object HopDagPatternMatcher {
   def leaf(variableName:String, dt:DataType=DataType.UNKNOWN):HopDagPatternMatcher = {
     val ret = new HopDagPatternMatcher(true)
     ret.variableName = variableName
-    dt match {
-      case DataType.SCALAR => ret.isScalar
-      case DataType.MATRIX => ret.isMatrix
-      case DataType.UNKNOWN => ret
-      case _ => throw new DMLRuntimeException("Unsupported datatype in HopDagPatternMatcher for leaf")
-    }
+    if(dt == DataType.SCALAR) ret.isScalar
+    else if(dt == DataType.MATRIX) ret.isMatrix
+    else if(dt == DataType.UNKNOWN) ret
+    else throw new DMLRuntimeException("Unsupported datatype in HopDagPatternMatcher for leaf")
   }
   def matrix(X:HopDagPatternMatcher, rows:HopDagPatternMatcher, cols:HopDagPatternMatcher):HopDagPatternMatcher =
 		new HopDagPatternMatcher().addPredicate("matrix_reshape", new Function[Hop, Boolean] { 
