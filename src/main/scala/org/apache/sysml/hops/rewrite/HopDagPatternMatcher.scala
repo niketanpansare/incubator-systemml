@@ -16,7 +16,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.apache.sysml.hops.rewrite
 
 import java.util.{ArrayList, HashMap, List}
@@ -27,7 +26,6 @@ import org.apache.sysml.hops.Hop._
 import org.apache.sysml.parser.Expression.DataType
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool
 import org.apache.sysml.utils.Explain
-import scala.collection.JavaConversions._
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 import org.apache.sysml.runtime.DMLRuntimeException
@@ -199,7 +197,8 @@ class HopDagPatternMatcher(val isLeaf:Boolean = false) {
 			}
 			return false;
 		}
-		for(p  <- _predicates) {
+		for(i  <- 0 until _predicates.size) {
+		  val p = _predicates.get(i)
 			if(!p._pred(h)) {
 				if(HopDagPatternMatcher.DEBUG_REWRITES) {
 					LOG.info("The predicate " + p.toString() + " failed for " + Explain.explain(h));
@@ -207,12 +206,11 @@ class HopDagPatternMatcher(val isLeaf:Boolean = false) {
 				return false;
 			}
 		}
-		var index = 0;
-		for(child <- _children) {
-			if(!child.matchHelper(root, h.getInput().get(index))) {
+		for(i  <- 0 until _children.size) {
+		  val child = _children.get(i)
+			if(!child.matchHelper(root, h.getInput().get(i))) {
 				return false;
 			}
-			index = index + 1
 		}
 		if(isLeaf) {
 			if(root.matchedHops == null) {
