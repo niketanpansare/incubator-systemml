@@ -23,6 +23,7 @@ import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.OpOpDnn;
 import org.apache.sysml.hops.rewrite.HopDagPatternMatcher._
 import org.apache.sysml.parser.Expression.DataType._
+import java.util.function.Function
 
 /*
  * -------------------------------------------------------------------------
@@ -87,14 +88,16 @@ object RewriteGPUSpecificOps {
 	// batchNormUpdatedVar = rowMeans(subgrp_vars) + rowVars(subgrp_means)*(((Hin*Win)-1)/(Hin*Win))
   private def _subgrp_vars = matrix(colVars(X.fitsOnGPU(2) * leaf("varConst1", SCALAR)), rows=C, cols=HW)
   val batchNormUpdatedVar = rowMeans(_subgrp_vars) + (rowVars(leaf("subgrp_means", MATRIX))*leaf("varConst2", SCALAR))
-  patternMatcher.add(new HopDagPatternReplacementPair(batchNormUpdatedVar, root => {
-    val HW = batchNormUpdatedVar.getLiteralValue("HW");
-		if(batchNormUpdatedVar.getLiteralValue("varConst2") == ((HW-1)/HW)) {
-      LOG.debug("Applied batchNormUpdatedVar rewrite.");
-      HopRewriteUtils.rewireAllParentChildReferences(root,
-        HopRewriteUtils.createDnnOp(batchNormUpdatedVar, OpOpDnn.UPDATE_EMA_VAR, "subgrp_means", "X", "C", "HW", "varConst1"))
-		}
-		else root
+  patternMatcher.add(new HopDagPatternReplacementPair(batchNormUpdatedVar, new Function[Hop, Hop] { 
+    override def apply(root: Hop): Hop = {
+      val HW = batchNormUpdatedVar.getLiteralValue("HW");
+  		if(batchNormUpdatedVar.getLiteralValue("varConst2") == ((HW-1)/HW)) {
+        LOG.debug("Applied batchNormUpdatedVar rewrite.");
+        HopRewriteUtils.rewireAllParentChildReferences(root,
+          HopRewriteUtils.createDnnOp(batchNormUpdatedVar, OpOpDnn.UPDATE_EMA_VAR, "subgrp_means", "X", "C", "HW", "varConst1"))
+  		}
+  		else root
+    }
   }))
   
   // Pattern 2:
@@ -102,69 +105,81 @@ object RewriteGPUSpecificOps {
   // batchNormTest = bias_add(bias_multiply(norm, gamma), beta)
   private def _norm = bias_multiply(bias_add(X.fitsOnGPU(3), -mean), one / sqrt(variance + eps))
   val batchNormTest = bias_add(bias_multiply(_norm, leaf("gamma", MATRIX)), leaf("beta", MATRIX))
-  patternMatcher.add(new HopDagPatternReplacementPair(batchNormTest, root => {
-    LOG.debug("Applied batchNormTest rewrite.")
-    HopRewriteUtils.rewireAllParentChildReferences(root,
-        HopRewriteUtils.createDnnOp(batchNormTest, OpOpDnn.BATCH_NORM2D_TEST, "X", "gamma", "beta", "mean", "var", "eps"))
-  }))
+  patternMatcher.add(new HopDagPatternReplacementPair(batchNormTest, new Function[Hop, Hop] { 
+    override def apply(root: Hop): Hop = {
+      LOG.debug("Applied batchNormTest rewrite.")
+      HopRewriteUtils.rewireAllParentChildReferences(root,
+          HopRewriteUtils.createDnnOp(batchNormTest, OpOpDnn.BATCH_NORM2D_TEST, "X", "gamma", "beta", "mean", "var", "eps"))
+    }
+   }))
   
   // Pattern 3:
 	// rowSums(matrix(colSums(X), rows=C, cols=HW))
   val channelSums = rowSums(matrix(colSums(X.fitsOnGPU(2)), rows=C, cols=HW))
-  patternMatcher.add(new HopDagPatternReplacementPair(channelSums, root => {
-    LOG.debug("Applied channelSums rewrite.")
-    HopRewriteUtils.rewireAllParentChildReferences(root,
-        HopRewriteUtils.createDnnOp(channelSums, OpOpDnn.CHANNEL_SUMS, "X", "C", "HW"))
+  patternMatcher.add(new HopDagPatternReplacementPair(channelSums, new Function[Hop, Hop] { 
+    override def apply(root: Hop): Hop = {
+      LOG.debug("Applied channelSums rewrite.")
+      HopRewriteUtils.rewireAllParentChildReferences(root,
+          HopRewriteUtils.createDnnOp(channelSums, OpOpDnn.CHANNEL_SUMS, "X", "C", "HW"))
+    }
   }))
   
   // Pattern 4:
 	// updateNesterovX = (X - (mu*v_prev)) + (1+mu)*v
   val updateNesterovX = (X.fitsOnGPU(4) - (mu*leaf("v_prev", MATRIX))) + (onePlusMu*leaf("v", MATRIX))
-  patternMatcher.add(new HopDagPatternReplacementPair(updateNesterovX, root => {
-    var ret = root
-    if((1+updateNesterovX.getLiteralValue("mu")) == updateNesterovX.getLiteralValue("onePlusMu")) {
-      val X = updateNesterovX.getMatchedHop("X");
-			val v = updateNesterovX.getMatchedHop("v");
-			val v_prev = updateNesterovX.getMatchedHop("v_prev");
-			if(hasSameDimensions(X, v) && hasSameDimensions(X, v_prev)) {
-				LOG.debug("Applied updateNesterovX rewrite.");
-				ret = HopRewriteUtils.rewireAllParentChildReferences(root, 
-				    HopRewriteUtils.createDnnOp(updateNesterovX, OpOpDnn.UPDATE_NESTEROV_X, "X", "v", "v_prev", "mu"));
-			}
+  patternMatcher.add(new HopDagPatternReplacementPair(updateNesterovX, new Function[Hop, Hop] { 
+    override def apply(root: Hop): Hop = {
+      var ret = root
+      if((1+updateNesterovX.getLiteralValue("mu")) == updateNesterovX.getLiteralValue("onePlusMu")) {
+        val X = updateNesterovX.getMatchedHop("X");
+  			val v = updateNesterovX.getMatchedHop("v");
+  			val v_prev = updateNesterovX.getMatchedHop("v_prev");
+  			if(hasSameDimensions(X, v) && hasSameDimensions(X, v_prev)) {
+  				LOG.debug("Applied updateNesterovX rewrite.");
+  				ret = HopRewriteUtils.rewireAllParentChildReferences(root, 
+  				    HopRewriteUtils.createDnnOp(updateNesterovX, OpOpDnn.UPDATE_NESTEROV_X, "X", "v", "v_prev", "mu"));
+  			}
+      }
+      ret
     }
-    ret
   }))
   
   // Pattern 5:
 	// reshapeColMeans = matrix(colMeans(X), rows=C, cols=Hin*Win)
 	// This avoids unnecessary copy by the reshape operator
   val reshapeColMeans = matrix(colMeans(X.fitsOnGPU(2)), rows=C, cols=HW)
-  patternMatcher.add(new HopDagPatternReplacementPair(reshapeColMeans, root => {
-    LOG.debug("Applied reshapeColMeans rewrite.")
-    HopRewriteUtils.rewireAllParentChildReferences(root,
-        HopRewriteUtils.createDnnOp(reshapeColMeans, OpOpDnn.RESHAPE_COLMEANS, "X", "C", "HW"))
+  patternMatcher.add(new HopDagPatternReplacementPair(reshapeColMeans, new Function[Hop, Hop] { 
+    override def apply(root: Hop): Hop = {
+      LOG.debug("Applied reshapeColMeans rewrite.")
+      HopRewriteUtils.rewireAllParentChildReferences(root,
+          HopRewriteUtils.createDnnOp(reshapeColMeans, OpOpDnn.RESHAPE_COLMEANS, "X", "C", "HW"))
+    }
   }))
   
   // Pattern 6:
 	// updateEMA = (mu*ema_mean) + ((1-mu)*mean)
   val updateEMA = (mu*leaf("ema_mean", MATRIX)) + (oneMinusMu*mean) 
-  patternMatcher.add(new HopDagPatternReplacementPair(updateEMA,  root => {
-    if((1-updateEMA.getLiteralValue("mu")) == updateEMA.getLiteralValue("oneMinusMu")) {
-      LOG.debug("Applied updateEMA rewrite.")
-      HopRewriteUtils.rewireAllParentChildReferences(root,
-        HopRewriteUtils.createDnnOp(updateEMA, OpOpDnn.UPDATE_EMA, "ema_mean", "mean", "mu"))
+  patternMatcher.add(new HopDagPatternReplacementPair(updateEMA,  new Function[Hop, Hop] { 
+    override def apply(root: Hop): Hop = {
+      if((1-updateEMA.getLiteralValue("mu")) == updateEMA.getLiteralValue("oneMinusMu")) {
+        LOG.debug("Applied updateEMA rewrite.")
+        HopRewriteUtils.rewireAllParentChildReferences(root,
+          HopRewriteUtils.createDnnOp(updateEMA, OpOpDnn.UPDATE_EMA, "ema_mean", "mean", "mu"))
+      }
+      else root
     }
-    else root
   }))
   
   
   // Pattern 7:
 	// invVar = 1/sqrt(var+epsilon)
   val invVar = one / sqrt(variance + eps)
-  patternMatcher.add(new HopDagPatternReplacementPair(updateEMA,  root => {
-    LOG.debug("Applied invVar rewrite.")
-    HopRewriteUtils.rewireAllParentChildReferences(root,
-      HopRewriteUtils.createDnnOp(invVar, OpOpDnn.INV_VAR, "var", "eps"))
+  patternMatcher.add(new HopDagPatternReplacementPair(updateEMA,  new Function[Hop, Hop] { 
+    override def apply(root: Hop): Hop = {
+      LOG.debug("Applied invVar rewrite.")
+      HopRewriteUtils.rewireAllParentChildReferences(root,
+        HopRewriteUtils.createDnnOp(invVar, OpOpDnn.INV_VAR, "var", "eps"))
+    }
   }))
   // -------------------------------------------------------------------------------------------
   

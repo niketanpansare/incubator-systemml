@@ -20,10 +20,11 @@ package org.apache.sysml.hops.rewrite
 
 import java.util.ArrayList
 import org.apache.sysml.hops.Hop
+import java.util.function.Function
 
-class HopDagPatternReplacementPair(pattern:HopDagPatternMatcher, replacement:Hop => Hop) {
+class HopDagPatternReplacementPair(pattern:HopDagPatternMatcher, replacement:Function[Hop, Hop]) {
   def getMatcher():HopDagPatternMatcher = pattern
-  def getReplacer():Hop => Hop = replacement
+  def getReplacer():Function[Hop, Hop] = replacement
 }
 
 abstract class HopRewriteRuleWithPatternMatcher extends HopRewriteRule {

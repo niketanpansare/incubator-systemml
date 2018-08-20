@@ -29,9 +29,10 @@ import org.apache.sysml.utils.Explain
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 import org.apache.sysml.runtime.DMLRuntimeException
+import java.util.function.Function
 
 // See RewriteGPUSpecificOps for usage and design documentation
-class HopPredicate(val _name:String, val _pred:Hop => Boolean) {
+class HopPredicate(val _name:String, val _pred:Function[Hop, Boolean]) {
   override def toString() = _name
 }
 
@@ -41,18 +42,24 @@ object HopDagPatternMatcher {
   
   // Factory methods:
   val dummy = new HopDagPatternMatcher()
-  def rowSums(child:HopDagPatternMatcher) = new HopDagPatternMatcher().addPredicate("rowSums", 
-        h => h.isInstanceOf[AggUnaryOp] && HopRewriteUtils.isAggUnaryOp(h.asInstanceOf[AggUnaryOp], AggOp.SUM, Direction.Row)).addChildMatcher(child)
-  def rowMeans(child:HopDagPatternMatcher) = new HopDagPatternMatcher().addPredicate("rowMeans", 
-        h => h.isInstanceOf[AggUnaryOp] && HopRewriteUtils.isAggUnaryOp(h.asInstanceOf[AggUnaryOp], AggOp.MEAN, Direction.Row)).addChildMatcher(child)
-	def rowVars(child:HopDagPatternMatcher) = new HopDagPatternMatcher().addPredicate("rowVars", 
-        h => h.isInstanceOf[AggUnaryOp] && HopRewriteUtils.isAggUnaryOp(h.asInstanceOf[AggUnaryOp], AggOp.VAR, Direction.Row)).addChildMatcher(child)
-  def colSums(child:HopDagPatternMatcher) = new HopDagPatternMatcher().addPredicate("colSums", 
-        h => h.isInstanceOf[AggUnaryOp] && HopRewriteUtils.isAggUnaryOp(h.asInstanceOf[AggUnaryOp], AggOp.SUM, Direction.Col)).addChildMatcher(child)
-	def colMeans(child:HopDagPatternMatcher) = new HopDagPatternMatcher().addPredicate("colMeans", 
-        h => h.isInstanceOf[AggUnaryOp] && HopRewriteUtils.isAggUnaryOp(h.asInstanceOf[AggUnaryOp], AggOp.MEAN, Direction.Col)).addChildMatcher(child)
-	def colVars(child:HopDagPatternMatcher) = new HopDagPatternMatcher().addPredicate("colVars", 
-        h => h.isInstanceOf[AggUnaryOp] && HopRewriteUtils.isAggUnaryOp(h.asInstanceOf[AggUnaryOp], AggOp.VAR, Direction.Col)).addChildMatcher(child)
+  def rowSums(child:HopDagPatternMatcher) = new HopDagPatternMatcher().addPredicate("rowSums", new Function[Hop, Boolean] { 
+    override def apply(h: Hop): Boolean = h.isInstanceOf[AggUnaryOp] && HopRewriteUtils.isAggUnaryOp(h.asInstanceOf[AggUnaryOp], AggOp.SUM, Direction.Row)
+  }).addChildMatcher(child)
+  def rowMeans(child:HopDagPatternMatcher) = new HopDagPatternMatcher().addPredicate("rowMeans", new Function[Hop, Boolean] { 
+    override def apply(h: Hop): Boolean = h.isInstanceOf[AggUnaryOp] && HopRewriteUtils.isAggUnaryOp(h.asInstanceOf[AggUnaryOp], AggOp.MEAN, Direction.Row)
+  }).addChildMatcher(child)
+	def rowVars(child:HopDagPatternMatcher) = new HopDagPatternMatcher().addPredicate("rowVars", new Function[Hop, Boolean] { 
+    override def apply(h: Hop): Boolean = h.isInstanceOf[AggUnaryOp] && HopRewriteUtils.isAggUnaryOp(h.asInstanceOf[AggUnaryOp], AggOp.VAR, Direction.Row)
+  }).addChildMatcher(child)
+  def colSums(child:HopDagPatternMatcher) = new HopDagPatternMatcher().addPredicate("colSums", new Function[Hop, Boolean] { 
+    override def apply(h: Hop): Boolean = h.isInstanceOf[AggUnaryOp] && HopRewriteUtils.isAggUnaryOp(h.asInstanceOf[AggUnaryOp], AggOp.SUM, Direction.Col)
+  }).addChildMatcher(child)
+	def colMeans(child:HopDagPatternMatcher) = new HopDagPatternMatcher().addPredicate("colMeans", new Function[Hop, Boolean] { 
+    override def apply(h: Hop): Boolean = h.isInstanceOf[AggUnaryOp] && HopRewriteUtils.isAggUnaryOp(h.asInstanceOf[AggUnaryOp], AggOp.MEAN, Direction.Col)
+  }).addChildMatcher(child)
+	def colVars(child:HopDagPatternMatcher) = new HopDagPatternMatcher().addPredicate("colVars", new Function[Hop, Boolean] { 
+    override def apply(h: Hop): Boolean = h.isInstanceOf[AggUnaryOp] && HopRewriteUtils.isAggUnaryOp(h.asInstanceOf[AggUnaryOp], AggOp.VAR, Direction.Col)
+  }).addChildMatcher(child)
   def leaf(variableName:String, dt:DataType=DataType.UNKNOWN):HopDagPatternMatcher = {
     val ret = new HopDagPatternMatcher(true)
     ret.variableName = variableName
@@ -64,20 +71,25 @@ object HopDagPatternMatcher {
     }
   }
   def matrix(X:HopDagPatternMatcher, rows:HopDagPatternMatcher, cols:HopDagPatternMatcher):HopDagPatternMatcher =
-		new HopDagPatternMatcher().addPredicate("matrix_reshape", h => HopRewriteUtils.isReorg(h, ReOrgOp.RESHAPE))
-		  .addChildMatcher(X, rows, cols)
+		new HopDagPatternMatcher().addPredicate("matrix_reshape", new Function[Hop, Boolean] { 
+      override def apply(h: Hop): Boolean = HopRewriteUtils.isReorg(h, ReOrgOp.RESHAPE)
+    }).addChildMatcher(X, rows, cols)
 	def bias_add(child1:HopDagPatternMatcher, child2:HopDagPatternMatcher):HopDagPatternMatcher =
-		new HopDagPatternMatcher().addPredicate("bias_add", h => HopRewriteUtils.isDnn(h, OpOpDnn.BIASADD))
-		  .addChildMatcher(child1, child2)
+		new HopDagPatternMatcher().addPredicate("bias_add", new Function[Hop, Boolean] { 
+      override def apply(h: Hop): Boolean = HopRewriteUtils.isDnn(h, OpOpDnn.BIASADD)
+    }).addChildMatcher(child1, child2)
 	def bias_multiply(child1:HopDagPatternMatcher, child2:HopDagPatternMatcher):HopDagPatternMatcher =
-		new HopDagPatternMatcher().addPredicate("bias_multiply", h => HopRewriteUtils.isDnn(h, OpOpDnn.BIASMULT))
-		  .addChildMatcher(child1, child2)
+		new HopDagPatternMatcher().addPredicate("bias_multiply", new Function[Hop, Boolean] { 
+      override def apply(h: Hop): Boolean = HopRewriteUtils.isDnn(h, OpOpDnn.BIASMULT)
+    }).addChildMatcher(child1, child2)
 	def sqrt(child:HopDagPatternMatcher):HopDagPatternMatcher =
-		new HopDagPatternMatcher().addPredicate("sqrt", h => HopRewriteUtils.isUnary(h, OpOp1.SQRT))
-		  .addChildMatcher(child)
+		new HopDagPatternMatcher().addPredicate("sqrt", new Function[Hop, Boolean] { 
+      override def apply(h: Hop): Boolean = HopRewriteUtils.isUnary(h, OpOp1.SQRT)
+    }).addChildMatcher(child)
 	def fromDouble(d: Double) = new HopDagPatternMatcher()
-    .addPredicate("fromDouble", h => HopRewriteUtils.isLiteralOfValue(h, d))
-		.addChildMatcher(HopDagPatternMatcher.dummy)
+    .addPredicate("fromDouble", new Function[Hop, Boolean] { 
+    override def apply(h: Hop): Boolean = HopRewriteUtils.isLiteralOfValue(h, d)
+    }).addChildMatcher(HopDagPatternMatcher.dummy)
 }
 
 class HopDagPatternMatcher(val isLeaf:Boolean = false) {
@@ -89,23 +101,26 @@ class HopDagPatternMatcher(val isLeaf:Boolean = false) {
   	
 	// Operators that are not yet supported: unary not
 	// Operators that are not required: assignment
-  def unary_- = new HopDagPatternMatcher().addPredicate("unaryMinus", h => HopRewriteUtils.isBinary(h, OpOp2.MINUS)
-				&& HopRewriteUtils.isLiteralOfValue(h.getInput().get(0), 0))
-				.addChildMatcher(HopDagPatternMatcher.dummy, this)
+  def unary_- = new HopDagPatternMatcher().addPredicate("unaryMinus", new Function[Hop, Boolean] { 
+    override def apply(h: Hop): Boolean = HopRewriteUtils.isBinary(h, OpOp2.MINUS) && HopRewriteUtils.isLiteralOfValue(h.getInput().get(0), 0)
+		}).addChildMatcher(HopDagPatternMatcher.dummy, this)
 	def _binary(child2:HopDagPatternMatcher, name:String, op:OpOp2):HopDagPatternMatcher = new HopDagPatternMatcher()
-    .addPredicate(name, h => HopRewriteUtils.isBinary(h, op))
-		.addChildMatcher(this, child2)
+    .addPredicate(name, new Function[Hop, Boolean] { 
+      override def apply(h: Hop): Boolean = HopRewriteUtils.isBinary(h, op)
+    }).addChildMatcher(this, child2)
 	def _binary(child2:Double, name:String, op:OpOp2):HopDagPatternMatcher = new HopDagPatternMatcher()
-    .addPredicate(name, h => HopRewriteUtils.isBinary(h, op) && HopRewriteUtils.isLiteralOfValue(h.getInput().get(1), child2))
-		.addChildMatcher(this, HopDagPatternMatcher.dummy)
+    .addPredicate(name, new Function[Hop, Boolean] { 
+      override def apply(h: Hop): Boolean = HopRewriteUtils.isBinary(h, op) && HopRewriteUtils.isLiteralOfValue(h.getInput().get(1), child2)
+    }).addChildMatcher(this, HopDagPatternMatcher.dummy)
 	
 	// Matrix-Matrix, Matrix-Vector, Vector-Matrix, ...
   def ^(child2:HopDagPatternMatcher):HopDagPatternMatcher = _binary(child2, "pow", OpOp2.POW)
   def +(child2:HopDagPatternMatcher):HopDagPatternMatcher = _binary(child2, "plus", OpOp2.PLUS)
   def -(child2:HopDagPatternMatcher):HopDagPatternMatcher = _binary(child2, "minus", OpOp2.MINUS)
   def %*%(child2:HopDagPatternMatcher):HopDagPatternMatcher = new HopDagPatternMatcher()
-    .addPredicate("matmult", h => HopRewriteUtils.isMatrixMultiply(h))
-		.addChildMatcher(this, child2)
+    .addPredicate("matmult", new Function[Hop, Boolean] { 
+      override def apply(h: Hop): Boolean = HopRewriteUtils.isMatrixMultiply(h)
+    }).addChildMatcher(this, child2)
 	def %/%(child2:HopDagPatternMatcher):HopDagPatternMatcher = _binary(child2, "intdiv", OpOp2.INTDIV)
 	def %%(child2:HopDagPatternMatcher):HopDagPatternMatcher = _binary(child2, "modulus", OpOp2.MODULUS)
 	def *(child2:HopDagPatternMatcher):HopDagPatternMatcher = _binary(child2, "mult", OpOp2.MULT)
@@ -145,18 +160,24 @@ class HopDagPatternMatcher(val isLeaf:Boolean = false) {
 	 * @param pred higher order function that takes as an input a hop and returns true if the pattern matches else false
 	 * @return this
 	 */
-  def addPredicate(name:String, pred:Hop => Boolean):HopDagPatternMatcher = {
+  def addPredicate(name:String, pred:Function[Hop, Boolean]):HopDagPatternMatcher = {
 		_predicates.add(new HopPredicate(name, pred));
 		return this;
 	}
   
-  /**
-	 * Add child pattern matcher
-	 * @param children list of childer
-	 * @return this
-	 */
-	def addChildMatcher(children: HopDagPatternMatcher*):HopDagPatternMatcher = {
-	  children.foreach( c => _children.add(c))
+	def addChildMatcher(child1: HopDagPatternMatcher):HopDagPatternMatcher = {
+	  _children.add(child1)
+		return this;
+	}
+	def addChildMatcher(child1: HopDagPatternMatcher, child2: HopDagPatternMatcher):HopDagPatternMatcher = {
+	  _children.add(child1)
+	  _children.add(child2)
+		return this;
+	}
+	def addChildMatcher(child1: HopDagPatternMatcher, child2: HopDagPatternMatcher, child3: HopDagPatternMatcher):HopDagPatternMatcher = {
+	  _children.add(child1)
+	  _children.add(child2)
+	  _children.add(child3)
 		return this;
 	}
 	
@@ -222,9 +243,15 @@ class HopDagPatternMatcher(val isLeaf:Boolean = false) {
 	}
 	
 	// Simple helper utilities for adding predicates
-	def isScalar():HopDagPatternMatcher = addPredicate("isScalar", h => h.getDataType() == DataType.SCALAR)
-	def isMatrix():HopDagPatternMatcher = addPredicate("isMatrix", h => h.getDataType() == DataType.MATRIX)
-	def fitsOnGPU(constant:Double) = addPredicate("fitsOnGPU", h => _fitsOnGPU(h, constant))
+	def isScalar():HopDagPatternMatcher = addPredicate("isScalar", new Function[Hop, Boolean] { 
+    override def apply(h: Hop): Boolean = h.getDataType() == DataType.SCALAR
+	})
+	def isMatrix():HopDagPatternMatcher = addPredicate("isMatrix", new Function[Hop, Boolean] { 
+    override def apply(h: Hop): Boolean = h.getDataType() == DataType.MATRIX
+  })
+	def fitsOnGPU(constant:Double) = addPredicate("fitsOnGPU", new Function[Hop, Boolean] { 
+    override def apply(h: Hop): Boolean = _fitsOnGPU(h, constant)
+  })
 	def _fitsOnGPU(h:Hop, multiplier:Double):Boolean = {
 		val memEst = multiplier*h.getMemEstimate();
 		DMLScript.USE_ACCELERATOR && h.dimsKnown() && OptimizerUtils.isMemoryBasedOptLevel() &&
