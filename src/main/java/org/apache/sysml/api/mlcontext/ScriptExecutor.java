@@ -370,7 +370,7 @@ public class ScriptExecutor {
 		Statistics.resetNoOfExecutedJobs();
 		if (statistics)
 			Statistics.reset();
-		DMLScript.EXPLAIN = (explainLevel != null) ? explainLevel.getExplainType() : ExplainType.RUNTIME;
+		DMLScript.EXPLAIN = (explainLevel != null) ? explainLevel.getExplainType() : ExplainType.NONE;
 	}
 
 	/**
