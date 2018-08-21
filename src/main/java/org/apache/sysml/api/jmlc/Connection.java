@@ -282,8 +282,6 @@ public class Connection implements Closeable
 					parsePyDML ? ScriptType.PYDML : ScriptType.DML, _dmlconf, SystemMLAPI.JMLC);
 		}
 		else {
-			if(!useGPU && forceGPU)
-				throw new RuntimeException("Cannot force a GPU-execution without useGPU flag enabled");
 			// Since the user has included JCuda libraries in the pipeline, he/she might want to use GPU as well as CPU prepared scripts.
 			// The current code bases uses static flags USE_ACCELERATOR and FORCE_ACCELERATOR to do conditional compilation.
 			// Hence, it is important to synchronize the compilation process so as not to generate incorrect plans.

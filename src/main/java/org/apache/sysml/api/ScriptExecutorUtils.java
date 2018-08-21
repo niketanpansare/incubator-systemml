@@ -116,9 +116,10 @@ public class ScriptExecutorUtils {
 		
 		Program rtprog = null;
 		
-		if(DMLScript.USE_ACCELERATOR && !IS_JCUDA_AVAILABLE) {
-			throw new RuntimeException("Cannot use the GPU backend without JCuda libraries");
-		}
+		if(DMLScript.USE_ACCELERATOR && !IS_JCUDA_AVAILABLE)
+			throw new RuntimeException("Incorrect usage: Cannot use the GPU backend without JCuda libraries. Hint: Include systemml-*-extra.jar (compiled using mvn package -P distribution) into the classpath.");
+		else if(!DMLScript.USE_ACCELERATOR && DMLScript.FORCE_ACCELERATOR)
+			throw new RuntimeException("Incorrect usage: Cannot force a GPU-execution without enabling GPU");
 		
 		if(api == SystemMLAPI.JMLC) {
 			//check for valid names of passed arguments
