@@ -58,6 +58,19 @@ import org.apache.sysml.yarn.DMLYarnClientProxy;
 
 public class ScriptExecutorUtils {
 	
+	public static final boolean IS_JCUDA_AVAILABLE;
+	static {
+		// Early detection of JCuda libraries avoids synchronization overhead for common JMLC scenario:
+		// i.e. CPU-only multi-threaded execution
+		boolean isJCudaAvailable = false;
+		try {
+			Class.forName("jcuda.Pointer");
+			isJCudaAvailable = true;
+		}
+		catch (ClassNotFoundException e) { }
+		IS_JCUDA_AVAILABLE = isJCudaAvailable;
+	}
+	
 	public static enum SystemMLAPI {
 		DMLScript,
 		MLContext,
@@ -102,6 +115,10 @@ public class ScriptExecutorUtils {
 		DMLScript.SCRIPT_TYPE = scriptType;
 		
 		Program rtprog = null;
+		
+		if(DMLScript.USE_ACCELERATOR && !IS_JCUDA_AVAILABLE) {
+			throw new RuntimeException("Cannot use the GPU backend without JCuda libraries");
+		}
 		
 		if(api == SystemMLAPI.JMLC) {
 			//check for valid names of passed arguments

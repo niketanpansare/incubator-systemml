@@ -246,18 +246,6 @@ public class Connection implements Closeable
 		return prepareScript(script, nsscripts, args, inputs, outputs, parsePyDML, false, false, -1);
 	}
 	
-	static final boolean IS_JCUDA_AVAILABLE;
-	static {
-		// Early detection of JCuda libraries avoids synchronization overhead for common JMLC scenario:
-		// i.e. CPU-only multi-threaded execution
-		boolean isJCudaAvailable = false;
-		try {
-			Class.forName("jcuda.Pointer");
-			isJCudaAvailable = true;
-		}
-		catch (ClassNotFoundException e) { }
-		IS_JCUDA_AVAILABLE = isJCudaAvailable;
-	}
 	/**
 	 * List of available GPU contexts:
 	 */
@@ -285,7 +273,7 @@ public class Connection implements Closeable
 		
 		Program rtprog = null;
 		List<GPUContext> _gpuCtx = null;
-		if(!IS_JCUDA_AVAILABLE) {
+		if(!ScriptExecutorUtils.IS_JCUDA_AVAILABLE) {
 			// Most common case: JMLC used for compiling CPU-only plans without JCuda libraries.
 			// If JCuda is not available, there is no need to synchronize the compilation of runtime program.
 			if(useGPU)
