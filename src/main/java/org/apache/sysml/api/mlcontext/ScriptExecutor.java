@@ -298,7 +298,7 @@ public class ScriptExecutor {
 		
 		Map<String, String> args = MLContextUtil
 				.convertInputParametersForParser(script.getInputParameters(), script.getScriptType());
-		ScriptExecutorUtils.compileRuntimeProgram(script.getScriptExecutionString(), Collections.emptyMap(), 
+		runtimeProgram = ScriptExecutorUtils.compileRuntimeProgram(script.getScriptExecutionString(), Collections.emptyMap(), 
 				args, null, symbolTable, inputs, outputs, script.getScriptType(), config, SystemMLAPI.MLContext, 
 				performHOPRewrites, isMaintainSymbolTable());
 	}
