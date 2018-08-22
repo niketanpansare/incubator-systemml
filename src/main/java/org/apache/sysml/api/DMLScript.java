@@ -431,7 +431,7 @@ public class DMLScript
 		ExecutionContext ec = null;
 		try {
 			ec = ScriptExecutorUtils.executeRuntimeProgram(rtprog, dmlconf, STATISTICS ? STATISTICS_COUNT : 0, 
-					new LocalVariableMap(), new HashSet<String>(), SystemMLAPI.DMLScript, gCtxs);
+					new LocalVariableMap(), null, SystemMLAPI.DMLScript, gCtxs);
 		}
 		finally {
 			if(ec != null && ec instanceof SparkExecutionContext)

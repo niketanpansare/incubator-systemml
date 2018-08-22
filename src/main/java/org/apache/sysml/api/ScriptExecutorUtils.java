@@ -314,7 +314,8 @@ public class ScriptExecutorUtils {
 				SpoofCompiler.cleanupCodeGenerator();
 			
 			//cleanup unnecessary outputs
-			symbolTable.removeAllNotIn(outputVariables);
+			if(outputVariables != null) 
+				symbolTable.removeAllNotIn(outputVariables);
 			
 			// Display statistics (disabled for JMLC)
 			if(api != SystemMLAPI.JMLC) {
