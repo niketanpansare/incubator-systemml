@@ -21,6 +21,7 @@ package org.apache.sysml.runtime.instructions.gpu;
 import java.util.HashMap;
 
 import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -74,9 +75,10 @@ public class GPUDenseInputPointerFetcher implements java.lang.AutoCloseable {
 		return getInputMatrixObject(var).getNumColumns();
 	}
 	public MatrixObject getOutputMatrixObject(long numRows, long numCols) {
-		long t0 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
+		boolean isFinegrainedStats = ConfigurationManager.isFinegrainedStatistics();
+		long t0 = isFinegrainedStats ? System.nanoTime() : 0;
 		Pair<MatrixObject, Boolean> mb = _ec.getDenseMatrixOutputForGPUInstruction(_output.getName(), numRows, numCols);
-		if (DMLScript.FINEGRAINED_STATISTICS && mb.getValue()) GPUStatistics.maintainCPMiscTimes(_instName,
+		if (isFinegrainedStats && mb.getValue()) GPUStatistics.maintainCPMiscTimes(_instName,
 				GPUInstruction.MISC_TIMER_ALLOCATE_DENSE_OUTPUT, System.nanoTime() - t0);
 		return  mb.getKey();
 	}

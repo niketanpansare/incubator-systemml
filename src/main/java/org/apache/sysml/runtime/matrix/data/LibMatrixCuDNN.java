@@ -1165,8 +1165,8 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 				jcuda.jcudnn.cudnnBatchNormMode.CUDNN_BATCHNORM_SPATIAL,  one(), zero(), one(), zero(),
 				nCHWDescriptor,  imagePtr, nCHWDescriptor, doutPtr, nCHWDescriptor, dXPtr,
 				scaleTensorDesc, scalePtr, dScalePtr, dBiasPtr, epsilon, resultSaveMeanPtr, resultSaveInvVariancePtr);
-		gCtx.cudaFreeHelper(instName, dScalePtr, DMLScript.EAGER_CUDA_FREE);
-		gCtx.cudaFreeHelper(instName, dBiasPtr, DMLScript.EAGER_CUDA_FREE);
+		gCtx.cudaFreeHelper(instName, dScalePtr, gCtx.EAGER_CUDA_FREE);
+		gCtx.cudaFreeHelper(instName, dBiasPtr, gCtx.EAGER_CUDA_FREE);
 	}
 	
 	private static void validateBatchNormalizationDimensions(MatrixObject scale, MatrixObject bias, MatrixObject runningMean, MatrixObject runningVar, int C) throws DMLRuntimeException {
