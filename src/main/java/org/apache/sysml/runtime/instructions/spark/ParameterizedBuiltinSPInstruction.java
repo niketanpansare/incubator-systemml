@@ -182,8 +182,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			else
 				throw new RuntimeException("Expected parameter " + key);
 		} catch(NumberFormatException e) {
-			CPOperand cpOperand = new CPOperand(val);
-			return ec.getScalarInput(cpOperand.getName(), cpOperand.getValueType(), cpOperand.isLiteral()).getDoubleValue();
+			return ec.getScalarInput(val, ValueType.DOUBLE, false).getDoubleValue();
 		} 
 	}
 	
@@ -195,8 +194,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			else
 				throw new RuntimeException("Expected parameter " + key);
 		} catch(NumberFormatException e) {
-			CPOperand cpOperand = new CPOperand(val);
-			return ec.getScalarInput(cpOperand.getName(), cpOperand.getValueType(), cpOperand.isLiteral()).getBooleanValue();
+			return ec.getScalarInput(val, ValueType.BOOLEAN, false).getBooleanValue();
 		} 
 	}
 	
@@ -208,8 +206,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			else
 				throw new RuntimeException("Expected parameter " + key);
 		} catch(NumberFormatException e) {
-			CPOperand cpOperand = new CPOperand(val);
-			return ec.getScalarInput(cpOperand.getName(), cpOperand.getValueType(), cpOperand.isLiteral()).getLongValue(); 
+			return ec.getScalarInput(val, ValueType.INT, false).getLongValue(); 
 		} 
 	}
 	
@@ -221,8 +218,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			else
 				return defaultValue;
 		} catch(NumberFormatException e) {
-			CPOperand cpOperand = new CPOperand(val);
-			return ec.getScalarInput(cpOperand.getName(), cpOperand.getValueType(), cpOperand.isLiteral()).getLongValue(); 
+			return ec.getScalarInput(val, ValueType.INT, false).getLongValue(); 
 		} 
 	}
 	
