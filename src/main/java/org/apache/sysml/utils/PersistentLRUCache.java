@@ -404,8 +404,10 @@ class DataWrapper {
 				throw new DMLRuntimeException("Not implemented");
 			}
 			else {
-				if(PersistentLRUCache.LOG.isDebugEnabled())
+				if(_cache.persistedKeys.contains(_key) && PersistentLRUCache.LOG.isDebugEnabled())
 					PersistentLRUCache.LOG.debug("Skipping writing of the key " + _key + " to disk as the value is already written" + debugSuffix);
+				else
+					throw new DMLRuntimeException("None of the container objects (double[], float[], MatrixBlock, ...) is not null and the key has not yet been persisted");
 			}
 		}
 		_dArr = null; _fArr = null; _mb = null; _mo = null;
