@@ -53,7 +53,7 @@ public class ShadowBuffer {
 	boolean isBuffered = false;
 	String fileName;
 	
-	public ShadowBuffer(GPUObject gpuObj) {
+	public static boolean isEnabled() {
 		if(CACHE == null && EVICTION_SHADOW_BUFFER_MAX_BYTES >= 0) {
 			double shadowBufferSize = ConfigurationManager.getDMLConfig().getDoubleValue(DMLConfig.EVICTION_SHADOW_BUFFERSIZE);
 			if(shadowBufferSize <= 0) {
@@ -65,13 +65,18 @@ public class ShadowBuffer {
 				EVICTION_SHADOW_BUFFER_MAX_BYTES = (long) (((double)InfrastructureAnalyzer.getLocalMaxMemory())*shadowBufferSize);
 				try {
 					CACHE = new PersistentLRUCache(EVICTION_SHADOW_BUFFER_MAX_BYTES);
-					fileName = "shadow_" + UNIQUE_ID.incrementAndGet();
 				} catch(IOException e) {
 					LOG.warn("Unable to create a temporary directory for shadow buffering on the local filesystem; disabling shadow buffering:" + e.getMessage());
 					EVICTION_SHADOW_BUFFER_MAX_BYTES = -1; // Minor optimization to avoid checking for file permission.
 				}
 			}
 		}
+		return CACHE != null;
+	}
+	
+	public ShadowBuffer(GPUObject gpuObj) {
+		if(isEnabled())
+			fileName = "shadow_" + UNIQUE_ID.incrementAndGet();
 		this.gpuObj = gpuObj;
 		
 	}
@@ -210,7 +215,7 @@ public class ShadowBuffer {
 	 * @return true if the given GPU object is eligible to be shadow buffered
 	 */
 	public boolean isEligibleForBuffering(boolean isEviction, boolean eagerDelete) {
-		if(EVICTION_SHADOW_BUFFER_MAX_BYTES > 0 && isEviction && eagerDelete && !gpuObj.isDensePointerNull()) {
+		if(isEnabled() && isEviction && eagerDelete && !gpuObj.isDensePointerNull()) {
 			long numBytes = getDataTypeSizeOf(gpuObj.mat.getNumRows()*gpuObj.mat.getNumColumns());
 			if(EVICTION_SHADOW_BUFFER_MAX_BYTES <= numBytes) {
 				return false; // Don't attempt to cache very large GPU objects.
