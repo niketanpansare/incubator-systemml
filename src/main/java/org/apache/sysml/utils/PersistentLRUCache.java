@@ -220,9 +220,10 @@ public class PersistentLRUCache extends LinkedHashMap<String, ValueWrapper> {
 					super.put(dummyKey, dummyValue); // This will invoke removeEldestEntry, which will set _eldest
 					remove(dummyKey);
 					if(_eldest != null && _eldest.getKey() != dummyKey) {
-						DataWrapper data = _eldest.getValue().get();
+						ValueWrapper value = _eldest.getValue();
+						DataWrapper data = value.get();
 						if(data != null) {
-							data.write(false); // Write the eldest entry to disk if not garbage collected.
+							data.write(value._lock, false); // Write the eldest entry to disk if not garbage collected.
 						}
 						makeRecent(_eldest.getKey()); // Make recent.
 					}
@@ -348,69 +349,74 @@ class DataWrapper {
 	@Override
 	protected void finalize() throws Throwable {
 		super.finalize();
-		write(true);
+		write(_cache.get(_key)._lock, true);
 	}
 	
-	public synchronized void write(boolean isBeingGarbageCollected) throws FileNotFoundException, IOException {
-		if(_key.equals(_cache.dummyKey))
-			return;
-		_cache.makeRecent(_key); // Make it recent.
-		
-		if(_dArr != null || _fArr != null || _mb != null || _mo != null) {
-			_cache._currentNumBytes.addAndGet(-getSize());
-		}
-		
-		if(!_cache.isInReadOnlyMode) {
-			String debugSuffix = null;
-			if(PersistentLRUCache.LOG.isDebugEnabled()) {
-				if(isBeingGarbageCollected)
-					debugSuffix = " (is being garbage collected).";
-				else
-					debugSuffix = " (capacity exceeded).";
+	public void write(Object lock, boolean isBeingGarbageCollected) throws FileNotFoundException, IOException {
+		// Use the same lock for reading and writing the evicted data.
+		synchronized(lock) {
+			if(_key.equals(_cache.dummyKey))
+				return;
+			else if(_cache.persistedKeys.contains(_key))
+				return;
+			_cache.makeRecent(_key); // Make it recent.
+			
+			if(_dArr != null || _fArr != null || _mb != null || _mo != null) {
+				_cache._currentNumBytes.addAndGet(-getSize());
 			}
 			
-			if(_dArr != null) {
-				try (ObjectOutputStream os = new ObjectOutputStream(new FileOutputStream(_cache.getFilePath(_key)))) {
-					os.writeInt(_dArr.length);
-					for(int i = 0; i < _dArr.length; i++) {
-						os.writeDouble(_dArr[i]);
+			if(!_cache.isInReadOnlyMode) {
+				String debugSuffix = null;
+				if(PersistentLRUCache.LOG.isDebugEnabled()) {
+					if(isBeingGarbageCollected)
+						debugSuffix = " (is being garbage collected).";
+					else
+						debugSuffix = " (capacity exceeded).";
+				}
+				
+				if(_dArr != null) {
+					try (ObjectOutputStream os = new ObjectOutputStream(new FileOutputStream(_cache.getFilePath(_key)))) {
+						os.writeInt(_dArr.length);
+						for(int i = 0; i < _dArr.length; i++) {
+							os.writeDouble(_dArr[i]);
+						}
 					}
+					_cache.persistedKeys.add(_key);
+					if(PersistentLRUCache.LOG.isDebugEnabled())
+						PersistentLRUCache.LOG.debug("Writing value (double[] of size " + getSize() + " bytes) for the key " + _key + " to disk" + debugSuffix);
 				}
-				_cache.persistedKeys.add(_key);
-				if(PersistentLRUCache.LOG.isDebugEnabled())
-					PersistentLRUCache.LOG.debug("Writing value (double[] of size " + getSize() + " bytes) for the key " + _key + " to disk" + debugSuffix);
-			}
-			else if(_fArr != null) {
-				try (ObjectOutputStream os = new ObjectOutputStream(new FileOutputStream(_cache.getFilePath(_key)))) {
-					os.writeInt(_fArr.length);
-					for(int i = 0; i < _fArr.length; i++) {
-						os.writeFloat(_fArr[i]);
+				else if(_fArr != null) {
+					try (ObjectOutputStream os = new ObjectOutputStream(new FileOutputStream(_cache.getFilePath(_key)))) {
+						os.writeInt(_fArr.length);
+						for(int i = 0; i < _fArr.length; i++) {
+							os.writeFloat(_fArr[i]);
+						}
 					}
+					_cache.persistedKeys.add(_key);
+					if(PersistentLRUCache.LOG.isDebugEnabled())
+						PersistentLRUCache.LOG.debug("Writing value (float[] of size " + getSize() + " bytes) for the key " + _key + " to disk" + debugSuffix);
 				}
-				_cache.persistedKeys.add(_key);
-				if(PersistentLRUCache.LOG.isDebugEnabled())
-					PersistentLRUCache.LOG.debug("Writing value (float[] of size " + getSize() + " bytes) for the key " + _key + " to disk" + debugSuffix);
-			}
-			else if(_mb != null) {
-				try(FastBufferedDataOutputStream os = new FastBufferedDataOutputStream(new ObjectOutputStream(new FileOutputStream(_cache.getFilePath(_key))))) {
-					os.writeLong(_mb.getInMemorySize());
-					_mb.write(os);
+				else if(_mb != null) {
+					try(FastBufferedDataOutputStream os = new FastBufferedDataOutputStream(new ObjectOutputStream(new FileOutputStream(_cache.getFilePath(_key))))) {
+						os.writeLong(_mb.getInMemorySize());
+						_mb.write(os);
+					}
+					_cache.persistedKeys.add(_key);
+					if(PersistentLRUCache.LOG.isDebugEnabled())
+						PersistentLRUCache.LOG.debug("Writing value (MatrixBlock of size " + getSize() + " bytes) for the key " + _key + " to disk" + debugSuffix);
 				}
-				_cache.persistedKeys.add(_key);
-				if(PersistentLRUCache.LOG.isDebugEnabled())
-					PersistentLRUCache.LOG.debug("Writing value (MatrixBlock of size " + getSize() + " bytes) for the key " + _key + " to disk" + debugSuffix);
+				else if(_mo != null) {
+					throw new DMLRuntimeException("Not implemented");
+				}
+				else {
+					if(_cache.persistedKeys.contains(_key) && PersistentLRUCache.LOG.isDebugEnabled())
+						PersistentLRUCache.LOG.debug("Skipping writing of the key " + _key + " to disk as the value is already written" + debugSuffix);
+					else
+						throw new DMLRuntimeException("None of the container objects (double[], float[], MatrixBlock, ...) is not null and the key has not yet been persisted");
+				}
 			}
-			else if(_mo != null) {
-				throw new DMLRuntimeException("Not implemented");
-			}
-			else {
-				if(_cache.persistedKeys.contains(_key) && PersistentLRUCache.LOG.isDebugEnabled())
-					PersistentLRUCache.LOG.debug("Skipping writing of the key " + _key + " to disk as the value is already written" + debugSuffix);
-				else
-					throw new DMLRuntimeException("None of the container objects (double[], float[], MatrixBlock, ...) is not null and the key has not yet been persisted");
-			}
+			_dArr = null; _fArr = null; _mb = null; _mo = null;
 		}
-		_dArr = null; _fArr = null; _mb = null; _mo = null;
 	}
 	
 	boolean isAvailable() {
