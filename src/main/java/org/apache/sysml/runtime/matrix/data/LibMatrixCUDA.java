@@ -1134,21 +1134,13 @@ public class LibMatrixCUDA {
 			LOG.trace("GPU : matrixScalarRelational, scalar: " + constant + ", GPUContext=" + gCtx);
 		}
 
-		Pointer A, C;
 		if (isSparseAndEmpty(gCtx, in)) {
 			setOutputToConstant(ec, gCtx, instName, op.executeScalar(0.0), outputName, in.getNumRows(),
 					in.getNumColumns());
 			return;
 		} else {
-			A = getDensePointer(gCtx, in, instName);
-			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, in.getNumRows(), in.getNumColumns());	// Allocated the dense output matrix
-			C = getDensePointer(gCtx, out, instName);
+			matrixScalarOp(ec, gCtx, instName, in, outputName, false, op);
 		}
-
-		int rlenA = toInt(in.getNumRows());
-		int clenA = toInt(in.getNumColumns());
-
-		matrixScalarOp(gCtx, instName, A, constant, rlenA, clenA, C, op);
 	}
 
 	/**
@@ -1328,12 +1320,24 @@ public class LibMatrixCUDA {
 
 		int rlenA = toInt(in.getNumRows());
 		int clenA = toInt(in.getNumColumns());
-		Pointer A = getDensePointer(gCtx, in, instName); // TODO: FIXME: Implement sparse binCellSparseScalarOp kernel
 		double scalar = op.getConstant();
-		// MatrixObject out = ec.getMatrixObject(outputName);
-		MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, rlenA, clenA);	// Allocated the dense output matrix
-		Pointer C = getDensePointer(gCtx, out, instName);
-		matrixScalarOp(gCtx, instName, A, scalar, rlenA, clenA, C, op);
+		
+		if(isInSparseFormat(gCtx, in) && op.sparseSafe) {
+			long nnz = in.getNnz();
+			CSRPointer sparseA = getSparsePointer(gCtx, in, instName);
+			MatrixObject out = getSparseMatrixOutputForGPUInstruction(ec, rlenA, clenA, nnz, instName, outputName);
+			CSRPointer sparseC = getSparsePointer(gCtx, out, instName);
+			// Since sparse safe operators, only perform matrixScalar operators on val pointer assuming it to be a 
+			// dense matrix of size [nnz, 1].
+			matrixScalarOp(gCtx, instName, sparseA.val, scalar, toInt(nnz), 1, sparseC.val, op);
+		}
+		else {
+			Pointer A = getDensePointer(gCtx, in, instName); 
+			// MatrixObject out = ec.getMatrixObject(outputName);
+			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, rlenA, clenA);	// Allocated the dense output matrix
+			Pointer C = getDensePointer(gCtx, out, instName);
+			matrixScalarOp(gCtx, instName, A, scalar, rlenA, clenA, C, op);
+		}
 	}
 
 	/**
