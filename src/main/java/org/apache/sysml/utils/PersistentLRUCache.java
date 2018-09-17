@@ -413,6 +413,10 @@ class DataWrapper {
 		_dArr = null; _fArr = null; _mb = null; _mo = null;
 	}
 	
+	boolean isAvailable() {
+		return _dArr != null || _fArr != null || _mb != null || _mo != null;
+	}
+	
 	static DataWrapper loadDoubleArr(String key, PersistentLRUCache cache) throws FileNotFoundException, IOException {
 		if(cache.isInReadOnlyMode)
 			throw new DMLRuntimeException("Read-only mode is only supported for MatrixBlock.");
@@ -523,7 +527,8 @@ class ValueWrapper {
 		}
 	}
 	boolean isAvailable() {
-		return _ref.get() != null;
+		DataWrapper data = _ref.get();
+		return data != null && data.isAvailable();
 	}
 	DataWrapper get() {
 		return _ref.get();
