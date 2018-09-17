@@ -830,7 +830,7 @@ public class LibMatrixCUDA {
 
 				// Subtract mean from every element in the matrix
 				ScalarOperator minusOp = new RightScalarOperator(Minus.getMinusFnObject(), mean);
-				matrixScalarOp(gCtx, instName, in, mean, rlen, clen, tmp, minusOp);
+				denseMatrixScalarOp(gCtx, instName, in, mean, rlen, clen, tmp, minusOp);
 
 				squareMatrix(gCtx, instName, tmp, tmp2, rlen, clen);
 
@@ -899,7 +899,7 @@ public class LibMatrixCUDA {
 		reduceCol(gCtx, instName, "reduce_col_sum", tmp2, tmpCol, rlen, clen);
 
 		ScalarOperator divideOp = new RightScalarOperator(Divide.getDivideFnObject(), rlen - 1);
-		matrixScalarOp(gCtx, instName, tmpCol, rlen - 1, 1, clen, out, divideOp);
+		denseMatrixScalarOp(gCtx, instName, tmpCol, rlen - 1, 1, clen, out, divideOp);
 
 		gCtx.cudaFreeHelper(instName, tmpCol, gCtx.EAGER_CUDA_FREE);
 		gCtx.cudaFreeHelper(instName, tmp, gCtx.EAGER_CUDA_FREE);
@@ -922,7 +922,7 @@ public class LibMatrixCUDA {
 		reduceRow(gCtx, instName, "reduce_row_sum", tmp2, tmpRow, rlen, clen);
 
 		ScalarOperator divideOp = new RightScalarOperator(Divide.getDivideFnObject(), clen - 1);
-		matrixScalarOp(gCtx, instName, tmpRow, clen - 1, rlen, 1, out, divideOp);
+		denseMatrixScalarOp(gCtx, instName, tmpRow, clen - 1, rlen, 1, out, divideOp);
 
 		gCtx.cudaFreeHelper(instName, tmpRow, gCtx.EAGER_CUDA_FREE);
 		gCtx.cudaFreeHelper(instName, tmp, gCtx.EAGER_CUDA_FREE);
@@ -940,7 +940,7 @@ public class LibMatrixCUDA {
 	 */
 	private static void squareMatrix(GPUContext gCtx, String instName, Pointer in, Pointer out, int rlen, int clen) {
 		ScalarOperator power2op = new RightScalarOperator(Power.getPowerFnObject(), 2);
-		matrixScalarOp(gCtx, instName, in, 2, rlen, clen, out, power2op);
+		denseMatrixScalarOp(gCtx, instName, in, 2, rlen, clen, out, power2op);
 	}
 
 	/**
@@ -1329,14 +1329,16 @@ public class LibMatrixCUDA {
 			CSRPointer sparseC = getSparsePointer(gCtx, out, instName);
 			// Since sparse safe operators, only perform matrixScalar operators on val pointer assuming it to be a 
 			// dense matrix of size [nnz, 1].
-			matrixScalarOp(gCtx, instName, sparseA.val, scalar, toInt(nnz), 1, sparseC.val, op);
+			denseMatrixScalarOp(gCtx, instName, sparseA.val, scalar, toInt(nnz), 1, sparseC.val, op);
+			cudaMemcpy(sparseC.rowPtr, sparseA.rowPtr, rlenA*jcuda.Sizeof.INT, cudaMemcpyDeviceToDevice);
+			cudaMemcpy(sparseC.colInd, sparseA.colInd, toInt(nnz)*jcuda.Sizeof.INT, cudaMemcpyDeviceToDevice);
 		}
 		else {
 			Pointer A = getDensePointer(gCtx, in, instName); 
 			// MatrixObject out = ec.getMatrixObject(outputName);
 			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, rlenA, clenA);	// Allocated the dense output matrix
 			Pointer C = getDensePointer(gCtx, out, instName);
-			matrixScalarOp(gCtx, instName, A, scalar, rlenA, clenA, C, op);
+			denseMatrixScalarOp(gCtx, instName, A, scalar, rlenA, clenA, C, op);
 		}
 	}
 
@@ -1354,7 +1356,7 @@ public class LibMatrixCUDA {
 	 * @param c        the dense output matrix
 	 * @param op       operation to perform
 	 */
-	private static void matrixScalarOp(GPUContext gCtx, String instName, Pointer a, double scalar, int rlenA, int clenA, Pointer c, ScalarOperator op) {
+	private static void denseMatrixScalarOp(GPUContext gCtx, String instName, Pointer a, double scalar, int rlenA, int clenA, Pointer c, ScalarOperator op) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : matrix_scalar_op" + ", GPUContext=" + gCtx);
 		}
