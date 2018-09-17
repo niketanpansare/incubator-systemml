@@ -85,6 +85,10 @@ public class ShadowBuffer {
 		return isBuffered;
 	}
 	
+	private static long getDataTypeSizeOf(long numElems) {
+		return numElems * ((long) LibMatrixCUDA.sizeOfDataType);
+	}
+	
 	/**
 	 * Move the data from GPU to shadow buffer 
 	 * @param instName name of the instruction
@@ -95,15 +99,15 @@ public class ShadowBuffer {
 		long start = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
 		int numElems = GPUObject.toIntExact(gpuObj.mat.getNumRows()*gpuObj.mat.getNumColumns());
 	
-		if(LibMatrixCUDA.sizeOfDataType == jcuda.Sizeof.DOUBLE) {
+		if(isDoublePrecision()) {
 			double [] shadowPointer = new double[numElems];
-			cudaMemcpy(Pointer.to(shadowPointer), gpuObj.jcudaDenseMatrixPtr, numElems*LibMatrixCUDA.sizeOfDataType, jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost);
+			cudaMemcpy(Pointer.to(shadowPointer), gpuObj.jcudaDenseMatrixPtr, getDataTypeSizeOf(numElems), jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost);
 			CACHE.put(fileName, shadowPointer);
 			isBuffered = true;
 		}
-		else if(LibMatrixCUDA.sizeOfDataType == jcuda.Sizeof.FLOAT) {
+		else if(isSinglePrecision()) {
 			float [] shadowPointer = new float[numElems];
-			cudaMemcpy(Pointer.to(shadowPointer), gpuObj.jcudaDenseMatrixPtr, numElems*LibMatrixCUDA.sizeOfDataType, jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost);
+			cudaMemcpy(Pointer.to(shadowPointer), gpuObj.jcudaDenseMatrixPtr, getDataTypeSizeOf(numElems), jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost);
 			CACHE.put(fileName, shadowPointer);
 			isBuffered = true;
 		}
@@ -122,6 +126,14 @@ public class ShadowBuffer {
 		}
 	}
 	
+	private static boolean isDoublePrecision() {
+		return LibMatrixCUDA.sizeOfDataType == jcuda.Sizeof.DOUBLE;
+	}
+	
+	private static boolean isSinglePrecision() {
+		return LibMatrixCUDA.sizeOfDataType == jcuda.Sizeof.FLOAT;
+	}
+	
 	/**
 	 * Move the data from shadow buffer to Matrix object
 	 * @throws IOException if error 
@@ -132,10 +144,10 @@ public class ShadowBuffer {
 		MatrixBlock tmp = new MatrixBlock(GPUObject.toIntExact(gpuObj.mat.getNumRows()), GPUObject.toIntExact(gpuObj.mat.getNumColumns()), false);
 		tmp.allocateDenseBlock();
 		double [] tmpArr = tmp.getDenseBlockValues();
-		if(LibMatrixCUDA.sizeOfDataType == jcuda.Sizeof.DOUBLE) {
+		if(isDoublePrecision()) {
 			System.arraycopy(CACHE.getAsDoubleArray(fileName), 0, tmpArr, 0, tmpArr.length);
 		}
-		else if(LibMatrixCUDA.sizeOfDataType == jcuda.Sizeof.FLOAT) {
+		else if(isSinglePrecision()) {
 			float [] shadowPointer = CACHE.getAsFloatArray(fileName);
 			for(int i = 0; i < shadowPointer.length; i++) {
 				tmpArr[i] = shadowPointer[i];
@@ -166,12 +178,12 @@ public class ShadowBuffer {
 	public void moveToDevice() throws FileNotFoundException, IOException {
 		long start = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
 		int length; Pointer shadowDevicePointer;
-		if(LibMatrixCUDA.sizeOfDataType == jcuda.Sizeof.DOUBLE) {
+		if(isDoublePrecision()) {
 			double [] shadowPointer = CACHE.getAsDoubleArray(fileName);
 			length = shadowPointer.length;
 			shadowDevicePointer = Pointer.to(shadowPointer);
 		}
-		else if(LibMatrixCUDA.sizeOfDataType == jcuda.Sizeof.FLOAT) {
+		else if(isSinglePrecision()) {
 			float [] shadowPointer = CACHE.getAsFloatArray(fileName);
 			length = shadowPointer.length;
 			shadowDevicePointer = Pointer.to(shadowPointer);
@@ -179,7 +191,7 @@ public class ShadowBuffer {
 		else {
 			throw new DMLRuntimeException("Unsupported datatype");
 		}
-		long numBytes = length*LibMatrixCUDA.sizeOfDataType;
+		long numBytes = getDataTypeSizeOf(length);
 		gpuObj.jcudaDenseMatrixPtr = gpuObj.getGPUContext().allocate(null, numBytes);
 		cudaMemcpy(gpuObj.jcudaDenseMatrixPtr, shadowDevicePointer, numBytes, jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice);
 		clearShadowPointer();
@@ -199,7 +211,7 @@ public class ShadowBuffer {
 	 */
 	public boolean isEligibleForBuffering(boolean isEviction, boolean eagerDelete) {
 		if(EVICTION_SHADOW_BUFFER_MAX_BYTES > 0 && isEviction && eagerDelete && !gpuObj.isDensePointerNull()) {
-			int numBytes = GPUObject.toIntExact(gpuObj.mat.getNumRows()*gpuObj.mat.getNumColumns())*LibMatrixCUDA.sizeOfDataType;
+			long numBytes = getDataTypeSizeOf(gpuObj.mat.getNumRows()*gpuObj.mat.getNumColumns());
 			if(EVICTION_SHADOW_BUFFER_MAX_BYTES <= numBytes) {
 				return false; // Don't attempt to cache very large GPU objects.
 			}
