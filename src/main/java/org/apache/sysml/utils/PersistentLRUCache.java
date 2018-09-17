@@ -241,6 +241,8 @@ public class PersistentLRUCache extends LinkedHashMap<String, ValueWrapper> {
 	public double [] getAsDoubleArray(String key) throws FileNotFoundException, IOException {
 		if(key == null)
 			throw new IOException("Null keys are not supported by PersistentLRUCache");
+		if(!containsKey(key))
+			throw new DMLRuntimeException("The map doesnot contains the given key:" + key);
 		ValueWrapper value = super.get(key);
 		if(!value.isAvailable()) {
 			// Fine-grained synchronization: only one read per key, but will allow parallel loading
@@ -259,7 +261,9 @@ public class PersistentLRUCache extends LinkedHashMap<String, ValueWrapper> {
 	
 	public float [] getAsFloatArray(String key) throws FileNotFoundException, IOException {
 		if(key == null)
-			throw new IOException("Null keys are not supported by PersistentLRUCache");
+			throw new DMLRuntimeException("Null keys are not supported by PersistentLRUCache");
+		if(!containsKey(key))
+			throw new DMLRuntimeException("The map doesnot contains the given key:" + key);
 		ValueWrapper value = super.get(key);
 		if(!value.isAvailable()) {
 			// Fine-grained synchronization: only one read per key, but will allow parallel loading
@@ -278,7 +282,9 @@ public class PersistentLRUCache extends LinkedHashMap<String, ValueWrapper> {
 	
 	public MatrixBlock getAsMatrixBlock(String key) throws FileNotFoundException, IOException {
 		if(key == null)
-			throw new IOException("Null keys are not supported by PersistentLRUCache");
+			throw new DMLRuntimeException("Null keys are not supported by PersistentLRUCache");
+		if(!containsKey(key))
+			throw new DMLRuntimeException("The map doesnot contains the given key:" + key);
 		ValueWrapper value = super.get(key);
 		if(!value.isAvailable()) {
 			// Fine-grained synchronization: only one read per key, but will allow parallel loading
