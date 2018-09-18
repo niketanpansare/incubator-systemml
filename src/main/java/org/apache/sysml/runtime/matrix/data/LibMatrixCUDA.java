@@ -1322,18 +1322,41 @@ public class LibMatrixCUDA {
 		int clenA = toInt(in.getNumColumns());
 		double scalar = op.getConstant();
 		
-		if(isInSparseFormat(gCtx, in) && op.sparseSafe) {
-			long nnz = in.getNnz();
+		if(isInSparseFormat(gCtx, in)) {
+			double zeroVal = op.executeScalar(0);
 			CSRPointer sparseA = getSparsePointer(gCtx, in, instName);
-			MatrixObject out = getSparseMatrixOutputForGPUInstruction(ec, rlenA, clenA, nnz, instName, outputName);
-			CSRPointer sparseC = getSparsePointer(gCtx, out, instName);
-			// Since sparse safe operators, only perform matrixScalar operators on val pointer assuming it to be a 
-			// dense matrix of size [nnz, 1].
-			denseMatrixScalarOp(gCtx, instName, sparseA.val, scalar, toInt(nnz), 1, sparseC.val, op);
-			cudaMemcpy(sparseC.rowPtr, sparseA.rowPtr, rlenA*jcuda.Sizeof.INT, cudaMemcpyDeviceToDevice);
-			cudaMemcpy(sparseC.colInd, sparseA.colInd, toInt(nnz)*jcuda.Sizeof.INT, cudaMemcpyDeviceToDevice);
+			long nnz = sparseA.nnz;
+			if(zeroVal == 0) {
+				// sparse-sparse scalar operation
+				MatrixObject out = getSparseMatrixOutputForGPUInstruction(ec, rlenA, clenA, nnz, instName, outputName);
+				if(nnz > 0) {
+					CSRPointer sparseC = getSparsePointer(gCtx, out, instName);
+					// Since sparse safe operators, only perform matrixScalar operators on val pointer assuming it to be a 
+					// dense matrix of size [nnz, 1].
+					denseMatrixScalarOp(gCtx, instName, sparseA.val, scalar, toInt(nnz), 1, sparseC.val, op);
+					cudaMemcpy(sparseC.rowPtr, sparseA.rowPtr, rlenA*jcuda.Sizeof.INT, cudaMemcpyDeviceToDevice);
+					cudaMemcpy(sparseC.colInd, sparseA.colInd, toInt(nnz)*jcuda.Sizeof.INT, cudaMemcpyDeviceToDevice);
+				}
+			}
+			else {
+				// sparse-dense scalar operation
+				MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, rlenA, clenA);	// Allocated the dense output matrix
+				Pointer C = getDensePointer(gCtx, out, instName);
+				setOutputToConstant(gCtx, instName, zeroVal, C, toInt(rlenA*clenA));
+				if(nnz > 0) {
+					long t0 = ConfigurationManager.isFinegrainedStatistics() ? System.nanoTime() : 0;
+					Pointer cooRowPtrA = sparseA.getCooRowPointer();
+					int isLeftScalar = (op instanceof LeftScalarOperator) ? 1 : 0;
+					getCudaKernels(gCtx).launchKernel("sparse_dense_matrix_scalar_op",
+							ExecutionConfig.getConfigForSimpleVectorOperations(toInt(nnz)),
+							cooRowPtrA, sparseA.colInd, sparseA.val, scalar, C, toInt(nnz), toInt(clenA), getBinaryOp(op.fn), isLeftScalar);
+					if (ConfigurationManager.isFinegrainedStatistics()) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_MATRIX_SCALAR_OP_KERNEL, System.nanoTime() - t0);
+					gCtx.cudaFreeHelper(instName, cooRowPtrA, gCtx.EAGER_CUDA_FREE);
+				}
+			}
 		}
 		else {
+			// dense-dense scalar operation
 			Pointer A = getDensePointer(gCtx, in, instName); 
 			// MatrixObject out = ec.getMatrixObject(outputName);
 			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, rlenA, clenA);	// Allocated the dense output matrix
@@ -1556,16 +1579,26 @@ public class LibMatrixCUDA {
 		} else {
 			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, numRows, numCols);   // Allocated the dense output matrix
 			Pointer A = getDensePointer(gCtx, out, instName);
-			int rlen = toInt(out.getNumRows());
-			int clen = toInt(out.getNumColumns());
-			long t0 = 0;
-			if (ConfigurationManager.isFinegrainedStatistics())
-				t0 = System.nanoTime();
-			int size = rlen * clen;
-			getCudaKernels(gCtx).launchKernel("fill", ExecutionConfig.getConfigForSimpleVectorOperations(size), A, constant, size);
-			if (ConfigurationManager.isFinegrainedStatistics())
-				GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_FILL_KERNEL, System.nanoTime() - t0);
+			int size = toInt(out.getNumRows() * out.getNumColumns());
+			setOutputToConstant(gCtx, instName, constant, A, size);
 		}
+	}
+	
+	/**
+	 * Fills an an array on the GPU with a given scalar value
+	 * @param gCtx a valid {@link GPUContext}
+	 * @param instName	name of the invoking instruction to record{@link Statistics}.
+	 * @param constant	scalar value with which to fill the matrix
+	 * @param A pointer to the input/output array
+	 * @param size length of A (not in bytes, but in float/double)
+	 */
+	private static void setOutputToConstant(GPUContext gCtx, String instName, double constant, Pointer A, int size) {
+		long t0 = 0;
+		if (ConfigurationManager.isFinegrainedStatistics())
+			t0 = System.nanoTime();
+		getCudaKernels(gCtx).launchKernel("fill", ExecutionConfig.getConfigForSimpleVectorOperations(size), A, constant, size);
+		if (ConfigurationManager.isFinegrainedStatistics())
+			GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_FILL_KERNEL, System.nanoTime() - t0);
 	}
 
 	/**
