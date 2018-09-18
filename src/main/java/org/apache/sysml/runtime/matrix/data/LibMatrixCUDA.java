@@ -1327,7 +1327,7 @@ public class LibMatrixCUDA {
 			CSRPointer sparseA = getSparsePointer(gCtx, in, instName);
 			long nnz = sparseA.nnz;
 			if(zeroVal == 0) {
-				// sparse-sparse scalar operation
+				// op(sparse input, scalar) -> sparse output
 				MatrixObject out = getSparseMatrixOutputForGPUInstruction(ec, rlenA, clenA, nnz, instName, outputName);
 				if(nnz > 0) {
 					CSRPointer sparseC = getSparsePointer(gCtx, out, instName);
@@ -1339,13 +1339,13 @@ public class LibMatrixCUDA {
 				}
 			}
 			else {
-				// sparse-dense scalar operation
+				// op(sparse input, scalar) -> dense output
 				MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, rlenA, clenA);	// Allocated the dense output matrix
 				Pointer C = getDensePointer(gCtx, out, instName);
 				setOutputToConstant(gCtx, instName, zeroVal, C, toInt(rlenA*clenA));
 				if(nnz > 0) {
 					long t0 = ConfigurationManager.isFinegrainedStatistics() ? System.nanoTime() : 0;
-					Pointer cooRowPtrA = sparseA.getCooRowPointer();
+					Pointer cooRowPtrA = sparseA.getCooRowPointer(getCusparseHandle(gCtx), rlenA);
 					int isLeftScalar = (op instanceof LeftScalarOperator) ? 1 : 0;
 					getCudaKernels(gCtx).launchKernel("sparse_dense_matrix_scalar_op",
 							ExecutionConfig.getConfigForSimpleVectorOperations(toInt(nnz)),
@@ -1356,7 +1356,7 @@ public class LibMatrixCUDA {
 			}
 		}
 		else {
-			// dense-dense scalar operation
+			// op(dense input, scalar) -> dense output
 			Pointer A = getDensePointer(gCtx, in, instName); 
 			// MatrixObject out = ec.getMatrixObject(outputName);
 			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, rlenA, clenA);	// Allocated the dense output matrix
