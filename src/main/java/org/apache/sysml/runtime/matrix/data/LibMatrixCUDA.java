@@ -1299,6 +1299,10 @@ public class LibMatrixCUDA {
 			dgeam(ec, gCtx, instName, in1, in2, outputName, isLeftTransposed, isRightTransposed, alpha, beta);
 		}
 	}
+	
+	private static long getIntSizeOf(long numElems) {
+		return numElems * ((long) Sizeof.INT);
+	}
 
 	/**
 	 * Utility to do matrix-scalar operation kernel
@@ -1323,19 +1327,19 @@ public class LibMatrixCUDA {
 		double scalar = op.getConstant();
 		
 		if(isInSparseFormat(gCtx, in)) {
-			double zeroVal = op.executeScalar(0);
+			double zeroVal = op.executeScalar(0.0);
 			CSRPointer sparseA = getSparsePointer(gCtx, in, instName);
 			long nnz = sparseA.nnz;
-			if(zeroVal == 0) {
+			if(zeroVal == 0.0) {
 				// op(sparse input, scalar) -> sparse output
 				MatrixObject out = getSparseMatrixOutputForGPUInstruction(ec, rlenA, clenA, nnz, instName, outputName);
+				CSRPointer sparseC = getSparsePointer(gCtx, out, instName);
 				if(nnz > 0) {
-					CSRPointer sparseC = getSparsePointer(gCtx, out, instName);
 					// Since sparse safe operators, only perform matrixScalar operators on val pointer assuming it to be a 
 					// dense matrix of size [nnz, 1].
 					denseMatrixScalarOp(gCtx, instName, sparseA.val, scalar, toInt(nnz), 1, sparseC.val, op);
-					cudaMemcpy(sparseC.rowPtr, sparseA.rowPtr, rlenA*jcuda.Sizeof.INT, cudaMemcpyDeviceToDevice);
-					cudaMemcpy(sparseC.colInd, sparseA.colInd, toInt(nnz)*jcuda.Sizeof.INT, cudaMemcpyDeviceToDevice);
+					cudaMemcpy(sparseC.rowPtr, sparseA.rowPtr, getIntSizeOf(rlenA+1), cudaMemcpyDeviceToDevice);
+					cudaMemcpy(sparseC.colInd, sparseA.colInd, getIntSizeOf(nnz), cudaMemcpyDeviceToDevice);
 				}
 			}
 			else {
