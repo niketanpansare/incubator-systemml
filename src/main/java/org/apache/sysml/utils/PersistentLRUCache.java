@@ -94,8 +94,10 @@ public class PersistentLRUCache extends LinkedHashMap<String, ValueWrapper> {
 		org.apache.log4j.Logger.getRootLogger().setLevel(Level.DEBUG);
 		double numBytesInMB = 1e+7;
 		int numDoubleInMB = (int) (numBytesInMB / 8);
-		PersistentLRUCache cache = new PersistentLRUCache((long)(numBytesInMB*25));
-		for(int i = 0; i < 30; ++i) {
+		long maxMemory = Runtime.getRuntime().maxMemory();
+		PersistentLRUCache cache = new PersistentLRUCache((long)(maxMemory*0.3));
+		long numIter = (long) ((2.0*maxMemory) / numBytesInMB);
+		for(long i = 0; i < numIter; ++i) {
 			LOG.debug("Putting a double array of size 1MB.");
 			cache.put("file_" + i, new double[numDoubleInMB]);
 		}
