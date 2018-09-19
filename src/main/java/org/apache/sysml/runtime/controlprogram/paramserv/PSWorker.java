@@ -36,6 +36,7 @@ import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
 
+// TODO use the validate features and labels to calculate the model precision when training
 public abstract class PSWorker implements Serializable 
 {
 	private static final long serialVersionUID = -3510485051178200118L;
@@ -49,23 +50,17 @@ public abstract class PSWorker implements Serializable
 	protected FunctionCallCPInstruction _inst;
 	protected MatrixObject _features;
 	protected MatrixObject _labels;
-
-	protected MatrixObject _valFeatures;
-	protected MatrixObject _valLabels;
 	protected String _updFunc;
 	protected Statement.PSFrequency _freq;
 
 	protected PSWorker() {}
 
-	protected PSWorker(int workerID, String updFunc, Statement.PSFrequency freq, int epochs, long batchSize,
-		MatrixObject valFeatures, MatrixObject valLabels, ExecutionContext ec, ParamServer ps) {
+	protected PSWorker(int workerID, String updFunc, Statement.PSFrequency freq, int epochs, long batchSize, ExecutionContext ec, ParamServer ps) {
 		_workerID = workerID;
 		_updFunc = updFunc;
 		_freq = freq;
 		_epochs = epochs;
 		_batchSize = batchSize;
-		_valFeatures = valFeatures;
-		_valLabels = valLabels;
 		_ec = ec;
 		_ps = ps;
 		setupUpdateFunction(updFunc, ec);

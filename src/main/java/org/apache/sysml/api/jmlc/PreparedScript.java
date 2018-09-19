@@ -21,15 +21,18 @@ package org.apache.sysml.api.jmlc;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
 
+import org.apache.avro.generic.GenericData;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.ConfigurableAPI;
 import org.apache.sysml.api.DMLException;
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
@@ -52,6 +55,8 @@ import org.apache.sysml.runtime.instructions.cp.DoubleObject;
 import org.apache.sysml.runtime.instructions.cp.IntObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUObject;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
@@ -79,7 +84,23 @@ public class PreparedScript implements ConfigurableAPI
 	private final LocalVariableMap _vars;
 	private final DMLConfig _dmlconf;
 	private final CompilerConfig _cconf;
-	
+
+	private GPUContext _gCtx;
+
+	public void printSymbolTable() {
+		for (Entry<String, Data> e : this._vars.entrySet())
+		{
+			System.out.println("VAR: " + e.getKey() + " => " +  e.getValue());
+		}
+	}
+
+	public void printInVarReuse() {
+		for (Entry<String, Data> e : this._inVarReuse.entrySet())
+		{
+			System.out.println("VAR: " + e.getKey() + " => " + e.getValue());
+		}
+	}
+
 	private PreparedScript(PreparedScript that) {
 		//shallow copy, except for a separate symbol table
 		//and related meta data of reused inputs
@@ -123,7 +144,14 @@ public class PreparedScript implements ConfigurableAPI
 		_dmlconf = dmlconf;
 		_cconf = cconf;
 	}
-	
+
+
+	public void clearInVarReuse() {
+		this._inVarReuse.clear();
+	}
+
+	public boolean hasPinnedVars() { return this._inVarReuse.size() > 0; }
+
 	@Override
 	public void resetConfig() {
 		_dmlconf.set(new DMLConfig());
@@ -158,7 +186,14 @@ public class PreparedScript implements ConfigurableAPI
 	public CompilerConfig getCompilerConfig() {
 		return _cconf;
 	}
-	
+
+	/**
+	 * Sets a GPU Context to use when executing GPU enabled scripts. This method must be called prior to
+	 * executing a GPU enabled script.
+	 * @param gCtx GPU context to use
+	 */
+	public void setGpuContext(GPUContext gCtx) { _gCtx = gCtx; }
+
 	/**
 	 * Binds a scalar boolean to a registered input variable.
 	 * 
@@ -289,7 +324,7 @@ public class PreparedScript implements ConfigurableAPI
 	 */
 	public void setMatrix(String varname, MatrixBlock matrix, boolean reuse) {
 		if( !_inVarnames.contains(varname) )
-			throw new DMLException("Unspecified input variable: "+varname);
+			throw new DMLException("Unspecified input variable: " + varname);
 				
 		int blocksize = ConfigurationManager.getBlocksize();
 		
@@ -300,12 +335,28 @@ public class PreparedScript implements ConfigurableAPI
 		mo.acquireModify(matrix); 
 		mo.release();
 		
-		//put create matrix wrapper into symbol table
-		_vars.put(varname, mo);
+		setMatrix(varname, mo, reuse);
+	}
+
+	/**
+	 * Binds a matrix object to a registered input variable.
+	 * If reuse requested, then the input is guaranteed to be
+	 * preserved over multiple <code>executeScript</code> calls.
+	 *
+	 * @param varname input variable name
+	 * @param matrix matrix represented as a MatrixObject
+	 * @param reuse if {@code true}, preserve value over multiple {@code executeScript} calls
+	 */
+	public void setMatrix(String varname, MatrixObject matrix, boolean reuse) {
+		if( !_inVarnames.contains(varname) )
+			throw new DMLException("Unspecified input variable: "+ varname);
+
+		_vars.put(varname, matrix);
 		if( reuse ) {
-			mo.enableCleanup(false); //prevent cleanup
-			_inVarReuse.put(varname, mo);
+			matrix.enableCleanup(false); //prevent cleanup
+			_inVarReuse.put(varname, matrix);
 		}
+
 	}
 
 	/**
@@ -413,7 +464,7 @@ public class PreparedScript implements ConfigurableAPI
 	public void clearParameters() {
 		_vars.removeAll();
 	}
-	
+
 	/**
 	 * Executes the prepared script over the bound inputs, creating the
 	 * result variables according to bound and registered outputs.
@@ -423,30 +474,53 @@ public class PreparedScript implements ConfigurableAPI
 	public ResultVariables executeScript() {
 		//add reused variables
 		_vars.putAll(_inVarReuse);
-		
+
 		//set thread-local configurations
 		ConfigurationManager.setLocalConfig(_dmlconf);
 		ConfigurationManager.setLocalConfig(_cconf);
-		
+
 		//create and populate execution context
 		ExecutionContext ec = ExecutionContextFactory.createContext(_vars, _prog);
-		
+		if (_gCtx != null) {
+			_gCtx.initializeThread();
+			List<GPUContext> gCtxs = new ArrayList<>();
+			gCtxs.add(_gCtx);
+			ec.setGPUContexts(gCtxs);
+		}
 		//core execute runtime program
 		_prog.execute(ec);
-		
+
+		if (_gCtx != null) {
+			for (String outVar : _outVarnames) {
+				Data data = ec.getVariable(outVar);
+				GPUObject gpuObj = ((MatrixObject) data).getGPUObject(_gCtx);
+				if (gpuObj != null && gpuObj.isDirty()) {
+					gpuObj.acquireHostRead(null);
+				}
+			}
+		}
+
 		//cleanup unnecessary outputs
 		_vars.removeAllNotIn(_outVarnames);
-		
+
 		//construct results
 		ResultVariables rvars = new ResultVariables();
 		for( String ovar : _outVarnames ) {
 			Data tmpVar = _vars.get(ovar);
-			if( tmpVar != null )
+			if( tmpVar != null ) {
 				rvars.addResult(ovar, tmpVar);
+			}
 		}
-		
+
+		// cleanup GPU objects if necessary
+		if (_gCtx != null)
+			_gCtx.clearTemporaryMemory();
+
 		//clear thread-local configurations
 		ConfigurationManager.clearLocalConfigs();
+
+		// TODO: Anthony: Double-check this!!
+		// ConfigurationManager.resetStatistics();
 
 		return rvars;
 	}

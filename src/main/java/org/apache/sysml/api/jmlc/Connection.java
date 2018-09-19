@@ -34,11 +34,14 @@ import org.apache.hadoop.fs.Path;
 import org.apache.sysml.api.DMLException;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.api.mlcontext.Matrix;
+import org.apache.sysml.utils.NativeHelper;
 import org.apache.sysml.api.mlcontext.ScriptType;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
+import org.apache.sysml.conf.DMLOptions;
 import org.apache.sysml.hops.codegen.SpoofCompiler;
 import org.apache.sysml.hops.rewrite.ProgramRewriter;
 import org.apache.sysml.hops.rewrite.RewriteRemovePersistentReadWrite;
@@ -52,6 +55,7 @@ import org.apache.sysml.parser.ParserWrapper;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.runtime.io.FrameReader;
 import org.apache.sysml.runtime.io.FrameReaderFactory;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
@@ -64,6 +68,7 @@ import org.apache.sysml.runtime.transform.TfUtils;
 import org.apache.sysml.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.UtilFunctions;
+import org.apache.sysml.utils.Explain;
 import org.apache.wink.json4j.JSONObject;
 
 /**
@@ -98,7 +103,7 @@ public class Connection implements Closeable
 {
 	private final DMLConfig _dmlconf;
 	private final CompilerConfig _cconf;
-	
+
 	/**
 	 * Connection constructor, the starting point for any other JMLC API calls.
 	 * 
@@ -149,8 +154,6 @@ public class Connection implements Closeable
 	 * @param dmlconfig a dml configuration.
 	 */
 	public Connection(DMLConfig dmlconfig) {
-		DMLScript.rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
-		
 		//setup basic parameters for embedded execution
 		//(parser, compiler, and runtime parameters)
 		CompilerConfig cconf = new CompilerConfig();
@@ -185,7 +188,7 @@ public class Connection implements Closeable
 	 *
 	 * @param stats boolean value with true indicating statistics should be gathered
 	 */
-	public void setStatistics(boolean stats) { DMLScript.STATISTICS = stats; }
+	public void setStatistics(boolean stats) { ConfigurationManager.setStatistics(stats); }
 
 	/**
 	 * Sets a boolean flag indicating if memory profiling statistics should be
@@ -193,8 +196,44 @@ public class Connection implements Closeable
 	 * @param stats boolean value with true indicating memory statistics should be gathered
 	 */
 	public void gatherMemStats(boolean stats) {
-		DMLScript.STATISTICS = stats || DMLScript.STATISTICS;
+		ConfigurationManager.setStatistics(stats || ConfigurationManager.isStatistics());
 		DMLScript.JMLC_MEM_STATISTICS = stats;
+	}
+
+	boolean gpu = false; boolean forceGPU = false;
+	
+	/**
+	 * Sets a boolean flag indicating if scripts compiled using this connection should use GPU
+	 *
+	 * @param enable boolean indicating whether GPU should be used
+	 */
+	public void setGpu(boolean enable) { gpu = enable; }
+
+	/**
+	 * Sets a boolean flag indicating if GPU enabled operators should -always- be compiled to use GPU
+	 *
+	 * @param enable boolean indicating if GPU should always be used
+	 */
+	public void setForceGPU(boolean enable) { forceGPU = enable; }
+
+	/**
+	 * Configures the list of available GPUs to use for this connection.
+	 *
+	 * @param availableGpus String containing a comma separated list of GPU devices or -1 to use all GPUs available
+	 * @param force Boolean flag indicating if GPU enabled operators should -always- be compiled to use GPU
+	 */
+	public void enableGpu(String availableGpus, Boolean force) {
+		GPUContextPool.AVAILABLE_GPUS = availableGpus;
+	
+		// TODO: Anthony: Double-check this !!
+		// DMLScript.PRINT_GPU_MEMORY_INFO = _dmlconf.getBooleanValue(DMLConfig.PRINT_GPU_MEMORY_INFO);
+		// DMLScript.SYNCHRONIZE_GPU = _dmlconf.getBooleanValue(DMLConfig.SYNCHRONIZE_GPU);
+		// DMLScript.EAGER_CUDA_FREE = _dmlconf.getBooleanValue(DMLConfig.EAGER_CUDA_FREE);
+		NativeHelper.initialize(_dmlconf.getTextValue(DMLConfig.NATIVE_BLAS_DIR), _dmlconf.getTextValue(DMLConfig.NATIVE_BLAS).trim());
+		DMLScript.FLOATING_POINT_PRECISION = _dmlconf.getTextValue(DMLConfig.FLOATING_POINT_PRECISION);
+		org.apache.sysml.runtime.matrix.data.LibMatrixCUDA.resetFloatingPointPrecision();
+		setGpu(true);
+		setForceGPU(force);
 	}
 	
 	/**
@@ -249,18 +288,23 @@ public class Connection implements Closeable
 	 */
 	public PreparedScript prepareScript(String script, Map<String,String> nsscripts, Map<String, String> args, String[] inputs, String[] outputs, boolean parsePyDML) {
 		DMLScript.SCRIPT_TYPE = parsePyDML ? ScriptType.PYDML : ScriptType.DML;
+
+		// Set DML Options here:
+		ConfigurationManager.setLocalOptions(new DMLOptions(args, 
+				false, 10, false, Explain.ExplainType.NONE, RUNTIME_PLATFORM.SINGLE_NODE, gpu, forceGPU, 
+				parsePyDML ? ScriptType.PYDML : ScriptType.DML, null, script));
 		
 		//check for valid names of passed arguments
 		String[] invalidArgs = args.keySet().stream()
 			.filter(k -> k==null || !k.startsWith("$")).toArray(String[]::new);
 		if( invalidArgs.length > 0 )
-			throw new LanguageException("Invalid argument names: "+Arrays.toString(invalidArgs));
+			throw new LanguageException("Invalid argument names: "+ Arrays.toString(invalidArgs));
 		
 		//check for valid names of input and output variables
 		String[] invalidVars = UtilFunctions.asSet(inputs, outputs).stream()
 			.filter(k -> k==null || k.startsWith("$")).toArray(String[]::new);
 		if( invalidVars.length > 0 )
-			throw new LanguageException("Invalid variable names: "+Arrays.toString(invalidVars));
+			throw new LanguageException("Invalid variable names: "+ Arrays.toString(invalidVars));
 		
 		setLocalConfigs();
 		
@@ -301,7 +345,6 @@ public class Connection implements Closeable
 			throw new DMLException(ex);
 		}
 		
-		//return newly create precompiled script 
 		return new PreparedScript(rtprog, inputs, outputs, _dmlconf, _cconf);
 	}
 	
@@ -361,24 +404,13 @@ public class Connection implements Closeable
 	////////////////////////////////////////////
 	// Read matrices
 	////////////////////////////////////////////
-	
-	/**
-	 * Reads an input matrix in arbitrary format from HDFS into a dense double array.
-	 * NOTE: this call currently only supports default configurations for CSV.
-	 * 
-	 * @param fname the filename of the input matrix
-	 * @return matrix as a two-dimensional double array
-	 * @throws IOException if IOException occurs
-	 */
-	public double[][] readDoubleMatrix(String fname) 
-		throws IOException
-	{
+
+	public MatrixBlock readMatrix(String fname) throws IOException {
 		try {
-			//read json meta data 
 			String fnamemtd = DataExpression.getMTDFileName(fname);
 			JSONObject jmtd = new DataExpression().readMetadataFile(fnamemtd, false);
-			
-			//parse json meta data 
+
+			//parse json meta data
 			long rows = jmtd.getLong(DataExpression.READROWPARAM);
 			long cols = jmtd.getLong(DataExpression.READCOLPARAM);
 			int brlen = jmtd.containsKey(DataExpression.ROWBLOCKCOUNTPARAM)?
@@ -389,9 +421,24 @@ public class Connection implements Closeable
 					jmtd.getLong(DataExpression.READNNZPARAM) : -1;
 			String format = jmtd.getString(DataExpression.FORMAT_TYPE);
 			InputInfo iinfo = InputInfo.stringExternalToInputInfo(format);
-		
-			//read matrix file
-			return readDoubleMatrix(fname, iinfo, rows, cols, brlen, bclen, nnz);
+			return readMatrix(fname, iinfo, rows, cols, brlen, bclen, nnz);
+		} catch (Exception ex) {
+			throw new IOException(ex);
+		}
+	}
+	
+	/**
+	 * Reads an input matrix in arbitrary format from HDFS into a dense double array.
+	 * NOTE: this call currently only supports default configurations for CSV.
+	 * 
+	 * @param fname the filename of the input matrix
+	 * @return matrix as a two-dimensional double array
+	 * @throws IOException if IOException occurs
+	 */
+	public double[][] readDoubleMatrix(String fname) throws IOException {
+		try {
+			MatrixBlock mb = readMatrix(fname);
+			return DataConverter.convertToDoubleMatrix(mb);
 		}
 		catch(Exception ex) {
 			throw new IOException(ex);
@@ -412,15 +459,15 @@ public class Connection implements Closeable
 	 * @return matrix as a two-dimensional double array
 	 * @throws IOException if IOException occurs
 	 */
-	public double[][] readDoubleMatrix(String fname, InputInfo iinfo, long rows, long cols, int brlen, int bclen, long nnz) 
+	public MatrixBlock readMatrix(String fname, InputInfo iinfo, long rows, long cols, int brlen, int bclen, long nnz)
 		throws IOException
 	{
 		setLocalConfigs();
 		
 		try {
 			MatrixReader reader = MatrixReaderFactory.createMatrixReader(iinfo);
-			MatrixBlock mb = reader.readMatrixFromHDFS(fname, rows, cols, brlen, bclen, nnz);
-			return DataConverter.convertToDoubleMatrix(mb);
+			return reader.readMatrixFromHDFS(fname, rows, cols, brlen, bclen, nnz);
+
 		}
 		catch(Exception ex) {
 			throw new IOException(ex);

@@ -85,7 +85,7 @@ public class OptimizerUtils
 	 * e.g., when input/output dimensions are unknown. The default is set to a large 
 	 * value so that operations are scheduled on MR while avoiding overflows as well.  
 	 */
-	public static double DEFAULT_SIZE;	
+	public static double DEFAULT_SIZE;
 	
 	
 	public static final long DOUBLE_SIZE = 8;
@@ -552,18 +552,18 @@ public class OptimizerUtils
 	}
 
 	public static boolean isSparkExecutionMode() {
-		return (   DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK
-				|| DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK);
+		return (   ConfigurationManager.getExecutionMode() == RUNTIME_PLATFORM.SPARK
+				|| ConfigurationManager.getExecutionMode() == RUNTIME_PLATFORM.HYBRID_SPARK);
 	}
 
 	public static boolean isHadoopExecutionMode() {
-		return (   DMLScript.rtplatform == RUNTIME_PLATFORM.HADOOP
-				|| DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID);
+		return (   ConfigurationManager.getExecutionMode() == RUNTIME_PLATFORM.HADOOP
+				|| ConfigurationManager.getExecutionMode() == RUNTIME_PLATFORM.HYBRID);
 	}
 
 	public static boolean isHybridExecutionMode() {
-		return (  DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID 
-			   || DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK );
+		return (  ConfigurationManager.getExecutionMode() == RUNTIME_PLATFORM.HYBRID 
+			   || ConfigurationManager.getExecutionMode() == RUNTIME_PLATFORM.HYBRID_SPARK );
 	}
 	
 	/**
@@ -970,6 +970,10 @@ public class OptimizerUtils
 	// Sparsity Estimates //
 	////////////////////////
 	
+	public static long getMatMultNnz(double sp1, double sp2, long m, long k, long n, boolean worstcase) {
+		return getNnz( m, n, getMatMultSparsity(sp1, sp2, m, k, n, worstcase));
+	}
+	
 	/**
 	 * Estimates the result sparsity for Matrix Multiplication A %*% B. 
 	 *  
@@ -981,8 +985,7 @@ public class OptimizerUtils
 	 * @param worstcase true if worst case
 	 * @return the sparsity
 	 */
-	public static double getMatMultSparsity(double sp1, double sp2, long m, long k, long n, boolean worstcase) 
-	{
+	public static double getMatMultSparsity(double sp1, double sp2, long m, long k, long n, boolean worstcase) {
 		if( worstcase ){
 			double nnz1 = sp1 * m * k;
 			double nnz2 = sp2 * k * n;
@@ -1157,6 +1160,10 @@ public class OptimizerUtils
 			default:
 				return n1 * n2;
 		}
+	}
+	
+	public static long getNnz(long dim1, long dim2, double sp) {
+		return (long) Math.round(sp * dim1 * dim2);
 	}
 	
 	public static double getSparsity( MatrixCharacteristics mc ) {

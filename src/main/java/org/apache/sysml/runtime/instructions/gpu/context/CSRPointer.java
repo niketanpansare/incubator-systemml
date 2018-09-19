@@ -25,6 +25,8 @@ import static jcuda.jcusparse.JCusparse.cusparseSetMatType;
 import static jcuda.jcusparse.JCusparse.cusparseSetPointerMode;
 import static jcuda.jcusparse.JCusparse.cusparseXcsrgeamNnz;
 import static jcuda.jcusparse.JCusparse.cusparseXcsrgemmNnz;
+import static jcuda.jcusparse.JCusparse.cusparseXcsr2coo;
+
 import static jcuda.jcusparse.cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO;
 import static jcuda.jcusparse.cusparseMatrixType.CUSPARSE_MATRIX_TYPE_GENERAL;
 import static jcuda.runtime.JCuda.cudaMemcpy;
@@ -34,7 +36,7 @@ import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
@@ -111,6 +113,24 @@ public class CSRPointer {
 		colInd = new Pointer();
 		allocateMatDescrPointer();
 	}
+	
+	/**
+	 * Note: the user is expected to free the returned pointer.
+	 * 
+	 * @param handle cusparse handle
+	 * @param rows number of rows of the CSR pointer
+	 * @return integer array of nnz uncompressed row indices (with index base 0).
+	 */
+	public Pointer getCooRowPointer(cusparseHandle handle, int rows) {
+		if(nnz > 0) {
+			Pointer cooRowInd = gpuContext.allocate(null, getIntSizeOf(nnz));
+			cusparseXcsr2coo(handle, rowPtr, LibMatrixCUDA.toInt(nnz), rows, cooRowInd, CUSPARSE_INDEX_BASE_ZERO);
+			return cooRowInd;
+		}
+		else {
+			throw new DMLRuntimeException("csr2coo only support when nnz > 0, but instead found " +  nnz);
+		}
+	}
 
 	private static long getDataTypeSizeOf(long numElems) {
 		return numElems * ((long) LibMatrixCUDA.sizeOfDataType);
@@ -180,7 +200,7 @@ public class CSRPointer {
 	public static void copyToDevice(GPUContext gCtx, CSRPointer dest, int rows, long nnz, int[] rowPtr, int[] colInd, double[] values) {
 		CSRPointer r = dest;
 		long t0 = 0;
-		if (DMLScript.STATISTICS)
+		if (ConfigurationManager.isStatistics())
 			t0 = System.nanoTime();
 		r.nnz = nnz;
 		if(rows < 0) throw new DMLRuntimeException("Incorrect input parameter: rows=" + rows);
@@ -191,9 +211,9 @@ public class CSRPointer {
 		LibMatrixCUDA.cudaSupportFunctions.hostToDevice(gCtx, values, r.val, null);
 		cudaMemcpy(r.rowPtr, Pointer.to(rowPtr), getIntSizeOf(rows + 1), cudaMemcpyHostToDevice);
 		cudaMemcpy(r.colInd, Pointer.to(colInd), getIntSizeOf(nnz), cudaMemcpyHostToDevice);
-		if (DMLScript.STATISTICS)
+		if (ConfigurationManager.isStatistics())
 			GPUStatistics.cudaToDevTime.add(System.nanoTime() - t0);
-		if (DMLScript.STATISTICS)
+		if (ConfigurationManager.isStatistics())
 			GPUStatistics.cudaToDevCount.add(3);
 	}
 	
@@ -458,7 +478,7 @@ public class CSRPointer {
 	 */
 	public Pointer toColumnMajorDenseMatrix(cusparseHandle cusparseHandle, cublasHandle cublasHandle, int rows,
 			int cols, String instName) {
-		long t0 = DMLScript.FINEGRAINED_STATISTICS && instName != null ? System.nanoTime() : 0;
+		long t0 = ConfigurationManager.isFinegrainedStatistics() && instName != null ? System.nanoTime() : 0;
 		LOG.trace("GPU : sparse -> column major dense (inside CSRPointer) on " + this + ", GPUContext="
 				+ getGPUContext());
 		long size = ((long) rows) * getDataTypeSizeOf((long) cols);
@@ -471,16 +491,8 @@ public class CSRPointer {
 		} else {
 			LOG.debug("in CSRPointer, the values array, row pointers array or column indices array was null");
 		}
-		if (DMLScript.FINEGRAINED_STATISTICS && instName != null) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SPARSE_TO_DENSE, System.nanoTime() - t0);
+		if (ConfigurationManager.isFinegrainedStatistics() && instName != null) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SPARSE_TO_DENSE, System.nanoTime() - t0);
 		return A;
-	}
-
-	/**
-	 * Calls cudaFree lazily on the allocated {@link Pointer} instances
-	 *
-	 */
-	public void deallocate() {
-		deallocate(DMLScript.EAGER_CUDA_FREE);
 	}
 
 	/**

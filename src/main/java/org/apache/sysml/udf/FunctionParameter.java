@@ -39,6 +39,7 @@ public abstract class FunctionParameter implements Serializable
 		Matrix, 
 		Scalar, 
 		Object,
+		List
 	}
 	
 	private FunctionParameterType _type;

@@ -36,8 +36,6 @@ import static org.apache.sysml.parser.Statement.PS_PARALLELISM;
 import static org.apache.sysml.parser.Statement.PS_SCHEME;
 import static org.apache.sysml.parser.Statement.PS_UPDATE_FUN;
 import static org.apache.sysml.parser.Statement.PS_UPDATE_TYPE;
-import static org.apache.sysml.parser.Statement.PS_VAL_FEATURES;
-import static org.apache.sysml.parser.Statement.PS_VAL_LABELS;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -57,7 +55,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.spark.network.server.TransportServer;
 import org.apache.spark.util.LongAccumulator;
-import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.lops.LopProperties;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -65,15 +63,15 @@ import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionScheme;
-import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitioner;
 import org.apache.sysml.runtime.controlprogram.paramserv.LocalPSWorker;
 import org.apache.sysml.runtime.controlprogram.paramserv.LocalParamServer;
 import org.apache.sysml.runtime.controlprogram.paramserv.ParamServer;
 import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
-import org.apache.sysml.runtime.controlprogram.paramserv.spark.SparkPSBody;
-import org.apache.sysml.runtime.controlprogram.paramserv.spark.SparkPSWorker;
-import org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc.PSRpcFactory;
+import org.apache.sysml.runtime.controlprogram.paramserv.SparkPSBody;
+import org.apache.sysml.runtime.controlprogram.paramserv.SparkPSWorker;
+import org.apache.sysml.runtime.controlprogram.paramserv.dp.DataPartitionLocalScheme;
+import org.apache.sysml.runtime.controlprogram.paramserv.dp.LocalDataPartitioner;
+import org.apache.sysml.runtime.controlprogram.paramserv.rpc.PSRpcFactory;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.matrix.operators.Operator;
@@ -83,8 +81,10 @@ import org.apache.sysml.utils.Statistics;
 public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruction {
 
 	private static final int DEFAULT_BATCH_SIZE = 64;
-	private static final PSFrequency DEFAULT_UPDATE_FREQUENCY = PSFrequency.BATCH;
+	private static final PSFrequency DEFAULT_UPDATE_FREQUENCY = PSFrequency.EPOCH;
 	private static final PSScheme DEFAULT_SCHEME = PSScheme.DISJOINT_CONTIGUOUS;
+	private static final PSModeType DEFAULT_MODE = PSModeType.LOCAL;
+	private static final PSUpdateType DEFAULT_TYPE = PSUpdateType.ASP;
 
 	//internal local debug level
 	private static final boolean LDEBUG = false;
@@ -113,13 +113,14 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 			case REMOTE_SPARK:
 				runOnSpark((SparkExecutionContext) ec, mode);
 				break;
+			default:
+				throw new DMLRuntimeException(String.format("Paramserv func: not support mode %s", mode));
 		}
 	}
 
 	private void runOnSpark(SparkExecutionContext sec, PSModeType mode) {
-		Timing tSetup = DMLScript.STATISTICS ? new Timing(true) : null;
+		Timing tSetup = ConfigurationManager.isStatistics() ? new Timing(true) : null;
 
-		PSScheme scheme = getScheme();
 		int workerNum = getWorkerNum(mode);
 		String updFunc = getParam(PS_UPDATE_FUN);
 		String aggFunc = getParam(PS_AGGREGATION_FUN);
@@ -128,9 +129,6 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		LocalVariableMap newVarsMap = createVarsMap(sec);
 		// Level of par is 1 in spark backend because one worker will be launched per task
 		ExecutionContext newEC = ParamservUtils.createExecutionContext(sec, newVarsMap, updFunc, aggFunc, 1);
-
-		MatrixObject features = sec.getMatrixObject(getParam(PS_FEATURES));
-		MatrixObject labels = sec.getMatrixObject(getParam(PS_LABELS));
 
 		// Create the agg service's execution context
 		ExecutionContext aggServiceEC = ParamservUtils.copyExecutionContext(newEC, 1).get(0);
@@ -169,27 +167,28 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 			getFrequency(), getEpochs(), getBatchSize(), program, clsMap, sec.getSparkContext().getConf(),
 			server.getPort(), aSetup, aWorker, aUpdate, aIndex, aGrad, aRPC, aBatch, aEpoch);
 
-		if (DMLScript.STATISTICS)
+		if (ConfigurationManager.isStatistics())
 			Statistics.accPSSetupTime((long) tSetup.stop());
 
+		MatrixObject features = sec.getMatrixObject(getParam(PS_FEATURES));
+		MatrixObject labels = sec.getMatrixObject(getParam(PS_LABELS));
 		try {
-			ParamservUtils.doPartitionOnSpark(sec, features, labels, scheme, workerNum) // Do data partitioning
+			ParamservUtils.doPartitionOnSpark(sec, features, labels, getScheme(), workerNum) // Do data partitioning
 				.foreach(worker); // Run remote workers
 		} catch (Exception e) {
 			throw new DMLRuntimeException("Paramserv function failed: ", e);
 		} finally {
-			// Stop the netty server
-			server.close();
+			server.close(); // Stop the netty server
 		}
 
 		// Accumulate the statistics for remote workers
-		if (DMLScript.STATISTICS) {
-			Statistics.accPSSetupTime(aSetup.value().longValue());
-			Statistics.incWorkerNumber(aWorker.value().longValue());
-			Statistics.accPSLocalModelUpdateTime(aUpdate.value().longValue());
-			Statistics.accPSBatchIndexingTime(aIndex.value().longValue());
-			Statistics.accPSGradientComputeTime(aGrad.value().longValue());
-			Statistics.accPSRpcRequestTime(aRPC.value().longValue());
+		if (ConfigurationManager.isStatistics()) {
+			Statistics.accPSSetupTime(aSetup.value());
+			Statistics.incWorkerNumber(aWorker.value());
+			Statistics.accPSLocalModelUpdateTime(aUpdate.value());
+			Statistics.accPSBatchIndexingTime(aIndex.value());
+			Statistics.accPSGradientComputeTime(aGrad.value());
+			Statistics.accPSRpcRequestTime(aRPC.value());
 		}
 
 		// Fetch the final model from ps
@@ -197,7 +196,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	}
 
 	private void runLocally(ExecutionContext ec, PSModeType mode) {
-		Timing tSetup = DMLScript.STATISTICS ? new Timing(true) : null;
+		Timing tSetup = ConfigurationManager.isStatistics() ? new Timing(true) : null;
 		int workerNum = getWorkerNum(mode);
 		BasicThreadFactory factory = new BasicThreadFactory.Builder()
 			.namingPattern("workers-pool-thread-%d").build();
@@ -205,11 +204,9 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		String updFunc = getParam(PS_UPDATE_FUN);
 		String aggFunc = getParam(PS_AGGREGATION_FUN);
 
-		int k = getParLevel(workerNum);
-
 		// Get the compiled execution context
 		LocalVariableMap newVarsMap = createVarsMap(ec);
-		ExecutionContext newEC = ParamservUtils.createExecutionContext(ec, newVarsMap, updFunc, aggFunc, k);
+		ExecutionContext newEC = ParamservUtils.createExecutionContext(ec, newVarsMap, updFunc, aggFunc, getParLevel(workerNum));
 
 		// Create workers' execution context
 		List<ExecutionContext> workerECs = ParamservUtils.copyExecutionContext(newEC, workerNum);
@@ -219,24 +216,21 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 		PSFrequency freq = getFrequency();
 		PSUpdateType updateType = getUpdateType();
-		int epochs = getEpochs();
 
 		// Create the parameter server
 		ListObject model = ec.getListObject(getParam(PS_MODEL));
 		ParamServer ps = createPS(mode, aggFunc, updateType, workerNum, model, aggServiceEC);
 
 		// Create the local workers
-		MatrixObject valFeatures = ec.getMatrixObject(getParam(PS_VAL_FEATURES));
-		MatrixObject valLabels = ec.getMatrixObject(getParam(PS_VAL_LABELS));
 		List<LocalPSWorker> workers = IntStream.range(0, workerNum)
-			.mapToObj(i -> new LocalPSWorker(i, updFunc, freq, epochs, getBatchSize(), valFeatures, valLabels, workerECs.get(i), ps))
+			.mapToObj(i -> new LocalPSWorker(i, updFunc, freq, getEpochs(), getBatchSize(), workerECs.get(i), ps))
 			.collect(Collectors.toList());
 
 		// Do data partition
 		PSScheme scheme = getScheme();
 		partitionLocally(scheme, ec, workers);
 
-		if (DMLScript.STATISTICS)
+		if (ConfigurationManager.isStatistics())
 			Statistics.accPSSetupTime((long) tSetup.stop());
 
 		if (LOG.isDebugEnabled()) {
@@ -251,8 +245,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 			for (Future<Void> ret : es.invokeAll(workers))
 				ret.get(); //error handling
 			// Fetch the final model from ps
-			ListObject result = ps.getResult();
-			ec.setVariable(output.getName(), result);
+			ec.setVariable(output.getName(), ps.getResult());
 		} catch (InterruptedException | ExecutionException e) {
 			throw new DMLRuntimeException("ParamservBuiltinCPInstruction: some error occurred: ", e);
 		} finally {
@@ -271,6 +264,9 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	}
 
 	private PSModeType getPSMode() {
+		if (!getParameterMap().containsKey(PS_MODE)) {
+			return DEFAULT_MODE;
+		}
 		PSModeType mode;
 		try {
 			mode = PSModeType.valueOf(getParam(PS_MODE));
@@ -294,6 +290,9 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	}
 
 	private PSUpdateType getUpdateType() {
+		if (!getParameterMap().containsKey(PS_UPDATE_TYPE)) {
+			return DEFAULT_TYPE;
+		}
 		PSUpdateType updType;
 		try {
 			updType = PSUpdateType.valueOf(getParam(PS_UPDATE_TYPE));
@@ -301,7 +300,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 			throw new DMLRuntimeException(String.format("Paramserv function: not support update type '%s'.", getParam(PS_UPDATE_TYPE)));
 		}
 		if (updType == PSUpdateType.SSP)
-			throw new DMLRuntimeException("Not support update type SSP.");
+			throw new DMLRuntimeException("Paramserv function: Not support update type SSP.");
 		return updType;
 	}
 
@@ -318,7 +317,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	}
 
 	private int getRemainingCores() {
-		return InfrastructureAnalyzer.getLocalParallelism() - 1;
+		return InfrastructureAnalyzer.getLocalParallelism();
 	}
 
 	/**
@@ -330,7 +329,6 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	private int getWorkerNum(PSModeType mode) {
 		switch (mode) {
 			case LOCAL:
-				// default worker number: available cores - 1 (assign one process for agg service)
 				return getParameterMap().containsKey(PS_PARALLELISM) ?
 					Integer.valueOf(getParam(PS_PARALLELISM)) : getRemainingCores();
 			case REMOTE_SPARK:
@@ -350,7 +348,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		switch (mode) {
 			case LOCAL:
 			case REMOTE_SPARK:
-				return new LocalParamServer(model, aggFunc, updateType, ec, workerNum);
+				return LocalParamServer.create(model, aggFunc, updateType, ec, workerNum);
 			default:
 				throw new DMLRuntimeException("Unsupported parameter server: "+mode.name());
 		}
@@ -379,9 +377,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	private void partitionLocally(PSScheme scheme, ExecutionContext ec, List<LocalPSWorker> workers) {
 		MatrixObject features = ec.getMatrixObject(getParam(PS_FEATURES));
 		MatrixObject labels = ec.getMatrixObject(getParam(PS_LABELS));
-		DataPartitionScheme.Result result = new DataPartitioner(scheme).doPartitioning(workers.size(), features.acquireRead(), labels.acquireRead());
-		features.release();
-		labels.release();
+		DataPartitionLocalScheme.Result result = new LocalDataPartitioner(scheme).doPartitioning(workers.size(), features.acquireReadAndRelease(), labels.acquireReadAndRelease());
 		List<MatrixObject> pfs = result.pFeatures;
 		List<MatrixObject> pls = result.pLabels;
 		if (pfs.size() < workers.size()) {

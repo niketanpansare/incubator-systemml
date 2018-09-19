@@ -26,6 +26,11 @@ import org.junit.runners.Suite;
  *  won't run two of them at once. */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
+	OpBindChainTest.class,
+	OpBindTest.class,
+	OpElemWChainTest.class,
+	OpElemWTest.class,
+	OpSingleTest.class,
 	OuterProductTest.class,
 	SelfProductTest.class,
 	SquaredProductChainTest.class,

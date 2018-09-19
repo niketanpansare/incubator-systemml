@@ -22,6 +22,7 @@ import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.math3.distribution.ExponentialDistribution;
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.DenseBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
@@ -52,7 +53,7 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 	}
 	
 	@Override
-	public double estim(MMNode root) {
+	public MatrixCharacteristics estim(MMNode root) {
 		throw new NotImplementedException();
 	}
 
@@ -67,7 +68,7 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 	}
 	
 	@Override
-	public double estim(MatrixBlock m1, MatrixBlock m2){
+	public double estim(MatrixBlock m1, MatrixBlock m2) {
 		LayeredGraph graph = new LayeredGraph(m1, m2, _rounds);
 		return OptimizerUtils.getSparsity(m1.getNumRows(),
 			m2.getNumColumns(), graph.estimateNnz());
@@ -123,7 +124,7 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 				for (int i=0; i<m; i++) {
 					double[] avals = a.values(i);
 					int aix = a.pos(i);
-					for (int j=0; j<m; j++)
+					for (int j=0; j<n; j++)
 						if( avals[aix+j] != 0 )
 							cols[j].addInput(rows[i]);
 				}
@@ -159,6 +160,7 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 				return _input;
 			}
 			
+			@SuppressWarnings("unused")
 			public double[] getVector() {
 				return _rvect;
 			}
@@ -183,8 +185,8 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 					return _rvect = ltmp.get(0);
 				else {
 					double[] tmp = ltmp.get(0).clone();
-					for(int i=1; i<_input.size(); i++) {
-						double[] v2 = _input.get(i).getVector();
+					for(int i=1; i<ltmp.size(); i++) {
+						double[] v2 = ltmp.get(i);
 						for(int j=0; j<rounds; j++)
 							tmp[j] = Math.min(tmp[j], v2[j]);
 					}

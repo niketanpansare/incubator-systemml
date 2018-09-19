@@ -189,10 +189,10 @@ public abstract class Hop implements ParseInfo
 	
 	public void checkAndSetForcedPlatform()
 	{
-		if(DMLScript.USE_ACCELERATOR && DMLScript.FORCE_ACCELERATOR && isGPUEnabled())
+		if(ConfigurationManager.isGPU() && ConfigurationManager.isForcedGPU() && isGPUEnabled())
 			_etypeForced = ExecType.GPU; // enabled with -gpu force option
-		else if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE ) {
-			if(OptimizerUtils.isMemoryBasedOptLevel() && DMLScript.USE_ACCELERATOR && isGPUEnabled()) {
+		else if ( ConfigurationManager.getExecutionMode() == RUNTIME_PLATFORM.SINGLE_NODE ) {
+			if(OptimizerUtils.isMemoryBasedOptLevel() && ConfigurationManager.isGPU() && isGPUEnabled()) {
 				// enabled with -exec singlenode -gpu option
 				_etypeForced = findExecTypeByMemEstimate();
 				if(_etypeForced != ExecType.CP && _etypeForced != ExecType.GPU)
@@ -203,9 +203,9 @@ public abstract class Hop implements ParseInfo
 				_etypeForced = ExecType.CP;  
 			}
 		}
-		else if ( DMLScript.rtplatform == RUNTIME_PLATFORM.HADOOP )
+		else if ( ConfigurationManager.getExecutionMode() == RUNTIME_PLATFORM.HADOOP )
 			_etypeForced = ExecType.MR; // enabled with -exec hadoop option
-		else if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK )
+		else if ( ConfigurationManager.getExecutionMode() == RUNTIME_PLATFORM.SPARK )
 			_etypeForced = ExecType.SPARK; // enabled with -exec spark option
 	}
 	
@@ -217,9 +217,9 @@ public abstract class Hop implements ParseInfo
 			
 			//force exec type mr if necessary
 			if( invalid ) { 
-				if( DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID )
+				if( ConfigurationManager.getExecutionMode() == RUNTIME_PLATFORM.HYBRID )
 					_etype = ExecType.MR;
-				else if( DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK )
+				else if( ConfigurationManager.getExecutionMode() == RUNTIME_PLATFORM.HYBRID_SPARK )
 					_etype = ExecType.SPARK;
 			}
 		}
@@ -290,7 +290,7 @@ public abstract class Hop implements ParseInfo
 	{
 		//determine execution type
 		ExecType et = ExecType.CP;
-		if( DMLScript.rtplatform != RUNTIME_PLATFORM.SINGLE_NODE 
+		if( ConfigurationManager.getExecutionMode() != RUNTIME_PLATFORM.SINGLE_NODE 
 			&& !(getDataType()==DataType.SCALAR) )
 		{
 			et = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
@@ -735,15 +735,15 @@ public abstract class Hop implements ParseInfo
 		char c = ' ';
 		double memEst = getMemEstimate();
 		if ( memEst < OptimizerUtils.getLocalMemBudget() ) {
-			if (DMLScript.USE_ACCELERATOR && isGPUEnabled() && memEst < GPUContextPool.initialGPUMemBudget())
+			if (ConfigurationManager.isGPU() && isGPUEnabled() && memEst < GPUContextPool.initialGPUMemBudget())
 				et = ExecType.GPU;
 			else
 				et = ExecType.CP;
 		}
 		else {
-			if( DMLScript.rtplatform == DMLScript.RUNTIME_PLATFORM.HYBRID )
+			if( ConfigurationManager.getExecutionMode() == DMLScript.RUNTIME_PLATFORM.HYBRID )
 				et = ExecType.MR;
-			else if( DMLScript.rtplatform == DMLScript.RUNTIME_PLATFORM.HYBRID_SPARK )
+			else if( ConfigurationManager.getExecutionMode() == DMLScript.RUNTIME_PLATFORM.HYBRID_SPARK )
 				et = ExecType.SPARK;
 			
 			c = '*';
@@ -1099,7 +1099,9 @@ public abstract class Hop implements ParseInfo
 	public enum OpOpDnn {
 		MAX_POOL, MAX_POOL_BACKWARD, AVG_POOL, AVG_POOL_BACKWARD,
 		CONV2D, CONV2D_BACKWARD_FILTER, CONV2D_BACKWARD_DATA,
-		BIASADD, BIASMULT, BATCH_NORM2D_TEST, CHANNEL_SUMS
+		BIASADD, BIASMULT, BATCH_NORM2D_TEST, CHANNEL_SUMS,
+		UPDATE_NESTEROV_X, RESHAPE_COLMEANS, UPDATE_EMA_VAR, UPDATE_EMA, INV_VAR,
+		BATCH_NORM2D_BACKWARD_DX
 	}
 	
 	public enum DataGenMethod {
@@ -1173,7 +1175,13 @@ public abstract class Hop implements ParseInfo
 		HopsConv2Lops.put(OpOpDnn.CONV2D_BACKWARD_FILTER, org.apache.sysml.lops.DnnTransform.OperationTypes.CONV2D_BACKWARD_FILTER);
 		HopsConv2Lops.put(OpOpDnn.CONV2D_BACKWARD_DATA, org.apache.sysml.lops.DnnTransform.OperationTypes.CONV2D_BACKWARD_DATA);
 		HopsConv2Lops.put(OpOpDnn.BATCH_NORM2D_TEST, org.apache.sysml.lops.DnnTransform.OperationTypes.BATCH_NORM2D_TEST);
+		HopsConv2Lops.put(OpOpDnn.UPDATE_EMA_VAR, org.apache.sysml.lops.DnnTransform.OperationTypes.UPDATE_EMA_VAR);
 		HopsConv2Lops.put(OpOpDnn.CHANNEL_SUMS, org.apache.sysml.lops.DnnTransform.OperationTypes.CHANNEL_SUMS);
+		HopsConv2Lops.put(OpOpDnn.UPDATE_NESTEROV_X, org.apache.sysml.lops.DnnTransform.OperationTypes.UPDATE_NESTEROV_X);
+		HopsConv2Lops.put(OpOpDnn.RESHAPE_COLMEANS, org.apache.sysml.lops.DnnTransform.OperationTypes.RESHAPE_COLMEANS);
+		HopsConv2Lops.put(OpOpDnn.UPDATE_EMA, org.apache.sysml.lops.DnnTransform.OperationTypes.UPDATE_EMA);
+		HopsConv2Lops.put(OpOpDnn.INV_VAR, org.apache.sysml.lops.DnnTransform.OperationTypes.INV_VAR);
+		HopsConv2Lops.put(OpOpDnn.BATCH_NORM2D_BACKWARD_DX, org.apache.sysml.lops.DnnTransform.OperationTypes.BATCH_NORM2D_BACKWARD_DX);
 	}
 
 	protected static final HashMap<Hop.Direction, org.apache.sysml.lops.PartialAggregate.DirectionTypes> HopsDirection2Lops;

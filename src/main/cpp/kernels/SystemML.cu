@@ -772,6 +772,47 @@ extern "C" __global__ void matrix_scalar_op_f(float *A, double scalar, float *C,
   matrix_scalar_op(A, (float)scalar, C, size, op, isLeftScalar);
 }
 
+
+/**
+ * Performs sparse-dense arithmetic operation between a matrix and a scalar.
+ * C = s op A or C = A op s (where A is the matrix, s is the scalar and op is
+ * the operation)
+ * @param cooRowPtrA    row pointers for input matrix allocated on GPU in coo format
+ * @param colPtrA       col index pointers for input matrix allocated on GPU
+ * @param valA          val array for input matrix allocated on GPU
+ * @param scalar        scalar input
+ * @param C             output matrix allocated on GPU
+ * @param nnz           number of non-zero elements in matrix A
+ * @param colsA         number of columns in matrix A
+ * @param op            number code of the arithmetic operation to perform
+ * @param isLeftScalar  whether the scalar is on the left side
+ */
+template <typename T>
+__device__ void sparse_dense_matrix_scalar_op(int* cooRowPtrA, int* colPtrA, T *valA, T scalar, T *C, int nnz, int colsA, int op,
+                                 int isLeftScalar) {
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  if (index < nnz) {
+    T inputVal = valA[index];
+    int outIndex = cooRowPtrA[index]*colsA + colPtrA[index];
+    if (isLeftScalar) {
+      C[outIndex] = binaryOp(scalar, inputVal, op);
+    } else {
+      C[outIndex] = binaryOp(inputVal, scalar, op);
+    }
+  }
+  __syncthreads();
+}
+
+extern "C" __global__ void sparse_dense_matrix_scalar_op_d(int* cooRowPtrA, int* colPtrA, double *valA, double scalar, double *C, 
+	int nnz, int colsA, int op, int isLeftScalar) {
+  sparse_dense_matrix_scalar_op(cooRowPtrA, colPtrA, valA, scalar, C, nnz, colsA, op, isLeftScalar);
+}
+
+extern "C" __global__ void sparse_dense_matrix_scalar_op_f(int* cooRowPtrA, int* colPtrA, float *valA, double scalar, float *C, 
+	int nnz, int colsA, int op, int isLeftScalar) {
+  sparse_dense_matrix_scalar_op(cooRowPtrA, colPtrA, valA, (float) scalar, C, nnz, colsA, op, isLeftScalar);
+}
+
 /**
  * Sets all elements (fills) of a double array of given length with a given
  * scalar value
@@ -2245,5 +2286,102 @@ extern "C" __global__ void prepare_lstm_dinput_d(double* smlInput, double* cudnn
 
 extern "C" __global__ void prepare_lstm_dinput_f(float* smlInput, float* cudnnInput, int N, int D, int TD, int size) {
   prepare_lstm_dinput(smlInput, cudnnInput, N, D, TD, size);
+}
+
+
+template <typename T>
+__device__ void colwise_reshape(T *A, T *C, unsigned int size, 
+	unsigned int inRows, unsigned int inCols,
+	unsigned int outRows, unsigned int outCols) {
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  if (index < size) {
+	int i = index / outCols;
+    int j = index % outCols;
+    int k = (outRows*j+i) % inRows;
+    int l = (outRows*j+i) / inRows;
+    C[index] = A[k*inCols+l];
+  }
+}
+
+extern "C" __global__ void colwise_reshape_d(double *A, double *C, unsigned int size, 
+	unsigned int inRows, unsigned int inCols,
+	unsigned int outRows, unsigned int outCols) {
+  colwise_reshape(A, C, size, inRows, inCols, outRows, outCols);
+}
+
+extern "C" __global__ void colwise_reshape_f(float *A, float *C, unsigned int size, 
+	unsigned int inRows, unsigned int inCols,
+	unsigned int outRows, unsigned int outCols) {
+  colwise_reshape(A, C, size, inRows, inCols, outRows, outCols);
+}
+
+// Performs the operation: out = X - mu*v_prev + (1+mu)*v
+template <typename T>
+__device__ void update_nesterov_x(T *X, T *v, T *v_prev, double mu, T *out, unsigned int size) {
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  if (index < size) {
+	out[index] = X[index] - mu*v_prev[index] + (1+mu)*v[index];
+  }
+}
+
+extern "C" __global__ void update_nesterov_x_d(double *X, double *v, double *v_prev, double mu, double *out, unsigned int size) {
+  update_nesterov_x(X, v, v_prev, mu, out, size);
+}
+
+extern "C" __global__ void update_nesterov_x_f(float *X, float *v, float *v_prev, double mu, float *out, unsigned int size) {
+  update_nesterov_x(X, v, v_prev, mu, out, size);
+}
+
+// Performs the operation: C = a*X + b*C
+template <typename T>
+__device__ void aXplusbC(T *X, T *C, double a, double b, unsigned int size) {
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  if (index < size) {
+	C[index] = a*X[index] + b*C[index];
+  }
+}
+
+extern "C" __global__ void aXplusbC_d(double *X, double *C, double a, double b, unsigned int size) {
+  aXplusbC(X, C, a, b,size);
+}
+
+extern "C" __global__ void aXplusbC_f(float *X, float *C, double a, double b, unsigned int size) {
+  aXplusbC(X, C, a, b,size);;
+}
+
+
+// Performs the operation: C = a*X + b*Y
+template <typename T>
+__device__ void aXplusbY(T *X, T* Y, T *C, double a, double b, unsigned int size) {
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  if (index < size) {
+	C[index] = a*X[index] + b*Y[index];
+  }
+}
+
+extern "C" __global__ void aXplusbY_d(double *X, double* Y, double *C, double a, double b, unsigned int size) {
+  aXplusbY(X, Y, C, a, b, size);
+}
+
+extern "C" __global__ void aXplusbY_f(float *X, float* Y, float *C, double a, double b, unsigned int size) {
+  aXplusbY(X, Y, C, a, b, size);
+}
+
+
+// Performs the operation: C = 1 / sqrt(X + eps)
+template <typename T>
+__device__ void invVar(T *X, T *C, double eps, unsigned int size) {
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  if (index < size) {
+	C[index] = 1.0 / sqrt(X[index] + eps);
+  }
+}
+
+extern "C" __global__ void invVar_d(double *X, double *C, double eps, unsigned int size) {
+  invVar(X, C, eps, size);
+}
+
+extern "C" __global__ void invVar_f(float *X, float *C, double eps, unsigned int size) {
+  invVar(X, C, eps, size);
 }
 

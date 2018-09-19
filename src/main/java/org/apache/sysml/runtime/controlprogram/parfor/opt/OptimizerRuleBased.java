@@ -30,7 +30,6 @@ import java.util.stream.Collectors;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.AggBinaryOp;
@@ -82,6 +81,7 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.util.ProgramConverter;
+import org.apache.sysml.utils.NativeHelper;
 import org.apache.sysml.runtime.controlprogram.parfor.ResultMergeLocalFile;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.CostEstimator.ExcludeType;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.CostEstimator.TestMeasure;
@@ -1223,7 +1223,7 @@ public class OptimizerRuleBased extends Optimizer
 			// otherwise it default to the number of CPU cores and the
 			// operations are run in CP mode
 			//FIXME rework for nested parfor parallelism and body w/o gpu ops
-			if (DMLScript.USE_ACCELERATOR) {
+			if (ConfigurationManager.isGPU()) {
 				long perGPUBudget = GPUContextPool.initialGPUMemBudget();
 				double maxMemUsage = getMaxCPOnlyBudget(n);
 				if (maxMemUsage < perGPUBudget){
@@ -1335,7 +1335,7 @@ public class OptimizerRuleBased extends Optimizer
 						mhop.setMaxNumThreads(opsK); //set max constraint in hop
 						c.setK(opsK); //set optnode k (for explain)
 						//need to recompile SB, if changed constraint
-						recompileSB = true;	
+						recompileSB = true;
 					}
 					//for all other multi-threaded hops set k=1 to simply debugging
 					else if( h instanceof MultiThreadedHop ) {
@@ -1371,7 +1371,11 @@ public class OptimizerRuleBased extends Optimizer
 		//compute max remaining operations parallelism k with slight over-provisioning 
 		//such that k * tmpK <= 1.5 * opsK; note that if parfor already exploits the
 		//maximum parallelism, this will not introduce any over-provisioning.
-		return (int)Math.max(Math.round((double)opsK / tmpK), 1);
+		//(when running with native BLAS/DNN libraries, we disable over-provisioning
+		//to avoid internal SIGFPE and allocation buffer issues w/ MKL and OpenBlas)
+		return NativeHelper.isNativeLibraryLoaded() ?
+			(int) Math.max(opsK / tmpK, 1) :
+			(int) Math.max(Math.round((double)opsK / tmpK), 1);
 	}
 	
 	///////

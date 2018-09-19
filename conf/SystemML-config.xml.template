@@ -97,7 +97,7 @@
     <sysml.floating.point.precision>double</sysml.floating.point.precision>
     
     <!-- the eviction policy for the GPU bufferpool. Supported values are lru, mru, lfu, min_evict, align_memory -->
-    <sysml.gpu.eviction.policy>align_memory</sysml.gpu.eviction.policy>
+    <sysml.gpu.eviction.policy>min_evict</sysml.gpu.eviction.policy>
     
    <!-- maximum wrap length for instruction and miscellaneous timer column of statistics -->
    <sysml.stats.maxWrapLength>30</sysml.stats.maxWrapLength>
@@ -112,4 +112,6 @@
    <!-- Fraction of available GPU memory to use. This is similar to TensorFlow's per_process_gpu_memory_fraction configuration property. (default: 0.9) -->
    <sysml.gpu.memory.util.factor>0.9</sysml.gpu.memory.util.factor>
    
+   <!-- Allocator to use to allocate GPU device memory. Supported values are cuda, unified_memory (default: cuda) -->
+   <sysml.gpu.memory.allocator>cuda</sysml.gpu.memory.allocator>
 </root>

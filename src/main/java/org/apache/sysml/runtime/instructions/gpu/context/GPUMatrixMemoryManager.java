@@ -52,7 +52,7 @@ public class GPUMatrixMemoryManager {
 	long getWorstCaseContiguousMemorySize(GPUObject gpuObj) {
 		long ret = 0;
 		if(!gpuObj.isDensePointerNull()) {
-			if(gpuObj.shadowPointer == null)
+			if(!gpuObj.shadowBuffer.isBuffered())
 				ret = gpuManager.allPointers.get(gpuObj.getDensePointer()).getSizeInBytes();
 			else
 				ret = 0; // evicted hence no contiguous memory on GPU
@@ -124,6 +124,12 @@ public class GPUMatrixMemoryManager {
 	 */
 	Set<Pointer> getPointers(boolean locked, boolean dirty) {
 		return gpuObjects.stream().filter(gObj -> gObj.isLocked() == locked && gObj.isDirty() == dirty).flatMap(gObj -> getPointers(gObj).stream()).collect(Collectors.toSet());
+	}
+
+	Set<Pointer> getPointers(boolean locked, boolean dirty, boolean cleanupEnabled) {
+		return gpuObjects.stream().filter(gObj -> gObj.isLocked() == locked &&
+				gObj.isCleanupEnabled() == cleanupEnabled &&
+				gObj.isDirty() == dirty).flatMap(gObj -> getPointers(gObj).stream()).collect(Collectors.toSet());
 	}
 	
 	/**

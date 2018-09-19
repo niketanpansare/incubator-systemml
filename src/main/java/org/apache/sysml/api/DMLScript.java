@@ -52,6 +52,7 @@ import org.apache.sysml.api.mlcontext.ScriptType;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
+import org.apache.sysml.conf.DMLOptions;
 import org.apache.sysml.debug.DMLDebugger;
 import org.apache.sysml.debug.DMLDebuggerProgramInfo;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -79,6 +80,7 @@ import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.utils.Explain;
+import org.apache.sysml.utils.NativeHelper;
 import org.apache.sysml.utils.Explain.ExplainCounts;
 import org.apache.sysml.utils.Explain.ExplainType;
 import org.apache.sysml.utils.Statistics;
@@ -110,22 +112,19 @@ public class DMLScript
 		// LOOP_AWARE 		// different policies for operations in for/while/parfor loop vs out-side the loop
 	}
 	
-	public static RUNTIME_PLATFORM  rtplatform          = DMLOptions.defaultOptions.execMode;    // the execution mode
-	public static boolean           STATISTICS          = DMLOptions.defaultOptions.stats;       // whether to print statistics
-	public static boolean           FINEGRAINED_STATISTICS  = false;                             // whether to print fine-grained statistics
+	// TODO: Anthony
 	public static boolean           JMLC_MEM_STATISTICS = false;                                 // whether to gather memory use stats in JMLC
-	public static int               STATISTICS_COUNT    = DMLOptions.defaultOptions.statsCount;  // statistics maximum heavy hitter count
-	public static int               STATISTICS_MAX_WRAP_LEN = 30;                                // statistics maximum wrap length
+	
+	// debug mode is deprecated and will be removed soon.
 	public static boolean           ENABLE_DEBUG_MODE   = DMLOptions.defaultOptions.debug;       // debug mode
+	
+	// These flags are not used by JMLC and hence are not cleaned up. We can revisit this later.
 	public static ExplainType       EXPLAIN             = DMLOptions.defaultOptions.explainType; // explain type
 	public static String            DML_FILE_PATH_ANTLR_PARSER = DMLOptions.defaultOptions.filePath; // filename of dml/pydml script
-	public static String            FLOATING_POINT_PRECISION = "double";                         // data type to use internally
-	public static EvictionPolicy    GPU_EVICTION_POLICY = EvictionPolicy.ALIGN_MEMORY;           // currently employed GPU eviction policy
-	public static boolean           PRINT_GPU_MEMORY_INFO = false;                               // whether to print GPU memory-related information
-	public static long            	EVICTION_SHADOW_BUFFER_MAX_BYTES = 0;                         // maximum number of bytes to use for shadow buffer
-	public static long            	EVICTION_SHADOW_BUFFER_CURR_BYTES = 0;                        // number of bytes to use for shadow buffer
-	public static double 			GPU_MEMORY_UTILIZATION_FACTOR = 0.9; 						  // fraction of available GPU memory to use
-
+	
+	// TODO: For now, assume that multiple threads won't attempt to use different floating point precision.
+	public static String            FLOATING_POINT_PRECISION = "double";                         // data type to use internally. 
+	
 	/**
 	 * Global variable indicating the script type (DML or PYDML). Can be used
 	 * for DML/PYDML-specific tasks, such as outputting booleans in the correct
@@ -133,14 +132,6 @@ public class DMLScript
 	 */
 	public static ScriptType        SCRIPT_TYPE         = DMLOptions.defaultOptions.scriptType;
 	
-	public static boolean           USE_ACCELERATOR     = DMLOptions.defaultOptions.gpu;
-	public static boolean           FORCE_ACCELERATOR   = DMLOptions.defaultOptions.forceGPU;
-	// whether to synchronize GPU after every instruction
-	public static boolean           SYNCHRONIZE_GPU  	= true;
-	// whether to perform eager CUDA free on rmvar
-	public static boolean           EAGER_CUDA_FREE  	= false;
-
-
 	public static boolean _suppressPrint2Stdout = false;  // flag that indicates whether or not to suppress any prints to stdout
 	public static boolean USE_LOCAL_SPARK_CONFIG = false; //set default local spark configuration - used for local testing
 	public static boolean _activeAM = false;
@@ -215,7 +206,7 @@ public class DMLScript
 	@SuppressWarnings("null")
 	public static boolean executeScript( Configuration conf, String[] args ) {
 		//parse arguments and set execution properties
-		RUNTIME_PLATFORM oldrtplatform  = rtplatform;  //keep old rtplatform
+		RUNTIME_PLATFORM oldExecMode  = ConfigurationManager.getExecutionMode();  //keep old ConfigurationManager.getExecutionMode()
 		ExplainType oldexplain          = EXPLAIN;     //keep old explain
 
 		DMLOptions dmlOptions = null;
@@ -223,16 +214,12 @@ public class DMLScript
 		try
 		{
 			dmlOptions = DMLOptions.parseCLArguments(args);
+			ConfigurationManager.setGlobalOptions(dmlOptions);
 			
-			STATISTICS          = dmlOptions.stats;
-			STATISTICS_COUNT    = dmlOptions.statsCount;
 			JMLC_MEM_STATISTICS = dmlOptions.memStats;
-			USE_ACCELERATOR     = dmlOptions.gpu;
-			FORCE_ACCELERATOR   = dmlOptions.forceGPU;
 			EXPLAIN             = dmlOptions.explainType;
 			ENABLE_DEBUG_MODE   = dmlOptions.debug;
 			SCRIPT_TYPE         = dmlOptions.scriptType;
-			rtplatform          = dmlOptions.execMode;
 
 			String fnameOptConfig = dmlOptions.configFile;
 			boolean isFile = dmlOptions.filePath != null;
@@ -295,7 +282,7 @@ public class DMLScript
 		}
 		finally {
 			//reset runtime platform and visualize flag
-			rtplatform = oldrtplatform;
+			ConfigurationManager.getDMLOptions().setExecutionMode(oldExecMode);
 			EXPLAIN = oldexplain;
 		}
 		
@@ -412,20 +399,12 @@ public class DMLScript
 		
 		//Step 1: parse configuration files & write any configuration specific global variables
 		DMLConfig dmlconf = DMLConfig.readConfigurationFile(fnameOptConfig);
-		ConfigurationManager.setGlobalConfig(dmlconf);		
+		ConfigurationManager.setGlobalConfig(dmlconf);
 		CompilerConfig cconf = OptimizerUtils.constructCompilerConfig(dmlconf);
 		ConfigurationManager.setGlobalConfig(cconf);
 		LOG.debug("\nDML config: \n" + dmlconf.getConfigInfo());
-
-		// Sets the GPUs to use for this process (a range, all GPUs, comma separated list or a specific GPU)
-		GPUContextPool.AVAILABLE_GPUS = dmlconf.getTextValue(DMLConfig.AVAILABLE_GPUS);
 		
-		String evictionPolicy = dmlconf.getTextValue(DMLConfig.GPU_EVICTION_POLICY).toUpperCase();
-		try {
-			DMLScript.GPU_EVICTION_POLICY = EvictionPolicy.valueOf(evictionPolicy);
-		} catch(IllegalArgumentException e) {
-			throw new RuntimeException("Unsupported eviction policy:" + evictionPolicy);
-		}
+		setGlobalFlags(dmlconf);
 
 		//Step 2: set local/remote memory if requested (for compile in AM context) 
 		if( dmlconf.getBooleanValue(DMLConfig.YARN_APPMASTER) ){
@@ -487,7 +466,7 @@ public class DMLScript
 		ExecutionContext ec = null;
 		try {
 			ec = ExecutionContextFactory.createContext(rtprog);
-			ScriptExecutorUtils.executeRuntimeProgram(rtprog, ec, dmlconf, STATISTICS ? STATISTICS_COUNT : 0, null);
+			ScriptExecutorUtils.executeRuntimeProgram(rtprog, ec, dmlconf, ConfigurationManager.isStatistics() ? ConfigurationManager.getDMLOptions().getStatisticsMaxHeavyHitters() : 0, null);
 		}
 		finally {
 			if(ec != null && ec instanceof SparkExecutionContext)
@@ -496,6 +475,25 @@ public class DMLScript
 			//cleanup scratch_space and all working dirs
 			cleanupHadoopExecution( dmlconf );
 		}
+	}
+	
+	/**
+	 * Sets the global flags in DMLScript based on user provided configuration
+	 * 
+	 * @param dmlconf user provided configuration
+	 */
+	public static void setGlobalFlags(DMLConfig dmlconf) {
+		// Sets the GPUs to use for this process (a range, all GPUs, comma separated list or a specific GPU)
+		GPUContextPool.AVAILABLE_GPUS = dmlconf.getTextValue(DMLConfig.AVAILABLE_GPUS);
+		
+		CacheableData.CACHING_BUFFER_SIZE = dmlconf.getDoubleValue(DMLConfig.CACHING_BUFFER_SIZE);
+		if(CacheableData.CACHING_BUFFER_SIZE < 0 || CacheableData.CACHING_BUFFER_SIZE > 1) 
+			throw new RuntimeException("Incorrect value (" + CacheableData.CACHING_BUFFER_SIZE + ") for the configuration " + DMLConfig.CACHING_BUFFER_SIZE);
+				
+		NativeHelper.initialize(dmlconf.getTextValue(DMLConfig.NATIVE_BLAS_DIR), dmlconf.getTextValue(DMLConfig.NATIVE_BLAS).trim());
+		
+		DMLScript.FLOATING_POINT_PRECISION = dmlconf.getTextValue(DMLConfig.FLOATING_POINT_PRECISION);
+		org.apache.sysml.runtime.matrix.data.LibMatrixCUDA.resetFloatingPointPrecision();
 	}
 	
 	/**
@@ -571,7 +569,7 @@ public class DMLScript
 		
 		//reset statistics (required if multiple scripts executed in one JVM)
 		Statistics.resetNoOfExecutedJobs();
-		if( STATISTICS )
+		if( ConfigurationManager.isStatistics() )
 			Statistics.reset();
 	}
 	
@@ -662,7 +660,7 @@ public class DMLScript
 
 	private static void printInvocationInfo(String fnameScript, String fnameOptConfig, Map<String,String> argVals) {
 		LOG.debug("****** args to DML Script ******\n" + "UUID: " + getUUID() + "\n" + "SCRIPT PATH: " + fnameScript + "\n" 
-			+ "RUNTIME: " + rtplatform + "\n" + "BUILTIN CONFIG: " + DMLConfig.DEFAULT_SYSTEMML_CONFIG_FILEPATH + "\n"
+			+ "RUNTIME: " + ConfigurationManager.getExecutionMode() + "\n" + "BUILTIN CONFIG: " + DMLConfig.DEFAULT_SYSTEMML_CONFIG_FILEPATH + "\n"
 			+ "OPTIONAL CONFIG: " + fnameOptConfig + "\n");
 		if( !argVals.isEmpty() ) {
 			LOG.debug("Script arguments are: \n");
@@ -674,7 +672,7 @@ public class DMLScript
 	private static void printStartExecInfo(String dmlScriptString) {
 		LOG.info("BEGIN DML run " + getDateTime());
 		LOG.debug("DML script: \n" + dmlScriptString);
-		if (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID) {
+		if (ConfigurationManager.getExecutionMode() == RUNTIME_PLATFORM.HADOOP || ConfigurationManager.getExecutionMode() == RUNTIME_PLATFORM.HYBRID) {
 			String hadoop_home = System.getenv("HADOOP_HOME");
 			LOG.info("HADOOP_HOME: " + hadoop_home);
 		}

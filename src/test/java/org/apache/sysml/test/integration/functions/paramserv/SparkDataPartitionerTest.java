@@ -23,10 +23,11 @@ import java.util.Map;
 import java.util.stream.IntStream;
 
 import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionScheme;
+import org.apache.sysml.runtime.controlprogram.paramserv.dp.DataPartitionLocalScheme;
 import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.junit.Assert;
@@ -40,7 +41,7 @@ public class SparkDataPartitionerTest extends BaseDataPartitionerTest {
 
 	static {
 		DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-		DMLScript.rtplatform = DMLScript.RUNTIME_PLATFORM.SPARK;
+		ConfigurationManager.getDMLOptions().setExecutionMode(DMLScript.RUNTIME_PLATFORM.SPARK);
 		_sec = (SparkExecutionContext) ExecutionContextFactory.createContext(null);
 	}
 
@@ -51,14 +52,14 @@ public class SparkDataPartitionerTest extends BaseDataPartitionerTest {
 
 	@Test
 	public void testSparkDataPartitionerDC() {
-		DataPartitionScheme.Result localResult = launchLocalDataPartitionerDC();
+		DataPartitionLocalScheme.Result localResult = launchLocalDataPartitionerDC();
 		Map<Integer, Tuple2<MatrixBlock, MatrixBlock>> sparkResult = doPartitioning(Statement.PSScheme.DISJOINT_CONTIGUOUS);
 
 		// Compare the both
 		assertResult(localResult, sparkResult);
 	}
 
-	private void assertResult(DataPartitionScheme.Result local, Map<Integer, Tuple2<MatrixBlock, MatrixBlock>> spark) {
+	private void assertResult(DataPartitionLocalScheme.Result local, Map<Integer, Tuple2<MatrixBlock, MatrixBlock>> spark) {
 		IntStream.range(0, WORKER_NUM).forEach(w -> {
 			Assert.assertArrayEquals(local.pFeatures.get(w).acquireRead().getDenseBlockValues(), spark.get(w)._1.getDenseBlockValues(), 0);
 			Assert.assertArrayEquals(local.pLabels.get(w).acquireRead().getDenseBlockValues(), spark.get(w)._2.getDenseBlockValues(), 0);
@@ -69,7 +70,7 @@ public class SparkDataPartitionerTest extends BaseDataPartitionerTest {
 	public void testSparkDataPartitionerDR() {
 		ParamservUtils.SEED = System.nanoTime();
 		MatrixBlock[] mbs = generateData();
-		DataPartitionScheme.Result localResult = launchLocalDataPartitionerDR(mbs);
+		DataPartitionLocalScheme.Result localResult = launchLocalDataPartitionerDR(mbs);
 		Map<Integer, Tuple2<MatrixBlock, MatrixBlock>> sparkResult = doPartitioning(Statement.PSScheme.DISJOINT_RANDOM);
 
 		// Compare the both
@@ -78,7 +79,7 @@ public class SparkDataPartitionerTest extends BaseDataPartitionerTest {
 
 	@Test
 	public void testSparkDataPartitionerDRR() {
-		DataPartitionScheme.Result localResult = launchLocalDataPartitionerDRR();
+		DataPartitionLocalScheme.Result localResult = launchLocalDataPartitionerDRR();
 		Map<Integer, Tuple2<MatrixBlock, MatrixBlock>> sparkResult = doPartitioning(Statement.PSScheme.DISJOINT_ROUND_ROBIN);
 
 		// Compare the both
@@ -88,7 +89,7 @@ public class SparkDataPartitionerTest extends BaseDataPartitionerTest {
 	@Test
 	public void testSparkDataPartitionerOR() {
 		ParamservUtils.SEED = System.nanoTime();
-		DataPartitionScheme.Result localResult = launchLocalDataPartitionerOR();
+		DataPartitionLocalScheme.Result localResult = launchLocalDataPartitionerOR();
 		Map<Integer, Tuple2<MatrixBlock, MatrixBlock>> sparkResult = doPartitioning(Statement.PSScheme.OVERLAP_RESHUFFLE);
 
 		// Compare the both
