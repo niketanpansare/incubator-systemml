@@ -93,14 +93,14 @@ public class PersistentLRUCache extends LinkedHashMap<String, ValueWrapper> {
 	public static void main(String [] args) throws IOException {
 		org.apache.log4j.Logger.getRootLogger().setLevel(Level.DEBUG);
 		double numBytesInMB = 1e+7;
-		int numDoubleInMB = (int) (numBytesInMB / 8);
+		int numDoubleIn50MB = (int) (50.0*numBytesInMB / 8.0);
 		long maxMemory = Runtime.getRuntime().maxMemory();
 		double multiplier = 2.0; // 0.3; // Use value > 1 to test GC and < 1 to test max capacity
 		PersistentLRUCache cache = new PersistentLRUCache((long)(maxMemory*multiplier));
-		long numIter = (long) ((2.0*maxMemory) / numBytesInMB);
+		long numIter = (long) ((3.0*maxMemory) / numBytesInMB);
 		for(long i = 0; i < numIter; ++i) {
-			LOG.debug("Putting a double array of size 1MB.");
-			cache.put("file_" + i, new double[numDoubleInMB]);
+			LOG.debug("Putting a double array of size 50MB.");
+			cache.put("file_" + i, new double[numDoubleIn50MB]);
 		}
 		cache.clear();
 	}
