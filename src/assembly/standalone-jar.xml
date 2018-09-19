@@ -71,7 +71,7 @@
 				</excludes>
 			</unpackOptions>
 		</dependencySet>
-
+		
 		<dependencySet>
 			<includes>
 				<include>*:${artifactId}*</include>

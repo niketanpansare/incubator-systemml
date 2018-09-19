@@ -60,6 +60,12 @@ public class GPUObject {
 	 */
 	private final GPUContext gpuContext;
 
+	private boolean _cleanupEnabled = true;
+
+	public void enableCleanup(boolean flag) { this._cleanupEnabled = flag; }
+
+	public boolean isCleanupEnabled() { return this._cleanupEnabled; }
+
 	/**
 	 * Pointer to the underlying dense matrix block on GPU
 	 */
