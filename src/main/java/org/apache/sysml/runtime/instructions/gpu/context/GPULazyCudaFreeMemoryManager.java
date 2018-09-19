@@ -45,6 +45,7 @@ public class GPULazyCudaFreeMemoryManager {
 	 */
 	private HashMap<Long, Set<Pointer>> rmvarGPUPointers = new HashMap<Long, Set<Pointer>>();
 	
+	
 	/**
 	 * Get any pointer of the given size from rmvar-ed pointers (applicable if eager cudaFree is set to false)
 	 * 
@@ -116,6 +117,14 @@ public class GPULazyCudaFreeMemoryManager {
 			return A;
 		}
 		return null;
+	}
+	
+	public boolean containsRmvarPointerMinSize(String opcode, long minSize) throws DMLRuntimeException {
+		if(rmvarGPUPointers.containsKey(minSize))
+			return true;
+		Optional<Long> toClear = rmvarGPUPointers.entrySet().stream().filter(e -> e.getValue().size() > 0).map(e -> e.getKey())
+				.filter(size -> size >= minSize).min((s1, s2) -> s1 < s2 ? -1 : 1);
+		return toClear.isPresent();
 	}
 	
 	

@@ -178,7 +178,7 @@ public class SinglePrecisionCudaSupportFunctions implements CudaSupportFunctions
 		// However, the conversion requires an additional space to be allocated for the conversion, which can lead to infinite recursion 
 		// during eviction: `evict -> devictToHost -> float2double -> allocate -> ensureFreeSpace -> evict`. 
 		// To avoid this recursion, it is necessary to perform this conversion in host.
-		if(PERFORM_CONVERSION_ON_DEVICE && !isEviction) {
+		if(gCtx.getMemoryManager().canAllocateWithoutEviction(instName, sizeOfDouble(dest.length)) && !isEviction) {
 			Pointer deviceDoubleData = gCtx.allocate(instName, sizeOfDouble(dest.length));
 			LibMatrixCUDA.float2double(gCtx, src, deviceDoubleData, dest.length);
 			cudaMemcpy(Pointer.to(dest), deviceDoubleData, sizeOfDouble(dest.length), cudaMemcpyDeviceToHost);
@@ -206,7 +206,7 @@ public class SinglePrecisionCudaSupportFunctions implements CudaSupportFunctions
 		LOG.debug("Potential OOM: Allocated additional space in hostToDevice");
 		// TODO: Perform conversion on GPU using double2float and float2double kernels
 		long t0 = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
-		if(PERFORM_CONVERSION_ON_DEVICE) {
+		if(gCtx.getMemoryManager().canAllocateWithoutEviction(instName, sizeOfDouble(src.length))) {
 			Pointer deviceDoubleData = gCtx.allocate(instName, sizeOfDouble(src.length));
 			cudaMemcpy(deviceDoubleData, Pointer.to(src), sizeOfDouble(src.length), cudaMemcpyHostToDevice);
 			LibMatrixCUDA.double2float(gCtx, deviceDoubleData, dest, src.length);
