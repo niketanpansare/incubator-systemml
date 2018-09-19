@@ -78,7 +78,7 @@ import org.apache.sysml.runtime.util.FastBufferedDataOutputStream;
  * This class does not assume minimum capacity and hence only soft references.
  * 
  * To test this class, please use the below command:
- * java -cp systemml-*-standalone.jar:commons-lang3-3.8.jar org.apache.sysml.utils.PersistentLRUCache.
+ * java -cp systemml-1.3.0-SNAPSHOT-standalone.jar:commons-lang3-3.8.jar org.apache.sysml.utils.PersistentLRUCache
  */
 public class PersistentLRUCache extends LinkedHashMap<String, ValueWrapper> {
 	static final Log LOG = LogFactory.getLog(PersistentLRUCache.class.getName());
@@ -95,7 +95,8 @@ public class PersistentLRUCache extends LinkedHashMap<String, ValueWrapper> {
 		double numBytesInMB = 1e+7;
 		int numDoubleInMB = (int) (numBytesInMB / 8);
 		long maxMemory = Runtime.getRuntime().maxMemory();
-		PersistentLRUCache cache = new PersistentLRUCache((long)(maxMemory*0.3));
+		double multiplier = 2.0; // 0.3; // Use value > 1 to test GC and < 1 to test max capacity
+		PersistentLRUCache cache = new PersistentLRUCache((long)(maxMemory*multiplier));
 		long numIter = (long) ((2.0*maxMemory) / numBytesInMB);
 		for(long i = 0; i < numIter; ++i) {
 			LOG.debug("Putting a double array of size 1MB.");
