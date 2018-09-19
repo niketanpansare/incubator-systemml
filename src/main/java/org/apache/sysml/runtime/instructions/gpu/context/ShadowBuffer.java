@@ -145,7 +145,7 @@ public class ShadowBuffer {
 	 */
 	public boolean isEligibleForBuffering(boolean isEviction, boolean eagerDelete) {
 		if(LibMatrixCUDA.sizeOfDataType == jcuda.Sizeof.FLOAT && isEviction && eagerDelete && !gpuObj.isDensePointerNull()) {
-			int numBytes = GPUObject.toIntExact(getSizeOfFloat(gpuObj.mat.getNumRows()*gpuObj.mat.getNumColumns()));
+			long numBytes = getSizeOfFloat(gpuObj.mat.getNumRows()*gpuObj.mat.getNumColumns());
 			boolean ret = EVICTION_SHADOW_BUFFER_CURR_BYTES + numBytes <= EVICTION_SHADOW_BUFFER_MAX_BYTES;
 			if(!ret && !_warnedAboutShadowBuffer) {
 				LOG.warn("Shadow buffer is full, so using CP bufferpool instead. Consider increasing sysml.gpu.eviction.shadow.bufferSize.");
