@@ -186,9 +186,11 @@ public class SinglePrecisionCudaSupportFunctions implements CudaSupportFunctions
 		}
 		else {
 			LOG.debug("Potential OOM: Allocated additional space on host in deviceToHost");
-			FloatBuffer floatData = ByteBuffer.allocateDirect(LibMatrixCUDA.toInt(sizeOfFloat(dest.length))).order(ByteOrder.nativeOrder()).asFloatBuffer();
+			float[] floatData = new float[dest.length];
 			cudaMemcpy(Pointer.to(floatData), src, sizeOfFloat(dest.length), cudaMemcpyDeviceToHost);
-			LibMatrixNative.fromFloatBuffer(floatData, dest);
+			for(int i = 0; i < dest.length; i++) {
+				dest[i] = floatData[i];
+			}
 		}
 		if(ConfigurationManager.isStatistics()) {
 			long totalTime = System.nanoTime() - t0;
@@ -211,8 +213,11 @@ public class SinglePrecisionCudaSupportFunctions implements CudaSupportFunctions
 			gCtx.cudaFreeHelper(instName, deviceDoubleData, gCtx.EAGER_CUDA_FREE);
 		}
 		else {
-			FloatBuffer floatData = ByteBuffer.allocateDirect(LibMatrixCUDA.toInt(sizeOfFloat(src.length))).order(ByteOrder.nativeOrder()).asFloatBuffer();
-			IntStream.range(0, src.length).parallel().forEach(i -> floatData.put(i, (float)src[i]));
+			LOG.debug("Potential OOM: Allocated additional space on host in hostToDevice");
+			float[] floatData = new float[src.length];
+			for(int i = 0; i < src.length; i++) {
+				floatData[i] = (float) src[i];
+			}
 			cudaMemcpy(dest, Pointer.to(floatData), sizeOfFloat(src.length), cudaMemcpyHostToDevice);
 		}
 		
