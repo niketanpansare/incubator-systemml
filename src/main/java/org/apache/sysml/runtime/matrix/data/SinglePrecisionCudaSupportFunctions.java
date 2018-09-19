@@ -179,15 +179,15 @@ public class SinglePrecisionCudaSupportFunctions implements CudaSupportFunctions
 		// during eviction: `evict -> devictToHost -> float2double -> allocate -> ensureFreeSpace -> evict`. 
 		// To avoid this recursion, it is necessary to perform this conversion in host.
 		if(PERFORM_CONVERSION_ON_DEVICE && !isEviction) {
-			Pointer deviceDoubleData = gCtx.allocate(instName, ((long)dest.length)*Sizeof.DOUBLE);
+			Pointer deviceDoubleData = gCtx.allocate(instName, sizeOfDouble(dest.length));
 			LibMatrixCUDA.float2double(gCtx, src, deviceDoubleData, dest.length);
-			cudaMemcpy(Pointer.to(dest), deviceDoubleData, ((long)dest.length)*Sizeof.DOUBLE, cudaMemcpyDeviceToHost);
+			cudaMemcpy(Pointer.to(dest), deviceDoubleData, sizeOfDouble(dest.length), cudaMemcpyDeviceToHost);
 			gCtx.cudaFreeHelper(instName, deviceDoubleData, gCtx.EAGER_CUDA_FREE);
 		}
 		else {
 			LOG.debug("Potential OOM: Allocated additional space on host in deviceToHost");
-			FloatBuffer floatData = ByteBuffer.allocateDirect(Sizeof.FLOAT*dest.length).order(ByteOrder.nativeOrder()).asFloatBuffer();
-			cudaMemcpy(Pointer.to(floatData), src, ((long)dest.length)*Sizeof.FLOAT, cudaMemcpyDeviceToHost);
+			FloatBuffer floatData = ByteBuffer.allocateDirect(LibMatrixCUDA.toInt(sizeOfFloat(dest.length))).order(ByteOrder.nativeOrder()).asFloatBuffer();
+			cudaMemcpy(Pointer.to(floatData), src, sizeOfFloat(dest.length), cudaMemcpyDeviceToHost);
 			LibMatrixNative.fromFloatBuffer(floatData, dest);
 		}
 		if(ConfigurationManager.isStatistics()) {
@@ -205,15 +205,15 @@ public class SinglePrecisionCudaSupportFunctions implements CudaSupportFunctions
 		// TODO: Perform conversion on GPU using double2float and float2double kernels
 		long t0 = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
 		if(PERFORM_CONVERSION_ON_DEVICE) {
-			Pointer deviceDoubleData = gCtx.allocate(instName, ((long)src.length)*Sizeof.DOUBLE);
-			cudaMemcpy(deviceDoubleData, Pointer.to(src), ((long)src.length)*Sizeof.DOUBLE, cudaMemcpyHostToDevice);
+			Pointer deviceDoubleData = gCtx.allocate(instName, sizeOfDouble(src.length));
+			cudaMemcpy(deviceDoubleData, Pointer.to(src), sizeOfDouble(src.length), cudaMemcpyHostToDevice);
 			LibMatrixCUDA.double2float(gCtx, deviceDoubleData, dest, src.length);
 			gCtx.cudaFreeHelper(instName, deviceDoubleData, gCtx.EAGER_CUDA_FREE);
 		}
 		else {
-			FloatBuffer floatData = ByteBuffer.allocateDirect(Sizeof.FLOAT*src.length).order(ByteOrder.nativeOrder()).asFloatBuffer();
+			FloatBuffer floatData = ByteBuffer.allocateDirect(LibMatrixCUDA.toInt(sizeOfFloat(src.length))).order(ByteOrder.nativeOrder()).asFloatBuffer();
 			IntStream.range(0, src.length).parallel().forEach(i -> floatData.put(i, (float)src[i]));
-			cudaMemcpy(dest, Pointer.to(floatData), ((long)src.length)*Sizeof.FLOAT, cudaMemcpyHostToDevice);
+			cudaMemcpy(dest, Pointer.to(floatData), sizeOfFloat(src.length), cudaMemcpyHostToDevice);
 		}
 		
 		if(ConfigurationManager.isStatistics()) {
@@ -223,5 +223,13 @@ public class SinglePrecisionCudaSupportFunctions implements CudaSupportFunctions
 			if(ConfigurationManager.isFinegrainedStatistics() && instName != null) 
 				GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_HOST_TO_DEVICE, totalTime);
 		}
+	}
+	
+	private long sizeOfFloat(long numElems) {
+		return Sizeof.FLOAT*numElems;
+	}
+	
+	private long sizeOfDouble(long numElems) {
+		return Sizeof.DOUBLE*numElems;
 	}
 }
