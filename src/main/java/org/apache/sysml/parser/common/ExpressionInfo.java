@@ -37,4 +37,21 @@ public class ExpressionInfo {
 	public Expression from = null;
 	public Expression to = null;
 	public Expression increment = null;
+	
+	public StringBuilder sb = null;
+	
+	public void appendText(StringBuilder newSb, org.apache.sysml.parser.dml.DmlParser.ExpressionContext ctx) {
+		if(sb != null)
+			newSb.append(sb.toString());
+		else
+			newSb.append(ctx.getText());
+	}
+	
+	public void appendText(StringBuilder newSb, org.apache.sysml.parser.dml.DmlParser.DataIdentifierContext ctx) {
+		if(sb != null)
+			newSb.append(sb.toString());
+		else
+			newSb.append(ctx.getText());
+	}
+	
 }

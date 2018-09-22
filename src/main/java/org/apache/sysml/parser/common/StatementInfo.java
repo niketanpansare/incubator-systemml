@@ -42,4 +42,7 @@ public class StatementInfo {
 	// Valid only for function statement
 	//public String namespace = DMLProgram.DEFAULT_NAMESPACE;
 	public String functionName = "";
+	
+	public StringBuilder sb = null;
+	
 }
