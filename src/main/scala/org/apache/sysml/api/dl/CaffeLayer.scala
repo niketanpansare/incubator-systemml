@@ -140,6 +140,47 @@ trait CaffeLayer extends BaseDMLGenerator {
     dmlScript.append("\n")
   }
   // --------------------------------------------------------------------------------------
+  
+  def invoke(dmlScript: StringBuilder, namespace1: String, returnVariables: List[String], functionName: String, arguments: List[String]): Unit =
+    invoke(dmlScript, namespace1, returnVariables, functionName, arguments, true)
+  def invoke(dmlScript: StringBuilder, namespace1: String, returnVariables: List[String], functionName: String, arguments: List[String], appendNewLine: Boolean): Unit = {
+    if(Caffe2DML.INLINE_NN_LIBRARY && caffe2dmlObj.isAlreadyImported(namespace1)) {
+      // Simple inline:
+      val dmlStr = caffe2dmlObj.readDMLScript(namespace1)
+      // For now, donot inline recursively
+      if(dmlStr.contains("source"))
+      return
+    }
+    if (returnVariables.length == 0) throw new DMLRuntimeException("User-defined functions should have atleast one return value")
+    if (returnVariables.length > 1) dmlScript.append("[")
+    dmlScript.append(returnVariables(0))
+    if (returnVariables.length > 1) {
+      for (i <- 1 until returnVariables.length) {
+        dmlScript.append(",").append(returnVariables(i))
+      }
+      dmlScript.append("]")
+    }
+    dmlScript.append(" = ")
+    dmlScript.append(namespace1)
+    dmlScript.append(functionName)
+    dmlScript.append("(")
+    if (arguments != null) {
+      if (arguments.length != 0)
+        dmlScript.append(arguments(0))
+      if (arguments.length > 1) {
+        for (i <- 1 until arguments.length) {
+          dmlScript.append(",").append(arguments(i))
+        }
+      }
+    }
+    dmlScript.append(")")
+    if (appendNewLine)
+      dmlScript.append("\n")
+  }
+  def invoke(dmlScript: StringBuilder, namespace1: String, returnVariables: List[String], functionName: String, appendNewLine: Boolean, arguments: String*): Unit =
+    invoke(dmlScript, namespace1, returnVariables, functionName, arguments.toList, appendNewLine)
+  def invoke(dmlScript: StringBuilder, namespace1: String, returnVariables: List[String], functionName: String, arguments: String*): Unit =
+    invoke(dmlScript, namespace1, returnVariables, functionName, arguments.toList, true)
 }
 
 trait IsLossLayer extends CaffeLayer {
