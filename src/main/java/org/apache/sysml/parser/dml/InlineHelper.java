@@ -157,6 +157,34 @@ public class InlineHelper extends CommonSyntacticValidator implements DmlListene
 			variables.add(ctx.getText());
 	}
 	
+	@Override
+	public void enterForStatement(ForStatementContext ctx) {
+		if(currentFunction != null && isRewritePhase) {
+			rewriter.insertBefore(ctx.iterVar, PREFIX_STR);
+			rewriter.insertAfter(ctx.iterVar, PREFIX_STR);
+		}
+	}
+	
+	@Override
+	public void enterParForStatement(ParForStatementContext ctx) {
+		if(currentFunction != null && isRewritePhase) {
+			rewriter.insertBefore(ctx.iterVar, PREFIX_STR);
+			rewriter.insertAfter(ctx.iterVar, PREFIX_STR);
+		}
+	}
+	
+	@Override
+	public void exitForStatement(ForStatementContext ctx) {
+		if(currentFunction != null)
+			variables.add(ctx.iterVar.getText());
+	}
+	
+	@Override
+	public void exitParForStatement(ParForStatementContext ctx) {
+		if(currentFunction != null)
+			variables.add(ctx.iterVar.getText());
+	}
+	
 
 	@Override
 	protected ConvertedDMLSyntax convertToDMLSyntax(ParserRuleContext ctx, String namespace, String functionName,
@@ -272,12 +300,7 @@ public class InlineHelper extends CommonSyntacticValidator implements DmlListene
 		
 		
 	}
-
-	@Override
-	public void enterForStatement(ForStatementContext ctx) {
-		
-		
-	}
+	
 
 	@Override
 	public void enterFunctionCallAssignmentStatement(FunctionCallAssignmentStatementContext ctx) {
@@ -359,12 +382,6 @@ public class InlineHelper extends CommonSyntacticValidator implements DmlListene
 
 	@Override
 	public void enterParameterizedExpression(ParameterizedExpressionContext ctx) {
-		
-		
-	}
-
-	@Override
-	public void enterParForStatement(ParForStatementContext ctx) {
 		
 		
 	}
@@ -543,11 +560,7 @@ public class InlineHelper extends CommonSyntacticValidator implements DmlListene
 		
 	}
 
-	@Override
-	public void exitForStatement(ForStatementContext ctx) {
-		
-		
-	}
+	
 
 	@Override
 	public void exitFunctionCallAssignmentStatement(FunctionCallAssignmentStatementContext ctx) {
@@ -629,12 +642,6 @@ public class InlineHelper extends CommonSyntacticValidator implements DmlListene
 
 	@Override
 	public void exitParameterizedExpression(ParameterizedExpressionContext ctx) {
-		
-		
-	}
-
-	@Override
-	public void exitParForStatement(ParForStatementContext ctx) {
 		
 		
 	}
