@@ -27,6 +27,7 @@ import java.util.Set;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.TokenStreamRewriter;
+import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.sysml.parser.Expression;
@@ -108,7 +109,7 @@ public class InlineHelper extends CommonSyntacticValidator implements DmlListene
 	public void exitInternalFunctionDefExpression(InternalFunctionDefExpressionContext ctx) {
 		StringBuilder sb = new StringBuilder();
 		for(StatementContext stmt : ctx.body) {
-			sb.append(stmt.getText());
+			sb.append(rewriter.getText(new Interval(stmt.start.getStartIndex(), stmt.stop.getStopIndex())));
 			sb.append("\n");
 		}
 		inlineMap.put(currentFunction, new InlineableMethods(currentFunction, sb.toString(), new HashSet<String>(variables)));
