@@ -1,12 +1,32 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package org.apache.sysml.parser.dml;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.TokenStreamRewriter;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.sysml.parser.Expression;
@@ -53,6 +73,7 @@ import org.apache.sysml.parser.dml.DmlParser.PowerExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.ProgramrootContext;
 import org.apache.sysml.parser.dml.DmlParser.RelationalExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.SimpleDataIdentifierExpressionContext;
+import org.apache.sysml.parser.dml.DmlParser.StatementContext;
 import org.apache.sysml.parser.dml.DmlParser.StrictParameterizedExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.StrictParameterizedKeyValueStringContext;
 import org.apache.sysml.parser.dml.DmlParser.TypedArgAssignContext;
@@ -62,12 +83,67 @@ import org.apache.sysml.parser.dml.DmlParser.ValueTypeContext;
 import org.apache.sysml.parser.dml.DmlParser.WhileStatementContext;
 
 public class InlineHelper extends CommonSyntacticValidator implements DmlListener {
-
+	final static String PREFIX_STR = "@@";
+	public HashMap<String, InlineableMethods> inlineMap = new HashMap<>();
+	TokenStreamRewriter rewriter;
+	
+	// Set internally
+	HashSet<String> variables = new HashSet<>();
+	String currentFunction = null;
+	
 	public InlineHelper(CustomErrorListener errorListener, Map<String, String> argVals, String sourceNamespace,
-			Set<String> prepFunctions) {
+			Set<String> prepFunctions, TokenStreamRewriter rewriter1) {
 		super(errorListener, argVals, sourceNamespace, prepFunctions);
-		
+		rewriter = rewriter1;
 	}
+	
+
+	@Override
+	public void enterInternalFunctionDefExpression(InternalFunctionDefExpressionContext ctx) {
+		currentFunction = ctx.name.getText();
+		variables.clear();
+	}
+	
+	@Override
+	public void exitInternalFunctionDefExpression(InternalFunctionDefExpressionContext ctx) {
+		StringBuilder sb = new StringBuilder();
+		for(StatementContext stmt : ctx.body) {
+			sb.append(stmt.getText());
+			sb.append("\n");
+		}
+		inlineMap.put(currentFunction, new InlineableMethods(currentFunction, sb.toString(), new HashSet<String>(variables)));
+		currentFunction = null;
+		variables.clear();
+	}
+	
+	@Override
+	public void enterIndexedExpression(IndexedExpressionContext ctx) {
+		if(currentFunction != null) {
+			rewriter.insertBefore(ctx.start, PREFIX_STR);
+			rewriter.insertAfter(ctx.stop, PREFIX_STR);
+		}
+	}
+	
+	@Override
+	public void exitIndexedExpression(IndexedExpressionContext ctx) {
+		if(currentFunction != null)
+			variables.add(ctx.getText());
+	}
+	
+	@Override
+	public void enterSimpleDataIdentifierExpression(SimpleDataIdentifierExpressionContext ctx) {
+		if(currentFunction != null) {
+			rewriter.insertBefore(ctx.start, PREFIX_STR);
+			rewriter.insertAfter(ctx.stop, PREFIX_STR);
+		}
+	}
+	
+	@Override
+	public void exitSimpleDataIdentifierExpression(SimpleDataIdentifierExpressionContext ctx) {
+		if(currentFunction != null)
+			variables.add(ctx.getText());
+	}
+	
 
 	@Override
 	protected ConvertedDMLSyntax convertToDMLSyntax(ParserRuleContext ctx, String namespace, String functionName,
@@ -221,22 +297,6 @@ public class InlineHelper extends CommonSyntacticValidator implements DmlListene
 	}
 
 	@Override
-	public void enterIndexedExpression(IndexedExpressionContext ctx) {
-		
-		
-	}
-	
-	String currentFunction;
-	StringBuilder body;
-	HashMap<String, String> inlineMap = new HashMap<>();
-
-	@Override
-	public void enterInternalFunctionDefExpression(InternalFunctionDefExpressionContext ctx) {
-		currentFunction = ctx.name.getText();
-		body = new StringBuilder();
-	}
-
-	@Override
 	public void enterIterablePredicateColonExpression(IterablePredicateColonExpressionContext ctx) {
 		
 		
@@ -316,12 +376,6 @@ public class InlineHelper extends CommonSyntacticValidator implements DmlListene
 
 	@Override
 	public void enterRelationalExpression(RelationalExpressionContext ctx) {
-		
-		
-	}
-
-	@Override
-	public void enterSimpleDataIdentifierExpression(SimpleDataIdentifierExpressionContext ctx) {
 		
 		
 	}
@@ -513,18 +567,6 @@ public class InlineHelper extends CommonSyntacticValidator implements DmlListene
 	}
 
 	@Override
-	public void exitIndexedExpression(IndexedExpressionContext ctx) {
-		
-		
-	}
-
-	@Override
-	public void exitInternalFunctionDefExpression(InternalFunctionDefExpressionContext ctx) {
-		
-		
-	}
-
-	@Override
 	public void exitIterablePredicateColonExpression(IterablePredicateColonExpressionContext ctx) {
 		
 		
@@ -607,13 +649,7 @@ public class InlineHelper extends CommonSyntacticValidator implements DmlListene
 		
 		
 	}
-
-	@Override
-	public void exitSimpleDataIdentifierExpression(SimpleDataIdentifierExpressionContext ctx) {
-		
-		
-	}
-
+	
 	@Override
 	public void exitStrictParameterizedExpression(StrictParameterizedExpressionContext ctx) {
 		

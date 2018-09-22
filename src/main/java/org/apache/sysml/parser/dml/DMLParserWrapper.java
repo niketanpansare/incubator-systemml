@@ -23,12 +23,14 @@ import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.DefaultErrorStrategy;
+import org.antlr.v4.runtime.TokenStreamRewriter;
 import org.antlr.v4.runtime.atn.PredictionMode;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -87,6 +89,91 @@ public class DMLParserWrapper extends ParserWrapper
 		return doParse(fileName, dmlScript, null, argVals);
 	}
 	
+	public HashMap<String, InlineableMethods> getInlineableMethods(String fileName, String dmlScript, String sourceNamespace, Map<String,String> argVals) {
+		ANTLRInputStream in;
+		try {
+			if(dmlScript == null) {
+				dmlScript = readDMLScript(fileName, LOG);
+			}
+			
+			InputStream stream = new ByteArrayInputStream(dmlScript.getBytes());
+			in = new ANTLRInputStream(stream);
+		} catch (FileNotFoundException e) {
+			throw new ParseException("Cannot find file/resource: " + fileName, e);
+		} catch (IOException e) {
+			throw new ParseException("Cannot open file: " + fileName, e);
+		} catch (LanguageException e) {
+			throw new ParseException(e.getMessage(), e);
+		}
+		
+		ProgramrootContext ast = null;
+		CustomErrorListener errorListener = new CustomErrorListener();
+		TokenStreamRewriter rewriter = null;
+		try {
+			DmlLexer lexer = new DmlLexer(in);
+			CommonTokenStream tokens = new CommonTokenStream(lexer);
+			rewriter = new TokenStreamRewriter(tokens);
+			DmlParser antlr4Parser = new DmlParser(tokens);
+			
+			boolean tryOptimizedParsing = false; // For now no optimization, since it is not able to parse integer value. 
+	
+			if(tryOptimizedParsing) {
+				// Try faster and simpler SLL
+				antlr4Parser.getInterpreter().setPredictionMode(PredictionMode.SLL);
+				antlr4Parser.removeErrorListeners();
+				antlr4Parser.setErrorHandler(new BailErrorStrategy());
+				try{
+					ast = antlr4Parser.programroot();
+					// If successful, no need to try out full LL(*) ... SLL was enough
+				}
+				catch(ParseCancellationException ex) {
+					// Error occurred, so now try full LL(*) for better error messages
+					tokens.reset();
+					antlr4Parser.reset();
+					if(fileName != null) {
+						errorListener.setCurrentFileName(fileName);
+					}
+					else {
+						errorListener.setCurrentFileName("MAIN_SCRIPT");
+					}
+					// Set our custom error listener
+					antlr4Parser.addErrorListener(errorListener);
+					antlr4Parser.setErrorHandler(new DefaultErrorStrategy());
+					antlr4Parser.getInterpreter().setPredictionMode(PredictionMode.LL);
+					ast = antlr4Parser.programroot();
+				}
+			}
+			else {
+				// Set our custom error listener
+				antlr4Parser.removeErrorListeners();
+				antlr4Parser.addErrorListener(errorListener);
+				errorListener.setCurrentFileName(fileName);
+	
+				// Now do the parsing
+				ast = antlr4Parser.programroot();
+			}
+		}
+		catch(Exception e) {
+			throw new ParseException("ERROR: Cannot parse the program:" + fileName, e);
+		}
+		
+		// Now convert the parse tree into DMLProgram
+		// Do syntactic validation while converting 
+		ParseTree tree = ast;
+		// And also do syntactic validation
+		ParseTreeWalker walker = new ParseTreeWalker();
+		// Get list of function definitions which take precedence over built-in functions if same name
+		DmlPreprocessor prep = new DmlPreprocessor(errorListener);
+		walker.walk(prep,  tree);
+		
+		// Collect tokens:
+		InlineHelper validator = new InlineHelper(errorListener, argVals, sourceNamespace, prep.getFunctionDefs(), rewriter);
+		walker.walk(validator, tree);
+		errorListener.unsetCurrentFileName();
+		return validator.inlineMap;
+		
+	}
+	
 	/**
 	 * This function is supposed to be called directly only from DmlSyntacticValidator when it encounters 'import'
 	 * @param fileName script file name
@@ -96,6 +183,9 @@ public class DMLParserWrapper extends ParserWrapper
 	 * @return dml program, or null if at least one error
 	 */
 	public DMLProgram doParse(String fileName, String dmlScript, String sourceNamespace, Map<String,String> argVals) {
+		
+		getInlineableMethods(fileName, dmlScript, sourceNamespace, argVals);
+		
 		DMLProgram dmlPgm = null;
 		
 		ANTLRInputStream in;

@@ -38,5 +38,4 @@ public class ExpressionInfo {
 	public Expression to = null;
 	public Expression increment = null;
 	
-	public StringBuilder sb = null;
 }
