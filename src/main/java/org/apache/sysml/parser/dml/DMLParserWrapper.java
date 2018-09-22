@@ -107,7 +107,7 @@ public class DMLParserWrapper extends ParserWrapper
 		walker.walk(validator, tree);
 		
 		errorListener = new CustomErrorListener();
-		ast = createAST(fileName, dmlScript, sourceNamespace, argVals, errorListener);
+		ast = createAST(null, rewriter.getText(), sourceNamespace, argVals, errorListener);
 		
 		// Now convert the parse tree into DMLProgram
 		// Do syntactic validation while converting 
@@ -119,6 +119,7 @@ public class DMLParserWrapper extends ParserWrapper
 		walker.walk(prep,  tree);
 				
 		validator.setPhase(false);
+		walker.walk(validator, tree);
 		
 		return validator.inlineMap;
 	}
