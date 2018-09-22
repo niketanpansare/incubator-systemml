@@ -88,7 +88,7 @@ public class InlineHelper extends CommonSyntacticValidator implements DmlListene
 	final static String PREFIX_STR;
 	static {
 		Random rand = new Random();
-		PREFIX_STR = "INTERNAL_PREFIX_" + Math.abs(rand.nextLong()) + "_" + Math.abs(rand.nextLong()); 
+		PREFIX_STR = "INTERNAL_PREFIX_" + Math.abs(rand.nextLong()) + "_" + Math.abs(rand.nextLong()) + "_"; 
 	}
 	public HashMap<String, InlineableMethods> inlineMap = new HashMap<>();
 	TokenStreamRewriter rewriter;
@@ -139,7 +139,7 @@ public class InlineHelper extends CommonSyntacticValidator implements DmlListene
 	
 	@Override
 	public void exitIndexedExpression(IndexedExpressionContext ctx) {
-		if(currentFunction != null && isRewritePhase)
+		if(currentFunction != null)
 			variables.add(ctx.getText());
 	}
 	
@@ -153,7 +153,7 @@ public class InlineHelper extends CommonSyntacticValidator implements DmlListene
 	
 	@Override
 	public void exitSimpleDataIdentifierExpression(SimpleDataIdentifierExpressionContext ctx) {
-		if(currentFunction != null && isRewritePhase)
+		if(currentFunction != null)
 			variables.add(ctx.getText());
 	}
 	

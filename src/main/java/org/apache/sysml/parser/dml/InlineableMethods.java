@@ -33,6 +33,10 @@ public class InlineableMethods {
 		_variables = variables;
 	}
 	
+	public HashSet<String> getLocalVariables() {
+		return _variables;
+	}
+	
 	public String getInlinedDML(int callerID, HashMap<String, String> actualArguments) {
 		String ret = _body;
 		for(String var : _variables) {
