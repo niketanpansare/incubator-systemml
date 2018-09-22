@@ -90,6 +90,43 @@ public class DMLParserWrapper extends ParserWrapper
 	}
 	
 	public HashMap<String, InlineableMethods> getInlineableMethods(String fileName, String dmlScript, String sourceNamespace, Map<String,String> argVals) {
+		CustomErrorListener errorListener = new CustomErrorListener();
+		ProgramrootContext ast = createAST(fileName, dmlScript, sourceNamespace, argVals, errorListener);
+		
+		// Now convert the parse tree into DMLProgram
+		// Do syntactic validation while converting 
+		ParseTree tree = ast;
+		// And also do syntactic validation
+		ParseTreeWalker walker = new ParseTreeWalker();
+		// Get list of function definitions which take precedence over built-in functions if same name
+		DmlPreprocessor prep = new DmlPreprocessor(errorListener);
+		walker.walk(prep,  tree);
+				
+		InlineHelper validator = new InlineHelper(errorListener, argVals, sourceNamespace, prep.getFunctionDefs(), rewriter);
+		validator.setPhase(true);
+		walker.walk(validator, tree);
+		
+		errorListener = new CustomErrorListener();
+		ast = createAST(fileName, dmlScript, sourceNamespace, argVals, errorListener);
+		
+		// Now convert the parse tree into DMLProgram
+		// Do syntactic validation while converting 
+		tree = ast;
+		// And also do syntactic validation
+		walker = new ParseTreeWalker();
+		// Get list of function definitions which take precedence over built-in functions if same name
+		prep = new DmlPreprocessor(errorListener);
+		walker.walk(prep,  tree);
+				
+		validator.setPhase(false);
+		
+		return validator.inlineMap;
+	}
+	
+	TokenStreamRewriter rewriter = null;
+	
+	private ProgramrootContext createAST(String fileName, String dmlScript, String sourceNamespace, 
+			Map<String,String> argVals, CustomErrorListener errorListener) {
 		ANTLRInputStream in;
 		try {
 			if(dmlScript == null) {
@@ -107,8 +144,6 @@ public class DMLParserWrapper extends ParserWrapper
 		}
 		
 		ProgramrootContext ast = null;
-		CustomErrorListener errorListener = new CustomErrorListener();
-		TokenStreamRewriter rewriter = null;
 		try {
 			DmlLexer lexer = new DmlLexer(in);
 			CommonTokenStream tokens = new CommonTokenStream(lexer);
@@ -156,22 +191,7 @@ public class DMLParserWrapper extends ParserWrapper
 		catch(Exception e) {
 			throw new ParseException("ERROR: Cannot parse the program:" + fileName, e);
 		}
-		
-		// Now convert the parse tree into DMLProgram
-		// Do syntactic validation while converting 
-		ParseTree tree = ast;
-		// And also do syntactic validation
-		ParseTreeWalker walker = new ParseTreeWalker();
-		// Get list of function definitions which take precedence over built-in functions if same name
-		DmlPreprocessor prep = new DmlPreprocessor(errorListener);
-		walker.walk(prep,  tree);
-		
-		// Collect tokens:
-		InlineHelper validator = new InlineHelper(errorListener, argVals, sourceNamespace, prep.getFunctionDefs(), rewriter);
-		walker.walk(validator, tree);
-		errorListener.unsetCurrentFileName();
-		return validator.inlineMap;
-		
+		return ast;
 	}
 	
 	/**

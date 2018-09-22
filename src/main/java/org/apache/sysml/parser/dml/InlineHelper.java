@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -84,18 +85,27 @@ import org.apache.sysml.parser.dml.DmlParser.ValueTypeContext;
 import org.apache.sysml.parser.dml.DmlParser.WhileStatementContext;
 
 public class InlineHelper extends CommonSyntacticValidator implements DmlListener {
-	final static String PREFIX_STR = "@@";
+	final static String PREFIX_STR;
+	static {
+		Random rand = new Random();
+		PREFIX_STR = "INTERNAL_PREFIX_" + Math.abs(rand.nextLong()) + "_" + Math.abs(rand.nextLong()); 
+	}
 	public HashMap<String, InlineableMethods> inlineMap = new HashMap<>();
 	TokenStreamRewriter rewriter;
 	
 	// Set internally
 	HashSet<String> variables = new HashSet<>();
 	String currentFunction = null;
+	boolean isRewritePhase;
 	
 	public InlineHelper(CustomErrorListener errorListener, Map<String, String> argVals, String sourceNamespace,
 			Set<String> prepFunctions, TokenStreamRewriter rewriter1) {
 		super(errorListener, argVals, sourceNamespace, prepFunctions);
 		rewriter = rewriter1;
+	}
+	
+	void setPhase(boolean isCollect) {
+		isRewritePhase = isCollect;
 	}
 	
 
@@ -107,19 +117,21 @@ public class InlineHelper extends CommonSyntacticValidator implements DmlListene
 	
 	@Override
 	public void exitInternalFunctionDefExpression(InternalFunctionDefExpressionContext ctx) {
-		StringBuilder sb = new StringBuilder();
-		for(StatementContext stmt : ctx.body) {
-			sb.append(rewriter.getText(new Interval(stmt.start.getStartIndex(), stmt.stop.getStopIndex())));
-			sb.append("\n");
+		if(!isRewritePhase) {
+			StringBuilder sb = new StringBuilder();
+			for(StatementContext stmt : ctx.body) {
+				sb.append(rewriter.getText(new Interval(stmt.start.getStartIndex(), stmt.stop.getStopIndex())));
+				sb.append("\n");
+			}
+			inlineMap.put(currentFunction, new InlineableMethods(currentFunction, sb.toString(), new HashSet<String>(variables)));
 		}
-		inlineMap.put(currentFunction, new InlineableMethods(currentFunction, sb.toString(), new HashSet<String>(variables)));
 		currentFunction = null;
 		variables.clear();
 	}
 	
 	@Override
 	public void enterIndexedExpression(IndexedExpressionContext ctx) {
-		if(currentFunction != null) {
+		if(currentFunction != null && isRewritePhase) {
 			rewriter.insertBefore(ctx.start, PREFIX_STR);
 			rewriter.insertAfter(ctx.stop, PREFIX_STR);
 		}
@@ -127,13 +139,13 @@ public class InlineHelper extends CommonSyntacticValidator implements DmlListene
 	
 	@Override
 	public void exitIndexedExpression(IndexedExpressionContext ctx) {
-		if(currentFunction != null)
+		if(currentFunction != null && isRewritePhase)
 			variables.add(ctx.getText());
 	}
 	
 	@Override
 	public void enterSimpleDataIdentifierExpression(SimpleDataIdentifierExpressionContext ctx) {
-		if(currentFunction != null) {
+		if(currentFunction != null && isRewritePhase) {
 			rewriter.insertBefore(ctx.start, PREFIX_STR);
 			rewriter.insertAfter(ctx.stop, PREFIX_STR);
 		}
@@ -141,7 +153,7 @@ public class InlineHelper extends CommonSyntacticValidator implements DmlListene
 	
 	@Override
 	public void exitSimpleDataIdentifierExpression(SimpleDataIdentifierExpressionContext ctx) {
-		if(currentFunction != null)
+		if(currentFunction != null && isRewritePhase)
 			variables.add(ctx.getText());
 	}
 	
