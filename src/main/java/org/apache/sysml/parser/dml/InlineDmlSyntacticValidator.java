@@ -87,19 +87,19 @@ import org.apache.sysml.parser.dml.DmlParser.WhileStatementContext;
 
 
 class InlineableFunction {
-	// <input/output varname, ___input/output___>
-	HashMap<String, String> inOutVarMapping;
 	HashMap<String, String> internalVarMapping;
-	StringBuilder body;
 	String id;
-	
-	String getInlinedDML(ArrayList<String> inputs, ArrayList<String> outputs) {
-		String _body = body.toString();
-		for(Entry<String, String> kv : inOutVarMapping.entrySet()) {
-			_body = _body.replaceAll(kv.getValue(), kv.getKey());
-		}
-		return _body;
+	static int ID = 0;
+	public InlineableFunction() {
+		id = "" + (ID++);
+		internalVarMapping = new HashMap<String, String>();
 	}
+	
+	@Override
+	protected Object clone() {
+		return new InlineableFunction();
+	}
+	
 }
 
 public class InlineDmlSyntacticValidator extends CommonSyntacticValidator implements DmlListener {
@@ -117,8 +117,8 @@ public class InlineDmlSyntacticValidator extends CommonSyntacticValidator implem
 		return null;
 	}
 
-	Stack<InlineableFunction> fnStack = new Stack<InlineableFunction>();
-	HashMap<String, InlineableFunction> udfs;
+	Stack<InlineableFunction> fnStack = new Stack<>();
+	HashMap<String, InlineableFunction> udfs = new HashMap<>();
 
 	@Override
 	public void exitAccumulatorAssignmentStatement(AccumulatorAssignmentStatementContext ctx) {
@@ -305,9 +305,8 @@ public class InlineDmlSyntacticValidator extends CommonSyntacticValidator implem
 		InlineableFunction fn = getUDF(ctx.name.getText());
 		if(fn != null) {
 			// Perform inlining
-			if(fnStack.pop() != fn) {
-				throw new RuntimeException("Internal Error while inlining.");
-			}
+			fn = fnStack.pop();
+			// TODO:
 		}
 	}
 
@@ -656,7 +655,7 @@ public class InlineDmlSyntacticValidator extends CommonSyntacticValidator implem
 	public void enterFunctionCallAssignmentStatement(FunctionCallAssignmentStatementContext ctx) {
 		InlineableFunction fn = getUDF(ctx.name.getText());
 		if(fn != null) {
-			fnStack.push(fn);
+			fnStack.push((InlineableFunction)fn.clone());
 		}
 	}
 
