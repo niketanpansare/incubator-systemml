@@ -437,8 +437,9 @@ public class InlineHelper extends CommonSyntacticValidator implements DmlListene
 
 	@Override
 	public void exitAccumulatorAssignmentStatement(AccumulatorAssignmentStatementContext ctx) {
-		
-		
+		if(currentFunction != null && isRewritePhase) {
+			rewriter.insertAfter(ctx.stop, ";\n");
+		}
 	}
 
 	@Override
@@ -449,7 +450,9 @@ public class InlineHelper extends CommonSyntacticValidator implements DmlListene
 
 	@Override
 	public void exitAssignmentStatement(AssignmentStatementContext ctx) {
-		
+		if(currentFunction != null && isRewritePhase) {
+			rewriter.insertAfter(ctx.stop, ";\n");
+		}
 		
 	}
 
@@ -545,38 +548,46 @@ public class InlineHelper extends CommonSyntacticValidator implements DmlListene
 
 	@Override
 	public void exitForStatement(ForStatementContext ctx) {
-		
+		if(currentFunction != null && isRewritePhase) {
+			rewriter.insertAfter(ctx.stop, ";\n");
+		}
 		
 	}
 
 	@Override
 	public void exitFunctionCallAssignmentStatement(FunctionCallAssignmentStatementContext ctx) {
-		
-		
+		if(currentFunction != null && isRewritePhase) {
+			rewriter.insertAfter(ctx.stop, ";\n");
+		}
 	}
 
 	@Override
 	public void exitFunctionCallMultiAssignmentStatement(FunctionCallMultiAssignmentStatementContext ctx) {
-		
-		
+		if(currentFunction != null && isRewritePhase) {
+			rewriter.insertAfter(ctx.stop, ";\n");
+		}
 	}
 
 	@Override
 	public void exitIfdefAssignmentStatement(IfdefAssignmentStatementContext ctx) {
-		
-		
+		if(currentFunction != null && isRewritePhase) {
+			rewriter.insertAfter(ctx.stop, ";\n");
+		}
 	}
 
 	@Override
 	public void exitIfStatement(IfStatementContext ctx) {
-		
+		if(currentFunction != null && isRewritePhase) {
+			rewriter.insertAfter(ctx.stop, ";\n");
+		}
 		
 	}
 
 	@Override
 	public void exitImportStatement(ImportStatementContext ctx) {
-		
-		
+		if(currentFunction != null && isRewritePhase) {
+			rewriter.insertAfter(ctx.stop, ";\n");
+		}
 	}
 
 	@Override
@@ -635,14 +646,17 @@ public class InlineHelper extends CommonSyntacticValidator implements DmlListene
 
 	@Override
 	public void exitParForStatement(ParForStatementContext ctx) {
-		
+		if(currentFunction != null && isRewritePhase) {
+			rewriter.insertAfter(ctx.stop, ";\n");
+		}
 		
 	}
 
 	@Override
 	public void exitPathStatement(PathStatementContext ctx) {
-		
-		
+		if(currentFunction != null && isRewritePhase) {
+			rewriter.insertAfter(ctx.stop, ";\n");
+		}
 	}
 
 	@Override
