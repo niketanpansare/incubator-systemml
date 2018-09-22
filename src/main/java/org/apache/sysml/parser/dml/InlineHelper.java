@@ -120,7 +120,7 @@ public class InlineHelper extends CommonSyntacticValidator implements DmlListene
 		if(!isRewritePhase) {
 			StringBuilder sb = new StringBuilder();
 			for(StatementContext stmt : ctx.body) {
-				sb.append(rewriter.getText(new Interval(stmt.start.getStartIndex(), stmt.stop.getStopIndex())));
+				sb.append(stmt.getText());
 				sb.append("\n");
 			}
 			inlineMap.put(currentFunction, new InlineableMethods(currentFunction, sb.toString(), new HashSet<String>(variables)));
