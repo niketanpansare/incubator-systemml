@@ -184,8 +184,6 @@ public class DMLParserWrapper extends ParserWrapper
 	 */
 	public DMLProgram doParse(String fileName, String dmlScript, String sourceNamespace, Map<String,String> argVals) {
 		
-		getInlineableMethods(fileName, dmlScript, sourceNamespace, argVals);
-		
 		DMLProgram dmlPgm = null;
 		
 		ANTLRInputStream in;
