@@ -23,24 +23,32 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import org.apache.sysml.runtime.DMLRuntimeException;
+
 public class InlineableMethods {
 	ArrayList<String> _variables;
 	final String _body;
 	final String _fnName;
+	final ArrayList<String> _inputArgs;
+	final ArrayList<String> _retVariables;
+	static int CALLER_ID = 1;
 	
-	public InlineableMethods(String fnName, String body, HashSet<String> variables) {
+	public InlineableMethods(String fnName, String body, HashSet<String> variables, ArrayList<String> inputArgs, ArrayList<String> retVariables) {
 		_fnName = fnName;
 		_body = body;
 		_variables = new ArrayList<String>(variables);
 		_variables.sort(Comparator.comparing(String::length).reversed());
+		_inputArgs = inputArgs;
+		_retVariables = retVariables;
 	}
 	
 	public ArrayList<String> getLocalVariables() {
 		return _variables;
 	}
 	
-	public String getInlinedDML(int callerID, HashMap<String, String> actualArguments) {
+	private String _getInlinedDML(HashMap<String, String> actualArguments) {
 		String ret = _body;
+		int callerID = CALLER_ID++;
 		for(String var : _variables) {
 			String originalVarName = var.substring(InlineHelper.ARG_PREFIX.length());
 			if(actualArguments.containsKey(originalVarName)) {
@@ -52,6 +60,23 @@ public class InlineableMethods {
 			}
 		}
 		return ret;
+	}
+	
+	public String getInlinedDML(ArrayList<String> actualInputArgs, ArrayList<String> actualRetVariables) {
+		HashMap<String, String> actualArguments = new HashMap<>();
+		if(actualInputArgs.size() != _inputArgs.size()) {
+			throw new DMLRuntimeException("Incorrect number of input arguments: expected " + _inputArgs.size() + " but found " + actualInputArgs.size());
+		}
+		if(actualRetVariables.size() != _retVariables.size()) {
+			throw new DMLRuntimeException("Incorrect number of return variables: expected " + _retVariables.size() + " but found " + actualRetVariables.size());
+		}
+		for(int i = 0; i < _inputArgs.size(); i++) {
+			actualArguments.put(_inputArgs.get(i), actualInputArgs.get(i));
+		}
+		for(int i = 0; i < _retVariables.size(); i++) {
+			actualArguments.put(_retVariables.get(i), actualRetVariables.get(i));
+		}
+		return _getInlinedDML(actualArguments);
 	}
 	
 	static final String LOCAL_ARG_PREFIX;

@@ -26,6 +26,8 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import scala.collection.JavaConversions._
 import caffe.Caffe
 import org.apache.sysml.parser.ParserWrapper
+import org.apache.sysml.parser.dml.DMLParserWrapper
+import org.apache.sysml.parser.dml.InlineableMethods
 
 trait BaseDMLGenerator {
   def commaSep(arr: List[String]): String =
@@ -137,7 +139,17 @@ trait SourceDMLGenerator extends TabbedDMLGenerator {
       alreadyImported.add(sourceFileName)
     }
   def isAlreadyImported(namesSpace:String):Boolean = namesSpace != null && !namesSpace.isEmpty && alreadyImported.contains(namesSpace)
-  def readDMLScript(namesSpace:String):String = ParserWrapper.readDMLScript(Caffe2DML.layerDir + namesSpace + ".dml", Caffe2DML.LOG)
+  def readDMLScript(fileName:String):String = ParserWrapper.readDMLScript(fileName, Caffe2DML.LOG)
+  val inlineableMethods = new java.util.HashMap[String, java.util.HashMap[String, InlineableMethods]]()
+  def getInlineableMethod(namespace:String, fnName:String):InlineableMethods = {
+    if(inlineableMethods.contains(namespace))
+      return inlineableMethods.get(namespace).get(fnName)
+    else {
+      val ret = new DMLParserWrapper().getInlineableMethods(Caffe2DML.layerDir + namespace + ".dml", null, namespace, null)
+      inlineableMethods.put(namespace, ret)
+      return ret.get(fnName)
+    }
+  }
   def source(dmlScript: StringBuilder, numTabs: Int, net: CaffeNetwork, solver: CaffeSolver, otherFiles: Array[String]): Unit = {
     // Add layers with multiple source files
     if (net.getLayers.filter(layer => net.getCaffeLayer(layer).isInstanceOf[SoftmaxWithLoss]).length > 0) {
