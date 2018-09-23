@@ -160,8 +160,6 @@ object Caffe2DML {
   val BATCH_ALGORITHM = "batch"
   val ALLREDUCE_ALGORITHM = "allreduce"
   val ALLREDUCE_PARALLEL_BATCHES_ALGORITHM = "allreduce_parallel_batches"
-  
-  var INLINE_NN_LIBRARY = true
 }
 
 class Caffe2DML(val sc: SparkContext,
@@ -306,6 +304,7 @@ class Caffe2DML(val sc: SparkContext,
   // Comma is included
   def getParforParameters():String = if (inputs.containsKey("$parfor_parameters")) inputs.get("$parfor_parameters") else ""
 
+  var INLINE_NN_LIBRARY = true
   // ================================================================================================
   // The below method parses the provided network and solver file and generates DML script.
   def getTrainingScript(isSingleNode: Boolean): (Script, String, String) = {
@@ -315,7 +314,7 @@ class Caffe2DML(val sc: SparkContext,
 
     // Flags passed by user
     val DEBUG_TRAINING = if (inputs.containsKey("$debug")) inputs.get("$debug").toLowerCase.toBoolean else false
-    Caffe2DML.INLINE_NN_LIBRARY = if (inputs.containsKey("$inline_nn_library")) inputs.get("$inline_nn_library").toLowerCase.toBoolean else false
+    INLINE_NN_LIBRARY = if (inputs.containsKey("$inline_nn_library")) inputs.get("$inline_nn_library").toLowerCase.toBoolean else true
     assign(tabDMLScript, "debug", if (DEBUG_TRAINING) "TRUE" else "FALSE")
     setDebugFlags(DEBUG_TRAINING)
 

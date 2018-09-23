@@ -138,7 +138,6 @@ trait SourceDMLGenerator extends TabbedDMLGenerator {
       tabDMLScript(dmlScript, numTabs).append("source(\"" + dir + sourceFileName + ".dml\") as " + sourceFileName + "\n")
       alreadyImported.add(sourceFileName)
     }
-  def isAlreadyImported(namesSpace:String):Boolean = namesSpace != null && !namesSpace.isEmpty && alreadyImported.contains(namesSpace)
   def readDMLScript(fileName:String):String = ParserWrapper.readDMLScript(fileName, Caffe2DML.LOG)
   val inlineableMethods = new java.util.HashMap[String, java.util.HashMap[String, InlineableMethods]]()
   def getInlineableMethod(namespace:String, fnName:String):InlineableMethods = {
