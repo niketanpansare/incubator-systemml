@@ -56,7 +56,8 @@ public class InlineableMethods {
 	
 	static final String LOCAL_ARG_PREFIX;
 	static {
-		Random rand = new Random();
-		LOCAL_ARG_PREFIX = "INTERNAL_" + Math.abs(rand.nextLong()) + "_" + Math.abs(rand.nextLong());
+//		Random rand = new Random();
+//		LOCAL_ARG_PREFIX = "LOCAL_" + Math.abs(rand.nextLong()) + "_";
+		LOCAL_ARG_PREFIX = "LOCAL_";
 	}
 }
