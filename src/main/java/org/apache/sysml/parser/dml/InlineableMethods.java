@@ -40,7 +40,7 @@ public class InlineableMethods {
 	public String getInlinedDML(int callerID, HashMap<String, String> actualArguments) {
 		String ret = _body;
 		for(String var : _variables) {
-			String originalVarName = var.substring(InlineHelper.PREFIX_STR.length()).trim();
+			String originalVarName = var.substring(InlineHelper.PREFIX_STR.length());
 			if(actualArguments.containsKey(originalVarName)) {
 				ret = ret.replaceAll(var, actualArguments.get(originalVarName));
 			}
