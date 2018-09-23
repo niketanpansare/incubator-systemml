@@ -140,11 +140,11 @@ trait SourceDMLGenerator extends TabbedDMLGenerator {
     }
   def readDMLScript(fileName:String):String = ParserWrapper.readDMLScript(fileName, Caffe2DML.LOG)
   val inlineableMethods = new java.util.HashMap[String, java.util.HashMap[String, InlineableMethods]]()
-  def getInlineableMethod(namespace:String, fnName:String):InlineableMethods = {
+  def getInlineableMethod(sourceFilePath:String, namespace:String, fnName:String):InlineableMethods = {
     if(inlineableMethods.contains(namespace))
       return inlineableMethods.get(namespace).get(fnName)
     else {
-      val ret = new DMLParserWrapper().getInlineableMethods(Caffe2DML.layerDir + namespace + ".dml", null, namespace, null)
+      val ret = new DMLParserWrapper().getInlineableMethods(sourceFilePath, null, namespace, null)
       inlineableMethods.put(namespace, ret)
       return ret.get(fnName)
     }
