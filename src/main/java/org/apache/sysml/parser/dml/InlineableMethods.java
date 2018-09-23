@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-
 import org.apache.sysml.runtime.DMLRuntimeException;
 
 public class InlineableMethods {
@@ -51,8 +50,8 @@ public class InlineableMethods {
 		int callerID = CALLER_ID++;
 		for(String var : _variables) {
 			String originalVarName = var.substring(InlineHelper.ARG_PREFIX.length());
-			if(actualArguments.containsKey(originalVarName)) {
-				ret = ret.replaceAll(var, actualArguments.get(originalVarName));
+			if(actualArguments.containsKey(var)) {
+				ret = ret.replaceAll(var, actualArguments.get(var));
 			}
 			else {
 				// internal argument
