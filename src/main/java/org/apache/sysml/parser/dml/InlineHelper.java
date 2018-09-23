@@ -132,14 +132,14 @@ public class InlineHelper extends CommonSyntacticValidator implements DmlListene
 	@Override
 	public void enterIndexedExpression(IndexedExpressionContext ctx) {
 		if(currentFunction != null && isRewritePhase) {
-			rewriter.insertBefore(ctx.start, PREFIX_STR);
+			rewriter.insertBefore(ctx.name, PREFIX_STR);
 		}
 	}
 	
 	@Override
 	public void exitIndexedExpression(IndexedExpressionContext ctx) {
 		if(currentFunction != null)
-			variables.add(ctx.getText());
+			variables.add(ctx.name.getText());
 	}
 	
 	@Override
