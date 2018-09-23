@@ -29,7 +29,7 @@ import caffe.Caffe.EltwiseParameter.EltwiseOp
 import org.apache.sysml.runtime.DMLRuntimeException;
 import java.util.ArrayList
 import caffe.Caffe.PoolingParameter.PoolMethod
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
 trait CaffeLayer extends BaseDMLGenerator {
   // -------------------------------------------------
@@ -149,7 +149,7 @@ trait CaffeLayer extends BaseDMLGenerator {
     if(Caffe2DML.INLINE_NN_LIBRARY && caffe2dmlObj.isAlreadyImported(namespace1)) {
       // For now, donot inline recursively
       val method = caffe2dmlObj.getInlineableMethod(namespace1, functionName)
-      dmlScript.append(method.getInlinedDML(arguments, returnVariables))
+      dmlScript.append(method.getInlinedDML(arguments.asJava, returnVariables.asJava))
       dmlScript.append("\n")
       return
     }
