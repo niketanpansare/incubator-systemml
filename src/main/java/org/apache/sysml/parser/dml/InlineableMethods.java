@@ -18,43 +18,45 @@
  */
 package org.apache.sysml.parser.dml;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Random;
 
 public class InlineableMethods {
-	HashSet<String> _variables = new HashSet<>();
-	String _body;
-	String _fnName;
+	ArrayList<String> _variables;
+	final String _body;
+	final String _fnName;
 	
-	public InlineableMethods(String fnName, String body, HashSet<String> variables) {
+	public InlineableMethods(String fnName, String body, ArrayList<String> variables) {
 		_fnName = fnName;
 		_body = body;
 		_variables = variables;
+		_variables.sort(Comparator.comparing(String::length).reversed());
 	}
 	
-	public HashSet<String> getLocalVariables() {
+	public ArrayList<String> getLocalVariables() {
 		return _variables;
 	}
 	
 	public String getInlinedDML(int callerID, HashMap<String, String> actualArguments) {
 		String ret = _body;
 		for(String var : _variables) {
-			String originalVarName = var.substring(InlineHelper.PREFIX_STR.length());
+			String originalVarName = var.substring(InlineHelper.ARG_PREFIX.length());
 			if(actualArguments.containsKey(originalVarName)) {
 				ret = ret.replaceAll(var, actualArguments.get(originalVarName));
 			}
 			else {
 				// internal argument
-				ret = ret.replaceAll(var, UNIQUE_PREFIX + _fnName + "_" + callerID + "_" + originalVarName);
+				ret = ret.replaceAll(var, LOCAL_ARG_PREFIX + _fnName + "_" + callerID + "_" + originalVarName);
 			}
 		}
 		return ret;
 	}
 	
-	static final String UNIQUE_PREFIX;
+	static final String LOCAL_ARG_PREFIX;
 	static {
 		Random rand = new Random();
-		UNIQUE_PREFIX = "INTERNAL_" + Math.abs(rand.nextLong()) + "_" + Math.abs(rand.nextLong());
+		LOCAL_ARG_PREFIX = "INTERNAL_" + Math.abs(rand.nextLong()) + "_" + Math.abs(rand.nextLong());
 	}
 }

@@ -85,10 +85,10 @@ import org.apache.sysml.parser.dml.DmlParser.ValueTypeContext;
 import org.apache.sysml.parser.dml.DmlParser.WhileStatementContext;
 
 public class InlineHelper extends CommonSyntacticValidator implements DmlListener {
-	final static String PREFIX_STR;
+	final static String ARG_PREFIX;
 	static {
 		Random rand = new Random();
-		PREFIX_STR = "INTERNAL_PREFIX_" + Math.abs(rand.nextLong()) + "_" + Math.abs(rand.nextLong()) + "_"; 
+		ARG_PREFIX = "INTERNAL_PREFIX_" + Math.abs(rand.nextLong()) + "_" + Math.abs(rand.nextLong()) + "_"; 
 	}
 	public HashMap<String, InlineableMethods> inlineMap = new HashMap<>();
 	TokenStreamRewriter rewriter;
@@ -132,7 +132,7 @@ public class InlineHelper extends CommonSyntacticValidator implements DmlListene
 	@Override
 	public void enterIndexedExpression(IndexedExpressionContext ctx) {
 		if(currentFunction != null && isRewritePhase) {
-			rewriter.insertBefore(ctx.name, " " + PREFIX_STR);
+			rewriter.insertBefore(ctx.name, " " + ARG_PREFIX);
 		}
 	}
 	
@@ -145,7 +145,7 @@ public class InlineHelper extends CommonSyntacticValidator implements DmlListene
 	@Override
 	public void enterSimpleDataIdentifierExpression(SimpleDataIdentifierExpressionContext ctx) {
 		if(currentFunction != null && isRewritePhase) {
-			rewriter.insertBefore(ctx.start, " " + PREFIX_STR);
+			rewriter.insertBefore(ctx.start, " " + ARG_PREFIX);
 			rewriter.insertAfter(ctx.stop, " ");
 		}
 	}
@@ -159,7 +159,7 @@ public class InlineHelper extends CommonSyntacticValidator implements DmlListene
 	@Override
 	public void enterForStatement(ForStatementContext ctx) {
 		if(currentFunction != null && isRewritePhase) {
-			rewriter.insertBefore(ctx.iterVar, " " + PREFIX_STR);
+			rewriter.insertBefore(ctx.iterVar, " " + ARG_PREFIX);
 			rewriter.insertAfter(ctx.iterVar, " ");
 		}
 	}
@@ -167,7 +167,7 @@ public class InlineHelper extends CommonSyntacticValidator implements DmlListene
 	@Override
 	public void enterParForStatement(ParForStatementContext ctx) {
 		if(currentFunction != null && isRewritePhase) {
-			rewriter.insertBefore(ctx.iterVar, " " + PREFIX_STR);
+			rewriter.insertBefore(ctx.iterVar, " " + ARG_PREFIX);
 			rewriter.insertAfter(ctx.iterVar, " ");
 		}
 	}
