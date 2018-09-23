@@ -65,10 +65,14 @@ public class InlineableMethods {
 	public String getInlinedDML(ArrayList<String> actualInputArgs, ArrayList<String> actualRetVariables) {
 		HashMap<String, String> actualArguments = new HashMap<>();
 		if(actualInputArgs.size() != _inputArgs.size()) {
-			throw new DMLRuntimeException("Incorrect number of input arguments: expected " + _inputArgs.size() + " but found " + actualInputArgs.size());
+			throw new DMLRuntimeException("Incorrect number of input arguments for the function " + _fnName + ": expected " 
+			+ _inputArgs.size() + " (" + String.join(", ", _inputArgs) + ") but found " + actualInputArgs.size() 
+			+ " (" + String.join(", ", actualInputArgs) + ")");
 		}
 		if(actualRetVariables.size() != _retVariables.size()) {
-			throw new DMLRuntimeException("Incorrect number of return variables: expected " + _retVariables.size() + " but found " + actualRetVariables.size());
+			throw new DMLRuntimeException("Incorrect number of return variables for the function " + _fnName + ": expected " 
+			+ _retVariables.size() + " (" + String.join(", ", _retVariables) + ") but found " + actualRetVariables.size()
+			+ " (" + String.join(", ", actualRetVariables) + ")");
 		}
 		for(int i = 0; i < _inputArgs.size(); i++) {
 			actualArguments.put(_inputArgs.get(i), actualInputArgs.get(i));
