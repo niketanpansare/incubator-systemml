@@ -123,7 +123,7 @@ public class InlineHelper extends CommonSyntacticValidator implements DmlListene
 				sb.append(stmt.getText());
 				sb.append("\n");
 			}
-			inlineMap.put(currentFunction, new InlineableMethods(currentFunction, sb.toString(), new HashSet<String>(variables)));
+			inlineMap.put(currentFunction, new InlineableMethods(currentFunction, sb.toString(), variables));
 		}
 		currentFunction = null;
 		variables.clear();

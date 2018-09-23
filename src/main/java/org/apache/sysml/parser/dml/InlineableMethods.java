@@ -21,17 +21,17 @@ package org.apache.sysml.parser.dml;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Random;
+import java.util.HashSet;
 
 public class InlineableMethods {
 	ArrayList<String> _variables;
 	final String _body;
 	final String _fnName;
 	
-	public InlineableMethods(String fnName, String body, ArrayList<String> variables) {
+	public InlineableMethods(String fnName, String body, HashSet<String> variables) {
 		_fnName = fnName;
 		_body = body;
-		_variables = variables;
+		_variables = new ArrayList<String>(variables);
 		_variables.sort(Comparator.comparing(String::length).reversed());
 	}
 	
