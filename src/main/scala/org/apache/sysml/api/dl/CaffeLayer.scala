@@ -149,8 +149,10 @@ trait CaffeLayer extends BaseDMLGenerator {
     if(Caffe2DML.INLINE_NN_LIBRARY && caffe2dmlObj.isAlreadyImported(namespace1)) {
       // For now, donot inline recursively
       val method = caffe2dmlObj.getInlineableMethod(namespace1, functionName)
-      dmlScript.append(method.getInlinedDML(new ArrayList[String](arguments.asJava), new ArrayList[String](returnVariables.asJava)))
+      val generatedDML = method.getInlinedDML(new ArrayList[String](arguments.asJava), new ArrayList[String](returnVariables.asJava))
+      dmlScript.append(generatedDML)
       dmlScript.append("\n")
+      //System.out.println(generatedDML)
       return
     }
     if (returnVariables.length == 0) throw new DMLRuntimeException("User-defined functions should have atleast one return value")

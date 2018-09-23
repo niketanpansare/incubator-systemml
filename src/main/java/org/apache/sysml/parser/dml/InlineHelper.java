@@ -122,7 +122,16 @@ public class InlineHelper extends CommonSyntacticValidator implements DmlListene
 				sb.append(stmt.getText());
 				sb.append("\n");
 			}
-			inlineMap.put(currentFunction, new InlineableMethods(currentFunction, sb.toString(), variables));
+			ArrayList<String> inputArgs = new ArrayList<>(); 
+			for(TypedArgAssignContext in : ctx.inputParams) {
+				inputArgs.add(ARG_PREFIX + in.paramName.getText());
+			}
+			ArrayList<String> retVariables = new ArrayList<>();
+			for(TypedArgNoAssignContext out : ctx.outputParams) {
+				inputArgs.add(ARG_PREFIX + out.paramName.getText());
+			}
+			
+			inlineMap.put(currentFunction, new InlineableMethods(currentFunction, sb.toString(), variables, inputArgs, retVariables));
 		}
 		currentFunction = null;
 		variables.clear();
