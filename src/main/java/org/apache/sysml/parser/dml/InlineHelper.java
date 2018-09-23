@@ -28,7 +28,6 @@ import java.util.Set;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.TokenStreamRewriter;
-import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.sysml.parser.Expression;
@@ -176,12 +175,22 @@ public class InlineHelper extends CommonSyntacticValidator implements DmlListene
 	public void exitForStatement(ForStatementContext ctx) {
 		if(currentFunction != null)
 			variables.add(ctx.iterVar.getText());
+		if(currentFunction != null && isRewritePhase) {
+			if(ctx.body != null && ctx.body.size() > 0)
+			rewriter.insertBefore(ctx.body.get(0).start, "\n");
+			rewriter.insertAfter(ctx.stop, "\n");
+		}
 	}
 	
 	@Override
 	public void exitParForStatement(ParForStatementContext ctx) {
 		if(currentFunction != null)
 			variables.add(ctx.iterVar.getText());
+		if(currentFunction != null && isRewritePhase) {
+			if(ctx.body != null && ctx.body.size() > 0)
+				rewriter.insertBefore(ctx.body.get(0).start, "\n");
+			rewriter.insertAfter(ctx.stop, "\n");
+		}
 	}
 	
 
@@ -453,7 +462,9 @@ public class InlineHelper extends CommonSyntacticValidator implements DmlListene
 
 	@Override
 	public void exitAccumulatorAssignmentStatement(AccumulatorAssignmentStatementContext ctx) {
-		
+		if(currentFunction != null && isRewritePhase) {
+			rewriter.insertAfter(ctx.stop, "\n");
+		}
 		
 	}
 
@@ -465,7 +476,9 @@ public class InlineHelper extends CommonSyntacticValidator implements DmlListene
 
 	@Override
 	public void exitAssignmentStatement(AssignmentStatementContext ctx) {
-		
+		if(currentFunction != null && isRewritePhase) {
+			rewriter.insertAfter(ctx.stop, "\n");
+		}
 		
 	}
 
@@ -563,31 +576,45 @@ public class InlineHelper extends CommonSyntacticValidator implements DmlListene
 
 	@Override
 	public void exitFunctionCallAssignmentStatement(FunctionCallAssignmentStatementContext ctx) {
-		
+		if(currentFunction != null && isRewritePhase) {
+			rewriter.insertAfter(ctx.stop, "\n");
+		}
 		
 	}
 
 	@Override
 	public void exitFunctionCallMultiAssignmentStatement(FunctionCallMultiAssignmentStatementContext ctx) {
-		
+		if(currentFunction != null && isRewritePhase) {
+			rewriter.insertAfter(ctx.stop, "\n");
+		}
 		
 	}
 
 	@Override
 	public void exitIfdefAssignmentStatement(IfdefAssignmentStatementContext ctx) {
-		
+		if(currentFunction != null && isRewritePhase) {
+			rewriter.insertAfter(ctx.stop, "\n");
+		}
 		
 	}
 
 	@Override
 	public void exitIfStatement(IfStatementContext ctx) {
-		
+		if(currentFunction != null && isRewritePhase) {
+			if(ctx.ifBody != null && ctx.ifBody.size() > 0)
+				rewriter.insertBefore(ctx.ifBody.get(0).start, "\n");
+			if(ctx.elseBody != null && ctx.elseBody.size() > 0)
+				rewriter.insertBefore(ctx.elseBody.get(0).start, "\n");
+			rewriter.insertAfter(ctx.stop, "\n");
+		}
 		
 	}
 
 	@Override
 	public void exitImportStatement(ImportStatementContext ctx) {
-		
+		if(currentFunction != null && isRewritePhase) {
+			rewriter.insertAfter(ctx.stop, "\n");
+		}
 		
 	}
 
@@ -647,7 +674,9 @@ public class InlineHelper extends CommonSyntacticValidator implements DmlListene
 
 	@Override
 	public void exitPathStatement(PathStatementContext ctx) {
-		
+		if(currentFunction != null && isRewritePhase) {
+			rewriter.insertAfter(ctx.stop, "\n");
+		}
 		
 	}
 
@@ -707,8 +736,11 @@ public class InlineHelper extends CommonSyntacticValidator implements DmlListene
 
 	@Override
 	public void exitWhileStatement(WhileStatementContext ctx) {
-		
-		
+		if(currentFunction != null && isRewritePhase) {
+			if(ctx.body != null && ctx.body.size() > 0)
+				rewriter.insertBefore(ctx.body.get(0).start, "\n");
+			rewriter.insertAfter(ctx.stop, "\n");
+		}
 	}
 
 	@Override
