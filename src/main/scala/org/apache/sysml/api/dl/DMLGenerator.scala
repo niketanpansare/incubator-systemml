@@ -111,15 +111,6 @@ trait BaseDMLGenerator {
   def ifdef(cmdLineVar: String, defaultVal: String): String    = "ifdef(" + cmdLineVar + ", " + defaultVal + ")"
   def ifdef(cmdLineVar: String): String                        = ifdef(cmdLineVar, "\" \"")
   def read(filePathVar: String, format: String): String        = "read(" + filePathVar + ", format=\"" + format + "\")"
-  def appendInlinedMethod(dmlScript: StringBuilder, dmlStr:String, varMap:Map[String, String]):Unit = {
-    var _dmlStr = dmlStr
-    for((k, v) <- varMap) {
-      _dmlStr = _dmlStr.replaceAll(k, v)
-    }
-    dmlScript.append("\n")
-    dmlScript.append(dmlStr)
-    dmlScript.append("\n")
-  }
 }
 
 trait TabbedDMLGenerator extends BaseDMLGenerator {
