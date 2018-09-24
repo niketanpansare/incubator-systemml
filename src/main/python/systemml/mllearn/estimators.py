@@ -937,7 +937,7 @@ class Caffe2DML(BaseSystemMLClassifier):
         output_activations: (developer flag) directory to output activations of each layer as csv while prediction. To be used only in batch mode (default: None)
         perform_one_hot_encoding: should perform one-hot encoding in DML using table function (default: False)
         parfor_parameters: dictionary for parfor parameters when using allreduce-style algorithms (default: "")
-        inline_nn_library: whether to inline the NN library using Caffe2DML (default: True)
+        inline_nn_library: whether to inline the NN library when generating DML using Caffe2DML (default: False)
         """
         if debug is not None:
             self.estimator.setInput("$debug", str(debug).upper())

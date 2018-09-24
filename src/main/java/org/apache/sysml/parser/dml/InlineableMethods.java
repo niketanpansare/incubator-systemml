@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Random;
+
 import org.apache.sysml.runtime.DMLRuntimeException;
 
 public class InlineableMethods {
@@ -84,8 +86,8 @@ public class InlineableMethods {
 	
 	static final String LOCAL_ARG_PREFIX;
 	static {
-//		Random rand = new Random();
-//		LOCAL_ARG_PREFIX = "LOCAL_" + Math.abs(rand.nextLong()) + "_";
-		LOCAL_ARG_PREFIX = "LOCAL_";
+		Random rand = new Random();
+		LOCAL_ARG_PREFIX = "LOCAL_" + Math.abs(rand.nextLong()) + "_" + Math.abs(rand.nextLong());
+//		LOCAL_ARG_PREFIX = "LOCAL_";
 	}
 }

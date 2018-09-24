@@ -304,7 +304,7 @@ class Caffe2DML(val sc: SparkContext,
   // Comma is included
   def getParforParameters():String = if (inputs.containsKey("$parfor_parameters")) inputs.get("$parfor_parameters") else ""
 
-  def shouldInlineNNLibrary():Boolean = if (inputs.containsKey("$inline_nn_library")) inputs.get("$inline_nn_library").toLowerCase.toBoolean else true
+  def shouldInlineNNLibrary():Boolean = if (inputs.containsKey("$inline_nn_library")) inputs.get("$inline_nn_library").toLowerCase.toBoolean else false
   // ================================================================================================
   // The below method parses the provided network and solver file and generates DML script.
   def getTrainingScript(isSingleNode: Boolean): (Script, String, String) = {
