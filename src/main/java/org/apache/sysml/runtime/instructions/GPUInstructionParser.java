@@ -66,6 +66,8 @@ public class GPUInstructionParser  extends InstructionParser
 		String2GPUInstructionType.put( "reshape_colmeans",      GPUINSTRUCTION_TYPE.Dnn);
 		String2GPUInstructionType.put( "inv_var",      			GPUINSTRUCTION_TYPE.Dnn);
 		String2GPUInstructionType.put( "batch_norm2d_bwd_dx",   GPUINSTRUCTION_TYPE.Dnn);
+		String2GPUInstructionType.put( "batch_norm2d",           GPUINSTRUCTION_TYPE.Dnn);
+		String2GPUInstructionType.put( "batch_norm2d_backward",  GPUINSTRUCTION_TYPE.Dnn);
 		
 		// Matrix Multiply Operators
 		String2GPUInstructionType.put( "ba+*",  GPUINSTRUCTION_TYPE.AggregateBinary);

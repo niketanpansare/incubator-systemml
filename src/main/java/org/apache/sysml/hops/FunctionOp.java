@@ -187,6 +187,18 @@ public class FunctionOp extends Hop
 				long outputV = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(2).getDim1(), getOutputs().get(2).getDim2(), 1.0);
 				return outputU+outputSigma+outputV;
 			}
+			else if ( getFunctionName().equalsIgnoreCase("batch_norm2d")) {
+				return OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 1.0) +
+						OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), getOutputs().get(1).getDim2(), 1.0) +
+						OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(2).getDim1(), getOutputs().get(2).getDim2(), 1.0) +
+						OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(3).getDim1(), getOutputs().get(3).getDim2(), 1.0) + 
+						OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(4).getDim1(), getOutputs().get(4).getDim2(), 1.0);
+			}
+			else if ( getFunctionName().equalsIgnoreCase("batch_norm2d_backward") ) {
+				return OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 1.0) +
+						OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), getOutputs().get(1).getDim2(), 1.0) +
+						OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(2).getDim1(), getOutputs().get(2).getDim2(), 1.0);
+			}
 			else
 				throw new RuntimeException("Invalid call of computeOutputMemEstimate in FunctionOp.");
 		}
@@ -219,6 +231,9 @@ public class FunctionOp extends Hop
 				double interOutput = OptimizerUtils.estimateSizeExactSparsity(1, getInput().get(0).getDim2(), 1.0);
 				return interOutput;
 			}
+			else if (getFunctionName().equalsIgnoreCase("batch_norm2d") || getFunctionName().equalsIgnoreCase("batch_norm2d_backward")) {
+				return 0; 
+			}
 			else
 				throw new RuntimeException("Invalid call of computeIntermediateMemEstimate in FunctionOp.");
 		}
@@ -232,7 +247,8 @@ public class FunctionOp extends Hop
 	
 	@Override
 	public boolean isGPUEnabled() {
-		if(getFunctionName().equalsIgnoreCase("lstm") || getFunctionName().equalsIgnoreCase("lstm_backward")) 
+		if(getFunctionName().equalsIgnoreCase("lstm") || getFunctionName().equalsIgnoreCase("lstm_backward") ||
+			getFunctionName().equalsIgnoreCase("batch_norm2d") || getFunctionName().equalsIgnoreCase("batch_norm2d_backward")) 
 			return true;
 		else
 			return false;
@@ -282,7 +298,8 @@ public class FunctionOp extends Hop
 					|| (getMemEstimate() >= OptimizerUtils.getLocalMemBudget()
 						&& OptimizerUtils.isSparkExecutionMode())) ? ExecType.SPARK : ExecType.CP);
 			}
-			else if(isBuiltinFunction && (getFunctionName().equalsIgnoreCase("lstm") || getFunctionName().equalsIgnoreCase("lstm_backward"))) {
+			else if(isBuiltinFunction && (getFunctionName().equalsIgnoreCase("lstm") || getFunctionName().equalsIgnoreCase("lstm_backward") ||
+					getFunctionName().equalsIgnoreCase("batch_norm2d") || getFunctionName().equalsIgnoreCase("batch_norm2d_backward"))) {
 				if(!ConfigurationManager.isGPU())
 					throw new RuntimeException("The function " + getFunctionName() + " is only supported on GPU.");
 				_etype = ExecType.GPU;

@@ -1135,6 +1135,8 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @param dout input errors of shape C, H, W
 	 * @param scale scale (as per CuDNN) and gamma as per original paper: shape [1, C, 1, 1]
 	 * @param dX (output) backpropagation errors for previous layer
+	 * @param dScale backpropagation error for scale  (if null, the errors are ignored)
+	 * @param dBias backpropagation error for bias  (if null, the errors are ignored)
 	 * @param epsilon epsilon value used in the batch normalization formula
 	 * @param resultSaveMean (input) running mean accumulated during training phase: shape [1, C, 1, 1]
 	 * @param resultSaveInvVariance (input) running variance accumulated during training phase: shape [1, C, 1, 1]
@@ -1142,7 +1144,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 */
 	public static void batchNormalizationBackwardDX(GPUContext gCtx, String instName, MatrixObject image, MatrixObject dout,
 			MatrixObject scale, MatrixObject dX, 
-			// MatrixObject dScale, MatrixObject dBias,
+			MatrixObject dScale, MatrixObject dBias,
 			double epsilon, MatrixObject resultSaveMean, MatrixObject resultSaveInvVariance) throws DMLRuntimeException {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : batchNormalizationBackward" + ", GPUContext=" + gCtx);
@@ -1168,8 +1170,8 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		Pointer doutPtr = getDensePointerForCuDNN(gCtx, dout, instName);
 		Pointer scalePtr = getDensePointerForCuDNN(gCtx, scale, instName);
 		Pointer dXPtr = getDensePointerForCuDNN(gCtx, dX, instName);
-		Pointer dScalePtr = gCtx.allocate(instName, C*LibMatrixCUDA.sizeOfDataType); // getDensePointerForCuDNN(gCtx, dScale, instName);
-		Pointer dBiasPtr = gCtx.allocate(instName, C*LibMatrixCUDA.sizeOfDataType); //getDensePointerForCuDNN(gCtx, dBias, instName);		
+		Pointer dScalePtr = dScale == null ? gCtx.allocate(instName, C*LibMatrixCUDA.sizeOfDataType) : getDensePointerForCuDNN(gCtx, dScale, instName);
+		Pointer dBiasPtr = dBias == null ? gCtx.allocate(instName, C*LibMatrixCUDA.sizeOfDataType) : getDensePointerForCuDNN(gCtx, dBias, instName);		
 		Pointer resultSaveMeanPtr = getDensePointerForCuDNN(gCtx, resultSaveMean, instName);
 		Pointer resultSaveInvVariancePtr = getDensePointerForCuDNN(gCtx, resultSaveInvVariance, instName);
 
