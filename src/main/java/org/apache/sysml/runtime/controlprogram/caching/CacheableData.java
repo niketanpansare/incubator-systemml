@@ -603,13 +603,19 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			throw new DMLRuntimeException("CacheableData (" + getDebugName() + ") not available to "
 					+ "modify. Status = " + _cacheStatus.name() + ".");
 		
+		// hack:
+		boolean isBatchNorm = _hdfsFileName.contains("batch_normalization_");
+		
 		// clear existing WB / FS representation (but prevent unnecessary probes)
 		if( !(isEmpty(true)||(_data!=null && isBelowCachingThreshold()) 
-			  ||(_data!=null && !isCachingActive()) )) //additional condition for JMLC
-			freeEvictedBlob();
+			  ||(_data!=null && !isCachingActive()) )) { //additional condition for JMLC
+			if(!isBatchNorm)
+				freeEvictedBlob();
+		}
 
 		// clear the in-memory data
-		_data = null;
+		if(!isBatchNorm)
+			_data = null;
 		clearCache();
 		
 		// clear rdd/broadcast back refs
