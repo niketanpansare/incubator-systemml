@@ -102,6 +102,15 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		_hdfsFileName = file;
 		_cache = null;
 		_data = null;
+		boolean check = ( _hdfsFileName != null && _hdfsFileName.contains("batch_normalization_") );
+		if(check) {
+			System.out.println(" CacheableData >> " + (_hdfsFileName !=null ? _hdfsFileName : ""));
+			try {
+				throw new Exception("foo");
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
 	}
 	
 	/**
