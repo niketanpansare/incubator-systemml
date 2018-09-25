@@ -1312,20 +1312,36 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			boolean eqScheme = IOUtilFunctions.isSameFileScheme(
 				new Path(_hdfsFileName), new Path(fName));
 			
+			boolean check = ( _hdfsFileName != null && _hdfsFileName.contains("batch_normalization_") ) ||
+			( fName != null && fName.contains("batch_normalization_"));
+			if(check) {
+				System.out.println(" 1 >> [" + (fName!=null ? fName : "")  + "] " + (_hdfsFileName !=null ? _hdfsFileName : ""));
+				try {
+					throw new Exception("foo");
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+			
 			//export or rename to target file on hdfs
 			if( isDirty() || !eqScheme || (!isEqualOutputFormat(outputFormat) && isEmpty(true)) 
 				|| (getRDDHandle()!=null && !MapReduceTool.existsFileOnHDFS(_hdfsFileName)) )
 			{
+				System.out.println(" 2 >> [" + (fName!=null ? fName : "")  + "] " + (_hdfsFileName !=null ? _hdfsFileName : ""));
 				exportData(fName, outputFormat);
 				ret = true;
 			}
 			else if( isEqualOutputFormat(outputFormat) )
 			{
+				System.out.println(" 3 >> [" + (fName!=null ? fName : "")  + "] " + (_hdfsFileName !=null ? _hdfsFileName : ""));
 				MapReduceTool.deleteFileIfExistOnHDFS(fName);
 				MapReduceTool.deleteFileIfExistOnHDFS(fName+".mtd");
 				MapReduceTool.renameFileOnHDFS( _hdfsFileName, fName );
 				writeMetaData( fName, outputFormat, null );
 				ret = true;
+			}
+			else {
+				System.out.println(" 4 >> [" + (fName!=null ? fName : "")  + "] " + (_hdfsFileName !=null ? _hdfsFileName : ""));
 			}
 		}
 		catch (Exception e) {
