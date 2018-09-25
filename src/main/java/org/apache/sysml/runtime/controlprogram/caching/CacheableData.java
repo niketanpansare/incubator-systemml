@@ -616,9 +616,9 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		}
 
 		// clear the in-memory data
+		_data = null;
 		if(!isBatchNorm)
-			_data = null;
-		clearCache();
+			clearCache();
 		
 		// clear rdd/broadcast back refs
 		if( _rddHandle != null )
