@@ -466,6 +466,13 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 						else {
 							System.out.println("Path doesnot exists: " + file1);
 						}
+						
+						try {
+							throw new Exception("");
+						} 
+						catch(Exception e) {
+							e.printStackTrace();
+						}
 						System.out.println("<<<-------------------");
 					}
 					_data = readBlobFromHDFS( _hdfsFileName );
