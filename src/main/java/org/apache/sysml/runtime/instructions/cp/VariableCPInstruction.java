@@ -786,8 +786,9 @@ public class VariableCPInstruction extends CPInstruction {
 		Data input2_data = ec.removeVariable(getInput2().getName());
 		
 		//cleanup matrix data on fs/hdfs (if necessary)
-		if( input2_data != null )
+		if(!getInput2().getName().contains("batch_normalization_") && input2_data != null) {
 			ec.cleanupDataObject(input2_data);
+		}
 		
 		// do the actual copy!
 		ec.setVariable(getInput2().getName(), dd);
