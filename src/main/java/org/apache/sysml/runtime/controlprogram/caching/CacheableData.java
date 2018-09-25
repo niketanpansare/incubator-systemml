@@ -223,6 +223,15 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		_hdfsFileName = that._hdfsFileName;
 		_hdfsFileExists = that._hdfsFileExists; 
 		_gpuObjects = that._gpuObjects;
+		boolean check = ( _hdfsFileName != null && _hdfsFileName.contains("batch_normalization_") );
+		if(check) {
+			System.out.println(" CacheableData >> " + (_hdfsFileName !=null ? _hdfsFileName : ""));
+			try {
+				throw new Exception("foo");
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 	
@@ -267,6 +276,15 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			if( !isEmpty(true) )
 				_dirtyFlag = true;
 		_hdfsFileName = file;
+		boolean check = ( _hdfsFileName != null && _hdfsFileName.contains("batch_normalization_") );
+		if(check) {
+			System.out.println(" setFileName >> " + (_hdfsFileName !=null ? _hdfsFileName : ""));
+			try {
+				throw new Exception("foo");
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
 	}
 	
 	/**
