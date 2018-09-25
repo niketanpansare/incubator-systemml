@@ -29,12 +29,12 @@ trait CaffeSolver {
   def update(dmlScript: StringBuilder, layer: CaffeLayer): Unit;
   def init(dmlScript: StringBuilder, layer: CaffeLayer): Unit;
   
-  def invoke(dmlScript: StringBuilder, namespace1: String, returnVariables: List[String], functionName: String, arguments: List[String], appendNewLine: Boolean): Unit = {
+  def invoke(dir:String, dmlScript: StringBuilder, namespace1: String, returnVariables: List[String], functionName: String, arguments: List[String], appendNewLine: Boolean): Unit = {
     val shouldInline = true
     if(shouldInline) {
       // For now, donot inline recursively
       val sourceFileName = if(namespace1.endsWith("::")) namespace1.substring(0, namespace1.length() - 2) else namespace1
-      val method = Caffe2DML.getInlineableMethod(Caffe2DML.optimDir + sourceFileName + ".dml", namespace1, functionName)
+      val method = Caffe2DML.getInlineableMethod(dir + sourceFileName + ".dml", namespace1, functionName)
       val generatedDML = method.getInlinedDML(new ArrayList[String](arguments.asJava), new ArrayList[String](returnVariables.asJava))
       dmlScript.append(generatedDML)
       dmlScript.append("\n")
@@ -108,11 +108,11 @@ trait CaffeSolver {
       val hasDecayMult = layer.param.getParamList != null && layer.param.getParamList.size >= 1 && layer.param.getParamList.get(0).hasDecayMult
       val newLambda = if(hasDecayMult) layer.param.getParamList.get(0).getDecayMult * lambda else lambda
       
-      invoke(dmlScript, regularizationSource + "::", List[String](layer.dWeight + "_reg"), "backward", 
+      invoke(Caffe2DML.layerDir, dmlScript, regularizationSource + "::", List[String](layer.dWeight + "_reg"), "backward", 
           List[String](layer.weight, ""+newLambda), true)
       dmlScript.append("\t").append(layer.dWeight + " = " + layer.dWeight + " + " + layer.dWeight + "_reg\n")
       if(layer.shouldUpdateExtraWeight) {
-        invoke(dmlScript, regularizationSource + "::", List[String](layer.dExtraWeight + "_reg"), "backward", 
+        invoke(Caffe2DML.layerDir, dmlScript, regularizationSource + "::", List[String](layer.dExtraWeight + "_reg"), "backward", 
           List[String](layer.extraWeight, ""+newLambda), true)
         dmlScript.append("\t").append(layer.dExtraWeight + " = " + layer.dExtraWeight + " + " + layer.dExtraWeight + "_reg\n")
       }
@@ -388,7 +388,7 @@ class Nesterov(regularizationType:String = "L2", lambda: Double = 5e-04, momentu
       regularization_update(regularizationType, lambda, dmlScript, layer)
     }
     if (layer.shouldUpdateWeight) {
-      invoke(dmlScript, "sgd_nesterov::", List[String](layer.weight, layer.weight + "_v"), "update", 
+      invoke(Caffe2DML.optimDir, dmlScript, "sgd_nesterov::", List[String](layer.weight, layer.weight + "_v"), "update", 
           List[String](layer.weight, layer.dWeight, getWeightLr(layer), momentum.toString, layer.weight + "_v"), true)
 //      dmlScript
 //        .append("\t")
@@ -398,7 +398,7 @@ class Nesterov(regularizationType:String = "L2", lambda: Double = 5e-04, momentu
 //        )
     }
     if (layer.shouldUpdateExtraWeight) {
-      invoke(dmlScript, "sgd_nesterov::", List[String](layer.extraWeight, layer.extraWeight + "_v"), "update", 
+      invoke(Caffe2DML.optimDir, dmlScript, "sgd_nesterov::", List[String](layer.extraWeight, layer.extraWeight + "_v"), "update", 
           List[String](layer.extraWeight, layer.dExtraWeight, getWeightLr(layer), momentum.toString, layer.extraWeight + "_v"), true)
 //      dmlScript
 //        .append("\t")
@@ -408,7 +408,7 @@ class Nesterov(regularizationType:String = "L2", lambda: Double = 5e-04, momentu
 //        )
     }
     if (layer.shouldUpdateBias) {
-      invoke(dmlScript, "sgd_nesterov::", List[String](layer.bias, layer.bias + "_v"), "update", 
+      invoke(Caffe2DML.optimDir, dmlScript, "sgd_nesterov::", List[String](layer.bias, layer.bias + "_v"), "update", 
           List[String](layer.bias, layer.dBias, getBiasLr(layer), momentum.toString, layer.bias + "_v"), true)
 //      dmlScript
 //        .append("\t")
