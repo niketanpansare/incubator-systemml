@@ -170,6 +170,19 @@ public class RewriteGPUSpecificOps extends HopRewriteRuleWithPatternMatcher {
 		return hi;
 	};
 	
+//	// mean = cache_mean
+//	// centered = bias_add(X, -mean)  # shape (N, C*Hin*Win)
+//	// norm = bias_multiply(centered, cache_inv_var)  # shape (N, C*Hin*Win)
+//	// # Compute gradients during training
+//	// dgamma = util::channel_sums(dout*norm, C, Hin, Win)
+//	private static final HopDagPatternMatcher _batchNormDGamma;
+//	static {
+//		_batchNormDGamma = util_channel_sums(
+//				mult(	leaf("dout", MATRIX),
+//						bias_multiply(bias_add(leaf("X", MATRIX), unaryMinus(leaf("ema_mean", MATRIX))), 
+//				leaf("ema_var", MATRIX))), leaf("C", SCALAR), leaf("HW", SCALAR));
+//	}
+	
 		
 	// Pattern 3:
 	private static final HopDagPatternMatcher _batchNormTest;
