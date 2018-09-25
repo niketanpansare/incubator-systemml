@@ -443,9 +443,11 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 						
 						Path path = new Path(_hdfsFileName);
 						FileSystem fs = IOUtilFunctions.getFileSystem(path);
+						boolean exists = false;
 						System.out.println(">>>-------------------");
 						if(fs.exists(path)) {
 							System.out.println("Path exists: " + _hdfsFileName);
+							exists = true;
 						}
 						else {
 							System.out.println("Path doesnot exists: " + _hdfsFileName);
@@ -456,10 +458,13 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 						}
 						path = new Path(file1);
 						if(fs.exists(path)) {
-							System.out.println("Path exists: " + _hdfsFileName);
+							System.out.println("Path exists: " + file1);
+							if(!exists) {
+								throw new RuntimeException("Incorrect suffix: _" + parts[parts.length-1]);
+							}
 						}
 						else {
-							System.out.println("Path doesnot exists: " + _hdfsFileName);
+							System.out.println("Path doesnot exists: " + file1);
 						}
 						System.out.println("<<<-------------------");
 					}
