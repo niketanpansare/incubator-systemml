@@ -22,7 +22,7 @@ import caffe.Caffe.SolverParameter
 import org.apache.sysml.runtime.DMLRuntimeException
 import caffe.Caffe
 import java.util.ArrayList
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
 trait CaffeSolver {
   def sourceFileName: String;
