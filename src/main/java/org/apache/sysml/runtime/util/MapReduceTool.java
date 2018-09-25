@@ -162,12 +162,25 @@ public class MapReduceTool
 	}
 	
 	private static void deleteFileIfExists(FileSystem fs, Path outpath) throws IOException {
-		if( fs.exists(outpath) ) {
-			int retries = MAX_DELETE_RETRIES;
-			while( !fs.delete(outpath, true) && retries > 0 ) {
-				retries--;
-			}
+		// Hack until we resolve the issue with batch_norm2d functions
+		if(outpath.getName().contains("batch_normalization_")) {
+			Runtime.getRuntime().addShutdownHook(new Thread() 
+		    { 
+		      public void run() 
+		      { 
+		    	  try {
+					if( fs.exists(outpath) )
+						  fs.delete(outpath, true);
+				} catch (IOException e) {} 
+		      } 
+		    }); 
 		}
+//		if( fs.exists(outpath) ) {
+//			int retries = MAX_DELETE_RETRIES;
+//			while( !fs.delete(outpath, true) && retries > 0 ) {
+//				retries--;
+//			}
+//		}
 	}
 
 	public static boolean isHDFSFileEmpty(String dir) throws IOException {
