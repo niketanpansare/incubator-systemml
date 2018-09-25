@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.commons.lang.mutable.MutableBoolean;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -437,6 +438,31 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 						throw new DMLRuntimeException("Cannot read matrix for empty filename.");
 					
 					//read cacheable data from hdfs
+					if(_hdfsFileName.contains("batch_normalization_")) {
+						String [] parts = _hdfsFileName.split("_");
+						
+						Path path = new Path(_hdfsFileName);
+						FileSystem fs = IOUtilFunctions.getFileSystem(path);
+						System.out.println(">>>-------------------");
+						if(fs.exists(path)) {
+							System.out.println("Path exists: " + _hdfsFileName);
+						}
+						else {
+							System.out.println("Path doesnot exists: " + _hdfsFileName);
+						}
+						String file1 = parts[0];
+						for(int i = 1; i < parts.length-1; i++) {
+							file1 = file1 + "_" + parts[i];
+						}
+						path = new Path(file1);
+						if(fs.exists(path)) {
+							System.out.println("Path exists: " + _hdfsFileName);
+						}
+						else {
+							System.out.println("Path doesnot exists: " + _hdfsFileName);
+						}
+						System.out.println("<<<-------------------");
+					}
 					_data = readBlobFromHDFS( _hdfsFileName );
 					
 					//mark for initial local write despite read operation
