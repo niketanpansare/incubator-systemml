@@ -21,11 +21,52 @@ package org.apache.sysml.api.dl
 import caffe.Caffe.SolverParameter
 import org.apache.sysml.runtime.DMLRuntimeException
 import caffe.Caffe
+import java.util.ArrayList
+import scala.collection.JavaConversions._
 
 trait CaffeSolver {
   def sourceFileName: String;
   def update(dmlScript: StringBuilder, layer: CaffeLayer): Unit;
   def init(dmlScript: StringBuilder, layer: CaffeLayer): Unit;
+  
+  def invoke(dmlScript: StringBuilder, namespace1: String, returnVariables: List[String], functionName: String, arguments: List[String], appendNewLine: Boolean): Unit = {
+    val shouldInline = true
+    if(shouldInline) {
+      // For now, donot inline recursively
+      val sourceFileName = if(namespace1.endsWith("::")) namespace1.substring(0, namespace1.length() - 2) else namespace1
+      val method = Caffe2DML.getInlineableMethod(Caffe2DML.optimDir + sourceFileName + ".dml", namespace1, functionName)
+      val generatedDML = method.getInlinedDML(new ArrayList[String](arguments.asJava), new ArrayList[String](returnVariables.asJava))
+      dmlScript.append(generatedDML)
+      dmlScript.append("\n")
+      //System.out.println(generatedDML)
+      return
+    }
+    if (returnVariables.length == 0) throw new DMLRuntimeException("User-defined functions should have atleast one return value")
+    if (returnVariables.length > 1) dmlScript.append("[")
+    dmlScript.append(returnVariables(0))
+    if (returnVariables.length > 1) {
+      for (i <- 1 until returnVariables.length) {
+        dmlScript.append(",").append(returnVariables(i))
+      }
+      dmlScript.append("]")
+    }
+    dmlScript.append(" = ")
+    dmlScript.append(namespace1)
+    dmlScript.append(functionName)
+    dmlScript.append("(")
+    if (arguments != null) {
+      if (arguments.length != 0)
+        dmlScript.append(arguments(0))
+      if (arguments.length > 1) {
+        for (i <- 1 until arguments.length) {
+          dmlScript.append(",").append(arguments(i))
+        }
+      }
+    }
+    dmlScript.append(")")
+    if (appendNewLine)
+      dmlScript.append("\n")
+  }
 
   // ----------------------------------------------------------------
   // Used for Fine-tuning
@@ -67,10 +108,12 @@ trait CaffeSolver {
       val hasDecayMult = layer.param.getParamList != null && layer.param.getParamList.size >= 1 && layer.param.getParamList.get(0).hasDecayMult
       val newLambda = if(hasDecayMult) layer.param.getParamList.get(0).getDecayMult * lambda else lambda
       
-      dmlScript.append("\t").append(layer.dWeight + "_reg = " + regularizationSource + "::backward(" + layer.weight + ", " + newLambda + ")\n")
+      invoke(dmlScript, regularizationSource + "::", List[String](layer.dWeight + "_reg"), "backward", 
+          List[String](layer.weight, ""+newLambda), true)
       dmlScript.append("\t").append(layer.dWeight + " = " + layer.dWeight + " + " + layer.dWeight + "_reg\n")
       if(layer.shouldUpdateExtraWeight) {
-        dmlScript.append("\t").append(layer.dExtraWeight + "_reg = " + regularizationSource + "::backward(" + layer.extraWeight + ", " + newLambda + ")\n")
+        invoke(dmlScript, regularizationSource + "::", List[String](layer.dExtraWeight + "_reg"), "backward", 
+          List[String](layer.extraWeight, ""+newLambda), true)
         dmlScript.append("\t").append(layer.dExtraWeight + " = " + layer.dExtraWeight + " + " + layer.dExtraWeight + "_reg\n")
       }
     }
@@ -339,32 +382,41 @@ class Nesterov(regularizationType:String = "L2", lambda: Double = 5e-04, momentu
    *      input v.
    */
   def update(dmlScript: StringBuilder, layer: CaffeLayer): Unit = {
-    val fn            = if (Caffe2DML.USE_NESTEROV_UDF) "update_nesterov" else "sgd_nesterov::update"
-    val lastParameter = if (Caffe2DML.USE_NESTEROV_UDF) (", " + lambda) else ""
+//    val fn            = if (Caffe2DML.USE_NESTEROV_UDF) "update_nesterov" else "sgd_nesterov::update"
+//    val lastParameter = if (Caffe2DML.USE_NESTEROV_UDF) (", " + lambda) else ""
     if (!Caffe2DML.USE_NESTEROV_UDF) {
       regularization_update(regularizationType, lambda, dmlScript, layer)
     }
-    if (layer.shouldUpdateWeight)
-      dmlScript
-        .append("\t")
-        .append(
-          "[" + commaSep(layer.weight, layer.weight + "_v") + "] " +
-          "= " + fn + "(" + commaSep(layer.weight, layer.dWeight, getWeightLr(layer), momentum.toString, layer.weight + "_v") + lastParameter + ")\n"
-        )
-    if (layer.shouldUpdateExtraWeight)
-      dmlScript
-        .append("\t")
-        .append(
-          "[" + commaSep(layer.extraWeight, layer.extraWeight + "_v") + "] " +
-          "= " + fn + "(" + commaSep(layer.extraWeight, layer.dExtraWeight, getWeightLr(layer), momentum.toString, layer.extraWeight + "_v") + lastParameter + ")\n"
-        )
-    if (layer.shouldUpdateBias)
-      dmlScript
-        .append("\t")
-        .append(
-          "[" + commaSep(layer.bias, layer.bias + "_v") + "] " +
-          "= " + fn + "(" + commaSep(layer.bias, layer.dBias, getBiasLr(layer), momentum.toString, layer.bias + "_v") + lastParameter + ")\n"
-        )
+    if (layer.shouldUpdateWeight) {
+      invoke(dmlScript, "sgd_nesterov::", List[String](layer.weight, layer.weight + "_v"), "update", 
+          List[String](layer.weight, layer.dWeight, getWeightLr(layer), momentum.toString, layer.weight + "_v"), true)
+//      dmlScript
+//        .append("\t")
+//        .append(
+//          "[" + commaSep(layer.weight, layer.weight + "_v") + "] " +
+//          "= " + fn + "(" + commaSep(layer.weight, layer.dWeight, getWeightLr(layer), momentum.toString, layer.weight + "_v") + lastParameter + ")\n"
+//        )
+    }
+    if (layer.shouldUpdateExtraWeight) {
+      invoke(dmlScript, "sgd_nesterov::", List[String](layer.extraWeight, layer.extraWeight + "_v"), "update", 
+          List[String](layer.extraWeight, layer.dExtraWeight, getWeightLr(layer), momentum.toString, layer.extraWeight + "_v"), true)
+//      dmlScript
+//        .append("\t")
+//        .append(
+//          "[" + commaSep(layer.extraWeight, layer.extraWeight + "_v") + "] " +
+//          "= " + fn + "(" + commaSep(layer.extraWeight, layer.dExtraWeight, getWeightLr(layer), momentum.toString, layer.extraWeight + "_v") + lastParameter + ")\n"
+//        )
+    }
+    if (layer.shouldUpdateBias) {
+      invoke(dmlScript, "sgd_nesterov::", List[String](layer.bias, layer.bias + "_v"), "update", 
+          List[String](layer.bias, layer.dBias, getBiasLr(layer), momentum.toString, layer.bias + "_v"), true)
+//      dmlScript
+//        .append("\t")
+//        .append(
+//          "[" + commaSep(layer.bias, layer.bias + "_v") + "] " +
+//          "= " + fn + "(" + commaSep(layer.bias, layer.dBias, getBiasLr(layer), momentum.toString, layer.bias + "_v") + lastParameter + ")\n"
+//        )
+    }
   }
   def init(dmlScript: StringBuilder, layer: CaffeLayer): Unit = {
     if (layer.shouldUpdateWeight) dmlScript.append(layer.weight + "_v = sgd_nesterov::init(" + layer.weight + ")\n")

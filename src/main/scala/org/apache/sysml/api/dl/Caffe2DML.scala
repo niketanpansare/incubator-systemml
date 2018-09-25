@@ -51,6 +51,10 @@ import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer
 import org.apache.sysml.hops.OptimizerUtils
+import org.apache.sysml.parser.ParserWrapper
+import org.apache.sysml.parser.dml.DMLParserWrapper
+import org.apache.sysml.parser.dml.InlineableMethods
+
 
 /***************************************************************************************
 DESIGN OF CAFFE2DML:
@@ -160,6 +164,17 @@ object Caffe2DML {
   val BATCH_ALGORITHM = "batch"
   val ALLREDUCE_ALGORITHM = "allreduce"
   val ALLREDUCE_PARALLEL_BATCHES_ALGORITHM = "allreduce_parallel_batches"
+  def readDMLScript(fileName:String):String = ParserWrapper.readDMLScript(fileName, Caffe2DML.LOG)
+  val inlineableMethods = new java.util.HashMap[String, java.util.HashMap[String, InlineableMethods]]()
+  def getInlineableMethod(sourceFilePath:String, namespace:String, fnName:String):InlineableMethods = {
+    if(inlineableMethods.contains(namespace))
+      return inlineableMethods.get(namespace).get(fnName)
+    else {
+      val ret = new DMLParserWrapper().getInlineableMethods(sourceFilePath, null, namespace, null)
+      inlineableMethods.put(namespace, ret)
+      return ret.get(fnName)
+    }
+  }
 }
 
 class Caffe2DML(val sc: SparkContext,

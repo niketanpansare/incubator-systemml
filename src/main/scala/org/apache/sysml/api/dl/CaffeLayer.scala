@@ -149,7 +149,7 @@ trait CaffeLayer extends BaseDMLGenerator {
     if(caffe2dmlObj.shouldInlineNNLibrary()) {
       // For now, donot inline recursively
       val sourceFileName = if(namespace1.endsWith("::")) namespace1.substring(0, namespace1.length() - 2) else namespace1
-      val method = caffe2dmlObj.getInlineableMethod(Caffe2DML.layerDir + sourceFileName + ".dml", namespace1, functionName)
+      val method = Caffe2DML.getInlineableMethod(Caffe2DML.layerDir + sourceFileName + ".dml", namespace1, functionName)
       val generatedDML = method.getInlinedDML(new ArrayList[String](arguments.asJava), new ArrayList[String](returnVariables.asJava))
       dmlScript.append(generatedDML)
       dmlScript.append("\n")
