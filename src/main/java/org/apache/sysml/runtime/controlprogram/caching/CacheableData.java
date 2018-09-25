@@ -603,8 +603,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			throw new DMLRuntimeException("CacheableData (" + getDebugName() + ") not available to "
 					+ "modify. Status = " + _cacheStatus.name() + ".");
 		
-		// hack:
-		boolean isBatchNorm = _hdfsFileName.contains("batch_normalization_");
+		// hack: scratch_space
+		String cacheFile = getCacheFilePathAndName();
+		boolean isBatchNorm = (_hdfsFileName != null && _hdfsFileName.contains("batch_normalization_")) ||
+				(cacheFile != null && cacheFile.contains("batch_normalization_"));
 		
 		// clear existing WB / FS representation (but prevent unnecessary probes)
 		if( !(isEmpty(true)||(_data!=null && isBelowCachingThreshold()) 
