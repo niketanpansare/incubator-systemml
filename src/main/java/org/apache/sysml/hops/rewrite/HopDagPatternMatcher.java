@@ -370,6 +370,8 @@ public class HopDagPatternMatcher {
 				.addChildMatcher(child1, dummy);
 	}
 	private static boolean _fitsOnGPU(Hop h, double multiplier) {
+		if(ConfigurationManager.isForcedGPU())
+			return true;
 		double memEst = multiplier*h.getMemEstimate();
 		return ConfigurationManager.isGPU() && h.dimsKnown() && OptimizerUtils.isMemoryBasedOptLevel() &&
 				memEst < OptimizerUtils.getLocalMemBudget() && memEst < GPUContextPool.initialGPUMemBudget();
