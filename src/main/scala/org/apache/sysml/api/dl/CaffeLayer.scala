@@ -271,7 +271,7 @@ class BatchNorm(val param: LayerParameter, val id: Int, val net: CaffeNetwork) e
    *  - ema_var: Exponential moving average of the variance, of
    *      shape (C, 1).
    */
-  override def init(dmlScript: StringBuilder) = invokeInit(dmlScript, List[String](gamma, beta, ema_mean, ema_var), numChannels)
+  override def init(dmlScript: StringBuilder) = {}// invokeInit(dmlScript, List[String](gamma, beta, ema_mean, ema_var), numChannels)
   var update_mean_var                         = true
   /*
    * Computes the forward pass for a 2D (spatial) batch normalization
