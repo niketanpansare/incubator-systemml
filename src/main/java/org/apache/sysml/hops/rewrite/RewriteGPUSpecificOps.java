@@ -179,7 +179,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRuleWithPatternMatcher {
 	private static final HopDagPatternMatcher _batchNormDGamma;
 	static {
 		_batchNormDGamma = util_channel_sums(
-				mult(	leaf("dout", MATRIX),
+				mult(	leaf("dout", MATRIX).fitsOnGPU(3),
 						bias_multiply(bias_add(leaf("X", MATRIX), unaryMinus(leaf("ema_mean", MATRIX))), 
 				leaf("ema_var", MATRIX))), leaf("C", SCALAR), leaf("HW", SCALAR));
 	}
