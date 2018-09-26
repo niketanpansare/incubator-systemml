@@ -305,16 +305,16 @@ class Caffe2DML(val sc: SparkContext,
   // Comma is included
   def getParforParameters():String = if (inputs.containsKey("$parfor_parameters")) inputs.get("$parfor_parameters") else ""
 
-  Caffe2DML.INLINE_NN_LIBRARY = if (inputs.containsKey("$inline_nn_library")) inputs.get("$inline_nn_library").toLowerCase.toBoolean else false
   // ================================================================================================
   // The below method parses the provided network and solver file and generates DML script.
   def getTrainingScript(isSingleNode: Boolean): (Script, String, String) = {
     val startTrainingTime = System.nanoTime()
-
+    
     reset // Reset the state of DML generator for training script.
 
     // Flags passed by user
     val DEBUG_TRAINING = if (inputs.containsKey("$debug")) inputs.get("$debug").toLowerCase.toBoolean else false
+    Caffe2DML.INLINE_NN_LIBRARY = if (inputs.containsKey("$inline_nn_library")) inputs.get("$inline_nn_library").toLowerCase.toBoolean else false
     assign(tabDMLScript, "debug", if (DEBUG_TRAINING) "TRUE" else "FALSE")
     setDebugFlags(DEBUG_TRAINING)
 
