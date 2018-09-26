@@ -363,6 +363,10 @@ public class SparkExecutionContext extends ExecutionContext
 			//get in-memory matrix block and parallelize it
 			//w/ guarded parallelize (fallback to export, rdd from file if too large)
 			MatrixCharacteristics mc = mo.getMatrixCharacteristics();
+			if(mc.getRowsPerBlock() < 0 && mc.getNumColBlocks() < 0) {
+				mc.setRowsPerBlock(OptimizerUtils.DEFAULT_BLOCKSIZE);
+				mc.setColsPerBlock(OptimizerUtils.DEFAULT_BLOCKSIZE);
+			}
 			boolean fromFile = false;
 			if( !OptimizerUtils.checkSparkCollectMemoryBudget(mc, 0) || !_parRDDs.reserve(
 					OptimizerUtils.estimatePartitionedSizeExactSparsity(mc))) {
