@@ -73,8 +73,8 @@ public class ScriptExecutorUtils {
 	 */
 	public static void executeRuntimeProgram(Program rtprog, ExecutionContext ec, DMLConfig dmlconf, int statisticsMaxHeavyHitters, Set<String> outputVariables) {
 		boolean exceptionThrown = false;
-		
 		Statistics.startRunTimer();
+		Exception finalizeException = null;
 		try {
 			// run execute (w/ exception handling to ensure proper shutdown)
 			if (ConfigurationManager.isGPU() && ec != null) {
@@ -116,9 +116,9 @@ public class ScriptExecutorUtils {
 						gCtx.clearTemporaryMemory();
 					}
 					GPUContextPool.freeAllGPUContexts();
-				} catch(Exception e1) {
-					// Ignore error while cleanup, but print stack trace 
-					e1.printStackTrace();
+				} catch (Exception e1) {
+					exceptionThrown = true;
+					finalizeException = e1; // do not throw exception while cleanup
 				}
 			}
 			if( ConfigurationManager.isCodegenEnabled() )
@@ -130,6 +130,9 @@ public class ScriptExecutorUtils {
 				.println(Statistics.display(statisticsMaxHeavyHitters > 0 ?
 					statisticsMaxHeavyHitters : ConfigurationManager.getDMLOptions().getStatisticsMaxHeavyHitters()));
 			ConfigurationManager.resetStatistics();
+		}
+		if(finalizeException != null) {
+			throw new DMLRuntimeException("Error occured while GPU memory cleanup.", finalizeException);
 		}
 	}
 

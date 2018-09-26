@@ -304,7 +304,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRuleWithPatternMatcher {
 			rewriters.add(new HopPatternRewriter("batchNormdX", _batchNormdX, _batchNormdXReplacer));
 			rewriters.add(new HopPatternRewriter("batchNormTest", _batchNormTest, _batchNormTestReplacer));
 			rewriters.add(new HopPatternRewriter("batchNormUpdatedVar", _batchNormUpdatedVar, _batchNormUpdatedVarReplacer));
-			rewriters.add(new HopPatternRewriter("batchNormDGamma", _batchNormDGamma, _batchNormDGammaReplacer));
+			// rewriters.add(new HopPatternRewriter("batchNormDGamma", _batchNormDGamma, _batchNormDGammaReplacer));
 			rewriters.add(new HopPatternRewriter("channelSums", _channelSums, _channelSumsReplacer));
 			rewriters.add(new HopPatternRewriter("updateNesterovX", _updateNesterovX, _updateNesterovXReplacer));
 			rewriters.add(new HopPatternRewriter("reshapeColMeans", _reshapeColMeans, _reshapeColMeansReplacer));
