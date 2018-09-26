@@ -622,7 +622,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 					fetcher.getInputPointer("ema_var"),
 					tmp,
 					// N, C, HW, CHW, NCHW
-					toInt(N), toInt(C), toInt(HW), toInt(CHW), toInt(N*CHW));
+					toInt(N), toInt(C), toInt(HW), toInt(CHW), N*CHW);
 			
 			LibMatrixCUDA.channelSums(gCtx, instName, 
 					tmp, fetcher.getOutputPointer(C, 1), N, C, HW);

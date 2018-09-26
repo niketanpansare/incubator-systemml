@@ -2388,7 +2388,7 @@ extern "C" __global__ void invVar_f(float *X, float *C, double eps, unsigned int
 
 template <typename T>
 __device__ void backward_dgamma_tmp(T *ema_mean, T *dout, T *X, T*ema_var, T*ret, int N, int C,
-                         int HW, int CHW, int NCHW) {
+                         int HW, int CHW, unsigned int NCHW) {
   int tid = blockIdx.x * blockDim.x + threadIdx.x;
   if (tid < NCHW) {
     int c = (tid % CHW) / HW;
@@ -2397,7 +2397,7 @@ __device__ void backward_dgamma_tmp(T *ema_mean, T *dout, T *X, T*ema_var, T*ret
 }
 
 extern "C" __global__ void backward_dgamma_tmp_d(double *ema_mean, double *dout, double *X, double* ema_var, double* ret, 
-	int N, int C, int HW, int CHW, int NCHW) {
+	int N, int C, int HW, int CHW, unsigned int NCHW) {
   backward_dgamma_tmp(ema_mean, dout, X, ema_var, ret, N, C, HW, CHW, NCHW);
 }
 

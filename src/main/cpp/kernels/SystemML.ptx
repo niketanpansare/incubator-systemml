@@ -15116,7 +15116,7 @@ BB123_2:
 	mov.u32 	%r6, %ntid.x;
 	mov.u32 	%r7, %tid.x;
 	mad.lo.s32 	%r1, %r6, %r5, %r7;
-	setp.ge.s32	%p1, %r1, %r4;
+	setp.ge.u32	%p1, %r1, %r4;
 	@%p1 bra 	BB124_2;
 
 	cvta.to.global.u64 	%rd6, %rd2;
@@ -15178,7 +15178,7 @@ BB124_2:
 	mov.u32 	%r6, %ntid.x;
 	mov.u32 	%r7, %tid.x;
 	mad.lo.s32 	%r1, %r6, %r5, %r7;
-	setp.ge.s32	%p1, %r1, %r4;
+	setp.ge.u32	%p1, %r1, %r4;
 	@%p1 bra 	BB125_2;
 
 	cvta.to.global.u64 	%rd6, %rd2;
