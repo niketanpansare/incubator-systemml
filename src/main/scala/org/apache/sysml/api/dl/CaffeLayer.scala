@@ -126,7 +126,7 @@ trait CaffeLayer extends BaseDMLGenerator {
   // The layers that have a corresponding dml script call this method.
   // Assumption: the first variable of resultVariables is always dX
   def invokeBackward(dmlScript: StringBuilder, outSuffix: String, resultVariables: List[String], arguments: String*): Unit = {
-    invoke(dmlScript, sourceFileName + "::", resultVariables.map(_ + outSuffix), "backward", arguments.toList, false)
+    Utils.invoke(Caffe2DML.layerDir, dmlScript, sourceFileName + "::", resultVariables.map(_ + outSuffix), "backward", arguments.toList, false)
     val bottomLayerIDs = net.getBottomLayers(param.getName).map(l => net.getCaffeLayer(l).id)
     dmlScript.append("; ")
     bottomLayerIDs.map(bottomLayerID => dmlScript.append(dX(bottomLayerID) + outSuffix + " = " + resultVariables(0) + outSuffix + "; "))
@@ -143,49 +143,11 @@ trait CaffeLayer extends BaseDMLGenerator {
   // --------------------------------------------------------------------------------------
   
   def invoke(dmlScript: StringBuilder, namespace1: String, returnVariables: List[String], functionName: String, arguments: List[String]): Unit =
-    invoke(dmlScript, namespace1, returnVariables, functionName, arguments, true)
-  
-  def invoke(dmlScript: StringBuilder, namespace1: String, returnVariables: List[String], functionName: String, arguments: List[String], appendNewLine: Boolean): Unit = {
-    if(caffe2dmlObj.shouldInlineNNLibrary()) {
-      // For now, donot inline recursively
-      val sourceFileName = if(namespace1.endsWith("::")) namespace1.substring(0, namespace1.length() - 2) else namespace1
-      val method = caffe2dmlObj.getInlineableMethod(Caffe2DML.layerDir + sourceFileName + ".dml", namespace1, functionName)
-      val generatedDML = method.getInlinedDML(new ArrayList[String](arguments.asJava), new ArrayList[String](returnVariables.asJava))
-      dmlScript.append(generatedDML)
-      dmlScript.append("\n")
-      //System.out.println(generatedDML)
-      return
-    }
-    if (returnVariables.length == 0) throw new DMLRuntimeException("User-defined functions should have atleast one return value")
-    if (returnVariables.length > 1) dmlScript.append("[")
-    dmlScript.append(returnVariables(0))
-    if (returnVariables.length > 1) {
-      for (i <- 1 until returnVariables.length) {
-        dmlScript.append(",").append(returnVariables(i))
-      }
-      dmlScript.append("]")
-    }
-    dmlScript.append(" = ")
-    dmlScript.append(namespace1)
-    dmlScript.append(functionName)
-    dmlScript.append("(")
-    if (arguments != null) {
-      if (arguments.length != 0)
-        dmlScript.append(arguments(0))
-      if (arguments.length > 1) {
-        for (i <- 1 until arguments.length) {
-          dmlScript.append(",").append(arguments(i))
-        }
-      }
-    }
-    dmlScript.append(")")
-    if (appendNewLine)
-      dmlScript.append("\n")
-  }
+    Utils.invoke(Caffe2DML.layerDir, dmlScript, namespace1, returnVariables, functionName, arguments, true)
   def invoke(dmlScript: StringBuilder, namespace1: String, returnVariables: List[String], functionName: String, appendNewLine: Boolean, arguments: String*): Unit =
-    invoke(dmlScript, namespace1, returnVariables, functionName, arguments.toList, appendNewLine)
+    Utils.invoke(Caffe2DML.layerDir, dmlScript, namespace1, returnVariables, functionName, arguments.toList, appendNewLine)
   def invoke(dmlScript: StringBuilder, namespace1: String, returnVariables: List[String], functionName: String, arguments: String*): Unit =
-    invoke(dmlScript, namespace1, returnVariables, functionName, arguments.toList, true)
+    Utils.invoke(Caffe2DML.layerDir, dmlScript, namespace1, returnVariables, functionName, arguments.toList, true)
 }
 
 trait IsLossLayer extends CaffeLayer {
