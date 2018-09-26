@@ -623,10 +623,10 @@ public class DnnGPUInstruction extends GPUInstruction {
 					tmp,
 					// N, C, HW, CHW, NCHW
 					toInt(N), toInt(C), toInt(HW), toInt(CHW), toInt(N*CHW));
-			gCtx.cudaFreeHelper(instName, tmp, gCtx.EAGER_CUDA_FREE);
 			
 			LibMatrixCUDA.channelSums(gCtx, instName, 
 					tmp, fetcher.getOutputPointer(C, 1), N, C, HW);
+			gCtx.cudaFreeHelper(instName, tmp, gCtx.EAGER_CUDA_FREE);
 		}
 	}
 	
