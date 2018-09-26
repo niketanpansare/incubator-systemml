@@ -2390,8 +2390,10 @@ template <typename T>
 __device__ void backward_dgamma_tmp(T *ema_mean, T *dout, T *X, T*ema_var, T*ret, int N, int C,
                          int HW, int CHW, unsigned int NCHW) {
   int tid = blockIdx.x * blockDim.x + threadIdx.x;
-  if (tid < NCHW) {
-    int c = (tid % CHW) / HW;
+  int ix = tid / CHW;
+  int iy = tid % CHW;
+  if (ix < N && iy < CHW) {
+    int c = iy / HW;
     ret[tid] = dout[tid] * ((X[tid] - ema_mean[c]) * ema_var[c]);
   }
 }

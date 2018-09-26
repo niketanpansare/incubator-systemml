@@ -15098,8 +15098,8 @@ BB123_2:
 	.param .u32 backward_dgamma_tmp_d_param_9
 )
 {
-	.reg .pred 	%p<2>;
-	.reg .b32 	%r<10>;
+	.reg .pred 	%p<4>;
+	.reg .b32 	%r<11>;
 	.reg .f64 	%fd<8>;
 	.reg .b64 	%rd<18>;
 
@@ -15109,25 +15109,30 @@ BB123_2:
 	ld.param.u64 	%rd3, [backward_dgamma_tmp_d_param_2];
 	ld.param.u64 	%rd4, [backward_dgamma_tmp_d_param_3];
 	ld.param.u64 	%rd5, [backward_dgamma_tmp_d_param_4];
+	ld.param.u32 	%r4, [backward_dgamma_tmp_d_param_5];
 	ld.param.u32 	%r2, [backward_dgamma_tmp_d_param_7];
 	ld.param.u32 	%r3, [backward_dgamma_tmp_d_param_8];
-	ld.param.u32 	%r4, [backward_dgamma_tmp_d_param_9];
 	mov.u32 	%r5, %ctaid.x;
 	mov.u32 	%r6, %ntid.x;
 	mov.u32 	%r7, %tid.x;
 	mad.lo.s32 	%r1, %r6, %r5, %r7;
-	setp.ge.u32	%p1, %r1, %r4;
-	@%p1 bra 	BB124_2;
+	div.s32 	%r8, %r1, %r3;
+	setp.lt.s32	%p1, %r8, %r4;
+	setp.gt.s32	%p2, %r3, -1;
+	and.pred  	%p3, %p1, %p2;
+	@!%p3 bra 	BB124_2;
+	bra.uni 	BB124_1;
 
+BB124_1:
+	rem.s32 	%r9, %r1, %r3;
 	cvta.to.global.u64 	%rd6, %rd2;
-	rem.s32 	%r8, %r1, %r3;
-	div.s32 	%r9, %r8, %r2;
 	mul.wide.s32 	%rd7, %r1, 8;
 	add.s64 	%rd8, %rd6, %rd7;
 	cvta.to.global.u64 	%rd9, %rd3;
 	add.s64 	%rd10, %rd9, %rd7;
+	div.s32 	%r10, %r9, %r2;
 	cvta.to.global.u64 	%rd11, %rd1;
-	mul.wide.s32 	%rd12, %r9, 8;
+	mul.wide.s32 	%rd12, %r10, 8;
 	add.s64 	%rd13, %rd11, %rd12;
 	ld.global.f64 	%fd1, [%rd13];
 	ld.global.f64 	%fd2, [%rd10];
@@ -15160,8 +15165,8 @@ BB124_2:
 	.param .u32 backward_dgamma_tmp_f_param_9
 )
 {
-	.reg .pred 	%p<2>;
-	.reg .b32 	%r<10>;
+	.reg .pred 	%p<4>;
+	.reg .b32 	%r<11>;
 	.reg .f64 	%fd<8>;
 	.reg .b64 	%rd<18>;
 
@@ -15171,25 +15176,30 @@ BB124_2:
 	ld.param.u64 	%rd3, [backward_dgamma_tmp_f_param_2];
 	ld.param.u64 	%rd4, [backward_dgamma_tmp_f_param_3];
 	ld.param.u64 	%rd5, [backward_dgamma_tmp_f_param_4];
+	ld.param.u32 	%r4, [backward_dgamma_tmp_f_param_5];
 	ld.param.u32 	%r2, [backward_dgamma_tmp_f_param_7];
 	ld.param.u32 	%r3, [backward_dgamma_tmp_f_param_8];
-	ld.param.u32 	%r4, [backward_dgamma_tmp_f_param_9];
 	mov.u32 	%r5, %ctaid.x;
 	mov.u32 	%r6, %ntid.x;
 	mov.u32 	%r7, %tid.x;
 	mad.lo.s32 	%r1, %r6, %r5, %r7;
-	setp.ge.u32	%p1, %r1, %r4;
-	@%p1 bra 	BB125_2;
+	div.s32 	%r8, %r1, %r3;
+	setp.lt.s32	%p1, %r8, %r4;
+	setp.gt.s32	%p2, %r3, -1;
+	and.pred  	%p3, %p1, %p2;
+	@!%p3 bra 	BB125_2;
+	bra.uni 	BB125_1;
 
+BB125_1:
+	rem.s32 	%r9, %r1, %r3;
 	cvta.to.global.u64 	%rd6, %rd2;
-	rem.s32 	%r8, %r1, %r3;
-	div.s32 	%r9, %r8, %r2;
 	mul.wide.s32 	%rd7, %r1, 8;
 	add.s64 	%rd8, %rd6, %rd7;
 	cvta.to.global.u64 	%rd9, %rd3;
 	add.s64 	%rd10, %rd9, %rd7;
+	div.s32 	%r10, %r9, %r2;
 	cvta.to.global.u64 	%rd11, %rd1;
-	mul.wide.s32 	%rd12, %r9, 8;
+	mul.wide.s32 	%rd12, %r10, 8;
 	add.s64 	%rd13, %rd11, %rd12;
 	ld.global.f64 	%fd1, [%rd13];
 	ld.global.f64 	%fd2, [%rd10];

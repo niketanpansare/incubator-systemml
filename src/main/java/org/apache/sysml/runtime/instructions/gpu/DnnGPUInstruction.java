@@ -614,6 +614,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 			}
 			long HW = CHW / C;
 			Pointer tmp = gCtx.allocate(instName, N*CHW*LibMatrixCUDA.sizeOfDataType);
+			// jcuda.runtime.JCuda.cudaDeviceSynchronize();
 			LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("backward_dgamma_tmp", 
 					ExecutionConfig.getConfigForSimpleVectorOperations(LibMatrixCUDA.toInt(N*CHW)),
 					fetcher.getInputPointer("ema_mean"), 
