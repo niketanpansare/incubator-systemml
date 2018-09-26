@@ -599,7 +599,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 	private void processBatchNorm2dBackwardDGammaInstruction(ExecutionContext ec) {
 		try(GPUDenseInputPointerFetcher fetcher = new GPUDenseInputPointerFetcher(ec, gCtx, instName, _output)) {
 			fetcher.add("ema_mean", _input1).add("dout", _input2).add("X", _input3)
-			.addScalar("ema_var", _input4);
+			.add("ema_var", _input4);
 			MatrixObject ema_mean = fetcher.getInputMatrixObject("ema_mean");
 			MatrixObject dout = fetcher.getInputMatrixObject("dout");
 			long C = ema_mean.getNumRows();
