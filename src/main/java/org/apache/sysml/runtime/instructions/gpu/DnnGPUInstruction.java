@@ -596,40 +596,40 @@ public class DnnGPUInstruction extends GPUInstruction {
 	}
 	
 	// "ema_mean", "dout", "X", "ema_var"
-		private void processBatchNorm2dBackwardDGammaInstruction(ExecutionContext ec) {
-			try(GPUDenseInputPointerFetcher fetcher = new GPUDenseInputPointerFetcher(ec, gCtx, instName, _output)) {
-				fetcher.add("ema_mean", _input1).add("dout", _input2).add("X", _input3)
-				.add("ema_var", _input4);
-				MatrixObject ema_mean = fetcher.getInputMatrixObject("ema_mean");
-				MatrixObject dout = fetcher.getInputMatrixObject("dout");
-				long C = ema_mean.getNumRows();
-				long N = dout.getNumRows();
-				long CHW = dout.getNumColumns();
-				fetcher.validateDimensions("ema_mean", C, 1);
-				fetcher.validateDimensions("dout", N, CHW);
-				fetcher.validateDimensions("X", N, CHW);
-				fetcher.validateDimensions("ema_var", C, 1);
-				if(CHW % C != 0) {
-					throw new DMLRuntimeException("Incorrect dimensions: C=" + C + ", CHW=" + CHW);
-				}
-				long HW = CHW / C;
-				Pointer tmp = gCtx.allocate(instName, N*CHW*LibMatrixCUDA.sizeOfDataType);
-				// jcuda.runtime.JCuda.cudaDeviceSynchronize();
-				LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("backward_dgamma_tmp", 
-						ExecutionConfig.getConfigForSimpleVectorOperations(LibMatrixCUDA.toInt(N*CHW)),
-						fetcher.getInputPointer("ema_mean"), 
-						fetcher.getInputPointer("dout"),
-						fetcher.getInputPointer("X"),
-						fetcher.getInputPointer("ema_var"),
-						tmp,
-						// N, C, HW, CHW, NCHW
-						toInt(N), toInt(C), toInt(HW), toInt(CHW), N*CHW);
-				
-				LibMatrixCUDA.channelSums(gCtx, instName, 
-						tmp, fetcher.getOutputPointer(C, 1), N, C, HW);
-				gCtx.cudaFreeHelper(instName, tmp, gCtx.EAGER_CUDA_FREE);
+	private void processBatchNorm2dBackwardDGammaInstruction(ExecutionContext ec) {
+		try(GPUDenseInputPointerFetcher fetcher = new GPUDenseInputPointerFetcher(ec, gCtx, instName, _output)) {
+			fetcher.add("ema_mean", _input1).add("dout", _input2).add("X", _input3)
+			.add("ema_var", _input4);
+			MatrixObject ema_mean = fetcher.getInputMatrixObject("ema_mean");
+			MatrixObject dout = fetcher.getInputMatrixObject("dout");
+			long C = ema_mean.getNumRows();
+			long N = dout.getNumRows();
+			long CHW = dout.getNumColumns();
+			fetcher.validateDimensions("ema_mean", C, 1);
+			fetcher.validateDimensions("dout", N, CHW);
+			fetcher.validateDimensions("X", N, CHW);
+			fetcher.validateDimensions("ema_var", C, 1);
+			if(CHW % C != 0) {
+				throw new DMLRuntimeException("Incorrect dimensions: C=" + C + ", CHW=" + CHW);
 			}
+			long HW = CHW / C;
+			Pointer tmp = gCtx.allocate(instName, N*CHW*LibMatrixCUDA.sizeOfDataType);
+			// jcuda.runtime.JCuda.cudaDeviceSynchronize();
+			LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("backward_dgamma_tmp", 
+					ExecutionConfig.getConfigForSimpleVectorOperations(LibMatrixCUDA.toInt(N*CHW)),
+					fetcher.getInputPointer("ema_mean"), 
+					fetcher.getInputPointer("dout"),
+					fetcher.getInputPointer("X"),
+					fetcher.getInputPointer("ema_var"),
+					tmp,
+					// N, C, HW, CHW, NCHW
+					toInt(N), toInt(C), toInt(HW), toInt(CHW), N*CHW);
+			
+			LibMatrixCUDA.channelSums(gCtx, instName, 
+					tmp, fetcher.getOutputPointer(C, 1), N, C, HW);
+			gCtx.cudaFreeHelper(instName, tmp, gCtx.EAGER_CUDA_FREE);
 		}
+	}
 	
 	private static int toInt(long num) throws DMLRuntimeException {
 		if(num >= Integer.MAX_VALUE || num <= Integer.MIN_VALUE) {

@@ -384,6 +384,7 @@ public class LibMatrixCUDA {
 		reduceRow(gCtx, instName, "reduce_row_sum", tmp, outputPointer, toInt(C), toInt(HW));
 		gCtx.cudaFreeHelper(instName, tmp, gCtx.EAGER_CUDA_FREE);
 	}
+			
 
 	/**
 	 * Performs the operation corresponding to the DML script:

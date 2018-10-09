@@ -73,7 +73,6 @@ public class ScriptExecutorUtils {
 	 */
 	public static void executeRuntimeProgram(Program rtprog, ExecutionContext ec, DMLConfig dmlconf, int statisticsMaxHeavyHitters, Set<String> outputVariables) {
 		boolean exceptionThrown = false;
-		
 		Statistics.startRunTimer();
 		Exception finalizeException = null;
 		try {

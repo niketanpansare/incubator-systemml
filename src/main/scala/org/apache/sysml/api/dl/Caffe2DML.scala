@@ -119,8 +119,9 @@ object Caffe2DML {
   val LOG = LogFactory.getLog(classOf[Caffe2DML].getName())
   // ------------------------------------------------------------------------
   val USE_PLUS_EQ = true
-  def layerDir = "nn/layers/"
-  def optimDir = "nn/optim/"
+  def nnDir = "nn/"
+  def layerDir = nnDir + "layers/"
+  def optimDir = nnDir + "optim/"
 
   // Naming conventions:
   val X    = "X"; val y        = "y"; val batchSize = "BATCH_SIZE"; val numImages = "num_images"; val numValidationImages = "num_validation"
@@ -159,6 +160,7 @@ object Caffe2DML {
   val BATCH_ALGORITHM = "batch"
   val ALLREDUCE_ALGORITHM = "allreduce"
   val ALLREDUCE_PARALLEL_BATCHES_ALGORITHM = "allreduce_parallel_batches"
+  var INLINE_NN_LIBRARY = false
 }
 
 class Caffe2DML(val sc: SparkContext,
@@ -307,11 +309,12 @@ class Caffe2DML(val sc: SparkContext,
   // The below method parses the provided network and solver file and generates DML script.
   def getTrainingScript(isSingleNode: Boolean): (Script, String, String) = {
     val startTrainingTime = System.nanoTime()
-
+    
     reset // Reset the state of DML generator for training script.
 
     // Flags passed by user
     val DEBUG_TRAINING = if (inputs.containsKey("$debug")) inputs.get("$debug").toLowerCase.toBoolean else false
+    Caffe2DML.INLINE_NN_LIBRARY = if (inputs.containsKey("$inline_nn_library")) inputs.get("$inline_nn_library").toLowerCase.toBoolean else false
     assign(tabDMLScript, "debug", if (DEBUG_TRAINING) "TRUE" else "FALSE")
     setDebugFlags(DEBUG_TRAINING)
 
