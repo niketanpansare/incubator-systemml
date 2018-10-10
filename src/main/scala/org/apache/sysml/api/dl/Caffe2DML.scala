@@ -119,9 +119,9 @@ object Caffe2DML {
   val LOG = LogFactory.getLog(classOf[Caffe2DML].getName())
   // ------------------------------------------------------------------------
   val USE_PLUS_EQ = true
-  def nnDir = "nn"
-  def layerDir = nnDir + "/layers/"
-  def optimDir = nnDir + "/optim/"
+  def nnDir = "nn/"
+  def layerDir = nnDir + "layers/"
+  def optimDir = nnDir + "optim/"
 
   // Naming conventions:
   val X    = "X"; val y        = "y"; val batchSize = "BATCH_SIZE"; val numImages = "num_images"; val numValidationImages = "num_validation"

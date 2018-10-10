@@ -246,7 +246,7 @@ trait DMLGenerator extends SourceDMLGenerator with NextBatchGenerator {
     // Append source statements for layers as well as solver
     source(net, solver, if (isTraining) Array[String]("l1_reg") else null)
     source(net, solver, if (isTraining) Array[String]("l2_reg") else null)
-    source(dmlScript, numTabs, "util", Caffe2DML.nnDir + "/")
+    source(dmlScript, numTabs, "util", Caffe2DML.nnDir)
 
     if (isTraining) {
       // Append external built-in function headers:
