@@ -83,6 +83,12 @@ import org.apache.sysml.parser.dml.DmlParser.UnaryExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.ValueTypeContext;
 import org.apache.sysml.parser.dml.DmlParser.WhileStatementContext;
 
+/**
+ * This class is used to generate inline-able methods.
+ * It does so in two phases:
+ * - Phase 1. Rewriting phase where local variables are rewritten by adding a prefix.
+ * - Phase 2. Capture the body of the functions using InlineableMethods class 
+ */
 public class InlineHelper extends CommonSyntacticValidator implements DmlListener {
 	final static String ARG_PREFIX;
 	static {
@@ -103,8 +109,8 @@ public class InlineHelper extends CommonSyntacticValidator implements DmlListene
 		rewriter = rewriter1;
 	}
 	
-	void setPhase(boolean isCollect) {
-		isRewritePhase = isCollect;
+	void setPhase(boolean isRewritePhase1) {
+		isRewritePhase = isRewritePhase1;
 	}
 	
 

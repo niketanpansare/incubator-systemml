@@ -26,6 +26,11 @@ import java.util.Random;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 
+/** 
+ * This class is a simple container class used to hold the function to be inlined.
+ * It contains the function name, body and also the input and return arguments.
+ * The user invokes getInlinedDML method to get the inlined DML code.
+ */
 public class InlineableMethods {
 	ArrayList<String> _variables;
 	final String _body;
