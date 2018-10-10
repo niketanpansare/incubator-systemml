@@ -119,7 +119,7 @@ object Caffe2DML {
   val LOG = LogFactory.getLog(classOf[Caffe2DML].getName())
   // ------------------------------------------------------------------------
   val USE_PLUS_EQ = true
-  def nnDir = "nn/"
+  def nnDir = "nn"
   def layerDir = nnDir + "/layers/"
   def optimDir = nnDir + "/optim/"
 
