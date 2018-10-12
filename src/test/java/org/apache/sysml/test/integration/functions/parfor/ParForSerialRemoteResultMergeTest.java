@@ -127,8 +127,7 @@ public class ParForSerialRemoteResultMergeTest extends AutomatedTestBase
 		boolean oldUseSparkConfig = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		
 		if( test_name.equals(TEST_NAME3) || test_name.equals(TEST_NAME4)  ) {
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-			rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
+			setRuntimePlatform(RUNTIME_PLATFORM.HYBRID_SPARK);
 		}
 		
 		//inst exec type, influenced via rows

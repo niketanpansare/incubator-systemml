@@ -130,7 +130,8 @@ public class ParForRepeatedOptimizationTest extends AutomatedTestBase
 	 */
 	private void runParForRepeatedOptTest( boolean reusePartitionedData, boolean update, boolean changedDim, ExecType et, int numExpectedMR )
 	{
-		RUNTIME_PLATFORM platformOld = rtplatform;
+		
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(et);
 		double memfactorOld = OptimizerUtils.MEM_UTIL_FACTOR;
 		boolean reuseOld = ParForProgramBlock.ALLOW_REUSE_PARTITION_VARS;
 		

@@ -22,7 +22,8 @@ package org.apache.sysml.test.integration.functions.parfor;
 import java.util.HashMap;
 
 import org.junit.Test;
-
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -118,6 +119,8 @@ public class ParForDataPartitionLeftIndexingTest extends AutomatedTestBase
 			long mem = 1024*1024*1;
 			InfrastructureAnalyzer.setLocalMaxMemory(mem);
 		}
+		
+		setRuntimePlatform(et);
 		
 		try
 		{

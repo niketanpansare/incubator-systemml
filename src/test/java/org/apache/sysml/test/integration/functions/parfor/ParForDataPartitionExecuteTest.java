@@ -91,15 +91,8 @@ public class ParForDataPartitionExecuteTest extends AutomatedTestBase
 	
 	private void runFusedDataPartitionExecuteTest(boolean sparse, boolean row, ExecType et)
 	{
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		switch( et ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
-			case SPARK: rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK; break;
-			default: throw new RuntimeException("Unsupported exec type: "+et.name());
-		}
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( et == ExecType.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(et);
 		
 		//modify memory budget to trigger fused datapartition-execute
 		long oldmem = InfrastructureAnalyzer.getLocalMaxMemory();
