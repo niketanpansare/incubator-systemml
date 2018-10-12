@@ -197,7 +197,16 @@ public abstract class AutomatedTestBase
 	 * Also set DMLScript.USE_LOCAL_SPARK_CONFIG to true for running the test
 	 * suite in spark mode
 	 */
-	protected static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HYBRID;
+	protected static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
+	
+	protected static RUNTIME_PLATFORM setRuntimePlatform(RUNTIME_PLATFORM platform) {
+		RUNTIME_PLATFORM platformOld = rtplatform;
+		if(platform == RUNTIME_PLATFORM.SPARK || platform == RUNTIME_PLATFORM.HYBRID_SPARK) {
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true; // Always use local config for junit tests
+		}
+		rtplatform = platform;
+		return platformOld;
+	}
 	
 	protected static RUNTIME_PLATFORM setRuntimePlatform(ExecType et) {
 		RUNTIME_PLATFORM platformOld = rtplatform;

@@ -190,7 +190,7 @@ public class LeftIndexingSparseDenseTest extends AutomatedTestBase
 		
 		
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		RUNTIME_PLATFORM oldRTP = rtplatform;
+		RUNTIME_PLATFORM oldRTP = setRuntimePlatform(et);
 		
 		//setup range (column lower/upper)
 		try {
@@ -198,16 +198,6 @@ public class LeftIndexingSparseDenseTest extends AutomatedTestBase
 			if(indexingMethod != null) {
 				LeftIndexingOp.FORCED_LEFT_INDEXING = indexingMethod;
 			}
-			
-			if(et == ExecType.SPARK) {
-		    	rtplatform = RUNTIME_PLATFORM.SPARK;
-		    }
-			else {
-				// rtplatform = (et==ExecType.MR)? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.SINGLE_NODE;
-			    rtplatform = RUNTIME_PLATFORM.HYBRID;
-			}
-			if( rtplatform == RUNTIME_PLATFORM.SPARK )
-				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 			
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			

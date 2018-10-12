@@ -144,12 +144,7 @@ public class ReadCSVTest extends AutomatedTestBase
 
 	private void runCSVTest(int testNumber, RUNTIME_PLATFORM platform, boolean parallel) 
 	{
-		RUNTIME_PLATFORM oldPlatform = rtplatform;
-		rtplatform = platform;
-		
-		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		RUNTIME_PLATFORM oldPlatform = setRuntimePlatform(platform);
 		
 		boolean oldpar = CompilerConfig.FLAG_PARREADWRITE_TEXT;
 		

@@ -97,9 +97,7 @@ public class CSVParametersTest extends AutomatedTestBase
 		setup();
 		sparsity = 0.1;
 		
-		RUNTIME_PLATFORM old_platform = rtplatform;
-		
-		rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
+		RUNTIME_PLATFORM old_platform = setRuntimePlatform(RUNTIME_PLATFORM.SINGLE_NODE);
 		csvParameterTest(rtplatform, sparsity);
 		
 		rtplatform = old_platform;
@@ -110,9 +108,7 @@ public class CSVParametersTest extends AutomatedTestBase
 		setup();
 		sparsity = 1.0;
 		
-		RUNTIME_PLATFORM old_platform = rtplatform;
-
-		rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
+		RUNTIME_PLATFORM old_platform = setRuntimePlatform(RUNTIME_PLATFORM.SINGLE_NODE);
 		csvParameterTest(rtplatform, sparsity);
 		
 		rtplatform = old_platform;
@@ -123,9 +119,7 @@ public class CSVParametersTest extends AutomatedTestBase
 		setup();
 		sparsity = 0.1;
 
-		RUNTIME_PLATFORM old_platform = rtplatform;
-
-		rtplatform = RUNTIME_PLATFORM.HADOOP;
+		RUNTIME_PLATFORM old_platform = setRuntimePlatform(RUNTIME_PLATFORM.HADOOP);
 		csvParameterTest(rtplatform, sparsity);
 		
 		rtplatform = old_platform;
@@ -136,9 +130,7 @@ public class CSVParametersTest extends AutomatedTestBase
 		setup();
 		sparsity = 1.0;
 
-		RUNTIME_PLATFORM old_platform = rtplatform;
-
-		rtplatform = RUNTIME_PLATFORM.HADOOP;
+		RUNTIME_PLATFORM old_platform = setRuntimePlatform(RUNTIME_PLATFORM.HADOOP);
 		csvParameterTest(rtplatform, sparsity);
 		
 		rtplatform = old_platform;
@@ -149,9 +141,8 @@ public class CSVParametersTest extends AutomatedTestBase
 		setup();
 		sparsity = 0.1;
 		
-		RUNTIME_PLATFORM old_platform = rtplatform;
+		RUNTIME_PLATFORM old_platform = setRuntimePlatform(RUNTIME_PLATFORM.HYBRID);
 
-		rtplatform = RUNTIME_PLATFORM.HYBRID;
 		csvParameterTest(rtplatform, sparsity);
 		
 		rtplatform = old_platform;
@@ -162,9 +153,57 @@ public class CSVParametersTest extends AutomatedTestBase
 		setup();
 		sparsity = 1.0;
 		
-		RUNTIME_PLATFORM old_platform = rtplatform;
+		RUNTIME_PLATFORM old_platform = setRuntimePlatform(RUNTIME_PLATFORM.HYBRID);
+		
+		csvParameterTest(rtplatform, sparsity);
+		
+		rtplatform = old_platform;
+	}
+	
+	
+	@Test
+	public void testCSVParametersSparseSpark() {
+		setup();
+		sparsity = 0.1;
+		
+		RUNTIME_PLATFORM old_platform = setRuntimePlatform(RUNTIME_PLATFORM.SPARK);
 
-		rtplatform = RUNTIME_PLATFORM.HYBRID;
+		csvParameterTest(rtplatform, sparsity);
+		
+		rtplatform = old_platform;
+	}
+	
+	@Test
+	public void testCSVParametersDenseSpark() {
+		setup();
+		sparsity = 1.0;
+		
+		RUNTIME_PLATFORM old_platform = setRuntimePlatform(RUNTIME_PLATFORM.SPARK);
+		
+		csvParameterTest(rtplatform, sparsity);
+		
+		rtplatform = old_platform;
+	}
+	
+	@Test
+	public void testCSVParametersSparseHybridSpark() {
+		setup();
+		sparsity = 0.1;
+		
+		RUNTIME_PLATFORM old_platform = setRuntimePlatform(RUNTIME_PLATFORM.HYBRID_SPARK);
+
+		csvParameterTest(rtplatform, sparsity);
+		
+		rtplatform = old_platform;
+	}
+	
+	@Test
+	public void testCSVParametersDenseHybridSpark() {
+		setup();
+		sparsity = 1.0;
+		
+		RUNTIME_PLATFORM old_platform = setRuntimePlatform(RUNTIME_PLATFORM.HYBRID_SPARK);
+		
 		csvParameterTest(rtplatform, sparsity);
 		
 		rtplatform = old_platform;

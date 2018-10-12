@@ -23,7 +23,7 @@ import java.io.IOException;
 
 import org.junit.Assert;
 import org.junit.Test;
-
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -131,9 +131,8 @@ public class FullDynWriteTest extends AutomatedTestBase
 	 */
 	private void runDynamicWriteTest( Type type, OutputInfo fmt, ExecType et )
 	{		
-		String TEST_NAME = (type==Type.Scalar) ? TEST_NAME1 : TEST_NAME2;		 
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = (et==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+		String TEST_NAME = (type==Type.Scalar) ? TEST_NAME1 : TEST_NAME2;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(et);
 		
 		if(shouldSkipTest())
 			return;
