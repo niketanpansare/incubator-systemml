@@ -97,6 +97,9 @@ public class FrameScalarCastingTest extends AutomatedTestBase
 	 */
 	private void runFrameCastingTest( String testname, ValueType vt)
 	{	
+		if(shouldSkipTest())
+			return;
+		
 		try
 		{
 			TestConfiguration config = getTestConfiguration(testname);

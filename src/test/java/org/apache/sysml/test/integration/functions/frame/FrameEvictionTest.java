@@ -21,6 +21,8 @@ package org.apache.sysml.test.integration.functions.frame;
 
 import java.lang.reflect.Method;
 
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
@@ -181,6 +183,8 @@ public class FrameEvictionTest extends AutomatedTestBase
 	 */
 	private void runFrameEvictionTest( ValueType[] schema, boolean sparse, boolean defaultMeta, boolean force)
 	{
+		if(shouldSkipTest())
+			return;
 		try
 		{
 			//data generation

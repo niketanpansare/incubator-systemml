@@ -65,6 +65,9 @@ public class FunctionExpressionsTest extends AutomatedTestBase
 
 	private void runFunctionExpressionsTest( String TEST_NAME )
 	{		
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);

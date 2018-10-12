@@ -155,6 +155,9 @@ public class FrameReadWriteTest extends AutomatedTestBase
 	 */
 	private void runFrameReadWriteTest( OutputInfo oinfo, ValueType[] schema1, ValueType[] schema2, boolean parallel)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		boolean oldParText = CompilerConfig.FLAG_PARREADWRITE_TEXT;
 		boolean oldParBin = CompilerConfig.FLAG_PARREADWRITE_BINARY;
 		

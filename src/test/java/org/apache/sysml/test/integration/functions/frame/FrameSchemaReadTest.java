@@ -112,6 +112,9 @@ public class FrameSchemaReadTest extends AutomatedTestBase
 	 */
 	private void runFrameSchemaReadTest( String testname, ValueType[] schema, boolean wildcard)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		try
 		{
 			TestConfiguration config = getTestConfiguration(testname);

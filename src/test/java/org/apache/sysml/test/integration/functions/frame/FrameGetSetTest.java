@@ -82,6 +82,9 @@ public class FrameGetSetTest extends AutomatedTestBase
 	 */
 	private void runFrameGetSetTest( ValueType[] schema, InitType itype)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		try
 		{
 			//data generation

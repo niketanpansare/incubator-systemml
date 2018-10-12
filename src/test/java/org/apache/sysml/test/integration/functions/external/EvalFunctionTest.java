@@ -56,6 +56,9 @@ public class EvalFunctionTest extends AutomatedTestBase
 	}
 	
 	private void runEvalFunctionTest(String testname) {
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = getTestConfiguration(testname);
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);

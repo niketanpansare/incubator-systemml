@@ -79,6 +79,9 @@ public class FrameAppendTest extends AutomatedTestBase
 	 */
 	private void runFrameAppendTest( ValueType[] schema1, ValueType[] schema2, AppendType atype)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		try
 		{
 			//data generation

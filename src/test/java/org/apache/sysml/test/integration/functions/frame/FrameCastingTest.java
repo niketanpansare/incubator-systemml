@@ -83,6 +83,9 @@ public class FrameCastingTest extends AutomatedTestBase
 	 */
 	private void runFrameCastingTest( ValueType[] schema, CastType ctype)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		try
 		{
 			//data generation

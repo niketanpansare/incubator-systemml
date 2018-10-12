@@ -78,6 +78,9 @@ public class FrameSerializationTest extends AutomatedTestBase
 	 */
 	private void runFrameSerializeTest( ValueType[] schema, SerType stype)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		try
 		{
 			//data generation

@@ -19,6 +19,8 @@
 
 package org.apache.sysml.test.integration.functions.frame;
 
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.instructions.cp.AppendCPInstruction.AppendType;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
@@ -77,6 +79,9 @@ public class FrameCopyTest extends AutomatedTestBase
 	 */
 	private void runFrameCopyTest( ValueType[] schema1, ValueType[] schema2, AppendType atype)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		try
 		{
 			//data generation

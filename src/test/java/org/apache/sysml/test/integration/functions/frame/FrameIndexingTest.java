@@ -80,6 +80,9 @@ public class FrameIndexingTest extends AutomatedTestBase
 	 */
 	private void runFrameIndexingTest( ValueType[] schema, IXType itype)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		try
 		{
 			//data generation

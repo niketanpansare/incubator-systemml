@@ -59,6 +59,9 @@ public class ParforFrameIntermediateTest extends AutomatedTestBase
 	private void runParforFrameIntermediatesTest( ExecType et ) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		RUNTIME_PLATFORM platformOld = setRuntimePlatform(et);
+		if(shouldSkipTest())
+			return;
+		
 		
 		try
 		{
