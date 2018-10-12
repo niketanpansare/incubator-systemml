@@ -37,6 +37,7 @@ import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.Lop;
+import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -194,6 +195,22 @@ public abstract class AutomatedTestBase
 	 * suite in spark mode
 	 */
 	protected static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HYBRID;
+	
+	protected static RUNTIME_PLATFORM setRuntimePlatform(ExecType et) {
+		RUNTIME_PLATFORM platformOld = rtplatform;
+        switch (et) {
+            case MR:
+                rtplatform = RUNTIME_PLATFORM.HADOOP;
+                break;
+            case SPARK:
+                rtplatform = RUNTIME_PLATFORM.SPARK;
+                break;
+            default:
+                rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
+                break;
+        }
+		return platformOld;
+	}
 
 	protected static final boolean DEBUG = false;
 

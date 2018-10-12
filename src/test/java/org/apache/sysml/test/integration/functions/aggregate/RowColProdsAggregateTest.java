@@ -112,12 +112,7 @@ public class RowColProdsAggregateTest extends AutomatedTestBase
 
 	private void runProdsAggregateTest(String TEST_NAME, boolean sparse, boolean rewrites, ExecType instType)
 	{
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
-			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
-		}
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
 	
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		if( rtplatform == RUNTIME_PLATFORM.SPARK )
