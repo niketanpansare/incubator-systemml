@@ -93,7 +93,8 @@ public abstract class AutomatedTestBase
 	// taken for running the entire test suite. This will also help continuous integration process.
 	public static final boolean TEST_MR_BACKEND = false;
 	public static boolean shouldSkipTest() {
-		return !TEST_MR_BACKEND && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID);
+		// Let's skip first HADOOP tests. In the subsequent commits, we can visit HYBRID
+		return !TEST_MR_BACKEND && rtplatform == RUNTIME_PLATFORM.HADOOP;
 	}
 
 	public static final boolean EXCEPTION_EXPECTED = true;
@@ -197,7 +198,7 @@ public abstract class AutomatedTestBase
 	 * Also set DMLScript.USE_LOCAL_SPARK_CONFIG to true for running the test
 	 * suite in spark mode
 	 */
-	protected static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
+	protected static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HYBRID;
 	
 	protected static RUNTIME_PLATFORM setRuntimePlatform(RUNTIME_PLATFORM platform) {
 		RUNTIME_PLATFORM platformOld = rtplatform;
