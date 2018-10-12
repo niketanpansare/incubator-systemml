@@ -1092,6 +1092,22 @@ public abstract class AutomatedTestBase
 		Assert.assertEquals(expected, actual);
     }
 	
+	public static void assertEquals(Integer expected, Long actual) {
+		if(shouldSkipTest()) {
+			// Skip checking the assertion
+			return;
+		}
+		Assert.assertEquals((long)expected, (long)actual);
+    }
+	
+	public static void assertEquals(Long expected, Integer actual) {
+		if(shouldSkipTest()) {
+			// Skip checking the assertion
+			return;
+		}
+		Assert.assertEquals((long)expected, (long)actual);
+    }
+	
 	public static void assertEquals(boolean expected, boolean actual) {
 		if(shouldSkipTest()) {
 			// Skip checking the assertion
