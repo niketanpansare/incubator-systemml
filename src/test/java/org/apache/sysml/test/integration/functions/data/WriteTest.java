@@ -63,6 +63,8 @@ public class WriteTest extends AutomatedTestBase
 	
 	@Test
 	public void testText() {
+		if(shouldSkipTest())
+			return;
 		int rows = 10;
 		int cols = 10;
 		
@@ -114,6 +116,8 @@ public class WriteTest extends AutomatedTestBase
 	
 	@Test
 	public void testWriteTwice() {
+		if(shouldSkipTest())
+			return;
 		int rows = 10;
 		int cols = 10;
 		

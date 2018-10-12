@@ -190,6 +190,8 @@ public class RandTest5 extends AutomatedTestBase
 	{	
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		RUNTIME_PLATFORM platformOld = setRuntimePlatform(et);
+		if(shouldSkipTest())
+			return;
 		
 		//set basic parameters
 		String TEST_NAME = TEST_NAME1;		 

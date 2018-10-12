@@ -99,6 +99,9 @@ public class ReadMMTest extends AutomatedTestBase
 
 	@Test
 	public void testTextSimple() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 10;
 		int cols = 10;
 
@@ -120,6 +123,8 @@ public class ReadMMTest extends AutomatedTestBase
 
 	@Test
 	public void testTextWrongRowDimension() {
+		if(shouldSkipTest())
+			return;
 		int rows = 5;
 		int cols = 10;
 
@@ -137,6 +142,9 @@ public class ReadMMTest extends AutomatedTestBase
 
 	@Test
 	public void testTextWrongColDimension() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 10;
 		int cols = 5;
 
@@ -160,6 +168,9 @@ public class ReadMMTest extends AutomatedTestBase
 	 */
 	@Test
 	public void testTextWrongDimensions() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 3;
 		int cols = 2;
 
@@ -188,6 +199,9 @@ public class ReadMMTest extends AutomatedTestBase
 	 */
 	@Test
 	public void testTextWrongIndexBase() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 1;
 		int cols = 2;
 
@@ -203,6 +217,9 @@ public class ReadMMTest extends AutomatedTestBase
 
 	@Test
 	public void testTextWrongFormat() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 10;
 		int cols = 10;
 
@@ -221,6 +238,9 @@ public class ReadMMTest extends AutomatedTestBase
 
 	@Test
 	public void testBinaryWrongRowDimension() throws IOException {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 5;
 		int cols = 10;
 		int rowsInBlock = OptimizerUtils.DEFAULT_BLOCKSIZE;
@@ -269,6 +289,9 @@ public class ReadMMTest extends AutomatedTestBase
 	 */
 	@Test
 	public void testBinaryWrongDimensions() throws IOException {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 3;
 		int cols = 2;
 		int rowsInBlock = OptimizerUtils.DEFAULT_BLOCKSIZE;
@@ -295,6 +318,9 @@ public class ReadMMTest extends AutomatedTestBase
 
 	@Test
 	public void testBinaryWrongFormat() throws IOException {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 10;
 		int cols = 10;
 
@@ -319,6 +345,9 @@ public class ReadMMTest extends AutomatedTestBase
 
 	@Test
 	public void testEmptyText() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 10;
 		int cols = 10;
 
@@ -341,6 +370,9 @@ public class ReadMMTest extends AutomatedTestBase
 
 	@Test
 	public void testEmptyBinary() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 10;
 		int cols = 10;
 
