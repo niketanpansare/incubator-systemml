@@ -391,8 +391,7 @@ public class FullLogicalScalarLeftTest extends AutomatedTestBase
 		}
 
 		//rtplatform for MR
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = (et==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(et);
 
 		try
 		{

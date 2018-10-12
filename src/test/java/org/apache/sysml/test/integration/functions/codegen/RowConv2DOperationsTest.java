@@ -72,12 +72,7 @@ public class RowConv2DOperationsTest extends AutomatedTestBase
 		int numFilters, int filterSize, int stride, int pad, boolean sparse1, boolean sparse2, ExecType et)
 	{
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		switch( et ) {
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
-			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK; break;
-		}
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(et);
 
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK )

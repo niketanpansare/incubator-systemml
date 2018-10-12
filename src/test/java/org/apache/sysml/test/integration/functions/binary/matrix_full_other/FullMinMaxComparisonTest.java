@@ -314,8 +314,7 @@ public class FullMinMaxComparisonTest extends AutomatedTestBase
 	private void runMinMaxComparisonTest( OpType type, DataType dtM1, DataType dtM2, boolean sparseM1, boolean sparseM2, ExecType instType)
 	{
 		//rtplatform for MR
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
 	
 		//get the testname
 		String TEST_NAME = null;

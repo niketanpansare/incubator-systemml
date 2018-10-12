@@ -231,12 +231,7 @@ public class FullDistributedMatrixMultiplicationTest extends AutomatedTestBase
 	private void runDistributedMatrixMatrixMultiplicationTest( boolean sparseM1, boolean sparseM2, MMultMethod method, ExecType instType)
 	{
 		//rtplatform for MR
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
-			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
-		}
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
 	
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		if( rtplatform == RUNTIME_PLATFORM.SPARK )

@@ -196,8 +196,7 @@ public class FullMatrixMultiplicationTransposeSelfTest extends AutomatedTestBase
 		}
 
 		//rtplatform for MR
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
 	
 		try
 		{
