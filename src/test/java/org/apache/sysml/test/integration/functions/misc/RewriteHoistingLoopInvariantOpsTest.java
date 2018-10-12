@@ -30,7 +30,6 @@ import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 import org.apache.sysml.utils.Statistics;
-import org.junit.Assert;
 import org.junit.Test;
 
 public class RewriteHoistingLoopInvariantOpsTest extends AutomatedTestBase
@@ -115,8 +114,8 @@ public class RewriteHoistingLoopInvariantOpsTest extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			
 			//check applied code motion rewrites (moved sum and - from 10 to 1)
-			Assert.assertEquals(rewrites?1:10, Statistics.getCPHeavyHitterCount("uak+"));
-			Assert.assertEquals(rewrites?1:10, Statistics.getCPHeavyHitterCount("-"));
+			assertEquals(rewrites?1:10, Statistics.getCPHeavyHitterCount("uak+"));
+			assertEquals(rewrites?1:10, Statistics.getCPHeavyHitterCount("-"));
 		}
 		finally {
 			OptimizerUtils.ALLOW_CODE_MOTION = rewritesOld;

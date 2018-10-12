@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.aggregate;
 import java.util.HashMap;
 
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
@@ -152,7 +151,7 @@ public class PushdownSumBinaryTest extends AutomatedTestBase
 			
 			String lopcode = TEST_NAME.equals(TEST_NAME1) ? "+" : "-";
 			String opcode = equiDims ? lopcode : Instruction.SP_INST_PREFIX+"map"+lopcode;
-			Assert.assertTrue("Non-applied rewrite", Statistics.getCPHeavyHitterOpCodes().contains(opcode));	
+			assertTrue("Non-applied rewrite", Statistics.getCPHeavyHitterOpCodes().contains(opcode));	
 		}
 		finally
 		{

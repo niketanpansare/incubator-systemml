@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.binary.matrix;
 
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.api.DMLScript;
@@ -116,7 +115,7 @@ public class OuterProductTest extends AutomatedTestBase
 			//TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			Double dmlret = dmlfile.get(new CellIndex(1,1));
 			Double compare = computeMinOuterProduct(A, B, rows, cols);
-			Assert.assertEquals("Wrong result value.", compare, dmlret);
+			assertEquals("Wrong result value.", compare, dmlret);
 			
 			int expectedNumCompiled = 4; //REBLOCK, MMRJ, GMR, GMR write
 			int expectedNumExecuted = 4; //REBLOCK, MMRJ, GMR, GMR write

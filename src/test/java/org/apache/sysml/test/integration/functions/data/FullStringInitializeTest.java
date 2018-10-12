@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.data;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -371,7 +370,7 @@ public class FullStringInitializeTest extends AutomatedTestBase
 		catch(Exception ex)
 		{
 			ex.printStackTrace();
-			Assert.fail(ex.getMessage());
+			fail(ex.getMessage());
 		}
 		finally
 		{

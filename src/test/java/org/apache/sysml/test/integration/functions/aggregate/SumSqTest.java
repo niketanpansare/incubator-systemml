@@ -29,7 +29,6 @@ import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 import org.apache.sysml.utils.Statistics;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -253,9 +252,9 @@ public class SumSqTest extends AutomatedTestBase {
                 String opcode = prefix + op;
                 boolean rewriteApplied = Statistics.getCPHeavyHitterOpCodes().contains(opcode);
                 if (vector)
-                    Assert.assertFalse("Rewrite applied to vector case.", rewriteApplied);
+                    assertFalse("Rewrite applied to vector case.", rewriteApplied);
                 else
-                    Assert.assertTrue("Rewrite not applied to matrix case.", rewriteApplied);
+                    assertTrue("Rewrite not applied to matrix case.", rewriteApplied);
             }
         }
         finally {

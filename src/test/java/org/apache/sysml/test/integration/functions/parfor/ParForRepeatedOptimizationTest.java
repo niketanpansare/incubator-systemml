@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.parfor;
 import java.util.HashMap;
 
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -172,7 +171,7 @@ public class ParForRepeatedOptimizationTest extends AutomatedTestBase
 			runTest(true, false, null, -1);
 			runRScript(true);
 			
-			Assert.assertEquals("Unexpected number of executed MR jobs.", numExpectedMR, Statistics.getNoOfExecutedMRJobs()); 
+			assertEquals("Unexpected number of executed MR jobs.", numExpectedMR, Statistics.getNoOfExecutedMRJobs()); 
 			
 			//compare matrices
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");

@@ -29,7 +29,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
-import org.junit.Assert;
 import org.junit.Test;
 
 public class RowConv2DOperationsTest extends AutomatedTestBase
@@ -112,7 +111,7 @@ public class RowConv2DOperationsTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("B");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("B");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
-			Assert.assertTrue(heavyHittersContainsSubString("spoofRA") 
+			assertTrue(heavyHittersContainsSubString("spoofRA") 
 				|| heavyHittersContainsSubString("sp_spoofRA"));
 		}
 		finally {

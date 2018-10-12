@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.transform;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -108,7 +107,7 @@ public class TransformFrameEncodeApplySubsetTest extends AutomatedTestBase
 			runTest(true, false, null, -1); 
 			
 			//check output 
-			Assert.assertEquals(Double.valueOf(148), 
+			assertEquals(Double.valueOf(148), 
 				readDMLMatrixFromHDFS("R").get(new CellIndex(1,1)));
 		}
 		finally {

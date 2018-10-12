@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.ternary;
 
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.api.DMLScript;
@@ -254,7 +253,7 @@ public class TernaryAggregateTest extends AutomatedTestBase
 			if( rewrites && et != ExecType.MR ) {
 				String opcode = ((et == ExecType.SPARK) ? Instruction.SP_INST_PREFIX : "") + 
 					(((testname.equals(TEST_NAME1) || vectors ) ? "tak+*" : "tack+*"));
-				Assert.assertEquals(Boolean.TRUE,
+				assertEquals(Boolean.TRUE,
 						Boolean.valueOf(Statistics.getCPHeavyHitterOpCodes().contains(opcode)));
 			}
 		}

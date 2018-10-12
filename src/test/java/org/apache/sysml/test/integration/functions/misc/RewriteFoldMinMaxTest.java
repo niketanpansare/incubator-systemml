@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.misc;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -99,11 +98,11 @@ public class RewriteFoldMinMaxTest extends AutomatedTestBase
 			
 			//compare matrices 
 			Double ret = readDMLMatrixFromHDFS("R").get(new CellIndex(1,1));
-			Assert.assertEquals("Wrong result", new Double(5*rows*cols), ret);
+			assertEquals("Wrong result", new Double(5*rows*cols), ret);
 			
 			//check for applied rewrites
 			if( rewrites ) {
-				Assert.assertTrue(!heavyHittersContainsString("min") && !heavyHittersContainsString("max")
+				assertTrue(!heavyHittersContainsString("min") && !heavyHittersContainsString("max")
 					&& (!testname.equals(TEST_NAME1) || Statistics.getCPHeavyHitterCount("nmin") == 1)
 					&& (!testname.equals(TEST_NAME2) || Statistics.getCPHeavyHitterCount("nmax") == 1));
 			}

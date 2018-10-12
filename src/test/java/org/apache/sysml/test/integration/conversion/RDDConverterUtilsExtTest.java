@@ -19,8 +19,6 @@
 
 package org.apache.sysml.test.integration.conversion;
 
-import static org.junit.Assert.assertTrue;
-
 import java.util.ArrayList;
 import java.util.List;
 

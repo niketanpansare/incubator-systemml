@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.unary.matrix;
 
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -148,8 +147,8 @@ public class RemoveEmptySelTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
 			Double expectedRows = (double) (margin.equals("rows") ? rows/2 : rows);
 			Double expectedCols = (double) (margin.equals("cols") ? cols/2 : cols);
-			Assert.assertEquals("Wrong output nrow.", expectedRows, dmlfile.get(new CellIndex(1,1)));
-			Assert.assertEquals("Wrong output ncol.", expectedCols, dmlfile.get(new CellIndex(2,1)));			
+			assertEquals("Wrong output nrow.", expectedRows, dmlfile.get(new CellIndex(1,1)));
+			assertEquals("Wrong output ncol.", expectedCols, dmlfile.get(new CellIndex(2,1)));			
 		}
 		finally
 		{

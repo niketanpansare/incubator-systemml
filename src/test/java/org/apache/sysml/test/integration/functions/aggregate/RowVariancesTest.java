@@ -29,7 +29,6 @@ import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 import org.apache.sysml.utils.Statistics;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -451,12 +450,12 @@ public class RowVariancesTest extends AutomatedTestBase {
                 if (dataType == DataType.ROWVECTOR) {
                     String opcode = prefix + varOp;
                     boolean rewriteApplied = Statistics.getCPHeavyHitterOpCodes().contains(opcode);
-                    Assert.assertTrue("Rewrite not applied to row vector case.", rewriteApplied);
+                    assertTrue("Rewrite not applied to row vector case.", rewriteApplied);
 
                 } else if (dataType == DataType.COLUMNVECTOR) {
                     String opcode = prefix + rowVarOp;
                     boolean rewriteApplied = !Statistics.getCPHeavyHitterOpCodes().contains(opcode);
-                    Assert.assertTrue("Rewrite not applied to column vector case.", rewriteApplied);
+                    assertTrue("Rewrite not applied to column vector case.", rewriteApplied);
                 }
             }
         }

@@ -19,8 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.unary.matrix;
 
-import static org.junit.Assert.assertTrue;
-
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;

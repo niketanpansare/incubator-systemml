@@ -35,7 +35,6 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
-import org.junit.Assert;
 import org.junit.Test;
 
 public class FrameSchemaReadTest extends AutomatedTestBase
@@ -145,7 +144,7 @@ public class FrameSchemaReadTest extends AutomatedTestBase
 			ValueType[] schemaExpected = (testname.equals(TEST_NAME2) || wildcard) ?
 					Collections.nCopies(schema.length, ValueType.STRING).toArray(new ValueType[0]) : schema;					
 			for( int i=0; i<schemaExpected.length; i++ ) {
-				Assert.assertEquals("Wrong result: "+frame2.getSchema()[i]+".", 
+				assertEquals("Wrong result: "+frame2.getSchema()[i]+".", 
 						schemaExpected[i], frame2.getSchema()[i]);
 			}
 		}

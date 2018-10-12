@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.binary.scalar;
 
 import java.io.IOException;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.runtime.util.MapReduceTool;
@@ -163,10 +162,10 @@ public class FullStringComparisonTest extends AutomatedTestBase
 		//compare result
 		try {
 			boolean retCondition = MapReduceTool.readBooleanFromHDFSFile(output("B"));
-			Assert.assertEquals(trueCondition, retCondition);
+			assertEquals(trueCondition, retCondition);
 		} 
 		catch (IOException e) {
-			Assert.fail(e.getMessage());
+			fail(e.getMessage());
 		}
 	}
 }

@@ -31,7 +31,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
-import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -134,7 +133,7 @@ public class CompressedLinregCG extends AutomatedTestBase
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("w");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			
-			Assert.assertTrue(heavyHittersContainsSubString("compress")
+			assertTrue(heavyHittersContainsSubString("compress")
 				|| heavyHittersContainsSubString("sp_compress"));
 		}
 		finally {

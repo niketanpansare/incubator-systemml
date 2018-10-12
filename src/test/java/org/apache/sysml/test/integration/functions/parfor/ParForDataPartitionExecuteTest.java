@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.parfor;
 
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.api.DMLScript;
@@ -141,7 +140,7 @@ public class ParForDataPartitionExecuteTest extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "DML", "R");
 			
 			//check for compiled datapartition-execute
-			Assert.assertTrue(heavyHittersContainsSubString(
+			assertTrue(heavyHittersContainsSubString(
 				(et == ExecType.SPARK) ? "ParFor-DPESP" : "MR-Job_ParFor-DPEMR"));
 		}
 		finally {

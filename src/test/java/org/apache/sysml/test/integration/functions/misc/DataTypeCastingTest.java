@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.misc;
 
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.api.DMLException;
@@ -128,7 +127,7 @@ public class DataTypeCastingTest extends AutomatedTestBase
 				}
 		        
 		        //compare results
-		        Assert.assertEquals(V[0][0], ret, 1e-16);
+		        assertEquals(V[0][0], ret, 1e-16);
 	        }
 		}
 		catch(Exception ex)

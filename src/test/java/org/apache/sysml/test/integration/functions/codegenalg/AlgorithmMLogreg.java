@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.codegenalg;
 import java.io.File;
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -431,7 +430,7 @@ public class AlgorithmMLogreg extends AutomatedTestBase
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("w");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("w");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
-			Assert.assertTrue(heavyHittersContainsSubString("spoof")
+			assertTrue(heavyHittersContainsSubString("spoof")
 				|| heavyHittersContainsSubString("sp_spoof"));
 		}
 		finally {

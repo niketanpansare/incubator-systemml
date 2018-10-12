@@ -25,7 +25,6 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
-import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -117,7 +116,7 @@ public class CholeskyTest extends AutomatedTestBase
 			
 			//run tests and compare results
 			runTest(true, false, null, -1);
-			Assert.assertEquals(0, readDMLMatrixFromHDFS("D")
+			assertEquals(0, readDMLMatrixFromHDFS("D")
 				.get(new CellIndex(1,1)), 1e-5);
 		}
 		finally {

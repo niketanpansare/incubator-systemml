@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.codegen;
 import java.io.File;
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -241,9 +240,9 @@ public class CompressedOuterProductTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("R");	
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
-			Assert.assertTrue(heavyHittersContainsSubString("spoofOP", 4) 
+			assertTrue(heavyHittersContainsSubString("spoofOP", 4) 
 				|| heavyHittersContainsSubString("sp_spoofOP", 4));
-			Assert.assertTrue(heavyHittersContainsSubString("compress")
+			assertTrue(heavyHittersContainsSubString("compress")
 				|| heavyHittersContainsSubString("sp_compress"));
 		}
 		finally {

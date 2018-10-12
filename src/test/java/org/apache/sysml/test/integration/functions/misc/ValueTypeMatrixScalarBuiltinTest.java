@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.misc;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
-import org.junit.Assert;
 import org.junit.Test;
 
 public class ValueTypeMatrixScalarBuiltinTest extends AutomatedTestBase
@@ -120,7 +119,7 @@ public class ValueTypeMatrixScalarBuiltinTest extends AutomatedTestBase
 		
 		//check output value type
 		ValueType vtOut = readDMLMetaDataValueType("R");
-		Assert.assertTrue("Wrong output value type: " + 
+		assertTrue("Wrong output value type: " + 
 			vtOut.name(), vtOut.equals(ValueType.DOUBLE));
 	}
 }

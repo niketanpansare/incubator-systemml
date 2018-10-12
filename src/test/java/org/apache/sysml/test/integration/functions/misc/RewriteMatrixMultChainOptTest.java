@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.misc;
 
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -113,7 +112,7 @@ public class RewriteMatrixMultChainOptTest extends AutomatedTestBase
 			//check for correct matrix multiplication order, which also allows
 			//the compilation of mmchain operators
 			if( rewrites ) {
-				Assert.assertTrue(heavyHittersContainsSubString("mmchain")
+				assertTrue(heavyHittersContainsSubString("mmchain")
 					|| heavyHittersContainsSubString("sp_mapmmchain"));
 			}
 		}

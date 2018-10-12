@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.unary.matrix;
 import java.util.HashMap;
 import java.util.Random;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.api.DMLScript;
@@ -335,7 +334,7 @@ public class ReplaceTest extends AutomatedTestBase
 			runRScript(true); 
 		
 			int numMRExpect = (etype==ExecType.MR)?(test.equals(TEST_NAME1)?1:test.equals(TEST_NAME5)?3:2):0; 
-			Assert.assertEquals("Unexpected number of executed MR jobs.", 
+			assertEquals("Unexpected number of executed MR jobs.", 
 		           numMRExpect, Statistics.getNoOfExecutedMRJobs()); //reblock in test1, reblock+GMR in test2-4
 		
 			//compare matrices 

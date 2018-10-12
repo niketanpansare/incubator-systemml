@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.parfor;
 
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -120,10 +119,10 @@ public class ParForParallelRemoteResultMergeTest extends AutomatedTestBase
 		
 		//compare num MR jobs
 		if( TEST_NAME.equals(TEST_NAME1) ) //2 results
-			Assert.assertEquals("Unexpected number of executed MR jobs.", 
+			assertEquals("Unexpected number of executed MR jobs.", 
 					  			3, Statistics.getNoOfExecutedMRJobs());	
 		else if ( TEST_NAME.equals(TEST_NAME2) ) //32 results
-			Assert.assertEquals("Unexpected number of executed MR jobs.", 
+			assertEquals("Unexpected number of executed MR jobs.", 
 		  			            33, Statistics.getNoOfExecutedMRJobs());
 		//compare matrices
 		HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");

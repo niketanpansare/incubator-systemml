@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.parfor;
 
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -89,7 +88,7 @@ public class ParForReplaceThreadIDRecompileTest extends AutomatedTestBase
 			
 			//compare matrices
 			HashMap<CellIndex, Double> dmlout = readDMLMatrixFromHDFS("B");
-			Assert.assertTrue( dmlout.size()>=1 );
+			assertTrue( dmlout.size()>=1 );
 		}
 		finally{
 			CompilerConfig.FLAG_DYN_RECOMPILE = flag;

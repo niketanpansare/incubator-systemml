@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.aggregate;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -123,7 +122,7 @@ public class AggregateNaNTest extends AutomatedTestBase
 			case 3: ret = mb.max();
 		}
 		
-		Assert.assertTrue(Double.isNaN(ret));
+		assertTrue(Double.isNaN(ret));
 	}
 	
 	private void runNaNRowIndexMxxTest(String type, boolean sparse) {
@@ -137,6 +136,6 @@ public class AggregateNaNTest extends AutomatedTestBase
 		InstructionUtils.parseBasicAggregateUnaryOperator(type),
 		new MatrixBlock(), -1, -1, new MatrixIndexes(1, 1), true).getValue(7, 0);
 
-		Assert.assertTrue(ret == 1);
+		assertTrue(ret == 1);
 	}
 }

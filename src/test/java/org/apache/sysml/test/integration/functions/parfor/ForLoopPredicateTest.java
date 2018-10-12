@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.parfor;
 
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -194,7 +193,7 @@ public class ForLoopPredicateTest extends AutomatedTestBase
 		
 		//compare matrices
 		HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
-		Assert.assertEquals( Double.valueOf(Math.ceil((Math.round(to)-Math.round(from)+1)/increment)),
+		assertEquals( Double.valueOf(Math.ceil((Math.round(to)-Math.round(from)+1)/increment)),
 				             dmlfile.get(new CellIndex(1,1)));
 	}
 	

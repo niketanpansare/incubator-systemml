@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.transform;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -115,7 +114,7 @@ public class TransformFrameEncodeDecodeTokenTest extends AutomatedTestBase
 			TestUtils.compareFrames(R1, R2, R1.length, R1[0].length);			
 			
 			if( rt == RUNTIME_PLATFORM.HYBRID_SPARK ) {
-				Assert.assertEquals("Wrong number of executed Spark instructions: " + 
+				assertEquals("Wrong number of executed Spark instructions: " + 
 					Statistics.getNoOfExecutedSPInst(), new Long(2), new Long(Statistics.getNoOfExecutedSPInst()));
 			}
 		}

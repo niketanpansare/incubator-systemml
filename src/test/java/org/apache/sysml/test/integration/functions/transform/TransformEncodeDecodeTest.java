@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.transform;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.lops.LopProperties.ExecType;
@@ -126,13 +125,13 @@ public class TransformEncodeDecodeTest extends AutomatedTestBase
 				String[] row = iterFO.next();
 				Double expected = (double)cFA.get(row[1]);
 				Double val = (row[0]!=null)?Double.valueOf(row[0]) : 0;
-				Assert.assertEquals("Output aggregates don't match: "+
+				assertEquals("Output aggregates don't match: "+
 						expected+" vs "+val, expected, val);
 			}
 		}
 		catch(Exception ex) {
 			ex.printStackTrace();
-			Assert.fail(ex.getMessage());
+			fail(ex.getMessage());
 		}
 		finally {
 			rtplatform = platformOld;

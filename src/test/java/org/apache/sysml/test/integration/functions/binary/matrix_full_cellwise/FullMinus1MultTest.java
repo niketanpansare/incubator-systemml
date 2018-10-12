@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.binary.matrix_full_cellwise;
 
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.api.DMLScript;
@@ -156,9 +155,9 @@ public class FullMinus1MultTest extends AutomatedTestBase
 			//check generated opcode
 			if( rewrites ){
 				if( instType == ExecType.CP )
-					Assert.assertTrue("Missing opcode: 1-*", Statistics.getCPHeavyHitterOpCodes().contains("1-*"));
+					assertTrue("Missing opcode: 1-*", Statistics.getCPHeavyHitterOpCodes().contains("1-*"));
 				else if( instType == ExecType.SPARK )
-					Assert.assertTrue("Missing opcode: sp_1-* | sp_map1-*", 
+					assertTrue("Missing opcode: sp_1-* | sp_map1-*", 
 							Statistics.getCPHeavyHitterOpCodes().contains("sp_1-*") || 
 							Statistics.getCPHeavyHitterOpCodes().contains("sp_map1-*"));
 			}

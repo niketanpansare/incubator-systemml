@@ -36,7 +36,6 @@ import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.utils.Statistics;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Test;
 
 
@@ -107,7 +106,7 @@ public class APICodegenTest extends AutomatedTestBase
 			}
 			
 			//check for generated operator
-			Assert.assertTrue(heavyHittersContainsSubString("spoofRA"));
+			assertTrue(heavyHittersContainsSubString("spoofRA"));
 		}
 		catch(Exception ex) {
 			throw new RuntimeException(ex);

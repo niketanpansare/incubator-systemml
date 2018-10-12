@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.misc;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.hops.OptimizerUtils;
@@ -95,9 +94,9 @@ public class RewriteRemoveComparisonChainsTest extends AutomatedTestBase
 			runTest(true, false, null, -1);
 			
 			//check for applied rewrites
-			Assert.assertEquals(rewrites, heavyHittersContainsString("uaggouterchain"));
+			assertEquals(rewrites, heavyHittersContainsString("uaggouterchain"));
 			if( compare == 1 && rewrites )
-				Assert.assertTrue(!heavyHittersContainsString("=="));
+				assertTrue(!heavyHittersContainsString("=="));
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;

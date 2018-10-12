@@ -24,7 +24,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.utils.TestUtils;
-import org.junit.Assert;
 import org.junit.Test;
 
 
@@ -168,7 +167,7 @@ public class BasicGetValueTest extends AutomatedTestBase
 				for(int j=0; j<cols; j++) {
 					double ulaVal = mb.getValue(i, j); //calls quickGetValue internally
 					double claVal = cmb.getValue(i, j); //calls quickGetValue internally
-					Assert.assertTrue("Get returned wrong value: "+claVal+" (expected: "+ulaVal+")", ulaVal==claVal);
+					assertTrue("Get returned wrong value: "+claVal+" (expected: "+ulaVal+")", ulaVal==claVal);
 				}
 		}
 		catch(Exception ex) {

@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.binary.matrix;
 import java.util.HashMap;
 
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -372,7 +371,7 @@ public class MapMultChainTest extends AutomatedTestBase
 			//check compiled mmchain instructions (cp/spark)
 			if( instType != ExecType.MR ){
 				String opcode = (instType==ExecType.CP)?MapMultChain.OPCODE_CP:"sp_"+MapMultChain.OPCODE;
-				Assert.assertEquals(sumProductRewrites, Statistics.getCPHeavyHitterOpCodes().contains(opcode));
+				assertEquals(sumProductRewrites, Statistics.getCPHeavyHitterOpCodes().contains(opcode));
 			}
 		}
 		finally

@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.misc;
 
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -201,7 +200,7 @@ public class RewriteFuseBinaryOpChainTest extends AutomatedTestBase
 			//compare matrices 
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("S");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("S");
-			Assert.assertTrue(TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R"));
+			assertTrue(TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R"));
 			
 			//check for applies rewrites
 			if( rewrites && instType!=ExecType.MR  ) {
@@ -213,9 +212,9 @@ public class RewriteFuseBinaryOpChainTest extends AutomatedTestBase
 				
 				String opcode = (testname.equals(TEST_NAME1)||testname.equals(TEST_NAME3)) ? prefix+"+*" : prefix+"-*";
 				if( testname.equals(TEST_NAME4) )
-					Assert.assertFalse("Rewrite applied.", heavyHittersContainsSubString(opcode));
+					assertFalse("Rewrite applied.", heavyHittersContainsSubString(opcode));
 				else
-					Assert.assertTrue("Rewrite not applied.", heavyHittersContainsSubString(opcode));
+					assertTrue("Rewrite not applied.", heavyHittersContainsSubString(opcode));
 			}
 		}
 		finally

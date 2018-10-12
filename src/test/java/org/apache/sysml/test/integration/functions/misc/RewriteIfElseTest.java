@@ -32,7 +32,6 @@ import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 import org.apache.sysml.utils.Statistics;
-import org.junit.Assert;
 import org.junit.Test;
 
 public class RewriteIfElseTest extends AutomatedTestBase
@@ -175,12 +174,12 @@ public class RewriteIfElseTest extends AutomatedTestBase
 			//compare matrices 
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("R");
-			Assert.assertTrue(TestUtils.compareMatrices(dmlfile, rfile, Math.pow(10,-10), "Stat-DML", "Stat-R"));
+			assertTrue(TestUtils.compareMatrices(dmlfile, rfile, Math.pow(10,-10), "Stat-DML", "Stat-R"));
 			
 			//check for presence of power operator, if we did a rewrite
 			if( rewrites ) {
 				String opcode = et==ExecType.SPARK ? Instruction.SP_INST_PREFIX + "rand" : "rand";
-				Assert.assertTrue(heavyHittersContainsString(opcode) && Statistics.getCPHeavyHitterCount(opcode)==1);
+				assertTrue(heavyHittersContainsString(opcode) && Statistics.getCPHeavyHitterCount(opcode)==1);
 			}
 		}
 		finally {

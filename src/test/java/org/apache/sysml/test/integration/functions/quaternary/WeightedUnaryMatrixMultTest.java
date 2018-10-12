@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.quaternary;
 import java.util.HashMap;
 
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
@@ -294,11 +293,11 @@ public class WeightedUnaryMatrixMultTest extends AutomatedTestBase
 
 			//check statistics for right operator in cp and spark
 			if( instType == ExecType.CP && rewrites ) {
-				Assert.assertTrue("Missing opcode wumm", Statistics.getCPHeavyHitterOpCodes().contains(WeightedUnaryMM.OPCODE_CP));
+				assertTrue("Missing opcode wumm", Statistics.getCPHeavyHitterOpCodes().contains(WeightedUnaryMM.OPCODE_CP));
 			}
 			else if( instType == ExecType.SPARK && rewrites ) {
 				String opcode = Instruction.SP_INST_PREFIX + ((rep)?WeightedUnaryMMR.OPCODE:WeightedUnaryMM.OPCODE);
-				Assert.assertTrue("Missing opcode sp_wumm", Statistics.getCPHeavyHitterOpCodes().contains(opcode) );
+				assertTrue("Missing opcode sp_wumm", Statistics.getCPHeavyHitterOpCodes().contains(opcode) );
 			}
 		}
 		finally

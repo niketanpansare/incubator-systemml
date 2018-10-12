@@ -63,7 +63,6 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
-import org.junit.Assert;
 import org.junit.Test;
 
 
@@ -399,7 +398,7 @@ public class FrameConverterTest extends AutomatedTestBase
 				String val1 = UtilFunctions.objectToString(frame1.get(i, j));
 				String val2 = UtilFunctions.objectToString(frame2.get(i, j));
 				if( UtilFunctions.compareTo(ValueType.STRING, val1, val2) != 0)
-					Assert.fail("The original data for cell ("+ i + "," + j + ") is " + val1 + 
+					fail("The original data for cell ("+ i + "," + j + ") is " + val1 + 
 							", not same as the converted value " + val2);
 			}
 	}
@@ -411,7 +410,7 @@ public class FrameConverterTest extends AutomatedTestBase
 								UtilFunctions.objectToDouble(frame.getSchema()[j], frame.get(i, j)));
 				Object val2 = UtilFunctions.doubleToObject(frame.getSchema()[j], matrix.getValue(i, j));
 				if(( UtilFunctions.compareTo(frame.getSchema()[j], val1, val2)) != 0)
-					Assert.fail("Frame value for cell ("+ i + "," + j + ") is " + val1 + 
+					fail("Frame value for cell ("+ i + "," + j + ") is " + val1 + 
 							", is not same as matrix value " + val2);
 			}
 	}

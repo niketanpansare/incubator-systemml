@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.misc;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -121,7 +120,7 @@ public class RewriteBinaryMV2OuterTest extends AutomatedTestBase
 			
 			//check for applied rewrites
 			if( rewrites )
-				Assert.assertTrue(!heavyHittersContainsSubString("ba+*"));
+				assertTrue(!heavyHittersContainsSubString("ba+*"));
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;

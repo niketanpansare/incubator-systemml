@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.sparse;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Iterator;
@@ -246,7 +245,7 @@ public class SparseBlockGetSet extends AutomatedTestBase
 			
 			//check basic meta data
 			if( sblock.numRows() != rows )
-				Assert.fail("Wrong number of rows: "+sblock.numRows()+", expected: "+rows);
+				fail("Wrong number of rows: "+sblock.numRows()+", expected: "+rows);
 			
 			//check for correct number of non-zeros
 			int[] rnnz = new int[rows]; int nnz = 0;
@@ -256,12 +255,12 @@ public class SparseBlockGetSet extends AutomatedTestBase
 				nnz += rnnz[i];
 			}
 			if( nnz != sblock.size() )
-				Assert.fail("Wrong number of non-zeros: "+sblock.size()+", expected: "+nnz);
+				fail("Wrong number of non-zeros: "+sblock.size()+", expected: "+nnz);
 		
 			//check correct isEmpty return
 			for( int i=0; i<rows; i++ )
 				if( sblock.isEmpty(i) != (rnnz[i]==0) )
-					Assert.fail("Wrong isEmpty(row) result for row nnz: "+rnnz[i]);
+					fail("Wrong isEmpty(row) result for row nnz: "+rnnz[i]);
 		
 			//check correct values			
 			for( int i=0; i<rows; i++ ) 
@@ -269,7 +268,7 @@ public class SparseBlockGetSet extends AutomatedTestBase
 					for( int j=0; j<cols; j++ )	{
 						double tmp = sblock.get(i, j);
 						if( tmp != A[i][j] )
-							Assert.fail("Wrong get value for cell ("+i+","+j+"): "+tmp+", expected: "+A[i][j]);
+							fail("Wrong get value for cell ("+i+","+j+"): "+tmp+", expected: "+A[i][j]);
 					}		
 		}
 		catch(Exception ex) {

@@ -54,7 +54,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.test.integration.mlcontext.MLContextTestBase;
 import org.apache.sysml.test.utils.TestUtils;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -191,7 +190,7 @@ public class GNMFTest extends MLContextTestBase
 			if(numRegisteredOutputs >= 2) {
 				String configStr = ConfigurationManager.getDMLConfig().getConfigInfo();
 				if(configStr.contains("cp.parallel.ops: true"))
-					Assert.fail("Configuration not updated via setConfig");
+					fail("Configuration not updated via setConfig");
 			}
 			
 			if(numRegisteredOutputs >= 1) {

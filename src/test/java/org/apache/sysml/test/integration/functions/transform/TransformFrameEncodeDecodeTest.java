@@ -31,7 +31,6 @@ import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 import org.apache.sysml.utils.Statistics;
-import org.junit.Assert;
 import org.junit.Test;
 
 public class TransformFrameEncodeDecodeTest extends AutomatedTestBase 
@@ -181,7 +180,7 @@ public class TransformFrameEncodeDecodeTest extends AutomatedTestBase
 			TestUtils.compareFrames(R1, R2, R1.length, R1[0].length);			
 			
 			if( rt == RUNTIME_PLATFORM.HYBRID_SPARK ) {
-				Assert.assertEquals("Wrong number of executed Spark instructions: " + 
+				assertEquals("Wrong number of executed Spark instructions: " + 
 					Statistics.getNoOfExecutedSPInst(), new Long(2), new Long(Statistics.getNoOfExecutedSPInst()));
 			}
 		}

@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.nary;
 
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.api.DMLScript;
@@ -182,7 +181,7 @@ public class NaryRBindTest extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlfile, rfile, epsilon, "DML", "R");
 			
 			//check for spark instructions
-			Assert.assertTrue(heavyHittersContainsSubString("sp_rbind")==(et==ExecType.SPARK));
+			assertTrue(heavyHittersContainsSubString("sp_rbind")==(et==ExecType.SPARK));
 		}
 		finally {
 			rtplatform = platformOld;

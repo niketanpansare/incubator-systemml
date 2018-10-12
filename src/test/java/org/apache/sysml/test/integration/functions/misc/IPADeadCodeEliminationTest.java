@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.misc;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.hops.OptimizerUtils;
@@ -100,9 +99,9 @@ public class IPADeadCodeEliminationTest extends AutomatedTestBase
 			runTest(true, false, null, -1);
 			
 			if( IPA && !testname.equals(TEST_NAME4) ) //check for applied dead code removal
-				Assert.assertTrue(!heavyHittersContainsString("uak+"));
+				assertTrue(!heavyHittersContainsString("uak+"));
 			if( testname.equals(TEST_NAME4) )
-				Assert.assertTrue(heavyHittersContainsString("uak+"));
+				assertTrue(heavyHittersContainsString("uak+"));
 		}
 		finally {
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = oldFlagIPA;

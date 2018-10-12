@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.unary.matrix;
 import java.util.HashMap;
 
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -202,7 +201,7 @@ public class FullSelectPosTest extends AutomatedTestBase
 			if( rewrites ) {
 				String expected_op = (instType == ExecType.SPARK) ? Instruction.SP_INST_PREFIX+"max" : "max";
 				if(instType == ExecType.CP || instType == ExecType.SPARK)
-					Assert.assertTrue("Missing opcode: " + expected_op , Statistics.getCPHeavyHitterOpCodes().contains(expected_op)
+					assertTrue("Missing opcode: " + expected_op , Statistics.getCPHeavyHitterOpCodes().contains(expected_op)
 						|| Statistics.getCPHeavyHitterOpCodes().contains("gpu_max"));
 			}
 		}

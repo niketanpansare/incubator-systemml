@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.reorg;
 
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.api.DMLScript;
@@ -196,7 +195,7 @@ public class MultipleOrderByColsTest extends AutomatedTestBase
 			
 			//check for applied rewrite
 			if( testname.equals(TEST_NAME2) && !ixret )
-				Assert.assertTrue(Statistics.getCPHeavyHitterCount("rsort")==1);
+				assertTrue(Statistics.getCPHeavyHitterCount("rsort")==1);
 		}
 		finally {
 			rtplatform = platformOld;

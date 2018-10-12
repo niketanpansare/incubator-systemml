@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.unary.matrix;
 import java.util.HashMap;
 
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -194,9 +193,9 @@ public class FullSignTest extends AutomatedTestBase
 			
 			//check generated opcode
 			if( instType == ExecType.CP )
-				Assert.assertTrue("Missing opcode: sign", Statistics.getCPHeavyHitterOpCodes().contains("sign"));
+				assertTrue("Missing opcode: sign", Statistics.getCPHeavyHitterOpCodes().contains("sign"));
 			else if ( instType == ExecType.SPARK )
-				Assert.assertTrue("Missing opcode: "+Instruction.SP_INST_PREFIX+"sign", Statistics.getCPHeavyHitterOpCodes().contains(Instruction.SP_INST_PREFIX+"sign"));	
+				assertTrue("Missing opcode: "+Instruction.SP_INST_PREFIX+"sign", Statistics.getCPHeavyHitterOpCodes().contains(Instruction.SP_INST_PREFIX+"sign"));	
 		}
 		finally
 		{

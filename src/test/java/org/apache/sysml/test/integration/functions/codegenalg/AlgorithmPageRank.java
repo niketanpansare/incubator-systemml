@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.codegenalg;
 import java.io.File;
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -171,7 +170,7 @@ public class AlgorithmPageRank extends AutomatedTestBase
 			HashMap<CellIndex, Double> dml = readDMLMatrixFromHDFS("p");
 			HashMap<CellIndex, Double> r = readRMatrixFromFS("p");
 			TestUtils.compareMatrices(dml, r, eps, "Stat-DML", "Stat-R");
-			Assert.assertTrue(heavyHittersContainsSubString("spoofRA") 
+			assertTrue(heavyHittersContainsSubString("spoofRA") 
 				|| heavyHittersContainsSubString("sp_spoofRA"));
 		}
 		finally {

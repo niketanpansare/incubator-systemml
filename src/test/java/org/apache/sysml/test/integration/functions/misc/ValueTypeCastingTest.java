@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.misc;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.api.DMLException;
@@ -184,9 +183,9 @@ public class ValueTypeCastingTest extends AutomatedTestBase
 		        //compare results
 	        	String outName = output("R");
 		        switch( vtOut ) {
-					case DOUBLE:  Assert.assertEquals(inVal, MapReduceTool.readDoubleFromHDFSFile(outName), 1e-16); break;
-					case INT:     Assert.assertEquals((int) inVal, MapReduceTool.readIntegerFromHDFSFile(outName)); break;
-					case BOOLEAN: Assert.assertEquals(inVal!=0, MapReduceTool.readBooleanFromHDFSFile(outName)); break;
+					case DOUBLE:  assertEquals(inVal, MapReduceTool.readDoubleFromHDFSFile(outName), 1e-16); break;
+					case INT:     assertEquals((int) inVal, MapReduceTool.readIntegerFromHDFSFile(outName)); break;
+					case BOOLEAN: assertEquals(inVal!=0, MapReduceTool.readBooleanFromHDFSFile(outName)); break;
 					default: //do nothing
 		        }
 	        }

@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.binary.matrix;
 import java.util.HashMap;
 
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -1358,10 +1357,10 @@ public class UaggOuterChainTest extends AutomatedTestBase
 			
 			//check statistics for right operator in cp and spark
 			if( instType == ExecType.CP ) {
-				Assert.assertTrue("Missing opcode sp_uaggouterchain", Statistics.getCPHeavyHitterOpCodes().contains(UAggOuterChain.OPCODE));
+				assertTrue("Missing opcode sp_uaggouterchain", Statistics.getCPHeavyHitterOpCodes().contains(UAggOuterChain.OPCODE));
 			}
 			else if( instType == ExecType.SPARK ) {
-				Assert.assertTrue("Missing opcode sp_uaggouterchain",
+				assertTrue("Missing opcode sp_uaggouterchain",
 						Statistics.getCPHeavyHitterOpCodes().contains(Instruction.SP_INST_PREFIX+UAggOuterChain.OPCODE));
 			}
 		}

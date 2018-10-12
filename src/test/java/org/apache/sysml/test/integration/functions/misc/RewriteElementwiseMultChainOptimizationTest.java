@@ -29,7 +29,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
-import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -115,7 +114,7 @@ public class RewriteElementwiseMultChainOptimizationTest extends AutomatedTestBa
 			
 			//check for presence of power operator, if we did a rewrite
 			if( rewrites ) {
-				Assert.assertTrue(heavyHittersContainsSubString("^2"));
+				assertTrue(heavyHittersContainsSubString("^2"));
 			}
 		}
 		finally {

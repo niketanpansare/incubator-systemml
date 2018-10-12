@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.ternary;
 
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.api.DMLScript;
@@ -177,7 +176,7 @@ public class TableOutputTest extends AutomatedTestBase
 			} catch(Exception e) {
 				e.printStackTrace();
 			}
-			Assert.assertEquals(0, numErrors);
+			assertEquals(0, numErrors);
 
 			numErrors = 0;
 			if ( delta > 0 ) {
@@ -193,7 +192,7 @@ public class TableOutputTest extends AutomatedTestBase
 					}
 				}
 			}
-			Assert.assertEquals(0, numErrors);
+			assertEquals(0, numErrors);
 		}
 		finally
 		{

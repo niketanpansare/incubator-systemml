@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.binary.matrix;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -91,7 +90,7 @@ public class MapMultLimitTest extends AutomatedTestBase
 			// Expected 3 jobs: 1 Reblock, 2 MapMults
 			runTest(true, exceptionExpected, null, 3); 
 			//System.out.println("#Jobs: " + Statistics.getNoOfExecutedMRJobs() + ", " + Statistics.getNoOfCompiledMRJobs());
-			Assert.assertTrue(Statistics.getNoOfExecutedMRJobs()==3);
+			assertTrue(Statistics.getNoOfExecutedMRJobs()==3);
 		}
 		finally
 		{

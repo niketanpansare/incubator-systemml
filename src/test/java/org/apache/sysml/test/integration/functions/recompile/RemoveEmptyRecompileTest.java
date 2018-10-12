@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.recompile;
 
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.hops.OptimizerUtils;
@@ -275,11 +274,11 @@ public class RemoveEmptyRecompileTest extends AutomatedTestBase
 			
 			//CHECK compiled MR jobs
 			int expectNumCompiled = 21; //reblock, 10xGMR, 2x(MMCJ+GMR), 2xGMR(LIX), write
-			Assert.assertEquals("Unexpected number of compiled MR jobs.", 
+			assertEquals("Unexpected number of compiled MR jobs.", 
 					            expectNumCompiled, Statistics.getNoOfCompiledMRJobs());
 			//CHECK executed MR jobs
 			int expectNumExecuted = 0;
-			Assert.assertEquals("Unexpected number of executed MR jobs.", 
+			assertEquals("Unexpected number of executed MR jobs.", 
 		                        expectNumExecuted, Statistics.getNoOfExecutedMRJobs());
 			
 			//CHECK rewrite application 
@@ -288,7 +287,7 @@ public class RemoveEmptyRecompileTest extends AutomatedTestBase
 				String opcode = getOpcode(type);
 				//sum subject to literal replacement (no-op for empty) which happens before the rewrites
 				boolean lempty = (type == OpType.SUM && empty) ? false : empty;
-				Assert.assertEquals(lempty, !Statistics.getCPHeavyHitterOpCodes().contains(opcode));
+				assertEquals(lempty, !Statistics.getCPHeavyHitterOpCodes().contains(opcode));
 			}
 			
 			//compare matrices

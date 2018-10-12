@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.unary.matrix;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.api.DMLScript;
@@ -117,7 +116,7 @@ public class FullCumsumprodTest extends AutomatedTestBase
 			
 			runTest(true, false, null, -1); 
 			
-			Assert.assertEquals(new Double(rows),
+			assertEquals(new Double(rows),
 				readDMLMatrixFromHDFS("C").get(new CellIndex(1,1)));
 		}
 		finally {

@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.sparse;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
@@ -63,32 +62,32 @@ public class SparseBlockMemEstimate extends AutomatedTestBase
 		
 		//check negative estimate
 		if( memMCSR <= 0 )
-			Assert.fail("SparseBlockMCSR memory estimate <= 0.");
+			fail("SparseBlockMCSR memory estimate <= 0.");
 		if( memCSR  <= 0 )
-			Assert.fail("SparseBlockCSR memory estimate <= 0.");
+			fail("SparseBlockCSR memory estimate <= 0.");
 		if( memCOO  <= 0 )
-			Assert.fail("SparseBlockCOO memory estimate <= 0.");
+			fail("SparseBlockCOO memory estimate <= 0.");
 		
 		//check dense estimate
 		if( memMCSR > memDense )
-			Assert.fail("SparseBlockMCSR memory estimate larger than dense estimate.");
+			fail("SparseBlockMCSR memory estimate larger than dense estimate.");
 		if( memCSR > memDense )
-			Assert.fail("SparseBlockCSR memory estimate larger than dense estimate.");
+			fail("SparseBlockCSR memory estimate larger than dense estimate.");
 		if( memCOO > memDense )
-			Assert.fail("SparseBlockCOO memory estimate larger than dense estimate.");
+			fail("SparseBlockCOO memory estimate larger than dense estimate.");
 		
 		//check sparse estimates relations
 		if( sparsity == sparsity1 ) { //sparse (pref CSR)
 			if( memMCSR < memCSR )
-				Assert.fail("SparseBlockMCSR memory estimate smaller than SparseBlockCSR estimate.");
+				fail("SparseBlockMCSR memory estimate smaller than SparseBlockCSR estimate.");
 			if( memCOO < memCSR )
-				Assert.fail("SparseBlockCOO memory estimate smaller than SparseBlockCSR estimate.");
+				fail("SparseBlockCOO memory estimate smaller than SparseBlockCSR estimate.");
 		}
 		else { //ultra-sparse (pref COO)
 			if( memMCSR < memCOO )
-				Assert.fail("SparseBlockMCSR memory estimate smaller than SparseBlockCOO estimate.");
+				fail("SparseBlockMCSR memory estimate smaller than SparseBlockCOO estimate.");
 			if( memCSR < memCOO )
-				Assert.fail("SparseBlockCSR memory estimate smaller than SparseBlockCOO estimate.");	
+				fail("SparseBlockCSR memory estimate smaller than SparseBlockCOO estimate.");	
 		}
 	}
 }

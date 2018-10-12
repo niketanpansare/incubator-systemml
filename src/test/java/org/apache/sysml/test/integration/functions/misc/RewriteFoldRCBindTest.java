@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.misc;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -99,11 +98,11 @@ public class RewriteFoldRCBindTest extends AutomatedTestBase
 			
 			//compare matrices 
 			Double ret = readDMLMatrixFromHDFS("R").get(new CellIndex(1,1));
-			Assert.assertEquals("Wrong result", new Double(5*rows*cols), ret);
+			assertEquals("Wrong result", new Double(5*rows*cols), ret);
 			
 			//check for applied rewrites
 			if( rewrites ) {
-				Assert.assertTrue(!heavyHittersContainsString("append")
+				assertTrue(!heavyHittersContainsString("append")
 					&& Statistics.getCPHeavyHitterCount("cbind") <= 1
 					&& Statistics.getCPHeavyHitterCount("rbind") <= 1);
 			}

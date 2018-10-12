@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.parfor;
 
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.api.DMLScript;
@@ -221,7 +220,7 @@ public class ParForBlockwiseDataPartitioningTest extends AutomatedTestBase
 			
 			//test for correct plan
 			boolean pos = testname.equals(TEST_NAME1) || testname.equals(TEST_NAME2);
-			Assert.assertEquals(pos, heavyHittersContainsSubString("ParFor-DPSP") 
+			assertEquals(pos, heavyHittersContainsSubString("ParFor-DPSP") 
 					|| heavyHittersContainsSubString("ParFor-DPESP"));
 		}
 		finally

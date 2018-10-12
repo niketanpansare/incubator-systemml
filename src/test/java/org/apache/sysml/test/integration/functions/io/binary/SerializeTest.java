@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.io.binary;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.parser.Expression.ValueType;
@@ -117,7 +116,7 @@ public class SerializeTest extends AutomatedTestBase
 				{
 					double val1 = mb.quickGetValue(i, j) * 7;
 					double val2 = mb2.quickGetValue(i, j);
-					Assert.assertEquals(val1, val2, eps);
+					assertEquals(val1, val2, eps);
 				}
 		}
 		catch(Exception ex)

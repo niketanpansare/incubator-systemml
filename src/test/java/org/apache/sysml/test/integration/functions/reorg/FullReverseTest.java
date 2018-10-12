@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.reorg;
 
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -174,9 +173,9 @@ public class FullReverseTest extends AutomatedTestBase
 			
 			//check generated opcode
 			if( instType == ExecType.CP )
-				Assert.assertTrue("Missing opcode: rev", Statistics.getCPHeavyHitterOpCodes().contains("rev"));
+				assertTrue("Missing opcode: rev", Statistics.getCPHeavyHitterOpCodes().contains("rev"));
 			else if ( instType == ExecType.SPARK )
-				Assert.assertTrue("Missing opcode: "+Instruction.SP_INST_PREFIX+"rev", Statistics.getCPHeavyHitterOpCodes().contains(Instruction.SP_INST_PREFIX+"rev"));	
+				assertTrue("Missing opcode: "+Instruction.SP_INST_PREFIX+"rev", Statistics.getCPHeavyHitterOpCodes().contains(Instruction.SP_INST_PREFIX+"rev"));	
 		}
 		finally
 		{

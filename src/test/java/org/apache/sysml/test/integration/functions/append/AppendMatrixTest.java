@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.append;
 import java.util.HashMap;
 import java.util.Random;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -258,7 +257,7 @@ public class AppendMatrixTest extends AutomatedTestBase
 			int expectedExecutedMRJobs = (rtplatform==RUNTIME_PLATFORM.HADOOP)? 2 : 0;
 			runTest(true, exceptionExpected, null, expectedCompiledMRJobs);
 			runRScript(true);
-			Assert.assertEquals("Wrong number of executed MR jobs.",
+			assertEquals("Wrong number of executed MR jobs.",
 					            expectedExecutedMRJobs, Statistics.getNoOfExecutedMRJobs());
 	
 			for(String file: config.getOutputFiles())

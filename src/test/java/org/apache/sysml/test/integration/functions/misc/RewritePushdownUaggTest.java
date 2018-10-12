@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.misc;
 
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.hops.OptimizerUtils;
@@ -144,7 +143,7 @@ public class RewritePushdownUaggTest extends AutomatedTestBase
 			String gpuCheck = "gpu_" + check;
 			boolean containsOpcode = Statistics.getCPHeavyHitterOpCodes().contains(check) || Statistics.getCPHeavyHitterOpCodes().contains(gpuCheck);
 
-			Assert.assertTrue( "Missing opcode: "+check, containsOpcode);
+			assertTrue( "Missing opcode: "+check, containsOpcode);
 		}
 		finally
 		{

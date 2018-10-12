@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.misc;
 
 import java.util.HashMap;
 import org.junit.Test;
-import org.junit.Assert;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
@@ -97,7 +96,7 @@ public class RewriteMergeBlocksTest extends AutomatedTestBase
 		HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
 		HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("R");
 		TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
-		Assert.assertTrue(expectedMerge == 
+		assertTrue(expectedMerge == 
 			heavyHittersContainsSubString("mmchain"));
 	}	
 }

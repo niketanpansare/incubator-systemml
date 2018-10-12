@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.codegen;
 import java.io.File;
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -223,13 +222,13 @@ public class OuterProdTmplTest extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			
 			if( testname.equals(TEST_NAME8) )
-				Assert.assertTrue(!(heavyHittersContainsSubString("spoofOP") 
+				assertTrue(!(heavyHittersContainsSubString("spoofOP") 
 						|| heavyHittersContainsSubString("sp_spoofOP")));
 			else if( !rewrites ) {
-				Assert.assertTrue(heavyHittersContainsSubString("spoofOP") 
+				assertTrue(heavyHittersContainsSubString("spoofOP") 
 						|| heavyHittersContainsSubString("sp_spoofOP"));
 				if( testname.equals(TEST_NAME9) )
-					Assert.assertTrue(!heavyHittersContainsSubString("!="));
+					assertTrue(!heavyHittersContainsSubString("!="));
 			}
 		}
 		finally {
@@ -289,10 +288,10 @@ public class OuterProdTmplTest extends AutomatedTestBase
 			}
 			
 			if( testname.equals(TEST_NAME8) )
-				Assert.assertTrue(!(heavyHittersContainsSubString("spoofOP") 
+				assertTrue(!(heavyHittersContainsSubString("spoofOP") 
 						|| heavyHittersContainsSubString("sp_spoofOP")));
 			else if( !rewrites )
-				Assert.assertTrue(heavyHittersContainsSubString("spoofOP") 
+				assertTrue(heavyHittersContainsSubString("spoofOP") 
 					|| heavyHittersContainsSubString("sp_spoofOP"));
 		}
 		finally {

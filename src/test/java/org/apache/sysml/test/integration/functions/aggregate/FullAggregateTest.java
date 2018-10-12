@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.aggregate;
 import java.util.HashMap;
 
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -589,7 +588,7 @@ public class FullAggregateTest extends AutomatedTestBase
 	
 			runTest(true, false, null, -1); 
 			if( instType==ExecType.CP ) //in CP no MR jobs should be executed
-				Assert.assertEquals("Unexpected number of executed MR jobs.", 0, Statistics.getNoOfExecutedMRJobs());
+				assertEquals("Unexpected number of executed MR jobs.", 0, Statistics.getNoOfExecutedMRJobs());
 		
 			runRScript(true); 
 		

@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.quaternary;
 import java.util.HashMap;
 
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -176,9 +175,9 @@ public class RewritesWeightedSigmoidTest extends AutomatedTestBase
 
 			//check statistics for right operator in cp
 			if( instType == ExecType.CP )
-				Assert.assertTrue(!Statistics.getCPHeavyHitterOpCodes().contains(WeightedSigmoid.OPCODE_CP));
+				assertTrue(!Statistics.getCPHeavyHitterOpCodes().contains(WeightedSigmoid.OPCODE_CP));
 			else if( instType == ExecType.SPARK )
-				Assert.assertTrue(!Statistics.getCPHeavyHitterOpCodes().contains(Instruction.SP_INST_PREFIX+WeightedSigmoid.OPCODE));	
+				assertTrue(!Statistics.getCPHeavyHitterOpCodes().contains(Instruction.SP_INST_PREFIX+WeightedSigmoid.OPCODE));	
 		}
 		finally
 		{

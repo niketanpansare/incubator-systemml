@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.piggybacking;
 
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -71,7 +70,7 @@ public class PiggybackingTest2 extends AutomatedTestBase
 	
 		HashMap<CellIndex, Double> d = TestUtils.readDMLScalarFromHDFS(output(config.getOutputFiles()[0]));
 		
-		Assert.assertEquals(d.get(new CellIndex(1,1)), Double.valueOf(1.0), 1e-10);
+		assertEquals(d.get(new CellIndex(1,1)), Double.valueOf(1.0), 1e-10);
 		
 		rtplatform = rtold;
 	}

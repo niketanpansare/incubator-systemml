@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.data;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -205,7 +204,7 @@ public class WriteReadZeroDimsTest extends AutomatedTestBase
 				
 				//check overall result
 				double expected = ((type == Type.Zero_Rows) ? colsM : rowsM) * 7;
-				Assert.assertEquals(new Double(expected),
+				assertEquals(new Double(expected),
 					readDMLMatrixFromHDFS("R2").get(new CellIndex(1,1)));
 			}
 		}

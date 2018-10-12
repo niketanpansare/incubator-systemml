@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.codegenalg;
 
 import java.io.File;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -206,7 +205,7 @@ public class AlgorithmAutoEncoder extends AutomatedTestBase
 			runTest(true, false, null, -1); 
 			//TODO R script
 			
-			Assert.assertTrue(heavyHittersContainsSubString("spoof") 
+			assertTrue(heavyHittersContainsSubString("spoof") 
 				|| heavyHittersContainsSubString("sp_spoof"));
 		}
 		finally {

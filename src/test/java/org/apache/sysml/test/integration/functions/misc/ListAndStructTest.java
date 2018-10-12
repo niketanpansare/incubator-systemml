@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.misc;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -185,11 +184,11 @@ public class ListAndStructTest extends AutomatedTestBase
 			//compare matrices 
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("R");
-			Assert.assertEquals(dmlfile.get(new CellIndex(1,1)), rfile.get(new CellIndex(1,1)));
+			assertEquals(dmlfile.get(new CellIndex(1,1)), rfile.get(new CellIndex(1,1)));
 			
 			//check for properly compiled CP operations
-			Assert.assertTrue(Statistics.getNoOfExecutedMRJobs()==0);
-			Assert.assertTrue(Statistics.getNoOfExecutedSPInst()==0);
+			assertTrue(Statistics.getNoOfExecutedMRJobs()==0);
+			assertTrue(Statistics.getNoOfExecutedSPInst()==0);
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;

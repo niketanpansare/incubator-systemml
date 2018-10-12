@@ -21,8 +21,6 @@ package org.apache.sysml.test.integration.functions.misc;
 
 import org.junit.Test;
 
-import org.junit.Assert;
-
 import java.util.HashMap;
 
 import org.apache.sysml.api.DMLScript;
@@ -123,7 +121,7 @@ public class SizePropagationTest extends AutomatedTestBase
 			
 			runTest(true, false, null, -1); 
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
-			Assert.assertEquals(new Double(expect), dmlfile.get(new CellIndex(1,1)));
+			assertEquals(new Double(expect), dmlfile.get(new CellIndex(1,1)));
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;

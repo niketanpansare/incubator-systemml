@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.misc;
 
 import org.junit.Test;
 
-import org.junit.Assert;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -158,7 +157,7 @@ public class RewriteCTableToRExpandTest extends AutomatedTestBase
 				checkDMLMetaDataFile("R", new MatrixCharacteristics(rrows, rcols, 1, 1));
 			
 			//check for applied rewrite
-			Assert.assertEquals(Boolean.valueOf(testname.equals(TEST_NAME1) 
+			assertEquals(Boolean.valueOf(testname.equals(TEST_NAME1) 
 				|| testname.equals(TEST_NAME2) || unknownTests),
 				Boolean.valueOf(heavyHittersContainsSubString("rexpand")));
 		}

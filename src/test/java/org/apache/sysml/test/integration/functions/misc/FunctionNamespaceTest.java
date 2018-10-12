@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.misc;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLException;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -310,19 +309,19 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 					{
 						if (!stdErrString.contains("Namespace Conflict"))
 						{
-							Assert.fail("Expected parse issue not detected.");
+							fail("Expected parse issue not detected.");
 						}
 					}
 					else if (TEST_NAME13.equals(TEST_NAME))
 					{
 						if (stdErrString != null && !stdErrString.contains("Function Name Conflict"))
 						{
-							Assert.fail("Expected parse issue not detected.");
+							fail("Expected parse issue not detected.");
 						}
 					}
 					else
 					{
-						Assert.fail("Unexpected parse error or DML script error: " + stdErrString);
+						fail("Unexpected parse error or DML script error: " + stdErrString);
 					}
 				}
 			}
@@ -330,7 +329,7 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 		catch (Exception e) 
 		{
 			e.printStackTrace(origStdErr);
-			Assert.fail("Unexpected exception: " + e);
+			fail("Unexpected exception: " + e);
 		}
 		finally
 		{
@@ -367,26 +366,26 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 			
 			//compare output
 			double ret = MapReduceTool.readDoubleFromHDFSFile(output("Rout"));
-			Assert.assertEquals(Double.valueOf(rows*cols*val*6), Double.valueOf(ret));
+			assertEquals(Double.valueOf(rows*cols*val*6), Double.valueOf(ret));
 			
 			//compiled MR jobs
 			int expectNumCompiled = IPA ? 0 : 4; 
-			Assert.assertEquals("Unexpected number of compiled MR jobs.", expectNumCompiled, Statistics.getNoOfCompiledMRJobs());
+			assertEquals("Unexpected number of compiled MR jobs.", expectNumCompiled, Statistics.getNoOfCompiledMRJobs());
 		
 			//check executed MR jobs (should always be 0 due to dynamic recompilation)
 			int expectNumExecuted = 0;
-			Assert.assertEquals("Unexpected number of executed MR jobs.", expectNumExecuted, Statistics.getNoOfExecutedMRJobs());
+			assertEquals("Unexpected number of executed MR jobs.", expectNumExecuted, Statistics.getNoOfExecutedMRJobs());
 			
 			String stdErrString = baos.toString();
 			if (stdErrString != null && stdErrString.length() > 0)
 			{
-				Assert.fail("Unexpected parse error or DML script error: " + stdErrString);
+				fail("Unexpected parse error or DML script error: " + stdErrString);
 			}
 		}
 		catch (Exception e) 
 		{
 			e.printStackTrace(originalStdErr);
-			Assert.fail("Unexpected exception: " + e);
+			fail("Unexpected exception: " + e);
 		}
 		finally
 		{

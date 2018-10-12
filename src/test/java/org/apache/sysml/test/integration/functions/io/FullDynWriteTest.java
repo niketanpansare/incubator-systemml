@@ -160,7 +160,7 @@ public class FullDynWriteTest extends AutomatedTestBase
 			
 			if( type == Type.Scalar ) {
 				long val = MapReduceTool.readIntegerFromHDFSFile(fname);
-				Assert.assertEquals(val, sum);
+				assertEquals(val, sum);
 			}
 			else{
 				double[][] B = readMatrix(fname, OutputInfo.getMatchingInputInfo(fmt), rows, cols, 1000, 1000);

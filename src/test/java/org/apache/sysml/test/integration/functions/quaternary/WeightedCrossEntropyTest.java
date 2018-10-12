@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.quaternary;
 import java.util.HashMap;
 
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -242,9 +241,9 @@ public class WeightedCrossEntropyTest extends AutomatedTestBase
 
 			//check statistics for right operator in cp
 			if( instType == ExecType.CP && rewrites )
-				Assert.assertTrue("Missing opcode wcemm", Statistics.getCPHeavyHitterOpCodes().contains(WeightedCrossEntropy.OPCODE_CP));
+				assertTrue("Missing opcode wcemm", Statistics.getCPHeavyHitterOpCodes().contains(WeightedCrossEntropy.OPCODE_CP));
 			else if( instType == ExecType.SPARK && rewrites ) {
-				Assert.assertTrue("Missing opcode sp_wcemm", 
+				assertTrue("Missing opcode sp_wcemm", 
 						!rep && Statistics.getCPHeavyHitterOpCodes().contains(Instruction.SP_INST_PREFIX+WeightedCrossEntropy.OPCODE)
 					  || rep && Statistics.getCPHeavyHitterOpCodes().contains(Instruction.SP_INST_PREFIX+WeightedCrossEntropyR.OPCODE) );
 			}

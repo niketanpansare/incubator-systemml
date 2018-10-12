@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.append;
 
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.api.DMLScript;
@@ -179,7 +178,7 @@ public class RBindCBindMatrixTest extends AutomatedTestBase
 			//check applied rewrite t(cbind(t(A),t(B)) --> rbind(A,B)
 			if( testname.equals(TEST_NAME2) ){
 				String opcode = ((et==ExecType.SPARK)?Instruction.SP_INST_PREFIX:"")+"r'";
-				Assert.assertTrue("Rewrite not applied", !Statistics.getCPHeavyHitterOpCodes().contains(opcode) );
+				assertTrue("Rewrite not applied", !Statistics.getCPHeavyHitterOpCodes().contains(opcode) );
 			}
 		}
 		finally

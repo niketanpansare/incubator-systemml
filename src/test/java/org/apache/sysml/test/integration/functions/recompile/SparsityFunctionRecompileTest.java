@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.recompile;
 
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -196,7 +195,7 @@ public class SparsityFunctionRecompileTest extends AutomatedTestBase
 			int expectNumCompiled = (testname.equals(TEST_NAME2)?3:4) //reblock,GMR,GMR,GMR (one GMR less for if) 
 					                 + ((testname.equals(TEST_NAME4))?2:0) //(+2 resultmerge)
 					                 + (IPA ? 0 : (testname.equals(TEST_NAME2)?3:1)); //GMR ua(+), 3x for if
-			Assert.assertEquals("Unexpected number of compiled MR jobs.", 
+			assertEquals("Unexpected number of compiled MR jobs.", 
 					            expectNumCompiled, Statistics.getNoOfCompiledMRJobs());
 		
 			//CHECK executed MR jobs (changed 07/2015 due to better sparsity inference)
@@ -205,18 +204,18 @@ public class SparsityFunctionRecompileTest extends AutomatedTestBase
 			else            expectNumExecuted = (testname.equals(TEST_NAME2)?3:4) //reblock,GMR,GMR,GMR (one GMR less for if) 
 					                              + ((testname.equals(TEST_NAME4))?2:0) //(+2 resultmerge) 
 					                              + (IPA ? 0 : (testname.equals(TEST_NAME2)?2:1)); //GMR ua(+)
-			Assert.assertEquals("Unexpected number of executed MR jobs.", 
+			assertEquals("Unexpected number of executed MR jobs.", 
 		                        expectNumExecuted, Statistics.getNoOfExecutedMRJobs());
 
 			
 			//compare matrices
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
-			Assert.assertEquals(Double.valueOf(val), dmlfile.get(new CellIndex(1,1)));
+			assertEquals(Double.valueOf(val), dmlfile.get(new CellIndex(1,1)));
 		}
 		catch(Exception ex)
 		{
 			ex.printStackTrace();
-			Assert.fail("Failed to run test: "+ex.getMessage());
+			fail("Failed to run test: "+ex.getMessage());
 		}
 		finally
 		{

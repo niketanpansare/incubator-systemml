@@ -32,7 +32,6 @@ import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 import org.apache.sysml.utils.Statistics;
-import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -403,7 +402,7 @@ public class ABATernaryAggregateTest extends AutomatedTestBase
 			if( rewrites && et != ExecType.MR ) {
 				String opcode = ((et == ExecType.SPARK) ? Instruction.SP_INST_PREFIX : "") + 
 					(((testname.equals(TEST_NAME1) || testname.equals(TEST_NAME3) || vectors ) ? "tak+*" : "tack+*"));
-				Assert.assertTrue(Statistics.getCPHeavyHitterOpCodes().contains(opcode));
+				assertTrue(Statistics.getCPHeavyHitterOpCodes().contains(opcode));
 			}
 		}
 		finally {

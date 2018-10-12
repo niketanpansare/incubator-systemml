@@ -19,8 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.data;
 
-import static org.junit.Assert.fail;
-
 import java.io.IOException;
 
 import org.junit.Test;

@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.caching;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -104,6 +103,6 @@ public class CachingPWriteExportTest extends AutomatedTestBase
 		for( int i=0; i<rows; i++ )
 			for( int j=0; j<cols; j++ )
 				if( V[i][j]!=Vp[i][j] )
-					Assert.fail("Wrong value i="+i+", j="+j+", value1="+V[i][j]+", value2="+Vp[i][j]);
+					fail("Wrong value i="+i+", j="+j+", value1="+V[i][j]+", value2="+Vp[i][j]);
 	}
 }
