@@ -214,12 +214,10 @@ public class RowStdDevsTest extends AutomatedTestBase {
      */
     private void testRowStdDevs(String testName, Sparsity sparsity, DataType dataType,
                                 ExecType platform) {
-        // Configure settings for this test case
-    	RUNTIME_PLATFORM platformOld = setRuntimePlatform(platform);
-
-        boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-        if (rtplatform == RUNTIME_PLATFORM.SPARK)
-            DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+    	boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+    	RUNTIME_PLATFORM platformOld = setRuntimePlatform(platform);        
+        if(shouldSkipTest())
+			return;
 
         try {
             // Create and load test configuration

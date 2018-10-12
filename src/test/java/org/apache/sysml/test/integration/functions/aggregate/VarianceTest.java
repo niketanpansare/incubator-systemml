@@ -214,12 +214,11 @@ public class VarianceTest extends AutomatedTestBase {
      */
     private void testVariance(String testName, Sparsity sparsity, DataType dataType,
                               ExecType platform) {
-        // Configure settings for this test case
+    	boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
     	RUNTIME_PLATFORM platformOld = setRuntimePlatform(platform);
+    	if(shouldSkipTest())
+			return;
 
-        boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-        if (rtplatform == RUNTIME_PLATFORM.SPARK)
-            DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
         try {
             // Create and load test configuration

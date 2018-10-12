@@ -75,6 +75,9 @@ public class RDDConverterUtilsExtTest extends AutomatedTestBase {
 
 	@Test
 	public void testStringDataFrameToVectorDataFrame() {
+		if(shouldSkipTest())
+			return;
+		
 		List<String> list = new ArrayList<String>();
 		list.add("((1.2, 4.3, 3.4))");
 		list.add("(1.2, 3.4, 2.2)");
@@ -103,6 +106,8 @@ public class RDDConverterUtilsExtTest extends AutomatedTestBase {
 
 	@Test
 	public void testStringDataFrameToVectorDataFrameNull() {
+		if(shouldSkipTest())
+			return;
 		List<String> list = new ArrayList<String>();
 		list.add("[1.2, 3.4]");
 		list.add(null);
@@ -127,6 +132,8 @@ public class RDDConverterUtilsExtTest extends AutomatedTestBase {
 
 	@Test(expected = SparkException.class)
 	public void testStringDataFrameToVectorDataFrameNonNumbers() {
+		if(shouldSkipTest())
+			return;
 		List<String> list = new ArrayList<String>();
 		list.add("[cheeseburger,fries]");
 		JavaRDD<String> javaRddString = sc.parallelize(list);

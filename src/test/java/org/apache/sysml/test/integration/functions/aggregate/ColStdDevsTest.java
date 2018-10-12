@@ -214,12 +214,10 @@ public class ColStdDevsTest extends AutomatedTestBase {
      */
     private void testColStdDevs(String testName, Sparsity sparsity, DataType dataType,
                                 ExecType platform) {
-        // Configure settings for this test case
+    	boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
     	RUNTIME_PLATFORM platformOld = setRuntimePlatform(platform);
-    	
-        boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-        if (rtplatform == RUNTIME_PLATFORM.SPARK)
-            DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+    	if(shouldSkipTest())
+			return;
 
         try {
             // Create and load test configuration

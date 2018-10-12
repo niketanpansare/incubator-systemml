@@ -297,12 +297,10 @@ public class TransposeMatrixMultiplicationTest extends AutomatedTestBase
 	 */
 	private void runTransposeMatrixMultiplicationTest( boolean sparseM1, boolean sparseM2, ExecType instType, boolean vectorM2, boolean minusM1)
 	{
-		//rtplatform for MR
-		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
-	
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
+		if(shouldSkipTest())
+			return;
 	
 		int rowsA = vectorM2 ? rowsA2 : rowsA1;
 		int colsA = vectorM2 ? colsA2 : colsA1;

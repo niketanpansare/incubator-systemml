@@ -107,11 +107,10 @@ public class StringAppendTest extends AutomatedTestBase
 	 */
 	public void runStringAppendTest(String TEST_NAME, int iters, boolean exceptionExpected, ExecType et)
 	{		
-		RUNTIME_PLATFORM oldPlatform = setRuntimePlatform(et);
-	    
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		RUNTIME_PLATFORM oldPlatform = setRuntimePlatform(et);
+		if(shouldSkipTest())
+			return;
 		
 		try
 		{

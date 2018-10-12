@@ -108,6 +108,9 @@ public class AggregateNaNTest extends AutomatedTestBase
 	}
 	
 	private void runNaNAggregateTest(int type, boolean sparse) {
+		if(shouldSkipTest())
+			return;
+		
 		//generate input
 		double sparsity = sparse ? sparsity1 : sparsity2;
 		double[][] A = getRandomMatrix(rows, cols, -0.05, 1, sparsity, 7); 
@@ -126,6 +129,9 @@ public class AggregateNaNTest extends AutomatedTestBase
 	}
 	
 	private void runNaNRowIndexMxxTest(String type, boolean sparse) {
+		if(shouldSkipTest())
+			return;
+		
 		//generate input
 		double sparsity = sparse ? sparsity1 : sparsity2;
 		double[][] A = getRandomMatrix(rows, cols, -0.05, 1, sparsity, 7);

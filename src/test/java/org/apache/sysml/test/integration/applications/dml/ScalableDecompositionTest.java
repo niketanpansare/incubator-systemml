@@ -160,12 +160,14 @@ public class ScalableDecompositionTest extends AutomatedTestBase
 	
 	private void runKMeansTest(String testname, DecompType type, boolean rewrites, ExecType instType)
 	{
-		boolean oldFlag1 = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
-		boolean oldFlag2 = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
 		if(shouldSkipTest())
 			return;
+		
+		boolean oldFlag1 = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
+		boolean oldFlag2 = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
+		
 		
 		try
 		{

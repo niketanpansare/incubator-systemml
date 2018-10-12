@@ -74,14 +74,11 @@ public class OuterProductTest extends AutomatedTestBase
 	{
 		//setup exec type, rows, cols
 
-		//rtplatform for MR
-		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
-	
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-
-	
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
+		if(shouldSkipTest())
+			return;
+		
 		try
 		{
 			getAndLoadTestConfiguration(TEST_NAME);

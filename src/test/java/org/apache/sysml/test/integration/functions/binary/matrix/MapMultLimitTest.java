@@ -57,7 +57,9 @@ public class MapMultLimitTest extends AutomatedTestBase
 	public void testMapMultLimit()
 	{
 
-		RUNTIME_PLATFORM rtold = setRuntimePlatform(ExecType.MR);;
+		RUNTIME_PLATFORM rtold = setRuntimePlatform(ExecType.MR);
+		if(shouldSkipTest())
+			return;
 
 		try
 		{

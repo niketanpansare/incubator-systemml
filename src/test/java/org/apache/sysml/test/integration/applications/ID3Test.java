@@ -62,6 +62,9 @@ public abstract class ID3Test extends AutomatedTestBase
     
     protected void testID3(ScriptType scriptType) 
     {
+    	if(shouldSkipTest())
+			return;
+    	
 		System.out.println("------------ BEGIN " + TEST_NAME + " " + scriptType + " TEST {" + numRecords + ", "
 				+ numFeatures + "} ------------");
 		this.scriptType = scriptType;    	

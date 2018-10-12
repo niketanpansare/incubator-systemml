@@ -297,6 +297,8 @@ public class FullIntegerDivisionTest extends AutomatedTestBase
 	{
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
+		if(shouldSkipTest())
+			return;
 	
 		double sparsity = sparse?sparsity2:sparsity1;				
 		

@@ -199,15 +199,15 @@ public class ColSumsSqTest extends AutomatedTestBase {
      */
     private void testColSumsSquared(String testName, boolean sparse, boolean vector,
                                     boolean rewrites, ExecType platform) {
+    	
+    	boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+    	RUNTIME_PLATFORM platformOld = setRuntimePlatform(platform);
+    	if(shouldSkipTest())
+			return;
+    	
         // Configure settings for this test case
         boolean rewritesOld = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
         OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
-
-        RUNTIME_PLATFORM platformOld = setRuntimePlatform(platform);
-
-        boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-        if (rtplatform == RUNTIME_PLATFORM.SPARK)
-            DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
         try {
             // Create and load test configuration

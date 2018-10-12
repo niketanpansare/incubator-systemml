@@ -208,13 +208,11 @@ public class ElementwiseBitwLogicalTest extends AutomatedTestBase{
 	}
 
 	private void runBitwLogic(String testname, boolean sparse, ExecType et) {
-		//rtplatform for MR
-		RUNTIME_PLATFORM platformOld = setRuntimePlatform(et);
-
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(et);
+		if(shouldSkipTest())
+			return;
+				
 		try {
 			String TEST_NAME = testname;
 			getAndLoadTestConfiguration(TEST_NAME);

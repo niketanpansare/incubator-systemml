@@ -136,6 +136,9 @@ public class FullStringComparisonTest extends AutomatedTestBase
 	 */
 	private void runStringComparison( Type type, boolean trueCondition )
 	{
+		if(shouldSkipTest())
+			return;
+		
 		String TEST_NAME = TEST_NAME1;
 		
 		String string1 = "abcd";
