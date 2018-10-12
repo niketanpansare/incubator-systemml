@@ -111,17 +111,11 @@ public class AlgorithmPNMF extends AutomatedTestBase
 	private void runPNMFTest( String testname, boolean rewrites, boolean sparse, ExecType instType, TestType testType)
 	{
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
-			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK; break;
-		}
-		currentTestType = testType;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
+		
+		currentTestType = testType;
+		
 		try
 		{
 			String TEST_NAME = testname;
