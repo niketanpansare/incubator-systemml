@@ -75,7 +75,7 @@ public class OuterProductTest extends AutomatedTestBase
 		//setup exec type, rows, cols
 
 		//rtplatform for MR
-		RUNTIME_PLATFORM platformOld = setRuntimePlatform(et);
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
 	
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		if( rtplatform == RUNTIME_PLATFORM.SPARK )
