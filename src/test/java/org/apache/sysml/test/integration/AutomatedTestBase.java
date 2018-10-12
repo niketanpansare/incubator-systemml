@@ -1594,6 +1594,9 @@ public abstract class AutomatedTestBase
 	 *            tolerance
 	 */
 	protected void compareResults(double epsilon) {
+		if(shouldSkipTest()) {
+			return;
+		}
 		for (int i = 0; i < comparisonFiles.length; i++) {
 			/* Note that DML scripts may generate a file with only scalar value */
 			if (outputDirectories[i].endsWith(".scalar")) {
