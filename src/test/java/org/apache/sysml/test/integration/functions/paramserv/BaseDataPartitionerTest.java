@@ -27,7 +27,7 @@ import org.apache.sysml.runtime.controlprogram.paramserv.dp.LocalDataPartitioner
 import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.DataConverter;
-import org.junit.Assert;
+import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.junit.internal.ArrayComparisonFailure;
 
 public abstract class BaseDataPartitionerTest {
@@ -39,13 +39,11 @@ public abstract class BaseDataPartitionerTest {
 
 	public static void assertArrayEquals(double[] expecteds,
 			double[] actuals, double delta) throws ArrayComparisonFailure {
-		// TODO: For now, we run MR tests under this test suite
-		Assert.assertArrayEquals(expecteds, actuals, delta);
+		AutomatedTestBase.assertArrayEquals(expecteds, actuals, delta);
 	}
 	
 	public static void assertEquals(int expected, int actual) {
-		// TODO: For now, we run MR tests under this test suite
-		Assert.assertEquals(expected, actual);
+		AutomatedTestBase.assertEquals(expected, actual);
     }
 	
 

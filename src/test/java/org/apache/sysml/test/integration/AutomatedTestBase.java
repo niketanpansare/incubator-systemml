@@ -88,6 +88,8 @@ public abstract class AutomatedTestBase
 		}
 	}
 	
+	// Since MR backend is in the maintenance mode, the MR tests can be skipped to reduce the time
+	// taken for running the entire test suite. This will also help continuous integration process.
 	public static final boolean TEST_MR_BACKEND = false;
 
 	public static final boolean EXCEPTION_EXPECTED = true;
@@ -704,20 +706,33 @@ public abstract class AutomatedTestBase
 	}
 
 	protected static HashMap<CellIndex, Double> readDMLMatrixFromHDFS(String fileName) {
+		if(!TEST_MR_BACKEND && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID)) {
+			return new HashMap<CellIndex, Double>();
+		}
 		return TestUtils.readDMLMatrixFromHDFS(baseDirectory + OUTPUT_DIR + fileName);
 	}
 
 	public HashMap<CellIndex, Double> readRMatrixFromFS(String fileName) {
+		if(!TEST_MR_BACKEND && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID)) {
+			return new HashMap<CellIndex, Double>();
+		}
 		System.out.println("R script out: " + baseDirectory + EXPECTED_DIR + cacheDir + fileName);
 		return TestUtils.readRMatrixFromFS(baseDirectory + EXPECTED_DIR + cacheDir + fileName);
 	}
 
 	protected static HashMap<CellIndex, Double> readDMLScalarFromHDFS(String fileName) {
+		if(!TEST_MR_BACKEND && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID)) {
+			return new HashMap<CellIndex, Double>();
+		}
 		return TestUtils.readDMLScalarFromHDFS(baseDirectory + OUTPUT_DIR + fileName);
 	}
 
 
 	protected static FrameBlock readDMLFrameFromHDFS(String fileName, InputInfo iinfo) throws IOException {
+		if(!TEST_MR_BACKEND && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID)) {
+			return new FrameBlock();
+		}
+		
 		//read frame data from hdfs
 		String strFrameFileName = baseDirectory + OUTPUT_DIR + fileName;
 		FrameReader reader = FrameReaderFactory.createFrameReader(iinfo);
@@ -728,6 +743,10 @@ public abstract class AutomatedTestBase
 
 
 	protected static FrameBlock readDMLFrameFromHDFS(String fileName, InputInfo iinfo, MatrixCharacteristics md) throws IOException {
+		if(!TEST_MR_BACKEND && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID)) {
+			return new FrameBlock();
+		}
+		
 		//read frame data from hdfs
 		String strFrameFileName = baseDirectory + OUTPUT_DIR + fileName;
 		FrameReader reader = FrameReaderFactory.createFrameReader(iinfo);
@@ -736,6 +755,10 @@ public abstract class AutomatedTestBase
 	}
 
 	protected static FrameBlock readRFrameFromHDFS(String fileName, InputInfo iinfo, MatrixCharacteristics md) throws IOException {
+		if(!TEST_MR_BACKEND && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID)) {
+			return new FrameBlock();
+		}
+		
 		//read frame data from hdfs
 		String strFrameFileName = baseDirectory + EXPECTED_DIR + fileName;
 
@@ -749,6 +772,10 @@ public abstract class AutomatedTestBase
 
 
 	public HashMap<CellIndex, Double> readRScalarFromFS(String fileName) {
+		if(!TEST_MR_BACKEND && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID)) {
+			return new HashMap<CellIndex, Double>();
+		}
+		
 		System.out.println("R script out: " + baseDirectory + EXPECTED_DIR + cacheDir + fileName);
 		return TestUtils.readRScalarFromFS(baseDirectory + EXPECTED_DIR + cacheDir + fileName);
 	}
