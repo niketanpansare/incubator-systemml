@@ -121,6 +121,9 @@ public class ScalarIOTest extends AutomatedTestBase
 	@Test
 	public void testIntScalarRead() {
 
+		if(shouldSkipTest())
+			return;
+		
 		int int_scalar = 464;
 		
 		fullDMLScriptName = HOME + "ScalarWrite.dml";
@@ -141,6 +144,9 @@ public class ScalarIOTest extends AutomatedTestBase
 	@Test
 	public void testDoubleScalarRead() {
 
+		if(shouldSkipTest())
+			return;
+		
 		double double_scalar = 464.5;
 		
 		fullDMLScriptName = HOME + "ScalarWrite.dml";
@@ -160,7 +166,9 @@ public class ScalarIOTest extends AutomatedTestBase
 
 	@Test
 	public void testBooleanScalarRead() {
-
+		if(shouldSkipTest())
+			return;
+		
 		boolean boolean_scalar = true;
 		
 		fullDMLScriptName = HOME + "ScalarWrite.dml";
@@ -178,7 +186,9 @@ public class ScalarIOTest extends AutomatedTestBase
 
 	@Test
 	public void testStringScalarRead() {
-
+		if(shouldSkipTest())
+			return;
+		
 		String string_scalar = "String Test.!";
 		
 		fullDMLScriptName = HOME + "ScalarWrite.dml";

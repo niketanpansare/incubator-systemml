@@ -90,6 +90,9 @@ public class SerializeTest extends AutomatedTestBase
 
 	private void runSerializeTest( int rows, int cols, double sparsity ) 
 	{
+		if(shouldSkipTest())
+			return;
+		
 		try
 		{	
 			TestConfiguration config = getTestConfiguration(TEST_NAME);

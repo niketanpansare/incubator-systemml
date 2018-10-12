@@ -128,6 +128,8 @@ public class FormatChangeTest extends AutomatedTestBase
 	}
 	
 	private void formatChangeTest() {
+		if(shouldSkipTest())
+			return;
 
 		int rows = _rows;
 		int cols = _cols;

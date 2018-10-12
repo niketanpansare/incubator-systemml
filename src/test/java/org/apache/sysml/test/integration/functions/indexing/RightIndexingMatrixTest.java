@@ -97,6 +97,7 @@ public class RightIndexingMatrixTest extends AutomatedTestBase
 	}
 	
 	public void runRightIndexingTest( ExecType et, boolean sparse ) {
+		
 		Random rand = new Random(System.currentTimeMillis());
 		long rl = (long)(rand.nextDouble()*((double)rows))+1;
 		long ru = (long)(rand.nextDouble()*((double)(rows-rl+1)))+rl;
@@ -110,6 +111,8 @@ public class RightIndexingMatrixTest extends AutomatedTestBase
 	{
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		RUNTIME_PLATFORM platformOld = setRuntimePlatform(et);
+		if(shouldSkipTest())
+			return;
 		
 		try
 		{

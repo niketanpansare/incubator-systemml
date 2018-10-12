@@ -48,6 +48,9 @@ public class FormatChangeTest extends AutomatedTestBase
 	
 	@Test
 	public void testFormatChange() {
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);

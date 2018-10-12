@@ -37,48 +37,64 @@ public class IndexRangeBlockAlignmentTest extends AutomatedTestBase
 	
 	@Test
 	public void testRowBlockFirstColumn() {
+		if(shouldSkipTest())
+			return;
 		assertEquals(true,
 				OptimizerUtils.isIndexingRangeBlockAligned(2001, 4000, 1, 1736, BRLEN, BCLEN));
 	}
 	
 	@Test
 	public void testRowBlockColBlock() {
+		if(shouldSkipTest())
+			return;
 		assertEquals(true,
 				OptimizerUtils.isIndexingRangeBlockAligned(2001, 4000, 7001, 9000, BRLEN, BCLEN));
 	}
 
 	@Test
 	public void testSingleRowBlockFirstColumn() {
+		if(shouldSkipTest())
+			return;
 		assertEquals(true,
 				OptimizerUtils.isIndexingRangeBlockAligned(2500, 2600, 1, 1736, BRLEN, BCLEN));
 	}
 	
 	@Test
 	public void testSingleRowBlockColBlock() {
+		if(shouldSkipTest())
+			return;
 		assertEquals(true,
 				OptimizerUtils.isIndexingRangeBlockAligned(2500, 2600, 7001, 9000, BRLEN, BCLEN));
 	}
 	
 	@Test
 	public void testRowBlockFirstColumnNeg() {
+		if(shouldSkipTest())
+			return;
 		assertEquals(false,
 				OptimizerUtils.isIndexingRangeBlockAligned(2501, 4500, 1, 1736, BRLEN, BCLEN));
 	}
 	
 	@Test
 	public void testRowBlockColBlockNeg() {
+		if(shouldSkipTest())
+			return;
 		assertEquals(false,
 				OptimizerUtils.isIndexingRangeBlockAligned(2501, 4500, 7001, 9000, BRLEN, BCLEN));
 	}
 
 	@Test
 	public void testSingleRowBlockFirstColumnNeg() {
+		if(shouldSkipTest())
+			return;
 		assertEquals(false,
 				OptimizerUtils.isIndexingRangeBlockAligned(2500, 3001, 1, 1736, BRLEN, BCLEN));
 	}
 	
 	@Test
 	public void testSingleRowBlockColBlockNeg() {
+		if(shouldSkipTest())
+			return;
 		assertEquals(false,
 				OptimizerUtils.isIndexingRangeBlockAligned(2500, 3001, 7001, 9000, BRLEN, BCLEN));
 	}
