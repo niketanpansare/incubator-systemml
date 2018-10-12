@@ -92,6 +92,9 @@ public abstract class AutomatedTestBase
 	// Since MR backend is in the maintenance mode, the MR tests can be skipped to reduce the time
 	// taken for running the entire test suite. This will also help continuous integration process.
 	public static final boolean TEST_MR_BACKEND = false;
+	public static boolean shouldSkipTest() {
+		return !TEST_MR_BACKEND && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID);
+	}
 
 	public static final boolean EXCEPTION_EXPECTED = true;
 	public static final boolean EXCEPTION_NOT_EXPECTED = false;
@@ -202,9 +205,11 @@ public abstract class AutomatedTestBase
             case MR:
                 rtplatform = RUNTIME_PLATFORM.HADOOP;
                 break;
-            case SPARK:
+            case SPARK: {
                 rtplatform = RUNTIME_PLATFORM.SPARK;
+                DMLScript.USE_LOCAL_SPARK_CONFIG = true; // Always use local config for junit tests
                 break;
+            }
             default:
                 rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
                 break;
@@ -723,14 +728,14 @@ public abstract class AutomatedTestBase
 	}
 
 	protected static HashMap<CellIndex, Double> readDMLMatrixFromHDFS(String fileName) {
-		if(!TEST_MR_BACKEND && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID)) {
+		if(shouldSkipTest()) {
 			return new HashMap<CellIndex, Double>();
 		}
 		return TestUtils.readDMLMatrixFromHDFS(baseDirectory + OUTPUT_DIR + fileName);
 	}
 
 	public HashMap<CellIndex, Double> readRMatrixFromFS(String fileName) {
-		if(!TEST_MR_BACKEND && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID)) {
+		if(shouldSkipTest()) {
 			return new HashMap<CellIndex, Double>();
 		}
 		System.out.println("R script out: " + baseDirectory + EXPECTED_DIR + cacheDir + fileName);
@@ -738,7 +743,7 @@ public abstract class AutomatedTestBase
 	}
 
 	protected static HashMap<CellIndex, Double> readDMLScalarFromHDFS(String fileName) {
-		if(!TEST_MR_BACKEND && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID)) {
+		if(shouldSkipTest()) {
 			return new HashMap<CellIndex, Double>();
 		}
 		return TestUtils.readDMLScalarFromHDFS(baseDirectory + OUTPUT_DIR + fileName);
@@ -746,7 +751,7 @@ public abstract class AutomatedTestBase
 
 
 	protected static FrameBlock readDMLFrameFromHDFS(String fileName, InputInfo iinfo) throws IOException {
-		if(!TEST_MR_BACKEND && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID)) {
+		if(shouldSkipTest()) {
 			return new FrameBlock();
 		}
 		
@@ -760,7 +765,7 @@ public abstract class AutomatedTestBase
 
 
 	protected static FrameBlock readDMLFrameFromHDFS(String fileName, InputInfo iinfo, MatrixCharacteristics md) throws IOException {
-		if(!TEST_MR_BACKEND && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID)) {
+		if(shouldSkipTest()) {
 			return new FrameBlock();
 		}
 		
@@ -772,7 +777,7 @@ public abstract class AutomatedTestBase
 	}
 
 	protected static FrameBlock readRFrameFromHDFS(String fileName, InputInfo iinfo, MatrixCharacteristics md) throws IOException {
-		if(!TEST_MR_BACKEND && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID)) {
+		if(shouldSkipTest()) {
 			return new FrameBlock();
 		}
 		
@@ -789,7 +794,7 @@ public abstract class AutomatedTestBase
 
 
 	public HashMap<CellIndex, Double> readRScalarFromFS(String fileName) {
-		if(!TEST_MR_BACKEND && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID)) {
+		if(shouldSkipTest()) {
 			return new HashMap<CellIndex, Double>();
 		}
 		
@@ -965,7 +970,7 @@ public abstract class AutomatedTestBase
 	}
 	
 	public static void assertNotEquals(Object expected, Object actual) {
-		if(!TEST_MR_BACKEND && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID)) {
+		if(shouldSkipTest()) {
 			// Skip checking the assertion
 			return;
 		}
@@ -973,7 +978,7 @@ public abstract class AutomatedTestBase
     }
 	
 	public static void assertNotEquals(double expected, double actual) {
-		if(!TEST_MR_BACKEND && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID)) {
+		if(shouldSkipTest()) {
 			// Skip checking the assertion
 			return;
 		}
@@ -981,7 +986,7 @@ public abstract class AutomatedTestBase
     }
 	
 	public static void assertNotEquals(int expected, int actual) {
-		if(!TEST_MR_BACKEND && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID)) {
+		if(shouldSkipTest()) {
 			// Skip checking the assertion
 			return;
 		}
@@ -989,7 +994,7 @@ public abstract class AutomatedTestBase
     }
 	
 	public static void assertNotEquals(long expected, long actual) {
-		if(!TEST_MR_BACKEND && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID)) {
+		if(shouldSkipTest()) {
 			// Skip checking the assertion
 			return;
 		}
@@ -997,7 +1002,7 @@ public abstract class AutomatedTestBase
     }
 	
 	public static void assertNotEquals(String message, double expected, double actual) {
-		if(!TEST_MR_BACKEND && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID)) {
+		if(shouldSkipTest()) {
 			// Skip checking the assertion
 			return;
 		}
@@ -1005,7 +1010,7 @@ public abstract class AutomatedTestBase
     }
 	
 	public static void assertNotEquals(String message, Long expected, Long actual) {
-		if(!TEST_MR_BACKEND && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID)) {
+		if(shouldSkipTest()) {
 			// Skip checking the assertion
 			return;
 		}
@@ -1013,7 +1018,7 @@ public abstract class AutomatedTestBase
     }
 	
 	public static void assertNotEquals(String message, long expected, long actual) {
-		if(!TEST_MR_BACKEND && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID)) {
+		if(shouldSkipTest()) {
 			// Skip checking the assertion
 			return;
 		}
@@ -1022,7 +1027,7 @@ public abstract class AutomatedTestBase
 	
 	public static void assertArrayEquals(double[] expecteds,
             double[] actuals, double delta) throws ArrayComparisonFailure {
-		if(!TEST_MR_BACKEND && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID)) {
+		if(shouldSkipTest()) {
 			// Skip checking the assertion
 			return;
 		}
@@ -1031,7 +1036,7 @@ public abstract class AutomatedTestBase
 	
 	public static void assertArrayEquals(double[] expecteds,
             double[] actuals, int delta) throws ArrayComparisonFailure {
-		if(!TEST_MR_BACKEND && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID)) {
+		if(shouldSkipTest()) {
 			// Skip checking the assertion
 			return;
 		}
@@ -1039,7 +1044,7 @@ public abstract class AutomatedTestBase
 	}
 	
 	public static void assertEquals(double expected, double actual, double delta) {
-		if(!TEST_MR_BACKEND && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID)) {
+		if(shouldSkipTest()) {
 			// Skip checking the assertion
 			return;
 		}
@@ -1047,7 +1052,7 @@ public abstract class AutomatedTestBase
     }
 	
 	public static void assertEquals(String message, double expected, double actual) {
-		if(!TEST_MR_BACKEND && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID)) {
+		if(shouldSkipTest()) {
 			// Skip checking the assertion
 			return;
 		}
@@ -1055,7 +1060,7 @@ public abstract class AutomatedTestBase
     }
 	
 	public static void assertEquals(String message, long expected, long actual) {
-		if(!TEST_MR_BACKEND && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID)) {
+		if(shouldSkipTest()) {
 			// Skip checking the assertion
 			return;
 		}
@@ -1063,7 +1068,7 @@ public abstract class AutomatedTestBase
     }
 	
 	public static void assertEquals(int expected, int actual) {
-		if(!TEST_MR_BACKEND && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID)) {
+		if(shouldSkipTest()) {
 			// Skip checking the assertion
 			return;
 		}
@@ -1071,7 +1076,7 @@ public abstract class AutomatedTestBase
     }
 	
 	public static void assertEquals(Object expected, Object actual) {
-		if(!TEST_MR_BACKEND && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID)) {
+		if(shouldSkipTest()) {
 			// Skip checking the assertion
 			return;
 		}
@@ -1079,7 +1084,7 @@ public abstract class AutomatedTestBase
     }
 	
 	public static void assertEquals(boolean expected, boolean actual) {
-		if(!TEST_MR_BACKEND && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID)) {
+		if(shouldSkipTest()) {
 			// Skip checking the assertion
 			return;
 		}
@@ -1087,7 +1092,7 @@ public abstract class AutomatedTestBase
     }
 	
 	public static void assertFalse(boolean condition) {
-		if(!TEST_MR_BACKEND && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID)) {
+		if(shouldSkipTest()) {
 			// Skip checking the assertion
 			return;
 		}
@@ -1095,7 +1100,7 @@ public abstract class AutomatedTestBase
 	}
 	
 	public static void assertFalse(String message, boolean condition) {
-		if(!TEST_MR_BACKEND && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID)) {
+		if(shouldSkipTest()) {
 			// Skip checking the assertion
 			return;
 		}
@@ -1103,7 +1108,7 @@ public abstract class AutomatedTestBase
 	}
 	
 	public static void assertTrue(String message, boolean condition) {
-		if(!TEST_MR_BACKEND && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID)) {
+		if(shouldSkipTest()) {
 			// Skip checking the assertion
 			return;
 		}
@@ -1111,7 +1116,7 @@ public abstract class AutomatedTestBase
     }
 
 	public static void assertTrue(boolean condition) {
-		if(!TEST_MR_BACKEND && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID)) {
+		if(shouldSkipTest()) {
 			// Skip checking the assertion
 			return;
 		}
@@ -1120,7 +1125,7 @@ public abstract class AutomatedTestBase
 	
 	public static void assertEquals(String message, Object expected,
             Object actual) {
-		if(!TEST_MR_BACKEND && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID)) {
+		if(shouldSkipTest()) {
 			// Skip checking the assertion
 			return;
 		}
@@ -1135,7 +1140,7 @@ public abstract class AutomatedTestBase
 	 * Runs an R script in the old or the new way
 	 */
 	protected void runRScript(boolean newWay) {
-		if(!TEST_MR_BACKEND && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID)) {
+		if(shouldSkipTest()) {
 			// Skip running test
 			return;
 		}
@@ -1361,7 +1366,7 @@ public abstract class AutomatedTestBase
 	 *            -1 there is no limit.
 	 */
 	protected void runTest(boolean newWay, boolean exceptionExpected, Class<?> expectedException, String errMessage, int maxMRJobs) {
-		if(!TEST_MR_BACKEND && (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID)) {
+		if(shouldSkipTest()) {
 			// Skip running test
 			return;
 		}

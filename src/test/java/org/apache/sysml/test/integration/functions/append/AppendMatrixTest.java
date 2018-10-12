@@ -218,16 +218,12 @@ public class AppendMatrixTest extends AutomatedTestBase
 		RUNTIME_PLATFORM prevPlfm=rtplatform;
 		
 		double sparsity = (sparse) ? sparsity2 : sparsity1; 
-		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		
 		try
 		{
 			if(forcedAppendMethod != null) {
 				BinaryOp.FORCED_APPEND_METHOD = forcedAppendMethod;
 			}
 		    rtplatform = platform;
-		    if( rtplatform == RUNTIME_PLATFORM.SPARK )
-				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 	
 	        config.addVariable("rows", rows);
 	        config.addVariable("cols", cols1);
@@ -271,7 +267,6 @@ public class AppendMatrixTest extends AutomatedTestBase
 		{
 			//reset execution platform
 			rtplatform = prevPlfm;
-			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 			BinaryOp.FORCED_APPEND_METHOD = null;
 		}
 	}

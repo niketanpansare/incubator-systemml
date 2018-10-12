@@ -135,6 +135,9 @@ public class FullDynWriteTest extends AutomatedTestBase
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		rtplatform = (et==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
 		
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
