@@ -284,6 +284,8 @@ public class ParForColwiseDataPartitioningTest extends AutomatedTestBase
 		if( partitioner == PDataPartitioner.REMOTE_SPARK || mode == PExecMode.REMOTE_SPARK) {
 			setRuntimePlatform(RUNTIME_PLATFORM.HYBRID_SPARK);
 		}
+		if(shouldSkipTest())
+			return;
 
 		try
 		{

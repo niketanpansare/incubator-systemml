@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.binary.matrix;
 import org.junit.Test;
 
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
-import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;

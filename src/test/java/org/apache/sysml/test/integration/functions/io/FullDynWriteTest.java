@@ -23,7 +23,6 @@ import java.io.IOException;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.parser.Expression.ValueType;

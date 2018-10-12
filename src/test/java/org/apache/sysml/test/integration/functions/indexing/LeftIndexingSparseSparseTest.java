@@ -165,6 +165,11 @@ public class LeftIndexingSparseSparseTest extends AutomatedTestBase
 	 */
 	public void runLeftIndexingSparseSparseTest(LixType type, ExecType et, LeftIndexingOp.LeftIndexingMethod indexingMethod) 
 	{
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		RUNTIME_PLATFORM oldRTP = setRuntimePlatform(et);
+		if(shouldSkipTest())
+			return;
+		
 		//setup range (column lower/upper)
 		int cl = -1;
 		switch( type ){
@@ -175,9 +180,6 @@ public class LeftIndexingSparseSparseTest extends AutomatedTestBase
 			case CENTERED: cl = (cols1-cols2)/2; break;
 		}
 		int cu = cl+cols2-1;
-		
-		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		RUNTIME_PLATFORM oldRTP = setRuntimePlatform(et);
 		
 		try
 		{

@@ -307,13 +307,11 @@ public class MapMultChainTest extends AutomatedTestBase
 	 */
 	private void runMapMultChainTest( String testname, boolean sparse, boolean sumProductRewrites, ExecType instType)
 	{
-		//rtplatform for MR
-		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
-	
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-		
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
+		if(shouldSkipTest())
+			return;
+			
 		//rewrite
 		boolean rewritesOld = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
 		OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = sumProductRewrites;

@@ -164,11 +164,10 @@ public class FullMatrixMultiplicationUltraSparseTest extends AutomatedTestBase
 	 */
 	private void runMatrixMatrixMultiplicationTest( SparsityType sparseM1, SparsityType sparseM2, ExecType instType)
 	{
-		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
-	
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
+		if(shouldSkipTest())
+			return;
 
 		try
 		{

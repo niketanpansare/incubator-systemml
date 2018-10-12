@@ -57,6 +57,7 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.integration.mlcontext.MLContextTestBase;
 import org.apache.sysml.test.utils.TestUtils;
+import org.junit.Assert;
 import org.junit.Test;
 
 
@@ -351,7 +352,7 @@ public class FrameTest extends MLContextTestBase
 				Object val1 = UtilFunctions.stringToObject(schema[j], UtilFunctions.objectToString(frame1.get(i, j)));
 				Object val2 = UtilFunctions.stringToObject(schema[j], UtilFunctions.objectToString(frame2.get(i, j)));
 				if( TestUtils.compareToR(schema[j], val1, val2, epsilon) != 0)
-					fail("The DML data for cell ("+ i + "," + j + ") is " + val1 + 
+					Assert.fail("The DML data for cell ("+ i + "," + j + ") is " + val1 + 
 							", not same as the R value " + val2);
 			}
 	}

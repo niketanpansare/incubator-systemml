@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.parfor;
 import java.util.HashMap;
 
 import org.junit.Test;
-
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
@@ -66,6 +65,9 @@ public class ParForFunctionSerializationTest extends AutomatedTestBase
 	
 	private void runFunctionTest( int testNum )
 	{
+		if(shouldSkipTest())
+			return;
+		
 		String TEST_NAME = null;
 		switch( testNum )
 		{

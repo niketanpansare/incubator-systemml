@@ -134,8 +134,11 @@ public class AppendChainTest extends AutomatedTestBase
 	{
 		TestConfiguration config = getAndLoadTestConfiguration(TEST_NAME);
 	    
-		RUNTIME_PLATFORM prevPlfm=rtplatform;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		RUNTIME_PLATFORM prevPlfm= setRuntimePlatform(platform);
+		if(shouldSkipTest())
+			return;
+		
 		
 		try
 		{

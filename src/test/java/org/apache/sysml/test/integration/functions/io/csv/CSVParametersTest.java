@@ -26,7 +26,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -210,6 +210,9 @@ public class CSVParametersTest extends AutomatedTestBase
 	}
 	
 	private void csvParameterTest(RUNTIME_PLATFORM platform, double sp) {
+		setRuntimePlatform(platform);
+		if(shouldSkipTest())
+			return;
 		
 		//generate actual dataset
 		double[][] D = getRandomMatrix(rows, cols, 0, 1, sp, 7777); 

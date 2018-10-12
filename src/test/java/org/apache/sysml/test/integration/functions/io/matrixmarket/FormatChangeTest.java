@@ -123,6 +123,9 @@ public class FormatChangeTest extends AutomatedTestBase
 	}
 	
 	private void verifyDMLandMMFiles(int rows, int cols, double sparsity, String dmlFile, String dmlFormat, String mmFile) {
+		if(shouldSkipTest())
+			return;
+		
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		
 		// backup old DML and R script files

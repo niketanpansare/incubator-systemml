@@ -87,12 +87,10 @@ public class AppendVectorTest extends AutomatedTestBase
 	{
 		TestConfiguration config = getAndLoadTestConfiguration(TEST_NAME);
 	    
-		RUNTIME_PLATFORM prevPlfm=rtplatform;
-		
-	    rtplatform = platform;
 	    boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-	    if( rtplatform == RUNTIME_PLATFORM.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+	    RUNTIME_PLATFORM prevPlfm = setRuntimePlatform(platform);
+		if(shouldSkipTest())
+			return;
 
 	    try {
 	        config.addVariable("rows", rows);

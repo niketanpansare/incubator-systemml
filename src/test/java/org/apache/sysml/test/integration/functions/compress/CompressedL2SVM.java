@@ -88,9 +88,10 @@ public class CompressedL2SVM extends AutomatedTestBase
 	 */
 	private void runL2SVMTest( String testname,boolean sparse, ExecType instType)
 	{
-		//rtplatform for MR
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
+		if(shouldSkipTest())
+			return;
 		
 		try
 		{

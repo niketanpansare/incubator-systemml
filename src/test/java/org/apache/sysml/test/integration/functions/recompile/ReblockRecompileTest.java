@@ -91,6 +91,9 @@ public class ReblockRecompileTest extends AutomatedTestBase
 	 */
 	private void runReblockTest(int scriptNum, long seed)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		String TEST_NAME = null;
 		switch(scriptNum) 
 		{

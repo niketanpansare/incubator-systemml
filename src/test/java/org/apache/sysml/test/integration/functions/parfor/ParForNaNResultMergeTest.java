@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 
 import org.junit.Test;
-
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
@@ -84,6 +83,9 @@ public class ParForNaNResultMergeTest extends AutomatedTestBase
 	 */
 	private void runParForNaNResultMergeTest( String test, boolean sparse )
 	{	
+		if(shouldSkipTest())
+			return;
+		
 		//script
 		String TEST_NAME = test;
 		int xrow = sparse ? 1 : rows;

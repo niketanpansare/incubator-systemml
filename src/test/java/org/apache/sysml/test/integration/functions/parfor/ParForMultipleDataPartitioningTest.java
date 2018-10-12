@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.parfor;
 import java.util.HashMap;
 
 import org.junit.Test;
-
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -72,6 +71,9 @@ public class ParForMultipleDataPartitioningTest extends AutomatedTestBase
 	 */
 	private void runParForDataPartitioningTest( boolean equiSchemes )
 	{		
+		if(shouldSkipTest())
+			return;
+		
 		//script
 		int scriptNum = -1;
 		if( equiSchemes )

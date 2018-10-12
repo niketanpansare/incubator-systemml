@@ -180,6 +180,9 @@ public class ParForBlockwiseDataPartitioningTest extends AutomatedTestBase
 	private void runParForDataPartitioningTest( String testname, PDataPartitioner partitioner, PExecMode mode, boolean sparse )
 	{
 		RUNTIME_PLATFORM oldRT = setRuntimePlatform(RUNTIME_PLATFORM.HYBRID_SPARK);
+		if(shouldSkipTest())
+			return;
+		
 		boolean oldUseSparkConfig = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		boolean oldDynRecompile = CompilerConfig.FLAG_DYN_RECOMPILE;
 		

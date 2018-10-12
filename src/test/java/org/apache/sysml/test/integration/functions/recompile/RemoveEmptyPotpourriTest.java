@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.recompile;
 import java.util.HashMap;
 
 import org.junit.Test;
-
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -118,6 +117,9 @@ public class RemoveEmptyPotpourriTest extends AutomatedTestBase
 	private void runRemoveEmptyTest( String TEST_NAME, boolean rewrite )
 	{	
 		getAndLoadTestConfiguration(TEST_NAME);
+		if(shouldSkipTest())
+			return;
+		
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		
 		try

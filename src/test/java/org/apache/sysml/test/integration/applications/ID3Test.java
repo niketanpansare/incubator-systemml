@@ -100,7 +100,7 @@ public abstract class ID3Test extends AutomatedTestBase
 		runRScript(true);
         
 		//check also num actually executed jobs
-		if(AutomatedTestBase.rtplatform != RUNTIME_PLATFORM.SPARK) {
+		if(rtplatform != RUNTIME_PLATFORM.SPARK) {
 			long actualMR = Statistics.getNoOfExecutedMRJobs();
 			assertEquals("Wrong number of executed jobs: expected 0 but executed "+actualMR+".", 0, actualMR);
 		}

@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -259,7 +260,7 @@ public class FrameIndexingDistTest extends AutomatedTestBase
 				Object val1 = UtilFunctions.stringToObject(schema[j], UtilFunctions.objectToString(frame1.get(i, j)));
 				Object val2 = UtilFunctions.stringToObject(schema[j], UtilFunctions.objectToString(frame2.get(i, j)));
 				if( TestUtils.compareToR(schema[j], val1, val2, epsilon) != 0)
-					fail("The DML data for cell ("+ i + "," + j + ") is " + val1 + 
+					Assert.fail("The DML data for cell ("+ i + "," + j + ") is " + val1 + 
 							", not same as the R value " + val2);
 			}
 	}

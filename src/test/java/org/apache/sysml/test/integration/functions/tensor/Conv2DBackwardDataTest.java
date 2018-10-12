@@ -134,6 +134,8 @@ public class Conv2DBackwardDataTest extends AutomatedTestBase
 	{
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		RUNTIME_PLATFORM oldRTP = setRuntimePlatform(et);
+		if(shouldSkipTest())
+			return;
 		
 		try
 		{

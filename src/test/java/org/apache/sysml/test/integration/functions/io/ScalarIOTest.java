@@ -20,7 +20,6 @@
 package org.apache.sysml.test.integration.functions.io;
 
 import org.junit.Test;
-
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
@@ -46,46 +45,52 @@ public class ScalarIOTest extends AutomatedTestBase
 	@Test
 	public void testIntScalarWrite() {
 
-		int int_scalar = 464;
-		
-		fullDMLScriptName = HOME + "ScalarWrite.dml";
-		programArgs = new String[]{	"-args", String.valueOf(int_scalar), output("a.scalar") };
-		runTest(true, false, null, -1);
-		
-		int int_out_scalar = TestUtils.readDMLScalarFromHDFS(output(OUT_FILE)).get(new CellIndex(1,1)).intValue();
-		assertEquals("Values not equal: " + int_scalar + "!=" + int_out_scalar, int_scalar, int_out_scalar);
-		
-		// Invoke the DML script that does computations and then writes scalar to HDFS
-		fullDMLScriptName = HOME + "ScalarComputeWrite.dml";
-		runTest(true, false, null, -1);
-		
-		int_out_scalar = TestUtils.readDMLScalarFromHDFS(output(OUT_FILE)).get(new CellIndex(1,1)).intValue();
-		assertEquals("Computation test for Integers failed: Values not equal: " + int_scalar + "!=" + int_out_scalar, int_scalar, int_out_scalar);
+		if(!shouldSkipTest()) {
+			int int_scalar = 464;
+			
+			fullDMLScriptName = HOME + "ScalarWrite.dml";
+			programArgs = new String[]{	"-args", String.valueOf(int_scalar), output("a.scalar") };
+			runTest(true, false, null, -1);
+			
+			int int_out_scalar = TestUtils.readDMLScalarFromHDFS(output(OUT_FILE)).get(new CellIndex(1,1)).intValue();
+			assertEquals("Values not equal: " + int_scalar + "!=" + int_out_scalar, int_scalar, int_out_scalar);
+			
+			// Invoke the DML script that does computations and then writes scalar to HDFS
+			fullDMLScriptName = HOME + "ScalarComputeWrite.dml";
+			runTest(true, false, null, -1);
+			
+			int_out_scalar = TestUtils.readDMLScalarFromHDFS(output(OUT_FILE)).get(new CellIndex(1,1)).intValue();
+			assertEquals("Computation test for Integers failed: Values not equal: " + int_scalar + "!=" + int_out_scalar, int_scalar, int_out_scalar);
+		}
 	}
 
 	@Test
 	public void testDoubleScalarWrite() 
 	{
-		Double double_scalar = 464.55;
-
-		fullDMLScriptName = HOME + "ScalarWrite.dml";
-		programArgs = new String[]{	"-args", String.valueOf(double_scalar), output("a.scalar") };
-		runTest(true, false, null, -1);
-		
-		Double double_out_scalar = TestUtils.readDMLScalarFromHDFS(output(OUT_FILE)).get(new CellIndex(1,1)).doubleValue();
-		assertEquals("Values not equal: " + double_scalar + "!=" + double_out_scalar, double_scalar, double_out_scalar);
-
-		// Invoke the DML script that does computations and then writes scalar to HDFS
-		fullDMLScriptName = HOME + "ScalarComputeWrite.dml";
-		runTest(true, false, null, -1);
-		
-		double_out_scalar = TestUtils.readDMLScalarFromHDFS(output(OUT_FILE)).get(new CellIndex(1,1)).doubleValue();
-		assertEquals("Computation test for Integers failed: Values not equal: " + double_scalar + "!=" + double_out_scalar, double_scalar, double_out_scalar);
+		if(!shouldSkipTest()) {
+			Double double_scalar = 464.55;
+	
+			fullDMLScriptName = HOME + "ScalarWrite.dml";
+			programArgs = new String[]{	"-args", String.valueOf(double_scalar), output("a.scalar") };
+			runTest(true, false, null, -1);
+			
+			Double double_out_scalar = TestUtils.readDMLScalarFromHDFS(output(OUT_FILE)).get(new CellIndex(1,1)).doubleValue();
+			assertEquals("Values not equal: " + double_scalar + "!=" + double_out_scalar, double_scalar, double_out_scalar);
+	
+			// Invoke the DML script that does computations and then writes scalar to HDFS
+			fullDMLScriptName = HOME + "ScalarComputeWrite.dml";
+			runTest(true, false, null, -1);
+			
+			double_out_scalar = TestUtils.readDMLScalarFromHDFS(output(OUT_FILE)).get(new CellIndex(1,1)).doubleValue();
+			assertEquals("Computation test for Integers failed: Values not equal: " + double_scalar + "!=" + double_out_scalar, double_scalar, double_out_scalar);
+		}
 	}
 
 	@Test
 	public void testBooleanScalarWrite() {
-
+		if(shouldSkipTest())
+			return;
+		
 		boolean boolean_scalar = true;
 
 		fullDMLScriptName = HOME + "ScalarWrite.dml";
@@ -99,7 +104,9 @@ public class ScalarIOTest extends AutomatedTestBase
 
 	@Test
 	public void testStringScalarWrite() {
-
+		if(shouldSkipTest())
+			return;
+		
 		String string_scalar = "String Test.!";
 
 		fullDMLScriptName = HOME + "ScalarWrite.dml";

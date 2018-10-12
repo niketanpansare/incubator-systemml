@@ -70,6 +70,9 @@ public class FunctionRecompileTest extends AutomatedTestBase
 
 	private void runFunctionTest( boolean recompile, boolean IPA )
 	{	
+		if(shouldSkipTest())
+			return;
+		
 		boolean oldFlagRecompile = CompilerConfig.FLAG_DYN_RECOMPILE;
 		boolean oldFlagIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
 		

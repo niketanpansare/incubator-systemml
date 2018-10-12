@@ -119,12 +119,10 @@ public class BinUaggChainTest extends AutomatedTestBase
 	 */
 	private void runBinUaggTest( String testname, boolean singleBlock, boolean sparse, ExecType instType)
 	{
-		//rtplatform for MR
-		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
-	
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
+		if(shouldSkipTest())
+			return;
 
 		try
 		{

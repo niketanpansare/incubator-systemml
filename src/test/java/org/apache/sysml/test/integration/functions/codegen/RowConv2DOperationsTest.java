@@ -71,15 +71,17 @@ public class RowConv2DOperationsTest extends AutomatedTestBase
 	public void runConv2DTest(String testname, boolean rewrites, int imgSize, int numImg, int numChannels,
 		int numFilters, int filterSize, int stride, int pad, boolean sparse1, boolean sparse2, ExecType et)
 	{
-		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
-		RUNTIME_PLATFORM platformOld = setRuntimePlatform(et);
-
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(et);
+		if(shouldSkipTest())
+			return;
+		
+		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
+		
 		try
 		{
+			
+			
 			String sparseVal1 = String.valueOf(sparse1).toUpperCase();
 			String sparseVal2 = String.valueOf(sparse2).toUpperCase();
 			TestConfiguration config = getTestConfiguration(testname);

@@ -24,7 +24,6 @@ import java.util.HashMap;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -129,6 +128,9 @@ public class Jdk7IssueRightIndexingTest extends AutomatedTestBase
 	public void runIndexingTest( boolean sparse, ExecType et ) 
 	{
 		RUNTIME_PLATFORM oldRTP = setRuntimePlatform(et);
+		if(shouldSkipTest())
+			return;
+		
 				
 		try
 		{

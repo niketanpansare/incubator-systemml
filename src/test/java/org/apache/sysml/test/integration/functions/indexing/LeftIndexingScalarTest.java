@@ -73,6 +73,8 @@ public class LeftIndexingScalarTest extends AutomatedTestBase
 	{		
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
+		if(shouldSkipTest())
+			return;
 		
 		try
 		{

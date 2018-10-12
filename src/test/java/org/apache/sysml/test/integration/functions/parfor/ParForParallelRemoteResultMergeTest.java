@@ -22,7 +22,7 @@ package org.apache.sysml.test.integration.functions.parfor;
 import java.util.HashMap;
 
 import org.junit.Test;
-
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
@@ -86,6 +86,9 @@ public class ParForParallelRemoteResultMergeTest extends AutomatedTestBase
 	 */
 	private void runParallelRemoteResultMerge( String test_name, boolean sparse )
 	{
+		if(shouldSkipTest())
+			return;
+		
 		//inst exec type, influenced via rows
 		String TEST_NAME = test_name;
 			

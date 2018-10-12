@@ -444,6 +444,8 @@ public class FullReblockTest extends AutomatedTestBase
 		
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		RUNTIME_PLATFORM platformOld = setRuntimePlatform(et);
+		if(shouldSkipTest())
+			return;
 		
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("rows", rows);

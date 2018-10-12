@@ -149,10 +149,12 @@ public class AlgorithmMSVM extends AutomatedTestBase
 
 	private void runMSVMTest( String testname, boolean rewrites, boolean sparse, int numClasses, ExecType instType, TestType testType)
 	{
-		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
+		if(shouldSkipTest())
+			return;
 		
+		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		currentTestType = testType;
 
 		try

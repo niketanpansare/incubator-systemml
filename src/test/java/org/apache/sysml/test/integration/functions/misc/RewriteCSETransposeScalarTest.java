@@ -75,6 +75,9 @@ public class RewriteCSETransposeScalarTest extends AutomatedTestBase
 	 */
 	private void testRewriteCSETransposeScalar( String testname, boolean rewrites )
 	{	
+		if(shouldSkipTest())
+			return;
+		
 		boolean rewritesOld = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 		

@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.parfor;
 import java.util.HashMap;
 
 import org.junit.Test;
-
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -114,6 +113,9 @@ public class ParForAdversarialLiteralsTest extends AutomatedTestBase
 	@SuppressWarnings("deprecation")
 	private void runLiteralTest( String testName )
 	{
+		if(shouldSkipTest())
+			return;
+		
 		String TEST_NAME = testName;
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("rows", rows);
@@ -139,9 +141,11 @@ public class ParForAdversarialLiteralsTest extends AutomatedTestBase
 		runTest(true, exceptionExpected, null, -1);
 		
 		//compare matrices
-		HashMap<CellIndex, Double> dmlin = TestUtils.readDMLMatrixFromHDFS(input(IN));
-		HashMap<CellIndex, Double> dmlout = readDMLMatrixFromHDFS(OUT); 
-		
-		TestUtils.compareMatrices(dmlin, dmlout, eps, "DMLin", "DMLout");
+		if(!shouldSkipTest()) {
+			HashMap<CellIndex, Double> dmlin = TestUtils.readDMLMatrixFromHDFS(input(IN));
+			HashMap<CellIndex, Double> dmlout = readDMLMatrixFromHDFS(OUT); 
+			
+			TestUtils.compareMatrices(dmlin, dmlout, eps, "DMLin", "DMLout");
+		}
 	}
 }

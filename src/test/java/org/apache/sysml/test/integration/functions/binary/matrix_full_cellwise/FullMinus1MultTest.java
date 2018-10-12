@@ -109,11 +109,10 @@ public class FullMinus1MultTest extends AutomatedTestBase
 	 */
 	private void runMinus1MultTest( int posScalar, ExecType instType, boolean rewrites)
 	{
-		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
-	
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
+		if(shouldSkipTest())
+			return;
 
 		//rewrites
 		boolean oldFlagRewrites = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;

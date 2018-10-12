@@ -288,12 +288,10 @@ public class DiagMatrixMultiplicationTest extends AutomatedTestBase
 	 */
 	private void runDiagMatrixMultiplicationTest( boolean sparseM1, boolean sparseM2, boolean rightTranspose, boolean rightVector, ExecType instType, boolean simplify)
 	{
-		//rtplatform for MR
-		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
-	
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
+		if(shouldSkipTest())
+			return;
 		
 		String TEST_NAME = rightTranspose ? TEST_NAME2 : TEST_NAME1;
 		boolean oldFlagSimplify = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;

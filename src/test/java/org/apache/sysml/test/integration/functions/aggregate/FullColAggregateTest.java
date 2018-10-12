@@ -594,11 +594,10 @@ public class FullColAggregateTest extends AutomatedTestBase
 	 */
 	private void runColAggregateOperationTest( OpType type, boolean sparse, boolean vector, ExecType instType, boolean rewrites)
 	{
-		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
-	
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
+		if(shouldSkipTest())
+			return;
 
 		boolean oldRewritesFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;

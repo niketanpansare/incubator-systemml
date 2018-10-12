@@ -389,9 +389,12 @@ public class AlgorithmMLogreg extends AutomatedTestBase
 	
 	private void runMlogregTest( String testname, int classes, int intercept, boolean rewrites, boolean sparse, ExecType instType, TestType testType)
 	{
-		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
+		if(shouldSkipTest())
+			return;
+		
+		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		
 		currentTestType = testType;
 		

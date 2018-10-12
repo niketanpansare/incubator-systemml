@@ -27,7 +27,7 @@ import org.apache.sysml.runtime.instructions.cp.IntObject;
 import org.apache.sysml.runtime.instructions.cp.ListObject;
 import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.ProgramConverter;
-import org.apache.sysml.test.integration.AutomatedTestBase;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.internal.ArrayComparisonFailure;
 
@@ -35,15 +35,15 @@ public class SerializationTest {
 	
 	public static void assertArrayEquals(double[] expecteds,
 			double[] actuals, double delta) throws ArrayComparisonFailure {
-		AutomatedTestBase.assertArrayEquals(expecteds, actuals, delta);
+		Assert.assertArrayEquals(expecteds, actuals, delta);
 	}
 	
 	public static void assertEquals(Object expected, Object actual) {
-		AutomatedTestBase.assertEquals(expected, actual);
+		Assert.assertEquals(expected, actual);
     }
 	
 	public static void assertEquals(long expected, long actual) {
-		AutomatedTestBase.assertEquals(expected, actual);
+		Assert.assertEquals(expected, actual);
     }
 
 	@Test

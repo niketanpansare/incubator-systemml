@@ -148,14 +148,10 @@ public class UltraSparseMRMatrixMultiplicationTest extends AutomatedTestBase
 	 */
 	private void runMatrixMatrixMultiplicationTest( boolean sparseM1, boolean sparseM2, ExecType instType, boolean rowwise, boolean forcePMMJ)
 	{
-		//setup exec type, rows, cols
-
-		//rtplatform for MR
-		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
-	
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
+		if(shouldSkipTest())
+			return;
 
 		if(forcePMMJ)
 			AggBinaryOp.FORCED_MMULT_METHOD = MMultMethod.PMM;

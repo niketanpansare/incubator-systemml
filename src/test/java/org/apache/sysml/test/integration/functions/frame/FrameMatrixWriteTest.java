@@ -125,6 +125,8 @@ public class FrameMatrixWriteTest extends AutomatedTestBase
 	{
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		RUNTIME_PLATFORM platformOld = setRuntimePlatform(et);
+		if(shouldSkipTest())
+			return;
 		
 		try
 		{

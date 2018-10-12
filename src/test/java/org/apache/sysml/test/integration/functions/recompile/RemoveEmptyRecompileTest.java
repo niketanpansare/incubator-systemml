@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.recompile;
 import java.util.HashMap;
 
 import org.junit.Test;
-
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.LeftIndex;
 import org.apache.sysml.lops.RightIndex;
@@ -242,6 +241,9 @@ public class RemoveEmptyRecompileTest extends AutomatedTestBase
 	 */
 	private void runRemoveEmptyTest( OpType type, boolean empty )
 	{	
+		if(shouldSkipTest())
+			return;
+		
 		boolean oldFlagIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
 		
 		try

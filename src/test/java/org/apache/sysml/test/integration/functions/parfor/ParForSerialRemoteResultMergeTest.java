@@ -125,6 +125,8 @@ public class ParForSerialRemoteResultMergeTest extends AutomatedTestBase
 	{
 		RUNTIME_PLATFORM oldRT = rtplatform;
 		boolean oldUseSparkConfig = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if(shouldSkipTest())
+			return;
 		
 		if( test_name.equals(TEST_NAME3) || test_name.equals(TEST_NAME4)  ) {
 			setRuntimePlatform(RUNTIME_PLATFORM.HYBRID_SPARK);

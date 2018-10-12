@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.Random;
 
 import org.junit.Test;
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.hops.BinaryOp;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -215,7 +214,9 @@ public class AppendMatrixTest extends AutomatedTestBase
 	{
 		TestConfiguration config = getAndLoadTestConfiguration(TEST_NAME);
 	    
-		RUNTIME_PLATFORM prevPlfm=rtplatform;
+		RUNTIME_PLATFORM prevPlfm= setRuntimePlatform(platform);
+		if(shouldSkipTest())
+			return;
 		
 		double sparsity = (sparse) ? sparsity2 : sparsity1; 
 		try
@@ -223,7 +224,6 @@ public class AppendMatrixTest extends AutomatedTestBase
 			if(forcedAppendMethod != null) {
 				BinaryOp.FORCED_APPEND_METHOD = forcedAppendMethod;
 			}
-		    rtplatform = platform;
 	
 	        config.addVariable("rows", rows);
 	        config.addVariable("cols", cols1);

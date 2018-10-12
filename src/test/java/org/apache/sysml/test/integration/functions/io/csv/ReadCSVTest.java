@@ -146,6 +146,8 @@ public class ReadCSVTest extends AutomatedTestBase
 	{
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		RUNTIME_PLATFORM oldPlatform = setRuntimePlatform(platform);
+		if(shouldSkipTest())
+			return;
 		
 		boolean oldpar = CompilerConfig.FLAG_PARREADWRITE_TEXT;
 		
