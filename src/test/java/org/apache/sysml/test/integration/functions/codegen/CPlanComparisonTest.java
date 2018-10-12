@@ -57,6 +57,8 @@ public class CPlanComparisonTest extends AutomatedTestBase
 	
 	@Test
 	public void testEqualLiteral() {
+		if(shouldSkipTest())
+			return;
 		CNodeData c1 = new CNodeData(new LiteralOp(7), 0, 0, DataType.SCALAR);
 		CNodeData c2 = new CNodeData(new LiteralOp(7), 0, 0, DataType.SCALAR);
 		assertEquals(c1.hashCode(), c2.hashCode());
@@ -73,6 +75,8 @@ public class CPlanComparisonTest extends AutomatedTestBase
 	
 	@Test
 	public void testNotEqualLiteral() {
+		if(shouldSkipTest())
+			return;
 		CNodeData c1 = new CNodeData(new LiteralOp(7), 0, 0, DataType.SCALAR);
 		CNodeData c2 = new CNodeData(new LiteralOp(3), 0, 0, DataType.SCALAR);
 		assertNotEquals(c1.hashCode(), c2.hashCode());
@@ -89,6 +93,8 @@ public class CPlanComparisonTest extends AutomatedTestBase
 	
 	@Test
 	public void testEqualMatrixDataNode() {
+		if(shouldSkipTest())
+			return;
 		Hop data = createDataOp(DataType.MATRIX);
 		CNode c1 = new CNodeData(data);
 		CNode c2 = new CNodeData(data);
@@ -98,6 +104,8 @@ public class CPlanComparisonTest extends AutomatedTestBase
 	
 	@Test
 	public void testNotEqualDataTypeDataNode() {
+		if(shouldSkipTest())
+			return;
 		assertNotEquals(
 			createCNodeData(DataType.MATRIX),
 			createCNodeData(DataType.SCALAR));
@@ -105,6 +113,8 @@ public class CPlanComparisonTest extends AutomatedTestBase
 	
 	@Test
 	public void testEqualUnaryNodes() {
+		if(shouldSkipTest())
+			return;
 		CNode c0 = createCNodeData(DataType.MATRIX);
 		CNode c1 = new CNodeUnary(c0, UnaryType.EXP);
 		CNode c2 = new CNodeUnary(c0, UnaryType.EXP);
@@ -114,6 +124,8 @@ public class CPlanComparisonTest extends AutomatedTestBase
 	
 	@Test
 	public void testNotEqualUnaryNodes() {
+		if(shouldSkipTest())
+			return;
 		CNode c0 = createCNodeData(DataType.MATRIX);
 		CNode c1 = new CNodeUnary(c0, UnaryType.EXP);
 		CNode c2 = new CNodeUnary(c0, UnaryType.LOG);
@@ -122,6 +134,8 @@ public class CPlanComparisonTest extends AutomatedTestBase
 	
 	@Test
 	public void testEqualBinaryNodes() {
+		if(shouldSkipTest())
+			return;
 		CNode c1 = createCNodeData(DataType.MATRIX);
 		CNode c2 = createCNodeData(DataType.SCALAR);
 		CNode bin1 = new CNodeBinary(c1, c2, BinType.PLUS);
@@ -132,6 +146,8 @@ public class CPlanComparisonTest extends AutomatedTestBase
 	
 	@Test
 	public void testNotEqualBinaryNodes() {
+		if(shouldSkipTest())
+			return;
 		CNode c1 = createCNodeData(DataType.MATRIX);
 		CNode c2 = createCNodeData(DataType.SCALAR);
 		assertNotEquals(
@@ -141,6 +157,8 @@ public class CPlanComparisonTest extends AutomatedTestBase
 	
 	@Test
 	public void testEqualTernaryNodes() {
+		if(shouldSkipTest())
+			return;
 		CNode c1 = createCNodeData(DataType.MATRIX);
 		CNode c2 = createCNodeData(DataType.SCALAR);
 		CNode c3 = createCNodeData(DataType.MATRIX);
@@ -152,6 +170,8 @@ public class CPlanComparisonTest extends AutomatedTestBase
 	
 	@Test
 	public void testNotEqualTernaryNodes() {
+		if(shouldSkipTest())
+			return;
 		CNode c1 = createCNodeData(DataType.MATRIX);
 		CNode c2 = createCNodeData(DataType.SCALAR);
 		CNode c3 = createCNodeData(DataType.MATRIX);
@@ -162,6 +182,8 @@ public class CPlanComparisonTest extends AutomatedTestBase
 
 	@Test
 	public void testNotEqualUnaryBinaryNodes() {
+		if(shouldSkipTest())
+			return;
 		CNode c1 = createCNodeData(DataType.MATRIX);
 		CNode c2 = createCNodeData(DataType.SCALAR);
 		CNode un1 = new CNodeUnary(c1, UnaryType.ABS);
@@ -171,6 +193,8 @@ public class CPlanComparisonTest extends AutomatedTestBase
 	
 	@Test
 	public void testNotEqualUnaryTernaryNodes() {
+		if(shouldSkipTest())
+			return;
 		CNode c1 = createCNodeData(DataType.MATRIX);
 		CNode c2 = createCNodeData(DataType.SCALAR);
 		CNode c3 = createCNodeData(DataType.MATRIX);
@@ -181,6 +205,8 @@ public class CPlanComparisonTest extends AutomatedTestBase
 	
 	@Test
 	public void testNotEqualBinaryTernaryNodes() {
+		if(shouldSkipTest())
+			return;
 		CNode c1 = createCNodeData(DataType.MATRIX);
 		CNode c2 = createCNodeData(DataType.SCALAR);
 		CNode c3 = createCNodeData(DataType.MATRIX);
@@ -191,6 +217,8 @@ public class CPlanComparisonTest extends AutomatedTestBase
 	
 	@Test
 	public void testNotEqualBinaryDAG1() {
+		if(shouldSkipTest())
+			return;
 		CNode c1 = createCNodeData(DataType.MATRIX);
 		CNode c2 = createCNodeData(DataType.MATRIX);
 		CNode c3 = createCNodeData(DataType.SCALAR);
@@ -205,6 +233,8 @@ public class CPlanComparisonTest extends AutomatedTestBase
 	
 	@Test
 	public void testNotEqualBinaryDAG2() {
+		if(shouldSkipTest())
+			return;
 		CNode c1 = createCNodeData(DataType.MATRIX);
 		CNode c2 = createCNodeData(DataType.MATRIX);
 		CNode c3 = createCNodeData(DataType.MATRIX);
@@ -219,6 +249,8 @@ public class CPlanComparisonTest extends AutomatedTestBase
 	
 	@Test
 	public void testNotEqualBinaryDAG3() {
+		if(shouldSkipTest())
+			return;
 		CNode c1 = createCNodeData(DataType.MATRIX);
 		CNode c2 = createCNodeData(DataType.MATRIX);
 		CNode c3 = createCNodeData(DataType.MATRIX);

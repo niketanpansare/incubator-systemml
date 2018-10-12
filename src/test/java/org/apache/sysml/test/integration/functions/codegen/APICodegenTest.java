@@ -66,6 +66,9 @@ public class APICodegenTest extends AutomatedTestBase
 
 	private void runMLContextParforDatasetTest(boolean jmlc) 
 	{
+		if(shouldSkipTest())
+			return;
+		
 		try {
 			double[][] X = getRandomMatrix(rows, cols, -10, 10, sparsity, 76543); 
 			MatrixBlock mX = DataConverter.convertToMatrixBlock(X); 

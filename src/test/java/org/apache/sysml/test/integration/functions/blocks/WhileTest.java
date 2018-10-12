@@ -52,6 +52,9 @@ public class WhileTest extends AutomatedTestBase
     
     @Test
     public void testComputation() {
+    	if(shouldSkipTest())
+			return;
+    	
     	int rows = 10;
     	int cols = 10;
         int maxIterations = 3;
@@ -81,6 +84,9 @@ public class WhileTest extends AutomatedTestBase
 
     @Test
     public void testCleanUp() {
+    	if(shouldSkipTest())
+			return;
+    	
         int rows = 10;
         int cols = 10;
         int maxIterations = 3;

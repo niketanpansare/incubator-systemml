@@ -61,6 +61,9 @@ public class CachingPWriteExportTest extends AutomatedTestBase
 	
 	private void runTestExport( String outputFormat )
 	{
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);

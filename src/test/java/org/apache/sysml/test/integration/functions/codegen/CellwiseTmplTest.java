@@ -462,16 +462,15 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	}
 
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )
-	{
+	{	
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
+		if(shouldSkipTest())
+			return;
+		
 		boolean oldRewrites = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		String oldTestConf = TEST_CONF;
-		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
-	
-		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-
-		
+			
 		if( testname.equals(TEST_NAME9) )
 			TEST_CONF = TEST_CONF6;
 		

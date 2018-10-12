@@ -66,6 +66,9 @@ public class XorTest extends AutomatedTestBase
 	
 	private void runXor( String op1, String op2, boolean trueCondition )
 	{
+		if(shouldSkipTest())
+			return;
+		
 		String TEST_NAME = TEST_NAME1;
 		getAndLoadTestConfiguration(TEST_NAME);
 

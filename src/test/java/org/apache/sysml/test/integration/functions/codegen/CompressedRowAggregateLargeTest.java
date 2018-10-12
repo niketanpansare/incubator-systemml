@@ -190,13 +190,13 @@ public class CompressedRowAggregateLargeTest extends AutomatedTestBase
 	
 	private void testCompressedRowAggregate(String testname, SparsityType stype, ValueType vtype, ExecType et)
 	{	
-		boolean oldRewrites = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
-		RUNTIME_PLATFORM platformOld = setRuntimePlatform(et);
-	
-		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(et);
+		if(shouldSkipTest())
+			return;
+	
+		boolean oldRewrites = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		try
 		{
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = true;

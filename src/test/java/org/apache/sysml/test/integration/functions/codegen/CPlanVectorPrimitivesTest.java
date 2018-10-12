@@ -718,8 +718,11 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 	}
 
 	@SuppressWarnings("incomplete-switch")
-	private static void testVectorAggPrimitive(UnaryType aggtype, InputType type1)
+	private void testVectorAggPrimitive(UnaryType aggtype, InputType type1)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		try {
 			//generate input data
 			double sparsity = (type1 == InputType.VECTOR_DENSE) ? sparsity1 : sparsity2;

@@ -164,13 +164,12 @@ public class MultiAggTmplTest extends AutomatedTestBase
 	
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )
 	{	
-		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
-		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
-
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
+		if(shouldSkipTest())
+			return;
 
+		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		try
 		{
 			TestConfiguration config = getTestConfiguration(testname);
