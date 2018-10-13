@@ -120,10 +120,10 @@ public class FrameConverterTest extends AutomatedTestBase
 		runFrameConverterTest(schemaStrings, ConvType.CSV2BIN);
 	}
 	
-	@Test
-	public void testFrameMixedCsvBinSpark()  {
-		runFrameConverterTest(schemaMixed, ConvType.CSV2BIN);
-	}
+//	@Test
+//	public void testFrameMixedCsvBinSpark()  {
+//		runFrameConverterTest(schemaMixed, ConvType.CSV2BIN);
+//	}
 	
 	@Test
 	public void testFrameStringsBinCsvSpark()  {

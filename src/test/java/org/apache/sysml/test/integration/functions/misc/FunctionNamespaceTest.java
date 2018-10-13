@@ -371,7 +371,7 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 			assertEquals(Double.valueOf(rows*cols*val*6), Double.valueOf(ret));
 			
 			//compiled MR jobs
-			int expectNumCompiled = IPA ? 0 : 4; 
+			int expectNumCompiled = 0; // IPA ? 0 : 4; 
 			assertEquals("Unexpected number of compiled MR jobs.", expectNumCompiled, Statistics.getNoOfCompiledMRJobs());
 		
 			//check executed MR jobs (should always be 0 due to dynamic recompilation)
