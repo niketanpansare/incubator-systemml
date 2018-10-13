@@ -62,6 +62,9 @@ public class RandSizeExpressionEvalTest extends AutomatedTestBase
 	
 	private void runRandTest( String testName, boolean evalExpr, boolean constFold )
 	{
+		if(shouldSkipTest())
+			return;
+		
 		boolean oldFlagEval = OptimizerUtils.ALLOW_SIZE_EXPRESSION_EVALUATION;
 		boolean oldFlagFold = OptimizerUtils.ALLOW_CONSTANT_FOLDING;
 		boolean oldFlagRand1 = OptimizerUtils.ALLOW_RAND_JOB_RECOMPILE;

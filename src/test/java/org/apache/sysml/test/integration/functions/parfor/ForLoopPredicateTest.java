@@ -147,6 +147,9 @@ public class ForLoopPredicateTest extends AutomatedTestBase
 	 */
 	private void runForPredicateTest( int testNum, boolean intScalar )
 	{
+		if(shouldSkipTest())
+			return;
+		
 		String TEST_NAME = null;
 		switch( testNum )
 		{

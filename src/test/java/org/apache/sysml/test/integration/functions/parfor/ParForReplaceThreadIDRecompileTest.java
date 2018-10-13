@@ -65,6 +65,8 @@ public class ParForReplaceThreadIDRecompileTest extends AutomatedTestBase
 	private void runThreadIDReplaceTest( String TEST_NAME, boolean recompile )
 	{
 		boolean flag = CompilerConfig.FLAG_DYN_RECOMPILE;
+		if(shouldSkipTest())
+			return;
 		
 		try
 		{

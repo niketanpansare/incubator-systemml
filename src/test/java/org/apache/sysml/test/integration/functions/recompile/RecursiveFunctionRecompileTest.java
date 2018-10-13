@@ -109,6 +109,9 @@ public class RecursiveFunctionRecompileTest extends AutomatedTestBase
 	
 	private void runRecompileTest( String testname, boolean IPA )
 	{	
+		if(shouldSkipTest())
+			return;
+		
 		boolean oldFlagIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
 		
 		try

@@ -238,6 +238,9 @@ public class PredicateRecompileTest extends AutomatedTestBase
 	
 	private void runRecompileTest( String testname, boolean recompile, boolean evalExpr, boolean constFold, boolean IPA )
 	{
+		if(shouldSkipTest())
+			return;
+		
 		boolean oldFlagRecompile = CompilerConfig.FLAG_DYN_RECOMPILE;
 		boolean oldFlagEval = OptimizerUtils.ALLOW_SIZE_EXPRESSION_EVALUATION;
 		boolean oldFlagFold = OptimizerUtils.ALLOW_CONSTANT_FOLDING;

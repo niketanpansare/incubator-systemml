@@ -48,6 +48,9 @@ public class ParForListResultVarsTest extends AutomatedTestBase
 	}
 	
 	private void runListResultVarTest(String testName, int rows, int cols) {
+		if(shouldSkipTest())
+			return;
+		
 		loadTestConfiguration(getTestConfiguration(testName));
 		
 		String HOME = SCRIPT_DIR + TEST_DIR;

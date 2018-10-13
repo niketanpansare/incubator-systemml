@@ -328,6 +328,9 @@ public class ParForDependencyAnalysisTest extends AutomatedTestBase
 	public void testDependencyAnalysis54d() { runTest("parfor54d.dml", true); }
 	
 	private void runTest( String scriptFilename, boolean expectedException ) {
+		if(shouldSkipTest())
+			return;
+		
 		boolean raisedException = false;
 		try
 		{

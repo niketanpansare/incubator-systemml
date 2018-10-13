@@ -164,6 +164,9 @@ public class SparsityFunctionRecompileTest extends AutomatedTestBase
 	
 	private void runRecompileTest( String testname, boolean recompile, boolean IPA )
 	{	
+		if(shouldSkipTest())
+			return;
+		
 		boolean oldFlagRecompile = CompilerConfig.FLAG_DYN_RECOMPILE;
 		boolean oldFlagIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
 		boolean oldFlagBranchRemoval = OptimizerUtils.ALLOW_BRANCH_REMOVAL;

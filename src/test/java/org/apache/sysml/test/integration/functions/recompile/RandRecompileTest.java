@@ -112,6 +112,9 @@ public class RandRecompileTest extends AutomatedTestBase
 	
 	private void runRandTest( String testName, boolean recompile, boolean IPA )
 	{	
+		if(shouldSkipTest())
+			return;
+		
 		boolean oldFlagRecompile = CompilerConfig.FLAG_DYN_RECOMPILE;
 		boolean oldFlagIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
 		

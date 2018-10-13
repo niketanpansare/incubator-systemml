@@ -58,6 +58,9 @@ public class LiteralReplaceCastScalarReadTest extends AutomatedTestBase
 	}
 	
 	private void runScalarCastTest( ValueType vt ) {
+		if(shouldSkipTest())
+			return;
+		
 		boolean oldCF = OptimizerUtils.ALLOW_CONSTANT_FOLDING;
 		
 		try {

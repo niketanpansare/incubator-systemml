@@ -218,6 +218,9 @@ public class ParForRulebasedOptimizerTest extends AutomatedTestBase
 	
 	private void runUnaryTest(int scriptNum, boolean timebasedOpt, int rows, int cols )
 	{
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = null;
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		if( scriptNum==1 ) {

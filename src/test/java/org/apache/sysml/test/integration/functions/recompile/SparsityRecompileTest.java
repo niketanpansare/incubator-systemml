@@ -115,6 +115,9 @@ public class SparsityRecompileTest extends AutomatedTestBase
 	
 	private void runRecompileTest( String testname, boolean recompile )
 	{	
+		if(shouldSkipTest())
+			return;
+		
 		boolean oldFlagRecompile = CompilerConfig.FLAG_DYN_RECOMPILE;
 		
 		try
