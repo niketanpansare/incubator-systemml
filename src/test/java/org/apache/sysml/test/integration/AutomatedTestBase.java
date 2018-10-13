@@ -223,7 +223,7 @@ public abstract class AutomatedTestBase
                 break;
             }
             default:
-                rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
+                rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
                 break;
         }
 		return platformOld;
