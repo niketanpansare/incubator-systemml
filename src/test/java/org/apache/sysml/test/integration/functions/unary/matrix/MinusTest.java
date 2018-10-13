@@ -102,7 +102,7 @@ public class MinusTest extends AutomatedTestBase
 	private void runTestMinus( boolean sparse, ExecType et )
 	{		
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		RUNTIME_PLATFORM rtold = setRuntimePlatform(et);
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(et);
 		if(shouldSkipTest())
 			return;
 	
