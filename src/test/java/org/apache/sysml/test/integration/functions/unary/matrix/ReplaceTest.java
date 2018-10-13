@@ -294,19 +294,13 @@ public class ReplaceTest extends AutomatedTestBase
 	 */
 	private void runTestReplace( String test, double pattern, boolean sparse, ExecType etype )
 	{		
-		RUNTIME_PLATFORM platformOld = rtplatform;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(etype);
+		if(shouldSkipTest())
+			return;
 		
 		try
 		{
-			if(etype == ExecType.SPARK) {
-		    	rtplatform = RUNTIME_PLATFORM.SPARK;
-		    }
-		    else {
-		    	rtplatform = (etype==ExecType.MR)? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
-		    }
-			if( rtplatform == RUNTIME_PLATFORM.SPARK )
-				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 			
 			double sparsity = (sparse)? sparsity2 : sparsity1;
 				

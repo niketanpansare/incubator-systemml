@@ -42,6 +42,9 @@ public class TransformApplyEmptyRecodeMapTest extends AutomatedTestBase
 	
 	@Test
 	public void testTransformApplyEmptyRecodeMap() {
+		if(shouldSkipTest())
+			return;
+		
 		try {
 			//generate input data
 			FrameBlock data = DataConverter.convertToFrameBlock(

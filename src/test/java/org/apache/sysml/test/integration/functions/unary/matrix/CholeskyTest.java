@@ -96,12 +96,10 @@ public class CholeskyTest extends AutomatedTestBase
 	}
 
 	private void runTestCholesky( int rows, int cols, RUNTIME_PLATFORM rt) {
-		RUNTIME_PLATFORM rtold = rtplatform;
-		rtplatform = rt;
-		
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		RUNTIME_PLATFORM rtold = setRuntimePlatform(rt);
+		if(shouldSkipTest())
+			return;
 		
 		try {
 			getAndLoadTestConfiguration(TEST_NAME);

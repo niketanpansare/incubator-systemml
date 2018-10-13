@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 import org.junit.Test;
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.io.FrameReader;
@@ -91,8 +92,9 @@ public class TransformEncodeDecodeTest extends AutomatedTestBase
 	
 	private void runTransformEncodeDecodeTest( ExecType et, boolean sparse, String fmt)
 	{
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = RUNTIME_PLATFORM.HYBRID; //only CP supported
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(RUNTIME_PLATFORM.HYBRID_SPARK);
+		if(shouldSkipTest())
+			return;
 
 		try
 		{
