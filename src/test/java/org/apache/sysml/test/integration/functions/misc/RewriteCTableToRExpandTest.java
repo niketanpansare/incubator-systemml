@@ -120,16 +120,15 @@ public class RewriteCTableToRExpandTest extends AutomatedTestBase
 	
 	private void testRewriteCTableRExpand( String testname, CropType type )
 	{	
+		boolean unknownTests = ( testname.equals(TEST_NAME5) || testname.equals(TEST_NAME6) );
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(unknownTests ? RUNTIME_PLATFORM.SINGLE_NODE : rtplatform);
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = getTestConfiguration(testname);
 		loadTestConfiguration(config);
 
 		int outDim = maxVal + ((type==CropType.CROP) ? -7 : 7);
-		boolean unknownTests = ( testname.equals(TEST_NAME5) || testname.equals(TEST_NAME6) );
-			
-		
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		if( unknownTests )
-			rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
 		
 		try 
 		{

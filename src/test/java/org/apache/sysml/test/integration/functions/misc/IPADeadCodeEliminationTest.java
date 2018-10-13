@@ -88,6 +88,8 @@ public class IPADeadCodeEliminationTest extends AutomatedTestBase
 	private void runIPALiteralReplacementTest( String testname, boolean IPA )
 	{
 		boolean oldFlagIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
+		if(shouldSkipTest())
+			return;
 		
 		try {
 			TestConfiguration config = getTestConfiguration(testname);

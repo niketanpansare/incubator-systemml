@@ -81,6 +81,9 @@ public class FunctionInExpressionTest extends AutomatedTestBase
 	
 	private void runFunInExpressionTest( String testName )
 	{
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = getTestConfiguration(testName);
 		loadTestConfiguration(config);
 		

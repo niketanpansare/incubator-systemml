@@ -20,7 +20,8 @@
 package org.apache.sysml.test.integration.functions.misc;
 
 import org.junit.Test;
-
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.io.MatrixWriterFactory;
@@ -63,6 +64,10 @@ public class UnivariateStatsBasicTest extends AutomatedTestBase
 	private void testUnivariateStats( boolean rewrites )
 	{	
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
+		
+		if(shouldSkipTest())
+			return;
+		
 		
 		try
 		{

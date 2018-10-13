@@ -164,6 +164,8 @@ public class ListAndStructTest extends AutomatedTestBase
 	private void runListStructTest(String testname, boolean rewrites)
 	{
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
+		if(shouldSkipTest())
+			return;
 		
 		try {
 			TestConfiguration config = getTestConfiguration(testname);

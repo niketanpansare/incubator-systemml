@@ -181,6 +181,9 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 	}
 	
 	private void runFunctionTest(String testName, boolean error) {
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = getTestConfiguration(testName);
 		loadTestConfiguration(config);
 		

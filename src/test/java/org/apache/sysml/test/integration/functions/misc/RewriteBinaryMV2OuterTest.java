@@ -87,6 +87,8 @@ public class RewriteBinaryMV2OuterTest extends AutomatedTestBase
 	private void testRewriteBinaryMV2Outer(String opcode, boolean rewrites)
 	{	
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
+		if(shouldSkipTest())
+			return;
 		
 		try
 		{

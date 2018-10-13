@@ -108,6 +108,9 @@ public class ValueTypeMatrixScalarBuiltinTest extends AutomatedTestBase
 	
 	private void runTest(String testName, ValueType vtIn) 
 	{
+		if(shouldSkipTest())
+			return;
+		
 		loadTestConfiguration(getTestConfiguration(testName));
 		
 		//setup arguments and run test

@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.io.PrintStream;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
@@ -94,6 +96,10 @@ public class SetWorkingDirTest extends AutomatedTestBase {
 	 */
 	private void runTest(String testName, boolean fileMissingTest, ScriptType scriptType) {
 
+		if(shouldSkipTest())
+			return;
+		
+		
 		// construct source filenames of dml scripts
 		String dir = SCRIPT_DIR + TEST_DIR;
 		String nameCall = testName + "." + scriptType.lowerCase();

@@ -22,7 +22,8 @@ package org.apache.sysml.test.integration.functions.misc;
 import java.util.HashMap;
 
 import org.junit.Test;
-
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -69,6 +70,9 @@ public class ScalarFunctionTest extends AutomatedTestBase
 	 */
 	private void runScalarFunctionTest( String testname )
 	{
+		if(shouldSkipTest())
+			return;
+		
 		String TEST_NAME = testname;
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		loadTestConfiguration(config);

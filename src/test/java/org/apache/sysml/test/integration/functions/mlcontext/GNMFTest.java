@@ -87,6 +87,11 @@ public class GNMFTest extends MLContextTestBase
 	
 	@Test
 	public void testGNMFWithRDMLAndJava() throws IOException, DMLException, ParseException {
+		boolean oldConfig = DMLScript.USE_LOCAL_SPARK_CONFIG; 
+		RUNTIME_PLATFORM oldRT = setRuntimePlatform(RUNTIME_PLATFORM.HYBRID_SPARK);
+		if(shouldSkipTest())
+			return;
+		
 		System.out.println("------------ BEGIN " + TEST_NAME + " TEST {" + numRegisteredInputs + ", "
 				+ numRegisteredOutputs + "} ------------");
 		this.scriptType = ScriptType.DML;
@@ -142,13 +147,8 @@ public class GNMFTest extends MLContextTestBase
 			}
 		}
 		
-		boolean oldConfig = DMLScript.USE_LOCAL_SPARK_CONFIG; 
-		DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-		RUNTIME_PLATFORM oldRT = ConfigurationManager.getExecutionMode();
-		
 		try 
 		{
-			ConfigurationManager.getDMLOptions().setExecutionMode(RUNTIME_PLATFORM.HYBRID_SPARK);
 
 			Script script = ScriptFactory.dmlFromFile(fullDMLScriptName);
 			// set positional argument values

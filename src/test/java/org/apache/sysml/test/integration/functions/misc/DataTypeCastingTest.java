@@ -89,6 +89,8 @@ public class DataTypeCastingTest extends AutomatedTestBase
 	{
 		String TEST_NAME = testName;
 		int numVals = (exceptionExpected ? 7 : 1);
+		if(shouldSkipTest())
+			return;
 		
 		try
 		{		

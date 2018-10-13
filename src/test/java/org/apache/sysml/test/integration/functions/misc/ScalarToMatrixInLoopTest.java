@@ -20,7 +20,8 @@
 package org.apache.sysml.test.integration.functions.misc;
 
 import org.junit.Test;
-
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 
@@ -38,6 +39,9 @@ public class ScalarToMatrixInLoopTest extends AutomatedTestBase
 
 	@Test
 	public void testScalarToMatrixInLoop() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 5, cols = 5;
 
 		TestConfiguration config = getTestConfiguration(TEST_NAME);

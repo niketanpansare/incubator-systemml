@@ -150,6 +150,9 @@ public class DataTypeChangeTest extends AutomatedTestBase
 
 	private void runTest( String testName, boolean exceptionExpected ) 
 	{
+		if(shouldSkipTest())
+			return;
+		
         String RI_HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = RI_HOME + testName + ".dml";
 		programArgs = new String[]{};

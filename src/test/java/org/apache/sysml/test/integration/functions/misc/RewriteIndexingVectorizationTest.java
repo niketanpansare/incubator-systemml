@@ -20,6 +20,8 @@
 package org.apache.sysml.test.integration.functions.misc;
 
 import org.junit.Test;
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -68,6 +70,9 @@ public class RewriteIndexingVectorizationTest extends AutomatedTestBase
 	
 	private void testRewriteIndexingVectorization(String testname, boolean vectorize)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		boolean oldFlag = OptimizerUtils.ALLOW_AUTO_VECTORIZATION;
 		
 		try

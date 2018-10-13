@@ -22,7 +22,8 @@ package org.apache.sysml.test.integration.functions.misc;
 import java.util.HashMap;
 
 import org.junit.Test;
-
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -102,6 +103,9 @@ public class RewritePushdownUaggTest extends AutomatedTestBase
 
 	private void testRewritePushdownUagg( String testname, boolean rewrites )
 	{	
+		if(shouldSkipTest())
+			return;
+		
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		
 		try

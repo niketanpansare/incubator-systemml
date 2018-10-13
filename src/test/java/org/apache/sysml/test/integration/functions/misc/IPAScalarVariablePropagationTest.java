@@ -61,6 +61,8 @@ public class IPAScalarVariablePropagationTest extends AutomatedTestBase
 	private void runIPAScalarVariablePropagationTest( String testname, boolean IPA )
 	{	
 		boolean oldFlagIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
+		if(shouldSkipTest())
+			return;
 		
 		try
 		{

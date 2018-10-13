@@ -20,7 +20,8 @@
 package org.apache.sysml.test.integration.functions.misc;
 
 import org.junit.Test;
-
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
@@ -82,6 +83,9 @@ public class RewriteRemoveComparisonChainsTest extends AutomatedTestBase
 
 	private void runComparisonChainTest( String op, int compare, boolean rewrites )
 	{
+		if(shouldSkipTest())
+			return;
+		
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		
 		try {

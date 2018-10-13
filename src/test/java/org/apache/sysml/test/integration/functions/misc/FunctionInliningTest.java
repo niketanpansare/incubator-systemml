@@ -92,6 +92,8 @@ public class FunctionInliningTest extends AutomatedTestBase
 	private void runInliningTest( String testname, boolean IPA )
 	{	
 		boolean oldIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
+		if(shouldSkipTest())
+			return;
 		
 		try
 		{

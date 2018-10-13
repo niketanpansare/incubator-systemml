@@ -130,6 +130,9 @@ public class ValueTypeCastingTest extends AutomatedTestBase
 	 */
 	private void runTest( ValueType vtIn, ValueType vtOut, boolean matrixInput, boolean exceptionExpected ) 
 	{
+		if(shouldSkipTest())
+			return;
+		
 		String TEST_NAME = null;
 		switch( vtOut )
 		{

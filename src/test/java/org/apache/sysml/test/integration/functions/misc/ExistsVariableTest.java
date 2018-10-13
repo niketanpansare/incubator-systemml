@@ -62,6 +62,8 @@ public class ExistsVariableTest extends AutomatedTestBase
 	}
 	
 	private void runExistsTest(String testName, boolean pos) {
+		if(shouldSkipTest())
+			return;
 		TestConfiguration config = getTestConfiguration(testName);
 		loadTestConfiguration(config);
 		String HOME = SCRIPT_DIR + TEST_DIR;

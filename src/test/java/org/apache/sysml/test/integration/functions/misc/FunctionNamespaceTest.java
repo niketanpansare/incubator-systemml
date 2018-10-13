@@ -280,6 +280,8 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 	private void runFunctionNamespaceTest(String TEST_NAME, ScriptType scriptType)
 	{		
 		getAndLoadTestConfiguration(TEST_NAME);
+		if(shouldSkipTest())
+			return;
 		
 		fullDMLScriptName = SCRIPT_DIR + TEST_DIR + TEST_NAME + "." + scriptType.toString().toLowerCase();
 		programArgs = (ScriptType.PYDML == scriptType) ? new String[]{"-python"} : new String[]{};
