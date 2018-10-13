@@ -54,7 +54,7 @@ public class SparseBlockMemEstimate extends AutomatedTestBase
 		runSparseBlockMemoryTest(sparsity2);
 	}
 	
-	private static void runSparseBlockMemoryTest( double sparsity)
+	private void runSparseBlockMemoryTest( double sparsity)
 	{
 		if(shouldSkipTest())
 			return;

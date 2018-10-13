@@ -84,7 +84,7 @@ public class VectorReshapeTest extends AutomatedTestBase
 	private void runVectorReshape(boolean sparse, ExecType et)
 	{		
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(et);
 		if(shouldSkipTest())
 			return;
 		

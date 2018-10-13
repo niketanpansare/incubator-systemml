@@ -21,8 +21,6 @@ package org.apache.sysml.test.integration.functions.recompile;
 
 import java.util.HashMap;
 import org.junit.Test;
-import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.io.FileFormatPropertiesCSV;
