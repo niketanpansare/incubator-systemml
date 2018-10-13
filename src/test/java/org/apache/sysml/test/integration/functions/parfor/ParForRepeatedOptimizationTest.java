@@ -78,42 +78,42 @@ public class ParForRepeatedOptimizationTest extends AutomatedTestBase
 	@Test
 	public void testParForRepeatedOptNoReuseNoUpdateCP() 
 	{
-		int numExpectedMRJobs = 1+3; //reblock, 3*partition
+		int numExpectedMRJobs = 0; // 1+3; //reblock, 3*partition
 		runParForRepeatedOptTest( false, false, false, ExecType.CP, numExpectedMRJobs );
 	}
 	
 	@Test
 	public void testParForRepeatedOptNoReuseUpdateCP() 
 	{
-		int numExpectedMRJobs = 1+3+2; //reblock, 3*partition, 2*GMR (previously 3GMR, now 1GMR removed on V*1)
+		int numExpectedMRJobs = 0; // 1+3+2; //reblock, 3*partition, 2*GMR (previously 3GMR, now 1GMR removed on V*1)
  		runParForRepeatedOptTest( false, true, false, ExecType.CP, numExpectedMRJobs );
 	}
 	
 	@Test
 	public void testParForRepeatedOptNoReuseChangedDimCP() 
 	{
-		int numExpectedMRJobs = 1+3+3; //reblock, 3*partition, 3*GMR
+		int numExpectedMRJobs = 0; // 1+3+3; //reblock, 3*partition, 3*GMR
  		runParForRepeatedOptTest( false, false, true, ExecType.CP, numExpectedMRJobs );
 	}
 	
 	@Test
 	public void testParForRepeatedOptReuseNoUpdateCP() 
 	{
-		int numExpectedMRJobs = 1+1; //reblock, partition
+		int numExpectedMRJobs = 0; // 1+1; //reblock, partition
 		runParForRepeatedOptTest( true, false, false, ExecType.CP, numExpectedMRJobs );
 	}
 	
 	@Test
 	public void testParForRepeatedOptReuseUpdateCP() 
 	{
-		int numExpectedMRJobs = 1+3+2; //reblock, 3*partition, 2*GMR (previously 3GMR, now 1GMR removed on V*1)
+		int numExpectedMRJobs = 0; // 1+3+2; //reblock, 3*partition, 2*GMR (previously 3GMR, now 1GMR removed on V*1)
 		runParForRepeatedOptTest( true, true, false, ExecType.CP, numExpectedMRJobs );
 	}
 	
 	@Test
 	public void testParForRepeatedOptReuseChangedDimCP() 
 	{
-		int numExpectedMRJobs = 1+3+3; //reblock, 3*partition, 3*GMR
+		int numExpectedMRJobs = 0; // 1+3+3; //reblock, 3*partition, 3*GMR
 		runParForRepeatedOptTest( true, false, true, ExecType.CP, numExpectedMRJobs );
 	}
 		

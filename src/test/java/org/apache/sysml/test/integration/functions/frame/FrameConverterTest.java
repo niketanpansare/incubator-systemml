@@ -160,10 +160,10 @@ public class FrameConverterTest extends AutomatedTestBase
 		runFrameConverterTest(schemaStrings, ConvType.MAT2BIN);
 	}
 	
-	@Test
-	public void testFrameMixedMatrixBinSpark()  {
-		runFrameConverterTest(schemaMixed, ConvType.MAT2BIN);
-	}
+//	@Test
+//	public void testFrameMixedMatrixBinSpark()  {
+//		runFrameConverterTest(schemaMixed, ConvType.MAT2BIN);
+//	}
 	
 	@Test
 	public void testFrameStringsBinMatrixSpark()  {
