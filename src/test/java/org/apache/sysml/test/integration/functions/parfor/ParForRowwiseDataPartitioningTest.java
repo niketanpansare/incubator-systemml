@@ -283,10 +283,9 @@ public class ParForRowwiseDataPartitioningTest extends AutomatedTestBase
 		boolean oldUseSparkConfig = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		
 		if( partitioner == PDataPartitioner.REMOTE_SPARK || mode == PExecMode.REMOTE_SPARK) {
-			setRuntimePlatform(RUNTIME_PLATFORM.HYBRID_SPARK);
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+			rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
 		}
-		if(shouldSkipTest())
-			return;
 		
 		try
 		{

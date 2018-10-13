@@ -21,6 +21,7 @@ package org.apache.sysml.test.integration.functions.parfor;
 
 import java.util.HashMap;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.api.DMLScript;
@@ -125,11 +126,10 @@ public class ParForSerialRemoteResultMergeTest extends AutomatedTestBase
 	{
 		RUNTIME_PLATFORM oldRT = rtplatform;
 		boolean oldUseSparkConfig = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if(shouldSkipTest())
-			return;
 		
 		if( test_name.equals(TEST_NAME3) || test_name.equals(TEST_NAME4)  ) {
-			setRuntimePlatform(RUNTIME_PLATFORM.HYBRID_SPARK);
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+			rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
 		}
 		
 		//inst exec type, influenced via rows
@@ -167,7 +167,7 @@ public class ParForSerialRemoteResultMergeTest extends AutomatedTestBase
 			
 			//compare num MR jobs
 			int expectedMRJobs = ( test_name.equals(TEST_NAME3) || test_name.equals(TEST_NAME4)  ) ? 0 : 2; 
-			assertEquals("Unexpected number of executed MR jobs.", expectedMRJobs, Statistics.getNoOfExecutedMRJobs());	
+			Assert.assertEquals("Unexpected number of executed MR jobs.", expectedMRJobs, Statistics.getNoOfExecutedMRJobs());	
 			
 			//compare matrices
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");

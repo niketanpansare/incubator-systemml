@@ -22,8 +22,10 @@ package org.apache.sysml.test.integration.functions.parfor;
 import java.util.HashMap;
 
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.LopProperties.ExecType;
@@ -78,42 +80,42 @@ public class ParForRepeatedOptimizationTest extends AutomatedTestBase
 	@Test
 	public void testParForRepeatedOptNoReuseNoUpdateCP() 
 	{
-		int numExpectedMRJobs = 0; // 1+3; //reblock, 3*partition
+		int numExpectedMRJobs = 1+3; //reblock, 3*partition
 		runParForRepeatedOptTest( false, false, false, ExecType.CP, numExpectedMRJobs );
 	}
 	
 	@Test
 	public void testParForRepeatedOptNoReuseUpdateCP() 
 	{
-		int numExpectedMRJobs = 0; // 1+3+2; //reblock, 3*partition, 2*GMR (previously 3GMR, now 1GMR removed on V*1)
+		int numExpectedMRJobs = 1+3+2; //reblock, 3*partition, 2*GMR (previously 3GMR, now 1GMR removed on V*1)
  		runParForRepeatedOptTest( false, true, false, ExecType.CP, numExpectedMRJobs );
 	}
 	
 	@Test
 	public void testParForRepeatedOptNoReuseChangedDimCP() 
 	{
-		int numExpectedMRJobs = 0; // 1+3+3; //reblock, 3*partition, 3*GMR
+		int numExpectedMRJobs = 1+3+3; //reblock, 3*partition, 3*GMR
  		runParForRepeatedOptTest( false, false, true, ExecType.CP, numExpectedMRJobs );
 	}
 	
 	@Test
 	public void testParForRepeatedOptReuseNoUpdateCP() 
 	{
-		int numExpectedMRJobs = 0; // 1+1; //reblock, partition
+		int numExpectedMRJobs = 1+1; //reblock, partition
 		runParForRepeatedOptTest( true, false, false, ExecType.CP, numExpectedMRJobs );
 	}
 	
 	@Test
 	public void testParForRepeatedOptReuseUpdateCP() 
 	{
-		int numExpectedMRJobs = 0; // 1+3+2; //reblock, 3*partition, 2*GMR (previously 3GMR, now 1GMR removed on V*1)
+		int numExpectedMRJobs = 1+3+2; //reblock, 3*partition, 2*GMR (previously 3GMR, now 1GMR removed on V*1)
 		runParForRepeatedOptTest( true, true, false, ExecType.CP, numExpectedMRJobs );
 	}
 	
 	@Test
 	public void testParForRepeatedOptReuseChangedDimCP() 
 	{
-		int numExpectedMRJobs = 0; // 1+3+3; //reblock, 3*partition, 3*GMR
+		int numExpectedMRJobs = 1+3+3; //reblock, 3*partition, 3*GMR
 		runParForRepeatedOptTest( true, false, true, ExecType.CP, numExpectedMRJobs );
 	}
 		
@@ -129,10 +131,7 @@ public class ParForRepeatedOptimizationTest extends AutomatedTestBase
 	 */
 	private void runParForRepeatedOptTest( boolean reusePartitionedData, boolean update, boolean changedDim, ExecType et, int numExpectedMR )
 	{
-		RUNTIME_PLATFORM platformOld = setRuntimePlatform(et);
-		if(shouldSkipTest())
-			return;
-		
+		RUNTIME_PLATFORM platformOld = rtplatform;
 		double memfactorOld = OptimizerUtils.MEM_UTIL_FACTOR;
 		boolean reuseOld = ParForProgramBlock.ALLOW_REUSE_PARTITION_VARS;
 		
@@ -152,6 +151,7 @@ public class ParForRepeatedOptimizationTest extends AutomatedTestBase
 		
 		try
 		{
+			rtplatform = (et==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
 			OptimizerUtils.MEM_UTIL_FACTOR = computeMemoryUtilFactor( 70 ); //force partitioning
 			ParForProgramBlock.ALLOW_REUSE_PARTITION_VARS = reusePartitionedData;
 			
@@ -172,7 +172,7 @@ public class ParForRepeatedOptimizationTest extends AutomatedTestBase
 			runTest(true, false, null, -1);
 			runRScript(true);
 			
-			assertEquals("Unexpected number of executed MR jobs.", numExpectedMR, Statistics.getNoOfExecutedMRJobs()); 
+			Assert.assertEquals("Unexpected number of executed MR jobs.", numExpectedMR, Statistics.getNoOfExecutedMRJobs()); 
 			
 			//compare matrices
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");

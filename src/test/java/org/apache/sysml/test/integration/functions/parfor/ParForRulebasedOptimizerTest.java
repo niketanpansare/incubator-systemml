@@ -22,6 +22,7 @@ package org.apache.sysml.test.integration.functions.parfor;
 import java.util.HashMap;
 
 import org.junit.Test;
+
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
@@ -218,9 +219,6 @@ public class ParForRulebasedOptimizerTest extends AutomatedTestBase
 	
 	private void runUnaryTest(int scriptNum, boolean timebasedOpt, int rows, int cols )
 	{
-		if(shouldSkipTest())
-			return;
-		
 		TestConfiguration config = null;
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		if( scriptNum==1 ) {
@@ -271,9 +269,6 @@ public class ParForRulebasedOptimizerTest extends AutomatedTestBase
 	
 	private void runNaryTest(int scriptNum, boolean timebasedOpt, int rows, int cols)
 	{
-		if(shouldSkipTest())
-			return;
-		
 		TestConfiguration config = getTestConfiguration(TEST_NAME2);
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);

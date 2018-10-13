@@ -19,6 +19,7 @@
 
 package org.apache.sysml.test.integration.functions.parfor;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -48,9 +49,6 @@ public class ParForListResultVarsTest extends AutomatedTestBase
 	}
 	
 	private void runListResultVarTest(String testName, int rows, int cols) {
-		if(shouldSkipTest())
-			return;
-		
 		loadTestConfiguration(getTestConfiguration(testName));
 		
 		String HOME = SCRIPT_DIR + TEST_DIR;
@@ -59,7 +57,7 @@ public class ParForListResultVarsTest extends AutomatedTestBase
 			String.valueOf(rows), String.valueOf(cols), output("R") };
 
 		runTest(true, false, null, -1);
-		assertEquals(new Double(7),
+		Assert.assertEquals(new Double(7),
 			readDMLMatrixFromHDFS("R").get(new CellIndex(1,1)));
 	}
 }

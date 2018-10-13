@@ -21,6 +21,7 @@ package org.apache.sysml.test.integration.functions.parfor;
 
 import java.util.HashMap;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.api.DMLScript;
@@ -179,12 +180,13 @@ public class ParForBlockwiseDataPartitioningTest extends AutomatedTestBase
 	
 	private void runParForDataPartitioningTest( String testname, PDataPartitioner partitioner, PExecMode mode, boolean sparse )
 	{
-		RUNTIME_PLATFORM oldRT = setRuntimePlatform(RUNTIME_PLATFORM.HYBRID_SPARK);
-		if(shouldSkipTest())
-			return;
-		
+		RUNTIME_PLATFORM oldRT = rtplatform;
 		boolean oldUseSparkConfig = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		boolean oldDynRecompile = CompilerConfig.FLAG_DYN_RECOMPILE;
+		
+		//run always in spark execution mode
+		DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
 		
 		try
 		{
@@ -219,7 +221,7 @@ public class ParForBlockwiseDataPartitioningTest extends AutomatedTestBase
 			
 			//test for correct plan
 			boolean pos = testname.equals(TEST_NAME1) || testname.equals(TEST_NAME2);
-			assertEquals(pos, heavyHittersContainsSubString("ParFor-DPSP") 
+			Assert.assertEquals(pos, heavyHittersContainsSubString("ParFor-DPSP") 
 					|| heavyHittersContainsSubString("ParFor-DPESP"));
 		}
 		finally

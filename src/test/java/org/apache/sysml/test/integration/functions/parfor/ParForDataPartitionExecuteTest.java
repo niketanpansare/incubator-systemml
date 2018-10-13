@@ -21,6 +21,7 @@ package org.apache.sysml.test.integration.functions.parfor;
 
 import java.util.HashMap;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.api.DMLScript;
@@ -91,10 +92,15 @@ public class ParForDataPartitionExecuteTest extends AutomatedTestBase
 	
 	private void runFusedDataPartitionExecuteTest(boolean sparse, boolean row, ExecType et)
 	{
+		RUNTIME_PLATFORM platformOld = rtplatform;
+		switch( et ){
+			case MR: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
+			case SPARK: rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK; break;
+			default: throw new RuntimeException("Unsupported exec type: "+et.name());
+		}
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		RUNTIME_PLATFORM platformOld = setRuntimePlatform(et);
-		if(shouldSkipTest())
-			return;
+		if( et == ExecType.SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		
 		//modify memory budget to trigger fused datapartition-execute
 		long oldmem = InfrastructureAnalyzer.getLocalMaxMemory();
@@ -135,7 +141,7 @@ public class ParForDataPartitionExecuteTest extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "DML", "R");
 			
 			//check for compiled datapartition-execute
-			assertTrue(heavyHittersContainsSubString(
+			Assert.assertTrue(heavyHittersContainsSubString(
 				(et == ExecType.SPARK) ? "ParFor-DPESP" : "MR-Job_ParFor-DPEMR"));
 		}
 		finally {

@@ -33,6 +33,7 @@ import org.apache.sysml.parser.ParserFactory;
 import org.apache.sysml.parser.ParserWrapper;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
+import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -328,9 +329,6 @@ public class ParForDependencyAnalysisTest extends AutomatedTestBase
 	public void testDependencyAnalysis54d() { runTest("parfor54d.dml", true); }
 	
 	private void runTest( String scriptFilename, boolean expectedException ) {
-		if(shouldSkipTest())
-			return;
-		
 		boolean raisedException = false;
 		try
 		{
@@ -370,11 +368,11 @@ public class ParForDependencyAnalysisTest extends AutomatedTestBase
 		catch(Exception ex2) {
 			ex2.printStackTrace();
 			throw new RuntimeException(ex2);
-			//fail( "Unexpected exception occured during test run." );
+			//Assert.fail( "Unexpected exception occured during test run." );
 		}
 		
 		//check correctness
-		assertEquals(expectedException, raisedException);
+		Assert.assertEquals(expectedException, raisedException);
 	}
 	
 }
