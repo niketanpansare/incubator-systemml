@@ -105,6 +105,9 @@ public class SparseBlockSize extends AutomatedTestBase
 	 */
 	private void runSparseBlockSizeTest( SparseBlock.Type btype, double sparsity)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		try
 		{
 			//data generation

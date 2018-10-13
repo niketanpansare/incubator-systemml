@@ -154,6 +154,9 @@ public class SparseBlockAppendSort extends AutomatedTestBase
 	 */
 	private void runSparseBlockAppendSortTest( SparseBlock.Type btype, double sparsity, InitType itype)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		try
 		{
 			//data generation

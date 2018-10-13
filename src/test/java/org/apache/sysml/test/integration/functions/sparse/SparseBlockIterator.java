@@ -151,6 +151,9 @@ public class SparseBlockIterator extends AutomatedTestBase
 	 */
 	private void runSparseBlockIteratorTest( SparseBlock.Type btype, double sparsity, boolean partial)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		try
 		{
 			//data generation

@@ -197,6 +197,9 @@ public class SparseBlockGetFirstIndex extends AutomatedTestBase
 	 */
 	private void runSparseBlockGetFirstIndexTest( SparseBlock.Type btype, double sparsity, IndexType itype)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		try
 		{
 			//data generation

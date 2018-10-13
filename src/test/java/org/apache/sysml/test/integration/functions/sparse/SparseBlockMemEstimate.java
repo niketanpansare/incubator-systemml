@@ -56,6 +56,9 @@ public class SparseBlockMemEstimate extends AutomatedTestBase
 	
 	private static void runSparseBlockMemoryTest( double sparsity)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		double memMCSR = SparseBlockFactory.estimateSizeSparseInMemory(SparseBlock.Type.MCSR, rows, cols, sparsity);
 		double memCSR = SparseBlockFactory.estimateSizeSparseInMemory(SparseBlock.Type.CSR, rows, cols, sparsity);
 		double memCOO = SparseBlockFactory.estimateSizeSparseInMemory(SparseBlock.Type.COO, rows, cols, sparsity);

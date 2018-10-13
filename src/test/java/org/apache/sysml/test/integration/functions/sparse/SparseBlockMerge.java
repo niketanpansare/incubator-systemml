@@ -223,6 +223,9 @@ public class SparseBlockMerge extends AutomatedTestBase
 	
 	private void runSparseBlockMergeTest( SparseBlock.Type btype1, SparseBlock.Type btype2, double sparsity)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		try
 		{
 			//data generation

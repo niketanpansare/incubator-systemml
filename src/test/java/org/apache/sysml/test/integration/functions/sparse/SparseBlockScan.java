@@ -101,6 +101,9 @@ public class SparseBlockScan extends AutomatedTestBase
 	 */
 	private void runSparseBlockScanTest( SparseBlock.Type btype, double sparsity)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		try
 		{
 			//data generation

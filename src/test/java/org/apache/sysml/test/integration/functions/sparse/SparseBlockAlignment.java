@@ -20,6 +20,8 @@
 package org.apache.sysml.test.integration.functions.sparse;
 
 import org.junit.Test;
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlockCOO;
@@ -146,6 +148,9 @@ public class SparseBlockAlignment extends AutomatedTestBase
 	 */
 	private void runSparseBlockScanTest( SparseBlock.Type btype, double sparsity, boolean positive)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		try
 		{
 			//data generation

@@ -202,6 +202,9 @@ public class SparseBlockGetSet extends AutomatedTestBase
 	 */
 	private void runSparseBlockGetSetTest( SparseBlock.Type btype, double sparsity, InitType itype)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		try
 		{
 			//data generation

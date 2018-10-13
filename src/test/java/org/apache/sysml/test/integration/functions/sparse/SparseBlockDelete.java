@@ -105,6 +105,9 @@ public class SparseBlockDelete extends AutomatedTestBase
 	 */
 	private void runSparseBlockDeleteTest( SparseBlock.Type btype, double sparsity)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		try
 		{
 			//data generation

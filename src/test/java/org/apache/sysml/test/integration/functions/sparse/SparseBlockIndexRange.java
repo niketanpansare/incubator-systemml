@@ -156,6 +156,9 @@ public class SparseBlockIndexRange extends AutomatedTestBase
 	 */
 	private void runSparseBlockIndexRangeTest( SparseBlock.Type btype, double sparsity, UpdateType utype)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		try
 		{
 			//data generation
