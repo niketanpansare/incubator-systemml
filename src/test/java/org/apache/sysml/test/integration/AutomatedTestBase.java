@@ -740,33 +740,20 @@ public abstract class AutomatedTestBase
 	}
 
 	protected HashMap<CellIndex, Double> readDMLMatrixFromHDFS(String fileName) {
-		if(shouldSkipTest()) {
-			return new HashMap<CellIndex, Double>();
-		}
 		return TestUtils.readDMLMatrixFromHDFS(baseDirectory + OUTPUT_DIR + fileName);
 	}
 
 	public HashMap<CellIndex, Double> readRMatrixFromFS(String fileName) {
-		if(shouldSkipTest()) {
-			return new HashMap<CellIndex, Double>();
-		}
 		System.out.println("R script out: " + baseDirectory + EXPECTED_DIR + cacheDir + fileName);
 		return TestUtils.readRMatrixFromFS(baseDirectory + EXPECTED_DIR + cacheDir + fileName);
 	}
 
 	protected HashMap<CellIndex, Double> readDMLScalarFromHDFS(String fileName) {
-		if(shouldSkipTest()) {
-			return new HashMap<CellIndex, Double>();
-		}
 		return TestUtils.readDMLScalarFromHDFS(baseDirectory + OUTPUT_DIR + fileName);
 	}
 
 
 	protected FrameBlock readDMLFrameFromHDFS(String fileName, InputInfo iinfo) throws IOException {
-		if(shouldSkipTest()) {
-			return new FrameBlock();
-		}
-		
 		//read frame data from hdfs
 		String strFrameFileName = baseDirectory + OUTPUT_DIR + fileName;
 		FrameReader reader = FrameReaderFactory.createFrameReader(iinfo);
@@ -777,10 +764,6 @@ public abstract class AutomatedTestBase
 
 
 	protected FrameBlock readDMLFrameFromHDFS(String fileName, InputInfo iinfo, MatrixCharacteristics md) throws IOException {
-		if(shouldSkipTest()) {
-			return new FrameBlock();
-		}
-		
 		//read frame data from hdfs
 		String strFrameFileName = baseDirectory + OUTPUT_DIR + fileName;
 		FrameReader reader = FrameReaderFactory.createFrameReader(iinfo);
@@ -789,10 +772,6 @@ public abstract class AutomatedTestBase
 	}
 
 	protected FrameBlock readRFrameFromHDFS(String fileName, InputInfo iinfo, MatrixCharacteristics md) throws IOException {
-		if(shouldSkipTest()) {
-			return new FrameBlock();
-		}
-		
 		//read frame data from hdfs
 		String strFrameFileName = baseDirectory + EXPECTED_DIR + fileName;
 
@@ -806,10 +785,6 @@ public abstract class AutomatedTestBase
 
 
 	public HashMap<CellIndex, Double> readRScalarFromFS(String fileName) {
-		if(shouldSkipTest()) {
-			return new HashMap<CellIndex, Double>();
-		}
-		
 		System.out.println("R script out: " + baseDirectory + EXPECTED_DIR + cacheDir + fileName);
 		return TestUtils.readRScalarFromFS(baseDirectory + EXPECTED_DIR + cacheDir + fileName);
 	}
@@ -982,189 +957,97 @@ public abstract class AutomatedTestBase
 	}
 	
 	public void assertNotEquals(Object expected, Object actual) {
-		if(shouldSkipTest()) {
-			// Skip checking the assertion
-			return;
-		}
 		Assert.assertNotEquals(expected, actual);
     }
 	
 	public void assertNotEquals(double expected, double actual) {
-		if(shouldSkipTest()) {
-			// Skip checking the assertion
-			return;
-		}
 		Assert.assertNotEquals(expected, actual);
     }
 	
 	public void assertNotEquals(int expected, int actual) {
-		if(shouldSkipTest()) {
-			// Skip checking the assertion
-			return;
-		}
 		Assert.assertNotEquals(expected, actual);
     }
 	
 	public void assertNotEquals(long expected, long actual) {
-		if(shouldSkipTest()) {
-			// Skip checking the assertion
-			return;
-		}
 		Assert.assertNotEquals(expected, actual);
     }
 	
 	public void assertNotEquals(String message, double expected, double actual) {
-		if(shouldSkipTest()) {
-			// Skip checking the assertion
-			return;
-		}
 		Assert.assertNotEquals(message, expected, actual);
     }
 	
 	public void assertNotEquals(String message, Long expected, Long actual) {
-		if(shouldSkipTest()) {
-			// Skip checking the assertion
-			return;
-		}
 		Assert.assertNotEquals(message, expected, actual);
     }
 	
 	public void assertNotEquals(String message, long expected, long actual) {
-		if(shouldSkipTest()) {
-			// Skip checking the assertion
-			return;
-		}
 		Assert.assertNotEquals(message, expected, actual);
     }
 	
 	public void assertArrayEquals(double[] expecteds,
             double[] actuals, double delta) throws ArrayComparisonFailure {
-		if(shouldSkipTest()) {
-			// Skip checking the assertion
-			return;
-		}
 		Assert.assertArrayEquals(expecteds, actuals, delta);
 	}
 	
 	public void assertArrayEquals(double[] expecteds,
             double[] actuals, int delta) throws ArrayComparisonFailure {
-		if(shouldSkipTest()) {
-			// Skip checking the assertion
-			return;
-		}
 		Assert.assertArrayEquals(expecteds, actuals, delta);
 	}
 	
 	public void assertEquals(double expected, double actual, double delta) {
-		if(shouldSkipTest()) {
-			// Skip checking the assertion
-			return;
-		}
 		Assert.assertEquals(expected, actual, delta);
     }
 	
 	public void assertEquals(String message, double expected, double actual) {
-		if(shouldSkipTest()) {
-			// Skip checking the assertion
-			return;
-		}
 		Assert.assertEquals(message, expected, actual);
     }
 	
 	public void assertEquals(String message, long expected, long actual) {
-		if(shouldSkipTest()) {
-			// Skip checking the assertion
-			return;
-		}
 		Assert.assertEquals(message, expected, actual);
     }
 	
 	public void assertEquals(int expected, int actual) {
-		if(shouldSkipTest()) {
-			// Skip checking the assertion
-			return;
-		}
 		Assert.assertEquals(expected, actual);
     }
 	
 	public void assertEquals(Object expected, Object actual) {
-		if(shouldSkipTest()) {
-			// Skip checking the assertion
-			return;
-		}
 		Assert.assertEquals(expected, actual);
     }
 	
 	public void assertEquals(Integer expected, Long actual) {
-		if(shouldSkipTest()) {
-			// Skip checking the assertion
-			return;
-		}
 		Assert.assertEquals((long)expected, (long)actual);
     }
 	
 	public void assertEquals(Long expected, Integer actual) {
-		if(shouldSkipTest()) {
-			// Skip checking the assertion
-			return;
-		}
 		Assert.assertEquals((long)expected, (long)actual);
     }
 	
 	public void assertEquals(boolean expected, boolean actual) {
-		if(shouldSkipTest()) {
-			// Skip checking the assertion
-			return;
-		}
 		Assert.assertEquals(expected, actual);
     }
 	
 	public void assertFalse(boolean condition) {
-		if(shouldSkipTest()) {
-			// Skip checking the assertion
-			return;
-		}
 		Assert.assertFalse(condition);
 	}
 	
 	public void assertFalse(String message, boolean condition) {
-		if(shouldSkipTest()) {
-			// Skip checking the assertion
-			return;
-		}
 		Assert.assertFalse(message, condition);
 	}
 	
 	public void assertTrue(String message, boolean condition) {
-		if(shouldSkipTest()) {
-			// Skip checking the assertion
-			return;
-		}
 		Assert.assertTrue(message, condition);
     }
 
 	public void assertTrue(boolean condition) {
-		if(shouldSkipTest()) {
-			// Skip checking the assertion
-			return;
-		}
 		Assert.assertTrue(condition);
     }
 	
 	public void assertEquals(String message, Object expected,
             Object actual) {
-		if(shouldSkipTest()) {
-			// Skip checking the assertion
-			return;
-		}
 		Assert.assertEquals(message, expected, actual);
 	}
 	
 	public void fail(String message) {
-		if(shouldSkipTest()) {
-			// Skip checking the assertion
-			return;
-		}
 		Assert.fail(message);
 	}
 	
@@ -1172,11 +1055,6 @@ public abstract class AutomatedTestBase
 	 * Runs an R script in the old or the new way
 	 */
 	protected void runRScript(boolean newWay) {
-		if(shouldSkipTest()) {
-			// Skip running test
-			return;
-		}
-
 		String executionFile = sourceDirectory + selectedTest + ".R";
 
 		// *** HACK ALERT *** HACK ALERT *** HACK ALERT ***
@@ -1398,11 +1276,6 @@ public abstract class AutomatedTestBase
 	 *            -1 there is no limit.
 	 */
 	protected void runTest(boolean newWay, boolean exceptionExpected, Class<?> expectedException, String errMessage, int maxMRJobs) {
-		if(shouldSkipTest()) {
-			// Skip running test
-			return;
-		}
-		
 		String executionFile = sourceDirectory + selectedTest + ".dml";
 
 		if( !newWay ) {
@@ -1586,8 +1459,6 @@ public abstract class AutomatedTestBase
 	 * </p>
 	 */
 	protected void compareResults() {
-		if(shouldSkipTest())
-			return;
 		compareResults(0);
 	}
 
@@ -1601,8 +1472,6 @@ public abstract class AutomatedTestBase
 	 *            tolerance
 	 */
 	protected void compareResultsWithR(double epsilon) {
-		if(shouldSkipTest())
-			return;
 		for (int i = 0; i < comparisonFiles.length; i++) {
 			TestUtils.compareDMLHDFSFileWithRFile(comparisonFiles[i], outputDirectories[i], epsilon);
 		}
@@ -1614,14 +1483,10 @@ public abstract class AutomatedTestBase
 	 * </p>
 	 */
 	protected void compareResultsWithR() {
-		if(shouldSkipTest())
-			return;
 		compareResultsWithR(0);
 	}
 
 	protected void compareResultsWithMM () {
-		if(shouldSkipTest())
-			return;	
 		TestUtils.compareMMMatrixWithJavaMatrix (comparisonFiles[0], outputDirectories[0], 0);
 	}
 	/**
@@ -1634,19 +1499,15 @@ public abstract class AutomatedTestBase
 	 *            tolerance
 	 */
 	protected void compareResults(double epsilon) {
-		if(shouldSkipTest())
-			return;
 		for (int i = 0; i < comparisonFiles.length; i++) {
 			/* Note that DML scripts may generate a file with only scalar value */
 			if (outputDirectories[i].endsWith(".scalar")) {
 			   String javaFile = comparisonFiles[i].replace(".scalar", "");
 			   String dmlFile = outputDirectories[i].replace(".scalar", "");
-			   if(!shouldSkipTest())
-				   TestUtils.compareDMLScalarWithJavaScalar(javaFile, dmlFile, epsilon);
+			   TestUtils.compareDMLScalarWithJavaScalar(javaFile, dmlFile, epsilon);
 			}
 			else {
-				if(!shouldSkipTest())
-					TestUtils.compareDMLMatrixWithJavaMatrix(comparisonFiles[i], outputDirectories[i], epsilon);
+				TestUtils.compareDMLMatrixWithJavaMatrix(comparisonFiles[i], outputDirectories[i], epsilon);
 			}
 		}
 	}
@@ -1663,12 +1524,10 @@ public abstract class AutomatedTestBase
 			if (outputDirectories[i].endsWith(".scalar")) {
 			   String javaFile = comparisonFiles[i].replace(".scalar", "");
 			   String dmlFile = outputDirectories[i].replace(".scalar", "");
-			   if(!shouldSkipTest())
-				   TestUtils.compareDMLScalarWithJavaScalar(javaFile, dmlFile, epsilon);
+			   TestUtils.compareDMLScalarWithJavaScalar(javaFile, dmlFile, epsilon);
 			}
 			else {
-				if(!shouldSkipTest())
-					TestUtils.compareDMLMatrixWithJavaMatrixRowsOutOfOrder(comparisonFiles[i], outputDirectories[i], epsilon);
+				TestUtils.compareDMLMatrixWithJavaMatrixRowsOutOfOrder(comparisonFiles[i], outputDirectories[i], epsilon);
 			}
 		}
 	}
