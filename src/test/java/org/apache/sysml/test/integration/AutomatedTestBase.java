@@ -95,8 +95,8 @@ public abstract class AutomatedTestBase
 	public boolean shouldSkipTest() {
 		if(rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK || rtplatform == RUNTIME_PLATFORM.SPARK)
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-		return !TEST_MR_BACKEND && (rtplatform == RUNTIME_PLATFORM.HADOOP ||
-				rtplatform == RUNTIME_PLATFORM.HYBRID);
+		// Let's skip first HADOOP tests. In the subsequent commits, we can visit HYBRID
+		return !TEST_MR_BACKEND && rtplatform == RUNTIME_PLATFORM.HADOOP;
 	}
 
 	public static final boolean EXCEPTION_EXPECTED = true;
