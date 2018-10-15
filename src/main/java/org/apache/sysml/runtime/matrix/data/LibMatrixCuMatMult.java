@@ -45,7 +45,7 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 
 	private static final Log LOG = LogFactory.getLog(LibMatrixCuMatMult.class.getName());
 
-	private static class CuMatMultParameters {
+	public static class CuMatMultParameters {
 		/*
 		 * For the operation, C = op(A) %*% op(B), the below parameters are used
 		 * to invoke the corresponding kernels in CuBLAS and CuSPARSE.
@@ -359,7 +359,7 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 	 * @param param
 	 *            BLAS parameters
 	 */
-	private static void denseDenseMatMult(cublasHandle handle, String instName, Pointer C, Pointer A, Pointer B,
+	static void denseDenseMatMult(cublasHandle handle, String instName, Pointer C, Pointer A, Pointer B,
 			CuMatMultParameters param) {
 		long t0 = ConfigurationManager.isFinegrainedStatistics() ? System.nanoTime() : 0;
 		String kernel = null;

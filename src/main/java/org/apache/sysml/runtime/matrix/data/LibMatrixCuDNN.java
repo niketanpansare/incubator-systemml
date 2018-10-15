@@ -58,6 +58,7 @@ import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.context.CSRPointer;
 import org.apache.sysml.runtime.instructions.gpu.context.ExecutionConfig;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
+import org.apache.sysml.runtime.matrix.data.LibMatrixCuMatMult.CuMatMultParameters;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNN.PoolingType;
 import org.apache.sysml.utils.GPUStatistics;
 import org.apache.sysml.utils.Statistics;
@@ -859,6 +860,42 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		return getDensePointerForCuDNN(gCtx, output, instName, numRows, numCols);
 	}
 	
+	public static void nnLstm(ExecutionContext ec, GPUContext gCtx, String instName,
+			Pointer X,  Pointer W, Pointer b, Pointer out0, Pointer c0, boolean return_sequences,
+			Pointer out, Pointer c,  // output matrices
+			Pointer cache_out, Pointer cache_c, Pointer cache_ifog, // temporary output
+			long N, long M, long D, long T) throws DMLRuntimeException {
+		// out_prev = out0
+		Pointer out_prev = copy(gCtx, instName, out0, N*M);
+		// c_prev = c0
+		Pointer c_prev = copy(gCtx, instName, c0, N*M);
+		// c = c_prev
+		cudaMemcpy(c, c_prev, N*M*sizeOfDataType, cudaMemcpyDeviceToDevice);
+		
+		Pointer input = gCtx.allocate(instName, N*(D+M)*sizeOfDataType);
+		Pointer ifog = gCtx.allocate(instName, N*4*M*sizeOfDataType);
+		
+		for(int t = 1; t <= T; t++) {
+			// X_t = X[,(t-1)*D+1:t*D]  # shape (N, D)
+			// input = cbind(X_t, out_prev)  # shape (N, D+M)
+			getCudaKernels(gCtx).launchKernel("prepareInputNNLstm",
+					ExecutionConfig.getConfigForSimpleVectorOperations(toInt(N*(D+M))),
+					X, out_prev, input, (t-1), toInt(M), toInt(D), toInt(T*D), toInt(D+M), toInt(N*(D+M)));
+			
+			CuMatMultParameters param = new CuMatMultParameters(N, D+M,
+					D+M, 4*M, false, false);
+			LibMatrixCuMatMult.denseDenseMatMult(gCtx.getCublasHandle(), instName, ifog, input, W, param);
+			
+		}
+		
+	}
+	
+	private static Pointer copy(GPUContext gCtx, String instName, Pointer ptr, long numElems) {
+		Pointer ret = gCtx.allocate(instName, numElems*sizeOfDataType);
+		cudaMemcpy(ret, ptr, numElems*sizeOfDataType, cudaMemcpyDeviceToDevice);
+		return ret;
+	}
+	
 	/**
 	 * Computes the forward pass for an LSTM layer with M neurons.
 	 * The input data has N sequences of T examples, each with D features.
@@ -879,13 +916,13 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @param T sequence length
 	 * @throws DMLRuntimeException if error
 	 */
-	public static void lstm(ExecutionContext ec, GPUContext gCtx, String instName,
+	public static void cuDNNLstm(ExecutionContext ec, GPUContext gCtx, String instName,
 			Pointer X,  Pointer wPointer, Pointer out0, Pointer c0, boolean return_sequences,
 			String outputName, String cyName, int N, int M, int D, int T) throws DMLRuntimeException {
-		singleLayerUnidirectionalRNNForward(ec, gCtx, instName, X, out0, c0, wPointer, outputName, cyName, "lstm", return_sequences, N, M, D, T);
+		cuDNNSingleLayerUnidirectionalRNNForward(ec, gCtx, instName, X, out0, c0, wPointer, outputName, cyName, "lstm", return_sequences, N, M, D, T);
 	}
 	
-	private static void singleLayerUnidirectionalRNNForward(ExecutionContext ec, GPUContext gCtx, String instName,
+	private static void cuDNNSingleLayerUnidirectionalRNNForward(ExecutionContext ec, GPUContext gCtx, String instName,
 			Pointer x, Pointer hx, Pointer cx, Pointer wPointer,  // input
 			String outputName, String cyName,  					 // output
 			String rnnMode, boolean return_sequences, int N, int M, int D, int T) throws DMLRuntimeException {
@@ -924,13 +961,20 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		gCtx.cudaFreeHelper(instName, cudnnYPointer, gCtx.EAGER_CUDA_FREE);
 	}
 	
-	public static void lstmBackward(ExecutionContext ec, GPUContext gCtx, String instName,
+	public static void cuDNNLstmBackward(ExecutionContext ec, GPUContext gCtx, String instName,
 			Pointer x, Pointer hx, Pointer cx, Pointer wPointer, String doutName, String dcyName,  // input
 			String dxName, String dwName, String dbName, String dhxName, String dcxName,  	// output
 			boolean return_sequences, long N, long M, long D, long T) throws DMLRuntimeException {
 		
 		if(LOG.isDebugEnabled()) {
-			long memRequired = (N*T*M + (return_sequences ? T*M : M) + N*T*M + 2*N*T*D + (D+M+2)*(4*M))*sizeOfDataType;
+			long memRequired = (D+M)*4*M // sysmlWPointer
+					+ 2*(D+M+2)*(4*M) // cudnnWPointer and cudnnDwPointer
+					+ 3*N*T*D  // cudnnInput, cudnnDx and smlDx
+					+ 2*N*T*M // dy and yPointer
+					+ (return_sequences ? T*M : M); // dout
+			memRequired *= LibMatrixCUDA.sizeOfDataType;
+			// Assume the workspace to be proportional to cudnnWPointer
+			// memRequired += (D+M+2)*(4*M)*LibMatrixCUDA.sizeOfDataType;
 			LOG.debug("Memory required for invoking lstmBackward is " + memRequired + " bytes + workspace + reserve space + memory for descriptors.");
 		}
 		

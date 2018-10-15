@@ -2406,3 +2406,31 @@ extern "C" __global__ void backward_dgamma_tmp_f(double *ema_mean, double *dout,
 	int N, int C, int HW, int CHW, int NCHW) {
   backward_dgamma_tmp(ema_mean, dout, X, ema_var, ret, N, C, HW, CHW, NCHW);
 }
+
+
+// Performs the operation:
+// X_t = X[,(t-1)*D+1:t*D]  # shape (N, D)
+// ret = cbind(X_t, out_prev)  # shape (N, D+M)
+// size => N*(D+M)
+template <typename T>
+__device__ void prepareInputNNLstm(T *X, T* out_prev, T *ret, int t, int M, int D, int TD, int DPlusM, unsigned int size) {
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  if (index < size) {
+    int n = index / DPlusM;
+  	int iy = index % DPlusM;
+    if(iy < D) {
+    	ret[index] = X[n*TD + t*D + iy];
+    }
+    else {
+    	ret[index] = out_prev[n*M + (iy-D)];
+    }
+  }
+}
+
+extern "C" __global__ void prepareInputNNLstm_d(double *X, double* out_prev, double *ret, int t, int M, int D, int TD, int DPlusM, unsigned int size) {
+  prepareInputNNLstm(X, out_prev, ret, t, M, D, TD, DPlusM, size);
+}
+
+extern "C" __global__ void prepareInputNNLstm_f(float *X, float* out_prev, float *ret, int t, int M, int D, int TD, int DPlusM, unsigned int size) {
+  prepareInputNNLstm(X, out_prev, ret, t, M, D, TD, DPlusM, size);
+}
