@@ -75,22 +75,27 @@ public class LstmTest extends GPUTests {
 	}
 	
 	public void testLstmCuDNNWithNN(int N, int T, int D, int M, String returnSequences) {
-		double sparsity = 0.9;
 		String scriptStr = "source(\"nn/layers/lstm_staging.dml\") as lstm;\n "
 				+ "[output, c] = lstm::forward(x, w, b, " + returnSequences + ", out0, c0)";
 		
 		HashMap<String, Object> inputs = new HashMap<>();
-		inputs.put("x", generateInputMatrix(spark, N, T*D, 0, 10, sparsity, seed));
-		inputs.put("w", generateInputMatrix(spark, D+M, 4*M, 0, 2, sparsity, seed));
-		inputs.put("b", generateInputMatrix(spark, 1, 4*M, 0, 2, sparsity, seed));
-		inputs.put("out0", generateInputMatrix(spark, N, M, 0, 2, sparsity, seed));
-		inputs.put("c0", generateInputMatrix(spark, N, M, 0, 2, sparsity, seed));
+		inputs.put("x", generateNonRandomInputMatrix(spark, N, T*D));
+		inputs.put("w", generateNonRandomInputMatrix(spark, D+M, 4*M));
+		inputs.put("b", generateNonRandomInputMatrix(spark, 1, 4*M));
+		inputs.put("out0", generateNonRandomInputMatrix(spark, N, M));
+		inputs.put("c0", generateNonRandomInputMatrix(spark, N, M));
 		List<String> outputs = Arrays.asList("output", "c");
 		List<Object> outGPUWithCuDNN = null;
 		List<Object> outGPUWithDNN = null;
 		synchronized (DnnGPUInstruction.FORCED_LSTM_OP) {
 			DnnGPUInstruction.FORCED_LSTM_OP = LstmOperator.CUDNN;
 			outGPUWithCuDNN = runOnGPU(spark, scriptStr, inputs, outputs);
+			inputs = new HashMap<>();
+			inputs.put("x", generateNonRandomInputMatrix(spark, N, T*D));
+			inputs.put("w", generateNonRandomInputMatrix(spark, D+M, 4*M));
+			inputs.put("b", generateNonRandomInputMatrix(spark, 1, 4*M));
+			inputs.put("out0", generateNonRandomInputMatrix(spark, N, M));
+			inputs.put("c0", generateNonRandomInputMatrix(spark, N, M));
 			DnnGPUInstruction.FORCED_LSTM_OP = LstmOperator.DENSE_NN;
 			outGPUWithDNN = runOnGPU(spark, scriptStr, inputs, outputs);
 		}
