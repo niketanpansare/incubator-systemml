@@ -910,10 +910,10 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			getCudaKernels(gCtx).launchKernel("postProcessNNLstmForward",
 					ExecutionConfig.getConfigForSimpleVectorOperations(toInt(N*M)),
 				ifog, c,  out_prev, c_prev, out, cache_out, cache_c,
-				return_sequences ? 1 : 0, t, toInt(T), toInt(M), toInt(N*M));
+				return_sequences ? 1 : 0, t-1, toInt(T), toInt(M), toInt(N*M));
 			
 			// cache_ifog[t,] = matrix(ifog, rows=1, cols=N*4*M)  # reshape
-			cudaMemcpy(cache_ifog.withByteOffset(t*N*4*M*sizeOfDataType), ifog, N*4*M*sizeOfDataType, cudaMemcpyDeviceToDevice);
+			cudaMemcpy(cache_ifog.withByteOffset((t-1)*N*4*M*sizeOfDataType), ifog, N*4*M*sizeOfDataType, cudaMemcpyDeviceToDevice);
 			
 		}
 		
