@@ -638,6 +638,18 @@ public class DnnGPUInstruction extends GPUInstruction {
 		return (int)num;
 	}
 	
+	public static long getMemRequiredForCuDNNLSTMBackward(long N, long T, long M, long D, boolean return_sequences) {
+		double memRequired = (D+M)*4*M // sysmlWPointer
+				+ 2*(D+M+2)*(4*M) // cudnnWPointer and cudnnDwPointer
+				+ 3*N*T*D  // cudnnInput, cudnnDx and smlDx
+				+ 2*N*T*M // dy and yPointer
+				+ (return_sequences ? T*M : M); // dout
+		memRequired *= LibMatrixCUDA.sizeOfDataType;
+		// Assume the workspace to be proportional to cudnnWPointer (add 20% additional overhead for workspace)
+		memRequired += 1.2*(D+M+2)*(4*M)*LibMatrixCUDA.sizeOfDataType;
+		return (long)memRequired;
+	}
+	
 	private void processLstmBackwardInstruction(ExecutionContext ec) throws DMLRuntimeException {
 		MatrixObject out0 = getMatrixInputForGPUInstruction(ec, _input4.getName());
 		long M = out0.getNumColumns(); // hiddenSize .. since out0: (N, M)
@@ -653,14 +665,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 		int T = toInt(numColsX/ D); // since X:(N, T*D) ... seqLength
 		boolean return_sequences = ec.getScalarInput(_input6.getName(), _input6.getValueType(), _input6.isLiteral()).getBooleanValue();
 		
-		double memRequired = (D+M)*4*M // sysmlWPointer
-				+ 2*(D+M+2)*(4*M) // cudnnWPointer and cudnnDwPointer
-				+ 3*N*T*D  // cudnnInput, cudnnDx and smlDx
-				+ 2*N*T*M // dy and yPointer
-				+ (return_sequences ? T*M : M); // dout
-		memRequired *= LibMatrixCUDA.sizeOfDataType;
-		// Assume the workspace to be proportional to cudnnWPointer (add 20% additional overhead for workspace)
-		memRequired += 1.2*(D+M+2)*(4*M)*LibMatrixCUDA.sizeOfDataType;
+		// long memRequired = getMemRequiredForCuDNNLSTMBackward(N, T, M, D, return_sequences);
 		 
 		String dxName = _output.getName();
 		String dwName = _output2.getName();
@@ -670,10 +675,10 @@ public class DnnGPUInstruction extends GPUInstruction {
 		String doutName = _input7.getName();
 		String dcyName = _input8.getName();
 			
-		if(gCtx.getMemoryManager().canAllocate(instName, (long)memRequired)) {
-			
-		}
-		else {
+//		if(gCtx.getMemoryManager().canAllocate(instName, (long)memRequired)) {
+//			
+//		}
+//		else {
 			// Use CuDNN LSTM kernel
 			Pointer sysmlWPointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, W, instName, D+M, 4*M);
 			Pointer sysmlBiasPointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, bias, instName, 1, 4*M);
@@ -696,7 +701,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 					return_sequences, N, M, D, T);
 			gCtx.cudaFreeHelper(instName, cudnnWPointer, gCtx.EAGER_CUDA_FREE);
 			gCtx.cudaFreeHelper(instName, cudnnInput, gCtx.EAGER_CUDA_FREE);
-		}
+		// }
 		
 		// release inputs/outputs
 		ec.releaseMatrixInputForGPUInstruction(_input4.getName());

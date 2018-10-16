@@ -2434,3 +2434,92 @@ extern "C" __global__ void prepareInputNNLstm_d(double *X, double* out_prev, dou
 extern "C" __global__ void prepareInputNNLstm_f(float *X, float* out_prev, float *ret, int t, int M, int D, int TD, int DPlusM, unsigned int size) {
   prepareInputNNLstm(X, out_prev, ret, t, M, D, TD, DPlusM, size);
 }
+
+
+// Performs the operations:
+// ifog = ifog + b
+// ifog[,1:3*M] = sigmoid::forward(ifog[,1:3*M])  # i,f,o gates squashed with sigmoid
+// ifog[,3*M+1:4*M] = tanh::forward(ifog[,3*M+1:4*M])  # g gate squashed with tanh
+template <typename T>
+__device__ void squashIFOG(T *ifog, T *b, int M, unsigned int size) {
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  if (index < size) {
+    int M4 = M*4;
+  	int n = index / M4;
+  	int iy = index % M4; 
+	T ifogVal = ifog[index] + b[iy];
+	if(iy < M*3) {
+		ifogVal = 0.5 * tanh(0.5 * ifogVal) + 0.5; // sigmoid
+	}
+	else {
+		ifogVal = tanh(ifogVal);
+	}
+	ifog[index] = ifogVal;
+  }
+}
+
+extern "C" __global__ void squashIFOG_d(double *ifog, double *b, int M, unsigned int size) {
+  squashIFOG(ifog, b, M, size);
+}
+
+extern "C" __global__ void squashIFOG_f(float *ifog, float *b, int M, unsigned int size) {
+  squashIFOG(ifog, b, M, size);
+}
+
+// c = ifog[,M+1:2*M]*c_prev + ifog[,1:M]*ifog[,3*M+1:4*M]
+// out_t = ifog[,2*M+1:3*M] * tanh::forward(c)
+// if (return_sequences) {
+//   out[,(t-1)*M+1:t*M] = out_t
+// }
+// else {
+//   out = out_t
+// }
+// out_prev = out_t
+// c_prev = c
+// cache_out[t,] = matrix(out_t, rows=1, cols=N*M)
+// cache_c[t,] = matrix(c, rows=1, cols=N*M) 
+template <typename T>
+__device__ void postProcessNNLstmForward(T *ifog, 
+	T *c,  T* out_prev, T* c_prev, 
+	T *out, T *cache_out, T *cache_c,
+	int return_sequences, int t, int T1, int M,
+	unsigned int NM) { 
+	int index = blockIdx.x * blockDim.x + threadIdx.x;
+  if (index < NM) {
+    int M4 = M*4;
+  	int n = index / M;
+  	int m = index % M;
+  	int m4 = m*4;
+  	T iGate = ifog[n*M4 + m]; 		// ifog[,1:M]
+  	T fGate = ifog[n*M4 + M + m];  // ifog[,M+1:2*M]
+  	T oGate = ifog[n*M4 + M*2 + m]; // ifog[,2*M+1:3*M]
+  	T gGate = ifog[n*M4 + M*3 + m]; // ifog[,3*M+1:4*M]
+  	T cVal = fGate*c_prev[index] + iGate*gGate;
+  	T out_tVal = oGate*tanh(cVal);
+  	int outIndex = return_sequences == 0 ? index : (n*T1*M + t*M + m);
+  	int cacheIndex = t*NM + index;
+  	
+  	c[index] = cVal;
+  	out_prev[index] = out_tVal;
+  	c_prev[index] = cVal;
+  	cache_out[cacheIndex] = out_tVal;
+  	cache_c[cacheIndex] = cVal;
+  	out[outIndex] = out_tVal;
+  }
+}
+
+extern "C" __global__ void postProcessNNLstmForward_d(double *ifog, 
+	double *c, double *out_prev, double *c_prev, 
+	double *out, double *cache_out, double *cache_c,
+	int return_sequences, int t, int T1, int M,
+	unsigned int NM) { 
+	postProcessNNLstmForward(ifog, c, out_prev, c_prev, out, cache_out, cache_c, return_sequences, t, T1, M, NM);
+}
+
+extern "C" __global__ void postProcessNNLstmForward_f(float *ifog, 
+	float *c, float *out_prev, float *c_prev, 
+	float *out, float *cache_out, float *cache_c,
+	int return_sequences, int t, int T1, int M,
+	unsigned int NM) { 
+	postProcessNNLstmForward(ifog, c, out_prev, c_prev, out, cache_out, cache_c, return_sequences, t, T1, M, NM);
+}

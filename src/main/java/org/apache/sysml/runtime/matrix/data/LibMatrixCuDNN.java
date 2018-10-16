@@ -863,7 +863,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	public static void nnLstm(ExecutionContext ec, GPUContext gCtx, String instName,
 			Pointer X,  Pointer W, Pointer b, Pointer out0, Pointer c0, boolean return_sequences,
 			Pointer out, Pointer c,  // output matrices
-			Pointer cache_out, Pointer cache_c, Pointer cache_ifog, // temporary output
+			Pointer cache_out, Pointer cache_c, Pointer cache_ifog, // temporary workspace passed to the backward function
 			long N, long M, long D, long T) throws DMLRuntimeException {
 		// out_prev = out0
 		Pointer out_prev = copy(gCtx, instName, out0, N*M);
@@ -882,12 +882,45 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 					ExecutionConfig.getConfigForSimpleVectorOperations(toInt(N*(D+M))),
 					X, out_prev, input, (t-1), toInt(M), toInt(D), toInt(T*D), toInt(D+M), toInt(N*(D+M)));
 			
+			// ifog = input %*% W
 			CuMatMultParameters param = new CuMatMultParameters(N, D+M,
 					D+M, 4*M, false, false);
 			LibMatrixCuMatMult.denseDenseMatMult(gCtx.getCublasHandle(), instName, ifog, input, W, param);
 			
+			// ifog = ifog + b
+			// ifog[,1:3*M] = sigmoid::forward(ifog[,1:3*M])  # i,f,o gates squashed with sigmoid
+			// ifog[,3*M+1:4*M] = tanh::forward(ifog[,3*M+1:4*M])  # g gate squashed with tanh
+			getCudaKernels(gCtx).launchKernel("squashIFOG",
+					ExecutionConfig.getConfigForSimpleVectorOperations(toInt(N*4*M)),
+				ifog, b, toInt(M), toInt(N*4*M));
+			
+			
+			// c = ifog[,M+1:2*M]*c_prev + ifog[,1:M]*ifog[,3*M+1:4*M]
+			// out_t = ifog[,2*M+1:3*M] * tanh::forward(c)
+			// if (return_sequences) {
+			//   out[,(t-1)*M+1:t*M] = out_t
+			// }
+			// else {
+			//   out = out_t
+			// }
+			// out_prev = out_t
+			// c_prev = c
+			// cache_out[t,] = matrix(out_t, rows=1, cols=N*M)
+			// cache_c[t,] = matrix(c, rows=1, cols=N*M)
+			getCudaKernels(gCtx).launchKernel("postProcessNNLstmForward",
+					ExecutionConfig.getConfigForSimpleVectorOperations(toInt(N*M)),
+				ifog, c,  out_prev, c_prev, out, cache_out, cache_c,
+				return_sequences ? 1 : 0, t, toInt(T), toInt(M), toInt(N*M));
+			
+			// cache_ifog[t,] = matrix(ifog, rows=1, cols=N*4*M)  # reshape
+			cudaMemcpy(cache_ifog.withByteOffset(t*N*4*M*sizeOfDataType), ifog, N*4*M*sizeOfDataType, cudaMemcpyDeviceToDevice);
+			
 		}
 		
+		gCtx.cudaFreeHelper(instName, out_prev, gCtx.EAGER_CUDA_FREE);
+		gCtx.cudaFreeHelper(instName, c_prev, gCtx.EAGER_CUDA_FREE);
+		gCtx.cudaFreeHelper(instName, input, gCtx.EAGER_CUDA_FREE);
+		gCtx.cudaFreeHelper(instName, ifog, gCtx.EAGER_CUDA_FREE);
 	}
 	
 	private static Pointer copy(GPUContext gCtx, String instName, Pointer ptr, long numElems) {
