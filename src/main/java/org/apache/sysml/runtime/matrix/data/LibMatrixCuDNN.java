@@ -875,7 +875,6 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		Pointer input = gCtx.allocate(instName, N*(D+M)*sizeOfDataType);
 		Pointer ifog = gCtx.allocate(instName, N*4*M*sizeOfDataType);
 		
-		
 		boolean isWSparse = isInSparseFormat(gCtx, W);
 		CSRPointer wSparsePointer = null;
 		Pointer wDensePointer = null;

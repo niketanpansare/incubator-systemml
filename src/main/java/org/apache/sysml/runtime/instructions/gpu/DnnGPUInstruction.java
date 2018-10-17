@@ -739,9 +739,12 @@ public class DnnGPUInstruction extends GPUInstruction {
 		
 		long memRequired = getMemRequiredForCuDNNLSTMBackward(N, T, M, D, return_sequences);
 		
+		boolean isWSparse = LibMatrixCUDA.isInSparseFormat(gCtx, W);
 		
 		if(FORCED_LSTM_OP == LstmOperator.CUDNN || 
-			(FORCED_LSTM_OP == LstmOperator.NONE && gCtx.getMemoryManager().canAllocate(instName, memRequired))) {
+			(!isWSparse && // Don't use CuDNN kernel when w is sparse.
+			// When an operator is not forced, then prefer CuDNN kernel if it can fit in the GPU memory
+			FORCED_LSTM_OP == LstmOperator.NONE && gCtx.getMemoryManager().canAllocate(instName, memRequired))) {
 			Pointer sysmlWPointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, W, instName, D+M, 4*M);
 			Pointer sysmlBiasPointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, bias, instName, 1, 4*M);
 			Pointer cudnnWPointer = gCtx.allocate(instName, (D+M+2)*(4*M)*LibMatrixCUDA.sizeOfDataType);
