@@ -61,8 +61,7 @@ public class LstmTest extends GPUTests {
 	
 	@Test
 	public void testLstmForward4() {
-		// TODO: debug this
-		// testLstmCuDNNWithNN(2, 3, 5, 10, "FALSE");
+		testLstmCuDNNWithNN(2, 3, 5, 10, "FALSE");
 	}
 	
 	@Test
@@ -72,8 +71,7 @@ public class LstmTest extends GPUTests {
 	
 	@Test
 	public void testLstmForward6() {
-		// TODO: debug this
-		// testLstmCuDNNWithNN(1, 3, 5, 1, "FALSE");
+		testLstmCuDNNWithNN(1, 3, 5, 1, "FALSE");
 	}
 	
 	public void testLstmCuDNNWithNN(int N, int T, int D, int M, String returnSequences) {
@@ -102,7 +100,7 @@ public class LstmTest extends GPUTests {
 			DnnGPUInstruction.FORCED_LSTM_OP = LstmOperator.DENSE_NN;
 			outGPUWithNN = runOnGPU(spark, scriptStr, inputs, outputs);
 		}
-		assertEqualObjects(outGPUWithCuDNN.get(0), outGPUWithNN.get(0), 1e-6);
-		assertEqualObjects(outGPUWithCuDNN.get(1), outGPUWithNN.get(1), 1e-6);
+		assertEqualObjects(outGPUWithCuDNN.get(0), outGPUWithNN.get(0));
+		assertEqualObjects(outGPUWithCuDNN.get(1), outGPUWithNN.get(1));
 	}
 }

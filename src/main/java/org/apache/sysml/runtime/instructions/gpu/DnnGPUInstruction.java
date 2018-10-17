@@ -768,7 +768,8 @@ public class DnnGPUInstruction extends GPUInstruction {
 			Pointer sysmlBiasPointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, bias, instName, 1, 4*M);
 			Pointer xPointer = LibMatrixCUDA.getDensePointer(gCtx, X, instName); 
 			Pointer c0Pointer = LibMatrixCUDA.getDensePointer(gCtx, getMatrixInputForGPUInstruction(ec, _input5.getName()), instName);
-			Pointer sysmlYPointer = LibMatrixCuDNN.getDenseOutputPointer(ec, gCtx, instName, _output.getName(), N, T*M);
+			Pointer sysmlYPointer = LibMatrixCuDNN.getDenseOutputPointer(ec, gCtx, instName, _output.getName(), N, 
+					return_sequences ? (T*M) : M);
 			Pointer cyPointer = LibMatrixCuDNN.getDenseOutputPointer(ec, gCtx, instName,  _output2.getName(), N, M);
 			
 			Pointer cache_out = gCtx.allocate(instName, T*N*M*LibMatrixCUDA.sizeOfDataType);
