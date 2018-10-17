@@ -928,7 +928,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			if(skipCache) {
 				getCudaKernels(gCtx).launchKernel("postProcessNNLstmForwardSkipCache",
 						ExecutionConfig.getConfigForSimpleVectorOperations(toInt(N*M)),
-					ifog, c,  out_prev, c_prev, out, cache_out, cache_c,
+					ifog, c,  out_prev, c_prev, out,
 					return_sequences ? 1 : 0, t-1, toInt(T), toInt(M), toInt(N*M));
 			}
 			else {
