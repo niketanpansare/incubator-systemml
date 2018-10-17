@@ -865,12 +865,12 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			Pointer out, Pointer c,  // output matrices
 			Pointer cache_out, Pointer cache_c, Pointer cache_ifog, // temporary workspace passed to the backward function
 			long N, long M, long D, long T) throws DMLRuntimeException {
-		if( !(cache_out == null && cache_c == null && cache_ifog == null) ||
-			!(cache_out != null && cache_c != null && cache_ifog != null)) {
+		boolean skipCache = cache_out == null || cache_c == null || cache_ifog == null;
+		
+		if( (skipCache && (cache_out != null || cache_c != null || cache_ifog != null)) || 
+			(!skipCache && (cache_out == null || cache_c == null || cache_ifog == null))) {
 			throw new DMLRuntimeException("Either all cache pointers should be null or all should be not null");
 		}
-		
-		boolean skipCache = (cache_out == null);
 		
 		// out_prev = out0
 		Pointer out_prev = copy(gCtx, instName, out0, N*M);
