@@ -209,28 +209,6 @@ public abstract class GPUTests extends AutomatedTestBase {
 		return in1;
 	}
 	
-	
-	/**
-	 * Generates a non-random input matrix with a given size and sparsity
-	 *
-	 * @param spark    valid instance of {@link SparkSession}
-	 * @param m        number of rows
-	 * @param n        number of columns
-	 * @param sparsity sparsity (1 = completely dense, 0 = completely sparse)
-	 * @param performRounding performs rounding after generation of random matrix
-	 * @return a random matrix with given size and sparsity
-	 */
-	protected Matrix generateNonRandomInputMatrix(SparkSession spark, int m, int n) {
-		MLContext genMLC = new MLContext(spark);
-		String scriptStr;
-		scriptStr = "in1 = matrix(seq(1, " + (m*n) + "), rows=" + m + ", cols=" + n + ")";
-		
-		Script generateScript = ScriptFactory.dmlFromString(scriptStr).out("in1");
-		Matrix in1 = genMLC.execute(generateScript).getMatrix("in1");
-		genMLC.close();
-		return in1;
-	}
-	
 	private void printMatrixIfNotEqual(MatrixBlock expectedMB, MatrixBlock actualMB, double threshold) {
 		long rows = expectedMB.getNumRows();
 		long cols = expectedMB.getNumColumns();

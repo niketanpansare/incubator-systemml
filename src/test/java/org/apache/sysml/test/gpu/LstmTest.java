@@ -80,12 +80,13 @@ public class LstmTest extends GPUTests {
 		String scriptStr = "source(\"nn/layers/lstm_staging.dml\") as lstm;\n "
 				+ "[output, c] = lstm::forward(x, w, b, " + returnSequences + ", out0, c0)";
 		
+		double sparsity = 0.9;
 		HashMap<String, Object> inputs = new HashMap<>();
-		inputs.put("x", generateNonRandomInputMatrix(spark, N, T*D));
-		inputs.put("w", generateNonRandomInputMatrix(spark, D+M, 4*M));
-		inputs.put("b", generateNonRandomInputMatrix(spark, 1, 4*M));
-		inputs.put("out0", generateNonRandomInputMatrix(spark, N, M));
-		inputs.put("c0", generateNonRandomInputMatrix(spark, N, M));
+		inputs.put("x", generateInputMatrix(spark, N, T*D, 0, 10, sparsity, seed));
+		inputs.put("w", generateInputMatrix(spark, D+M, 4*M, 0, 10, sparsity, seed));
+		inputs.put("b", generateInputMatrix(spark, 1, 4*M, 0, 10, sparsity, seed));
+		inputs.put("out0", generateInputMatrix(spark, N, M, 0, 10, sparsity, seed));
+		inputs.put("c0", generateInputMatrix(spark, N, M, 0, 10, sparsity, seed));
 		List<String> outputs = Arrays.asList("output", "c");
 		List<Object> outGPUWithCuDNN = null;
 		List<Object> outGPUWithNN = null;
@@ -93,11 +94,11 @@ public class LstmTest extends GPUTests {
 			DnnGPUInstruction.FORCED_LSTM_OP = LstmOperator.CUDNN;
 			outGPUWithCuDNN = runOnGPU(spark, scriptStr, inputs, outputs);
 			inputs = new HashMap<>();
-			inputs.put("x", generateNonRandomInputMatrix(spark, N, T*D));
-			inputs.put("w", generateNonRandomInputMatrix(spark, D+M, 4*M));
-			inputs.put("b", generateNonRandomInputMatrix(spark, 1, 4*M));
-			inputs.put("out0", generateNonRandomInputMatrix(spark, N, M));
-			inputs.put("c0", generateNonRandomInputMatrix(spark, N, M));
+			inputs.put("x", generateInputMatrix(spark, N, T*D, 0, 10, sparsity, seed));
+			inputs.put("w", generateInputMatrix(spark, D+M, 4*M, 0, 10, sparsity, seed));
+			inputs.put("b", generateInputMatrix(spark, 1, 4*M, 0, 10, sparsity, seed));
+			inputs.put("out0", generateInputMatrix(spark, N, M, 0, 10, sparsity, seed));
+			inputs.put("c0", generateInputMatrix(spark, N, M, 0, 10, sparsity, seed));
 			DnnGPUInstruction.FORCED_LSTM_OP = LstmOperator.DENSE_NN;
 			outGPUWithNN = runOnGPU(spark, scriptStr, inputs, outputs);
 		}
