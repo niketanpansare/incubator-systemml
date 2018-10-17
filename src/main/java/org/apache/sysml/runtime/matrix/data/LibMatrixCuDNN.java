@@ -865,6 +865,13 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			Pointer out, Pointer c,  // output matrices
 			Pointer cache_out, Pointer cache_c, Pointer cache_ifog, // temporary workspace passed to the backward function
 			long N, long M, long D, long T) throws DMLRuntimeException {
+		if( !(cache_out == null && cache_c == null && cache_ifog == null) ||
+			!(cache_out != null && cache_c != null && cache_ifog != null)) {
+			throw new DMLRuntimeException("Either all cache pointers should be null or all should be not null");
+		}
+		
+		boolean skipCache = (cache_out == null);
+		
 		// out_prev = out0
 		Pointer out_prev = copy(gCtx, instName, out0, N*M);
 		// c_prev = c0
@@ -918,13 +925,22 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			// c_prev = c
 			// cache_out[t,] = matrix(out_t, rows=1, cols=N*M)
 			// cache_c[t,] = matrix(c, rows=1, cols=N*M)
-			getCudaKernels(gCtx).launchKernel("postProcessNNLstmForward",
-					ExecutionConfig.getConfigForSimpleVectorOperations(toInt(N*M)),
-				ifog, c,  out_prev, c_prev, out, cache_out, cache_c,
-				return_sequences ? 1 : 0, t-1, toInt(T), toInt(M), toInt(N*M));
+			if(skipCache) {
+				getCudaKernels(gCtx).launchKernel("postProcessNNLstmForwardSkipCache",
+						ExecutionConfig.getConfigForSimpleVectorOperations(toInt(N*M)),
+					ifog, c,  out_prev, c_prev, out, cache_out, cache_c,
+					return_sequences ? 1 : 0, t-1, toInt(T), toInt(M), toInt(N*M));
+			}
+			else {
+				getCudaKernels(gCtx).launchKernel("postProcessNNLstmForward",
+						ExecutionConfig.getConfigForSimpleVectorOperations(toInt(N*M)),
+					ifog, c,  out_prev, c_prev, out, cache_out, cache_c,
+					return_sequences ? 1 : 0, t-1, toInt(T), toInt(M), toInt(N*M));
+			}
 			
 			// cache_ifog[t,] = matrix(ifog, rows=1, cols=N*4*M)  # reshape
-			cudaMemcpy(cache_ifog.withByteOffset((t-1)*N*4*M*sizeOfDataType), ifog, N*4*M*sizeOfDataType, cudaMemcpyDeviceToDevice);
+			if(!skipCache)
+				cudaMemcpy(cache_ifog.withByteOffset((t-1)*N*4*M*sizeOfDataType), ifog, N*4*M*sizeOfDataType, cudaMemcpyDeviceToDevice);
 			
 		}
 		

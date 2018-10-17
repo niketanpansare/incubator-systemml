@@ -662,6 +662,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 	private void processLstmBackwardInstruction(ExecutionContext ec) throws DMLRuntimeException {
 		MatrixObject out0 = getMatrixInputForGPUInstruction(ec, _input4.getName());
 		long M = out0.getNumColumns(); // hiddenSize .. since out0: (N, M)
+		long N1 = out0.getNumRows();
 		Pointer out0Pointer =  LibMatrixCUDA.getDensePointer(gCtx, out0, instName);
 		
 		MatrixObject W = getMatrixInputForGPUInstruction(ec, _input2.getName());
@@ -683,11 +684,20 @@ public class DnnGPUInstruction extends GPUInstruction {
 		String dcxName = _output5.getName();
 		String doutName = _input7.getName();
 		String dcyName = _input8.getName();
-			
-//		if(gCtx.getMemoryManager().canAllocate(instName, (long)memRequired)) {
-//			
-//		}
-//		else {
+		
+		long memRequired = getMemRequiredForCuDNNLSTMBackward(N, T, M, D, return_sequences);
+		
+		boolean isWSparse = LibMatrixCUDA.isInSparseFormat(gCtx, W);
+		
+		if(N != N1) {
+			throw new DMLRuntimeException("Unsupported operation: The batch size of previous iteration " + N1 + 
+					" is different than the batch size of current iteration " + N);
+		}
+		
+		if(FORCED_LSTM_OP == LstmOperator.CUDNN || 
+			(!isWSparse && // Don't use CuDNN kernel when w is sparse.
+			// When an operator is not forced, then prefer CuDNN kernel if it can fit in the GPU memory
+			FORCED_LSTM_OP == LstmOperator.NONE && gCtx.getMemoryManager().canAllocate(instName, memRequired))) {
 			// Use CuDNN LSTM kernel
 			Pointer sysmlWPointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, W, instName, D+M, 4*M);
 			Pointer sysmlBiasPointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, bias, instName, 1, 4*M);
@@ -710,7 +720,35 @@ public class DnnGPUInstruction extends GPUInstruction {
 					return_sequences, N, M, D, T);
 			gCtx.cudaFreeHelper(instName, cudnnWPointer, gCtx.EAGER_CUDA_FREE);
 			gCtx.cudaFreeHelper(instName, cudnnInput, gCtx.EAGER_CUDA_FREE);
-		// }
+		}
+		else {
+			Pointer sysmlBiasPointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, bias, instName, 1, 4*M);
+			Pointer xPointer = LibMatrixCUDA.getDensePointer(gCtx, X, instName); 
+			Pointer c0Pointer = LibMatrixCUDA.getDensePointer(gCtx, getMatrixInputForGPUInstruction(ec, _input5.getName()), instName);
+			Pointer sysmlYPointer = LibMatrixCuDNN.getDenseOutputPointer(ec, gCtx, instName, _output.getName(), N, 
+					return_sequences ? (T*M) : M);
+			Pointer cyPointer = LibMatrixCuDNN.getDenseOutputPointer(ec, gCtx, instName,  _output2.getName(), N, M);
+			
+			// Donot skip cache as it is required in the backward pass
+			Pointer cache_out = gCtx.allocate(instName, T*N*M*LibMatrixCUDA.sizeOfDataType);
+			Pointer cache_c = gCtx.allocate(instName, T*N*M*LibMatrixCUDA.sizeOfDataType);
+			Pointer cache_ifog = gCtx.allocate(instName, T*N*4*M*LibMatrixCUDA.sizeOfDataType);
+			
+			LibMatrixCuDNN.nnLstm(ec, gCtx, instName, xPointer, W, sysmlBiasPointer, out0Pointer, 
+					c0Pointer, return_sequences, sysmlYPointer, cyPointer, 
+					cache_out, cache_c, cache_ifog, 
+					N, M,  D, T);
+			
+			// TODO:
+			
+			gCtx.cudaFreeHelper(instName, cache_out, gCtx.EAGER_CUDA_FREE);
+			gCtx.cudaFreeHelper(instName, cache_c, gCtx.EAGER_CUDA_FREE);
+			gCtx.cudaFreeHelper(instName, cache_ifog, gCtx.EAGER_CUDA_FREE);
+			ec.releaseMatrixInputForGPUInstruction(_input1.getName());
+			ec.releaseMatrixInputForGPUInstruction(_input2.getName()); // W
+			ec.releaseMatrixInputForGPUInstruction(_input3.getName()); // bias
+			
+		}
 		
 		// release inputs/outputs
 		ec.releaseMatrixInputForGPUInstruction(_input4.getName());
@@ -725,6 +763,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 		// out: (N, T*M) or (N, M) ==> (T, M, N)
 		MatrixObject out0 = getMatrixInputForGPUInstruction(ec, _input4.getName());
 		long M = out0.getNumColumns(); // hiddenSize .. since out0: (N, M)
+		long N1 = out0.getNumRows();
 		Pointer out0Pointer =  LibMatrixCUDA.getDensePointer(gCtx, out0, instName);
 		
 		MatrixObject W = getMatrixInputForGPUInstruction(ec, _input2.getName());
@@ -740,6 +779,11 @@ public class DnnGPUInstruction extends GPUInstruction {
 		long memRequired = getMemRequiredForCuDNNLSTMBackward(N, T, M, D, return_sequences);
 		
 		boolean isWSparse = LibMatrixCUDA.isInSparseFormat(gCtx, W);
+		
+		if(N != N1) {
+			throw new DMLRuntimeException("Unsupported operation: The batch size of previous iteration " + N1 + 
+					" is different than the batch size of current iteration " + N);
+		}
 		
 		if(FORCED_LSTM_OP == LstmOperator.CUDNN || 
 			(!isWSparse && // Don't use CuDNN kernel when w is sparse.
@@ -774,18 +818,19 @@ public class DnnGPUInstruction extends GPUInstruction {
 					return_sequences ? (T*M) : M);
 			Pointer cyPointer = LibMatrixCuDNN.getDenseOutputPointer(ec, gCtx, instName,  _output2.getName(), N, M);
 			
-			Pointer cache_out = gCtx.allocate(instName, T*N*M*LibMatrixCUDA.sizeOfDataType);
-			Pointer cache_c = gCtx.allocate(instName, T*N*M*LibMatrixCUDA.sizeOfDataType);
-			Pointer cache_ifog = gCtx.allocate(instName, T*N*4*M*LibMatrixCUDA.sizeOfDataType);
+			// Skip cache in forward for now. We can revisit this when we add stateful operators.
+			Pointer cache_out = null; // gCtx.allocate(instName, T*N*M*LibMatrixCUDA.sizeOfDataType);
+			Pointer cache_c = null;  // gCtx.allocate(instName, T*N*M*LibMatrixCUDA.sizeOfDataType);
+			Pointer cache_ifog = null; // gCtx.allocate(instName, T*N*4*M*LibMatrixCUDA.sizeOfDataType);
 			
 			LibMatrixCuDNN.nnLstm(ec, gCtx, instName, xPointer, W, sysmlBiasPointer, out0Pointer, 
 					c0Pointer, return_sequences, sysmlYPointer, cyPointer, 
 					cache_out, cache_c, cache_ifog, 
 					N, M,  D, T);
 			
-			gCtx.cudaFreeHelper(instName, cache_out, gCtx.EAGER_CUDA_FREE);
-			gCtx.cudaFreeHelper(instName, cache_c, gCtx.EAGER_CUDA_FREE);
-			gCtx.cudaFreeHelper(instName, cache_ifog, gCtx.EAGER_CUDA_FREE);
+			// gCtx.cudaFreeHelper(instName, cache_out, gCtx.EAGER_CUDA_FREE);
+			// gCtx.cudaFreeHelper(instName, cache_c, gCtx.EAGER_CUDA_FREE);
+			// gCtx.cudaFreeHelper(instName, cache_ifog, gCtx.EAGER_CUDA_FREE);
 			ec.releaseMatrixInputForGPUInstruction(_input1.getName());
 			ec.releaseMatrixInputForGPUInstruction(_input2.getName()); // W
 			ec.releaseMatrixInputForGPUInstruction(_input3.getName()); // bias
