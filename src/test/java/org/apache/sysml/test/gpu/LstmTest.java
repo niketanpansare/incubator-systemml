@@ -46,39 +46,49 @@ public class LstmTest extends GPUTests {
 
 	@Test
 	public void testLstmForward1() {
-		testLstmCuDNNWithNN(1, 1, 1, 1, "TRUE");
+		testLstmCuDNNWithNN(1, 1, 1, 1, "TRUE", 0.9);
 	}
 	
 	@Test
 	public void testLstmForward2() {
-		testLstmCuDNNWithNN(1, 1, 1, 1, "FALSE");
+		testLstmCuDNNWithNN(1, 1, 1, 1, "FALSE", 0.9);
 	}
 	
 	@Test
 	public void testLstmForward3() {
-		testLstmCuDNNWithNN(2, 3, 5, 10, "TRUE");
+		testLstmCuDNNWithNN(20, 13, 50, 10, "TRUE", 0.9);
 	}
 	
 	@Test
 	public void testLstmForward4() {
-		testLstmCuDNNWithNN(2, 3, 5, 10, "FALSE");
+		testLstmCuDNNWithNN(20, 13, 50, 10, "FALSE", 0.9);
 	}
 	
 	@Test
 	public void testLstmForward5() {
-		testLstmCuDNNWithNN(1, 3, 5, 1, "TRUE");
+		testLstmCuDNNWithNN(1, 3, 5, 1, "TRUE", 0.9);
 	}
 	
 	@Test
 	public void testLstmForward6() {
-		testLstmCuDNNWithNN(1, 3, 5, 1, "FALSE");
+		testLstmCuDNNWithNN(1, 3, 5, 1, "FALSE", 0.9);
 	}
 	
-	public void testLstmCuDNNWithNN(int N, int T, int D, int M, String returnSequences) {
+	@Test
+	public void testLstmForward7() {
+		testLstmCuDNNWithNN(20, 13, 50, 10, "TRUE", 0.1);
+	}
+	
+	@Test
+	public void testLstmForward8() {
+		testLstmCuDNNWithNN(20, 13, 50, 10, "FALSE", 0.1);
+	}
+	
+	
+	public void testLstmCuDNNWithNN(int N, int T, int D, int M, String returnSequences, double sparsity) {
 		String scriptStr = "source(\"nn/layers/lstm_staging.dml\") as lstm;\n "
 				+ "[output, c] = lstm::forward(x, w, b, " + returnSequences + ", out0, c0)";
 		
-		double sparsity = 0.9;
 		HashMap<String, Object> inputs = new HashMap<>();
 		inputs.put("x", generateInputMatrix(spark, N, T*D, 0, 10, sparsity, seed));
 		inputs.put("w", generateInputMatrix(spark, D+M, 4*M, 0, 10, sparsity, seed));

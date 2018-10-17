@@ -861,7 +861,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	}
 	
 	public static void nnLstm(ExecutionContext ec, GPUContext gCtx, String instName,
-			Pointer X,  Pointer W, Pointer b, Pointer out0, Pointer c0, boolean return_sequences,
+			Pointer X,  MatrixObject W, Pointer b, Pointer out0, Pointer c0, boolean return_sequences,
 			Pointer out, Pointer c,  // output matrices
 			Pointer cache_out, Pointer cache_c, Pointer cache_ifog, // temporary workspace passed to the backward function
 			long N, long M, long D, long T) throws DMLRuntimeException {
@@ -875,6 +875,15 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		Pointer input = gCtx.allocate(instName, N*(D+M)*sizeOfDataType);
 		Pointer ifog = gCtx.allocate(instName, N*4*M*sizeOfDataType);
 		
+		
+		boolean isWSparse = isInSparseFormat(gCtx, W);
+		CSRPointer wSparsePointer = null;
+		Pointer wDensePointer = null;
+		if(isWSparse)
+			wSparsePointer = W.getGPUObject(gCtx).getJcudaSparseMatrixPtr();
+		else
+			wDensePointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, W, instName, D+M, 4*M);
+		
 		for(int t = 1; t <= T; t++) {
 			// X_t = X[,(t-1)*D+1:t*D]  # shape (N, D)
 			// input = cbind(X_t, out_prev)  # shape (N, D+M)
@@ -885,7 +894,10 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			// ifog = input %*% W
 			CuMatMultParameters param = new CuMatMultParameters(N, D+M,
 					D+M, 4*M, false, false);
-			LibMatrixCuMatMult.denseDenseMatMult(gCtx.getCublasHandle(), instName, ifog, input, W, param);
+			if(isWSparse)
+				LibMatrixCuMatMult.denseSparseMatMult(gCtx.getCusparseHandle(), instName, ifog, input, wSparsePointer, param);
+			else
+				LibMatrixCuMatMult.denseDenseMatMult(gCtx.getCublasHandle(), instName, ifog, input, wDensePointer, param);
 			
 			// ifog = ifog + b
 			// ifog[,1:3*M] = sigmoid::forward(ifog[,1:3*M])  # i,f,o gates squashed with sigmoid

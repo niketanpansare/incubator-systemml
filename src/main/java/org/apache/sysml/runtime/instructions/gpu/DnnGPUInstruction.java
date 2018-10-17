@@ -764,7 +764,6 @@ public class DnnGPUInstruction extends GPUInstruction {
 			gCtx.cudaFreeHelper(instName, cudnnInput, gCtx.EAGER_CUDA_FREE);
 		}
 		else {
-			Pointer sysmlWPointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, W, instName, D+M, 4*M);
 			Pointer sysmlBiasPointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, bias, instName, 1, 4*M);
 			Pointer xPointer = LibMatrixCUDA.getDensePointer(gCtx, X, instName); 
 			Pointer c0Pointer = LibMatrixCUDA.getDensePointer(gCtx, getMatrixInputForGPUInstruction(ec, _input5.getName()), instName);
@@ -776,7 +775,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 			Pointer cache_c = gCtx.allocate(instName, T*N*M*LibMatrixCUDA.sizeOfDataType);
 			Pointer cache_ifog = gCtx.allocate(instName, T*N*4*M*LibMatrixCUDA.sizeOfDataType);
 			
-			LibMatrixCuDNN.nnLstm(ec, gCtx, instName, xPointer, sysmlWPointer, sysmlBiasPointer, out0Pointer, 
+			LibMatrixCuDNN.nnLstm(ec, gCtx, instName, xPointer, W, sysmlBiasPointer, out0Pointer, 
 					c0Pointer, return_sequences, sysmlYPointer, cyPointer, 
 					cache_out, cache_c, cache_ifog, 
 					N, M,  D, T);
