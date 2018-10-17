@@ -847,7 +847,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		}
 	}
 	
-	static Pointer getDenseInputPointer(ExecutionContext ec, GPUContext gCtx, String instName, String inputName,
+	public static Pointer getDenseInputPointer(ExecutionContext ec, GPUContext gCtx, String instName, String inputName,
 			long numRows, long numCols) throws DMLRuntimeException {
 		MatrixObject output = ec.getMatrixInputForGPUInstruction(inputName, instName);
 		return LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, output, instName, numRows, numCols);
@@ -858,6 +858,15 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		MatrixObject output = ec.getMatrixObject(outputName);
 		getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, numRows, numCols); // Allocated the dense output matrix
 		return getDensePointerForCuDNN(gCtx, output, instName, numRows, numCols);
+	}
+	
+	public static void nnLstmBackward(ExecutionContext ec, GPUContext gCtx, String instName,
+			Pointer xPointer, Pointer out0Pointer, Pointer c0Pointer, MatrixObject W, Pointer doutPointer, Pointer dcyPointer,  // input
+			Pointer cache_out, Pointer cache_c, Pointer cache_ifog,
+			Pointer dxPointer, Pointer dwPointer, Pointer dbPointer, Pointer dhxPointer, Pointer dcxPointer,  	// output
+			boolean return_sequences, long N, long M, long D, long T) throws DMLRuntimeException {
+		// TODO:
+		
 	}
 	
 	public static void nnLstm(ExecutionContext ec, GPUContext gCtx, String instName,

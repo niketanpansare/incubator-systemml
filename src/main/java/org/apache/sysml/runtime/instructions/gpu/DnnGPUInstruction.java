@@ -729,6 +729,15 @@ public class DnnGPUInstruction extends GPUInstruction {
 					return_sequences ? (T*M) : M);
 			Pointer cyPointer = LibMatrixCuDNN.getDenseOutputPointer(ec, gCtx, instName,  _output2.getName(), N, M);
 			
+			Pointer doutPointer = LibMatrixCuDNN.getDenseInputPointer(ec, gCtx, instName, doutName, N, return_sequences ? T*M : M);
+			Pointer dcyPointer = LibMatrixCuDNN.getDenseInputPointer(ec, gCtx, instName, dcyName, N, M);
+			
+			Pointer dxPointer = LibMatrixCuDNN.getDenseOutputPointer(ec, gCtx, instName, dxName, N, T*D);
+			Pointer dwPointer = LibMatrixCuDNN.getDenseOutputPointer(ec, gCtx, instName, dwName, D+M, 4*M);
+			Pointer dbPointer = LibMatrixCuDNN.getDenseOutputPointer(ec, gCtx, instName, dbName, 1, 4*M);
+			Pointer dhxPointer = LibMatrixCuDNN.getDenseOutputPointer(ec, gCtx, instName, dhxName, N, M);
+			Pointer dcxPointer = LibMatrixCuDNN.getDenseOutputPointer(ec, gCtx, instName, dcxName, N, M);
+			
 			// Donot skip cache as it is required in the backward pass
 			Pointer cache_out = gCtx.allocate(instName, T*N*M*LibMatrixCUDA.sizeOfDataType);
 			Pointer cache_c = gCtx.allocate(instName, T*N*M*LibMatrixCUDA.sizeOfDataType);
@@ -739,7 +748,11 @@ public class DnnGPUInstruction extends GPUInstruction {
 					cache_out, cache_c, cache_ifog, 
 					N, M,  D, T);
 			
-			// TODO:
+			LibMatrixCuDNN.nnLstmBackward(ec, gCtx, instName,
+					xPointer, out0Pointer, c0Pointer, W, doutPointer, dcyPointer,  // input
+					cache_out, cache_c, cache_ifog,
+					dxPointer, dwPointer, dbPointer, dhxPointer, dcxPointer,  	// output
+					return_sequences, N, M, D, T);
 			
 			gCtx.cudaFreeHelper(instName, cache_out, gCtx.EAGER_CUDA_FREE);
 			gCtx.cudaFreeHelper(instName, cache_c, gCtx.EAGER_CUDA_FREE);
@@ -747,6 +760,13 @@ public class DnnGPUInstruction extends GPUInstruction {
 			ec.releaseMatrixInputForGPUInstruction(_input1.getName());
 			ec.releaseMatrixInputForGPUInstruction(_input2.getName()); // W
 			ec.releaseMatrixInputForGPUInstruction(_input3.getName()); // bias
+			ec.releaseMatrixInputForGPUInstruction(doutName);
+			ec.releaseMatrixInputForGPUInstruction(dcyName);
+			ec.releaseMatrixOutputForGPUInstruction(dxName);
+			ec.releaseMatrixOutputForGPUInstruction(dwName);
+			ec.releaseMatrixOutputForGPUInstruction(dbName);
+			ec.releaseMatrixOutputForGPUInstruction(dhxName);
+			ec.releaseMatrixOutputForGPUInstruction(dcxName);
 			
 		}
 		
