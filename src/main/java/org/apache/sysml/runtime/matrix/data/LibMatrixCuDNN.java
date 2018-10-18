@@ -950,12 +950,16 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			LibMatrixCuMatMult.denseDenseMatMult(gCtx.getCublasHandle(), instName, dW, input, difog_raw, param1);
 			
 			// dinput = difog_raw %*% t(W)  # shape (N, D+M)
-			if(wSparsePointer != null)
-				LibMatrixCuMatMult.denseSparseMatMult(gCtx.getCusparseHandle(), instName, dinput, difog_raw, wSparsePointer, param2);
+			if(isWSparse) {
+				if(wSparsePointer.nnz == 0) {
+					cudaMemset(dinput, 0, N*(D+M)*sizeOfDataType);
+				}
+				else {
+					LibMatrixCuMatMult.denseSparseMatMult(gCtx.getCusparseHandle(), instName, dinput, difog_raw, wSparsePointer, param2);
+				}
+			}
 			else
 				LibMatrixCuMatMult.denseDenseMatMult(gCtx.getCublasHandle(), instName, dinput, difog_raw, wDensePointer, param2);
-			
-			// jcuda.runtime.JCuda.cudaDeviceSynchronize();
 			
 			// db = db + colSums(difog_raw)  # shape (1, 4M)
 			reduceCol(gCtx, instName, "reduce_col_sum", difog_raw, tmpDb, 1, toInt(4*M));
@@ -1023,8 +1027,14 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			// ifog = input %*% W
 			CuMatMultParameters param = new CuMatMultParameters(N, D+M,
 					D+M, 4*M, false, false);
-			if(isWSparse)
-				LibMatrixCuMatMult.denseSparseMatMult(gCtx.getCusparseHandle(), instName, ifog, input, wSparsePointer, param);
+			if(isWSparse) {
+				if(wSparsePointer.nnz == 0) {
+					cudaMemset(ifog, 0, N*4*M*sizeOfDataType);
+				}
+				else {
+					LibMatrixCuMatMult.denseSparseMatMult(gCtx.getCusparseHandle(), instName, ifog, input, wSparsePointer, param);
+				}
+			}
 			else
 				LibMatrixCuMatMult.denseDenseMatMult(gCtx.getCublasHandle(), instName, ifog, input, wDensePointer, param);
 			
