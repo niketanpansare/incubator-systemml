@@ -208,8 +208,8 @@ public class LstmTest extends GPUTests {
 				+ "[dX, dW, db, dout0, dc0] = lstm::backward(dout, dc, x, w, b, " + returnSequences + ", out0, c0);";
 		
 		HashMap<String, Object> inputs = new HashMap<>();
-		inputs.put("dout", generateInputMatrix(spark, N, returnSequences1 ? T*M : M, 0, 2, sparsity, seed));
-		inputs.put("dc", generateInputMatrix(spark, N, M, 0, 2, sparsity, seed));
+		inputs.put("dout", generateInputMatrix(spark, N, returnSequences1 ? T*M : M, 0, 10, sparsity, seed));
+		inputs.put("dc", generateInputMatrix(spark, N, M, 0, 10, sparsity, seed));
 		inputs.put("x", generateInputMatrix(spark, N, T*D, 0, 10, sparsity, seed));
 		inputs.put("w", generateInputMatrix(spark, D+M, 4*M, 0, 10, sparsity, seed));
 		inputs.put("b", generateInputMatrix(spark, 1, 4*M, 0, 10, sparsity, seed));
@@ -223,8 +223,8 @@ public class LstmTest extends GPUTests {
 				DnnGPUInstruction.FORCED_LSTM_OP = LstmOperator.CUDNN;
 				outGPUWithCuDNN = runOnGPU(spark, scriptStr, inputs, outputs);
 				inputs = new HashMap<>();
-				inputs.put("dout", generateInputMatrix(spark, N, returnSequences1 ? T*M : M, 0, 2, sparsity, seed));
-				inputs.put("dc", generateInputMatrix(spark, N, M, 0, 2, sparsity, seed));
+				inputs.put("dout", generateInputMatrix(spark, N, returnSequences1 ? T*M : M, 0, 10, sparsity, seed));
+				inputs.put("dc", generateInputMatrix(spark, N, M, 0, 10, sparsity, seed));
 				inputs.put("x", generateInputMatrix(spark, N, T*D, 0, 10, sparsity, seed));
 				inputs.put("w", generateInputMatrix(spark, D+M, 4*M, 0, 10, sparsity, seed));
 				inputs.put("b", generateInputMatrix(spark, 1, 4*M, 0, 10, sparsity, seed));
