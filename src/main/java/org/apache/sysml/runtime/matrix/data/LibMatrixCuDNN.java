@@ -861,12 +861,92 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	}
 	
 	public static void nnLstmBackward(ExecutionContext ec, GPUContext gCtx, String instName,
-			Pointer xPointer, Pointer out0Pointer, Pointer c0Pointer, MatrixObject W, Pointer doutPointer, Pointer dcyPointer,  // input
+			Pointer X, Pointer out0, Pointer c0, MatrixObject W, Pointer dout, Pointer dcy,  // input
 			Pointer cache_out, Pointer cache_c, Pointer cache_ifog,
-			Pointer dxPointer, Pointer dwPointer, Pointer dbPointer, Pointer dhxPointer, Pointer dcxPointer,  	// output
+			Pointer dx, Pointer dw, Pointer db, Pointer dhx, Pointer dcx,  	// output
 			boolean return_sequences, long N, long M, long D, long T) throws DMLRuntimeException {
-		// TODO:
-		
+		Pointer out_prev = gCtx.allocate(instName, N*M);
+		Pointer c_prev = gCtx.allocate(instName, N*M);
+		Pointer dout_t = gCtx.allocate(instName, N*M);
+		Pointer input = gCtx.allocate(instName, N*(D+M)*sizeOfDataType);
+				
+		for(long t = T; t >= 1; t--) {
+			if (t == 1) {
+				// out_prev = out0  # shape (N, M)
+				// c_prev = c0  # shape (N, M)
+				cudaMemcpy(out_prev, out0, N*M*sizeOfDataType, cudaMemcpyDeviceToDevice);
+				cudaMemcpy(c_prev, c0, N*M*sizeOfDataType, cudaMemcpyDeviceToDevice);
+			}
+			else {
+				// out_prev = matrix(cache_out[t-1,], rows=N, cols=M)  # shape (N, M)
+				// c_prev = matrix(cache_c[t-1,], rows=N, cols=M)  # shape (N, M)
+				cudaMemcpy(out_prev, cache_out.withByteOffset((t-1)*N*M*sizeOfDataType), N*M*sizeOfDataType, cudaMemcpyDeviceToDevice);
+				cudaMemcpy(c_prev, cache_c.withByteOffset((t-1)*N*M*sizeOfDataType), N*M*sizeOfDataType, cudaMemcpyDeviceToDevice);
+			}
+			
+			// X_t = X[,(t-1)*D+1:t*D]  # shape (N, D)
+			// input = cbind(X_t, out_prev)  # shape (N, D+M)
+			getCudaKernels(gCtx).launchKernel("prepareInputNNLstm",
+					ExecutionConfig.getConfigForSimpleVectorOperations(toInt(N*(D+M))),
+					X, out_prev, input, (t-1), toInt(M), toInt(D), toInt(T*D), toInt(D+M), toInt(N*(D+M)));
+			
+			// dout_t = dout[,(t-1)*M+1:t*M]  # shape (N, M)
+			if(return_sequences) {
+				// TODO: column indexing
+			}
+			else {
+				// Since we avoided prepending empty douts for all other timesteps
+				if(t == T)
+					cudaMemcpy(dout_t, dout, N*M*sizeOfDataType, cudaMemcpyDeviceToDevice);
+				else 
+					cudaMemset(dout_t, 0, N*M*sizeOfDataType);
+			}
+				
+			// Not required:
+			// out_t = matrix(cache_out[t,], rows=N, cols=M)  # shape (N, M)
+			// Pointer out_t = cache_out.withByteOffset((t-1)*N*M*sizeOfDataType); // since read-only
+			
+			// ct = matrix(cache_c[t,], rows=N, cols=M)  # shape (N, M)
+			Pointer ct = cache_c.withByteOffset((t-1)*N*M*sizeOfDataType); // since read-only
+			
+			// ifog = matrix(cache_ifog[t,], rows=N, cols=4*M)
+			Pointer ifog = cache_ifog.withByteOffset((t-1)*N*4*M*sizeOfDataType); // since read-only
+			
+			// i = ifog[,1:M]  # input gate, shape (N, M)
+			// f = ifog[,M+1:2*M]  # forget gate, shape (N, M)
+			// o = ifog[,2*M+1:3*M]  # output gate, shape (N, M)
+			// g = ifog[,3*M+1:4*M]  # g gate, shape (N, M)
+			// dct = dct + o*tanh::backward(dout_t, ct)  # shape (N, M)
+			// do = tanh::forward(ct) * dout_t  # output gate, shape (N, M)
+			// df = c_prev * dct  # forget gate, shape (N, M)
+			// dc_prev = f * dct  # shape (N, M)
+			// di = g * dct  # input gate, shape (N, M)
+			// dg = i * dct  # g gate, shape (N, M)
+
+			// di_raw = i * (1-i) * di
+			// df_raw = f * (1-f) * df
+			// do_raw = o * (1-o) * do
+			// dg_raw = (1-g^2) * dg
+			// difog_raw = cbind(di_raw, df_raw, do_raw, dg_raw)  # shape (N, 4M)
+
+			// dW = dW + t(input) %*% difog_raw  # shape (D+M, 4M)
+			// db = db + colSums(difog_raw)  # shape (1, 4M)
+			// dinput = difog_raw %*% t(W)  # shape (N, D+M)
+			// dX[,(t-1)*D+1:t*D] = dinput[,1:D]
+			// dout_prev = dinput[,D+1:D+M]  # shape (N, M)
+			
+			
+			if (t == 1) {
+				// dout0 = dout_prev  # shape (N, M)
+				// dc0 = dc_prev  # shape (N, M)
+				
+			}
+			else {
+				// dout[,(t-2)*M+1:(t-1)*M] = dout[,(t-2)*M+1:(t-1)*M] + dout_prev  # shape (N, M)
+				// dct = dc_prev  # shape (N, M)
+			}
+					
+		}
 	}
 	
 	public static void nnLstm(ExecutionContext ec, GPUContext gCtx, String instName,
