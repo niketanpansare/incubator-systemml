@@ -955,16 +955,21 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			else
 				LibMatrixCuMatMult.denseDenseMatMult(gCtx.getCublasHandle(), instName, dinput, difog_raw, wDensePointer, param2);
 			
+			// jcuda.runtime.JCuda.cudaDeviceSynchronize();
+			
 			// db = db + colSums(difog_raw)  # shape (1, 4M)
 			reduceCol(gCtx, instName, "reduce_col_sum", difog_raw, tmpDb, 1, toInt(4*M));
 			matrixMatrixOp(gCtx, instName, tmpDb, db, 1, toInt(4*M), VectorShape.NONE.code(), VectorShape.NONE.code(), db, 
 					new BinaryOperator(Plus.getPlusFnObject()));
 			
+			// jcuda.runtime.JCuda.cudaDeviceSynchronize();
+			
 			int size = toInt(Math.max(N*D, N*M));
 			getCudaKernels(gCtx).launchKernel("postProcessNNLstmBackward",
 					ExecutionConfig.getConfigForSimpleVectorOperations(size),
-					dinput, dout0, dout, dout_t, dX, return_sequences, t, N, D, M, 
+					dinput, dout0, dout, dout_t, dX, return_sequences ? 1 : 0, t, N, D, M, 
 					toInt(N*D), toInt(N*M), toInt(T*D), toInt(T*M), toInt(D+M), size);
+			
 		}
 		
 		gCtx.cudaFreeHelper(instName, out_prev, gCtx.EAGER_CUDA_FREE);
