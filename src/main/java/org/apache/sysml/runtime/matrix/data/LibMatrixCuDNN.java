@@ -889,13 +889,11 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		
 		CSRPointer wSparsePointer = null;
 		Pointer wDensePointer = null;
-		wDensePointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, W, instName, D+M, 4*M);
-		// TODO: Support sparse weight matrix
-//		boolean isWSparse = isInSparseFormat(gCtx, W);
-//		if(isWSparse)
-//			wSparsePointer = W.getGPUObject(gCtx).getJcudaSparseMatrixPtr();
-//		else
-//			wDensePointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, W, instName, D+M, 4*M);
+		boolean isWSparse = isInSparseFormat(gCtx, W);
+		if(isWSparse)
+			wSparsePointer = W.getGPUObject(gCtx).getJcudaSparseMatrixPtr();
+		else
+			wDensePointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, W, instName, D+M, 4*M);
 		
 		for(int t = toInt(T); t >= 1; t--) {
 			if (t == 1) {
