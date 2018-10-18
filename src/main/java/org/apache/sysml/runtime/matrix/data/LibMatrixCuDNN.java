@@ -887,13 +887,15 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		CuMatMultParameters param2 = new CuMatMultParameters(N, 4*M,
 				D+M, 4*M, false, true);
 		
-		boolean isWSparse = isInSparseFormat(gCtx, W);
 		CSRPointer wSparsePointer = null;
 		Pointer wDensePointer = null;
-		if(isWSparse)
-			wSparsePointer = W.getGPUObject(gCtx).getJcudaSparseMatrixPtr();
-		else
-			wDensePointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, W, instName, D+M, 4*M);
+		wDensePointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, W, instName, D+M, 4*M);
+		// TODO: Support sparse weight matrix
+//		boolean isWSparse = isInSparseFormat(gCtx, W);
+//		if(isWSparse)
+//			wSparsePointer = W.getGPUObject(gCtx).getJcudaSparseMatrixPtr();
+//		else
+//			wDensePointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, W, instName, D+M, 4*M);
 		
 		for(int t = toInt(T); t >= 1; t--) {
 			if (t == 1) {
@@ -950,7 +952,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			LibMatrixCuMatMult.denseDenseMatMult(gCtx.getCublasHandle(), instName, dW, input, difog_raw, param1);
 			
 			// dinput = difog_raw %*% t(W)  # shape (N, D+M)
-			if(isWSparse)
+			if(wSparsePointer != null)
 				LibMatrixCuMatMult.denseSparseMatMult(gCtx.getCusparseHandle(), instName, dinput, difog_raw, wSparsePointer, param2);
 			else
 				LibMatrixCuMatMult.denseDenseMatMult(gCtx.getCublasHandle(), instName, dinput, difog_raw, wDensePointer, param2);
