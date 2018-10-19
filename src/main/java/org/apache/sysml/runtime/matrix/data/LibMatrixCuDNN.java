@@ -867,7 +867,6 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			Pointer cache_out, Pointer cache_c, Pointer cache_ifog,
 			Pointer dX, Pointer dW, Pointer db, Pointer dout0, Pointer dc0,  	// output
 			boolean return_sequences, long N, long M, long D, long T) throws DMLRuntimeException {
-		Pointer out_prev = gCtx.allocate(instName, N*M*sizeOfDataType);
 		Pointer input = gCtx.allocate(instName, N*(D+M)*sizeOfDataType);
 		
 		Pointer difog_raw = gCtx.allocate(instName, N*4*M*sizeOfDataType);
@@ -902,25 +901,14 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		
 		
 		for(int t = toInt(T); t >= 1; t--) {
-			
-			if (t == 1) {
-				// out_prev = out0  # shape (N, M)
-				cudaMemcpy(out_prev, out0, N*M*sizeOfDataType, cudaMemcpyDeviceToDevice);
-			}
-			else {
-				// out_prev = matrix(cache_out[t-1,], rows=N, cols=M)  # shape (N, M)
-				cudaMemcpy(out_prev, cache_out.withByteOffset((t-1)*N*M*sizeOfDataType), N*M*sizeOfDataType, cudaMemcpyDeviceToDevice);
-			}
+			// if (t == 1) { out_prev = out0; } else { out_prev = matrix(cache_out[t-1,], rows=N, cols=M) }
+			Pointer out_prev = (t == 1) ? out0 : cache_out.withByteOffset((t-1)*N*M*sizeOfDataType); // since read-only
 			
 			// X_t = X[,(t-1)*D+1:t*D]  # shape (N, D)
 			// input = cbind(X_t, out_prev)  # shape (N, D+M)
 			getCudaKernels(gCtx).launchKernel("prepareInputNNLstm",
 					ExecutionConfig.getConfigForSimpleVectorOperations(toInt(N*(D+M))),
 					X, out_prev, input, (t-1), toInt(M), toInt(D), toInt(T*D), toInt(D+M), toInt(N*(D+M)));
-				
-			// Not required:
-			// out_t = matrix(cache_out[t,], rows=N, cols=M)  # shape (N, M)
-			// Pointer out_t = cache_out.withByteOffset((t-1)*N*M*sizeOfDataType); // since read-only
 			
 			// ct = matrix(cache_c[t,], rows=N, cols=M)  # shape (N, M)
 			Pointer ct = cache_c.withByteOffset((t-1)*N*M*sizeOfDataType); // since read-only
@@ -981,7 +969,6 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			
 		}
 		
-		gCtx.cudaFreeHelper(instName, out_prev, gCtx.EAGER_CUDA_FREE);
 		gCtx.cudaFreeHelper(instName, dout_t, gCtx.EAGER_CUDA_FREE);
 		gCtx.cudaFreeHelper(instName, input, gCtx.EAGER_CUDA_FREE);
 		gCtx.cudaFreeHelper(instName, difog_raw, gCtx.EAGER_CUDA_FREE);
