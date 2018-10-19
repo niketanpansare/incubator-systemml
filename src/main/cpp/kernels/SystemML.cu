@@ -2693,15 +2693,15 @@ __device__ void postProcessNNLstmBackward(T *dinput, T *dout0, T* dout, T * dout
   	T dout_prev = dinput[n*DPlusM + D + m];
   	if(t == 0) {
   		// dout0 = dout_prev
-  		dout0[n*M + m] = dout_prev;
+  		dout0[index] = dout_prev;
   	}
   	else if(return_sequences != 0) {
   		// dout_t =  dout[,(t-2)*M+1:(t-1)*M] + dout_prev
-  		dout_t[n*M + m] = dout[n*TM + (t-1)*M + m] + dout_prev;
+  		dout_t[index] = dout[n*TM + (t-1)*M + m] + dout_prev;
   	}
   	else {
   		// dout_t = dout_prev
-  		dout_t[n*M + m] = dout_prev;
+  		dout_t[index] = dout_prev;
   	}
   }
 }

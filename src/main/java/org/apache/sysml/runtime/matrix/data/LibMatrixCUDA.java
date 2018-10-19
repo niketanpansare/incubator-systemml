@@ -227,6 +227,23 @@ public class LibMatrixCUDA {
 				A, ret, numElems);
 		return ret;
 	}
+	
+	public static void printPointerForDebugging(Pointer ptr, int rows, int cols, String matName) {
+		if(sizeOfDataType == jcuda.Sizeof.DOUBLE) {
+			double[] devData = new double[rows*cols];
+			cudaMemcpy(Pointer.to(devData), ptr, rows*cols*sizeOfDataType, jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost);
+			System.out.println(matName + ":");
+			for(int i = 0; i < rows; i++) {
+				for(int j = 0; j < cols; j++) {
+					System.out.print(devData[i] + " ");
+				}
+				System.out.println();
+			}
+		}
+		else {
+			throw new DMLRuntimeException("The method printPointerForDebugging is only supported for double precision.");
+		}
+	}
 
 	//********************************************************************/
 	//************************ End of UTILS ******************************/
