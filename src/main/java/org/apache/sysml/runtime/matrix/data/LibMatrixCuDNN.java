@@ -863,7 +863,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	}
 	
 	public static void nnLstmBackward(ExecutionContext ec, GPUContext gCtx, String instName,
-			Pointer X, Pointer out0, Pointer c0, MatrixObject W, Pointer dout, Pointer dcy,  // input
+			Pointer X, Pointer out0, Pointer c0, MatrixObject W, Pointer dout, Pointer dc,  // input
 			Pointer cache_out, Pointer cache_c, Pointer cache_ifog,
 			Pointer dX, Pointer dW, Pointer db, Pointer dout0, Pointer dc0,  	// output
 			boolean return_sequences, long N, long M, long D, long T) throws DMLRuntimeException {
@@ -873,7 +873,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		Pointer input = gCtx.allocate(instName, N*(D+M)*sizeOfDataType);
 		
 		Pointer difog_raw = gCtx.allocate(instName, N*4*M*sizeOfDataType);
-		Pointer dct = gCtx.allocate(instName, N*M*sizeOfDataType);
+		Pointer dct = copy(gCtx, instName, dc, N*M);
 		
 		Pointer dinput = gCtx.allocate(instName, N*(D+M)*sizeOfDataType); // (N, D+M)
 		
