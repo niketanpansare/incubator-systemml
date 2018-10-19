@@ -230,6 +230,7 @@ public class LibMatrixCUDA {
 	
 	public static void printPointerForDebugging(Pointer ptr, int rows, int cols, String matName) {
 		if(sizeOfDataType == jcuda.Sizeof.DOUBLE) {
+			jcuda.runtime.JCuda.cudaDeviceSynchronize();
 			double[] devData = new double[rows*cols];
 			cudaMemcpy(Pointer.to(devData), ptr, rows*cols*sizeOfDataType, jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost);
 			System.out.println(matName + ":");
