@@ -752,6 +752,8 @@ public class DnnGPUInstruction extends GPUInstruction {
 			gCtx.cudaFreeHelper(instName, sysmlYPointer, gCtx.EAGER_CUDA_FREE);
 			gCtx.cudaFreeHelper(instName, cyPointer, gCtx.EAGER_CUDA_FREE);
 			
+			LibMatrixCUDA.printPointerForDebugging(cache_ifog, toInt(T), toInt(N*4*M), "cache_ifog");
+			
 			LibMatrixCuDNN.nnLstmBackward(ec, gCtx, instName,
 					xPointer, out0Pointer, c0Pointer, W, doutPointer, dcyPointer,  // input
 					cache_out, cache_c, cache_ifog,
