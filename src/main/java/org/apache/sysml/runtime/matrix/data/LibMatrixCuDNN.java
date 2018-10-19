@@ -925,7 +925,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			// ifog = matrix(cache_ifog[t,], rows=N, cols=4*M)
 			Pointer ifog = cache_ifog.withByteOffset((t-1)*N*4*M*sizeOfDataType); // since read-only
 			
-			printPointerForDebugging(ifog, toInt(T), toInt(N*M), "ifog");
+			printPointerForDebugging(ifog, toInt(N), toInt(4*M), "ifog");
 			
 			// i = ifog[,1:M]  # input gate, shape (N, M)
 			// f = ifog[,M+1:2*M]  # forget gate, shape (N, M)
