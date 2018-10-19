@@ -897,7 +897,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		Pointer dout_t = gCtx.allocate(instName, N*M*sizeOfDataType);
 		
 		for(int t = toInt(T); t >= 1; t--) {
-			printPointerForDebugging(dct, toInt(N), toInt(M), "dout_t");
+			printPointerForDebugging(dout_t, toInt(N), toInt(M), "dout_t");
 			
 			if (t == 1) {
 				// out_prev = out0  # shape (N, M)
