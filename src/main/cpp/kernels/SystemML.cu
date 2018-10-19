@@ -2579,6 +2579,24 @@ extern "C" __global__ void postProcessNNLstmForwardSkipCache_f(float *ifog,
 	postProcessNNLstmForwardSkipCache(ifog, c, out_prev, c_prev, out, return_sequences, t, T1, M, NM);
 }
 
+template <typename T>
+__device__ void initializeDoutWhenReturnSeq(T *dout, T *dout_t, int t, int M, int TM, unsigned int NM) {
+	int index = blockIdx.x * blockDim.x + threadIdx.x;
+  	if (index < NM) {
+  		int n = index / M;
+  		int m = index % M;
+		dout_t[index] = dout[n*TM + t*M + m];
+	}
+}
+
+extern "C" __global__ void initializeDoutWhenReturnSeq_d(double *dout, double  *dout_t, int t, int M, int TM, unsigned int NM) {
+	initializeDoutWhenReturnSeq(dout, dout_t, t, M, TM, NM);
+}
+
+extern "C" __global__ void initializeDoutWhenReturnSeq_f(float *dout, float *dout_t, int t, int M, int TM, unsigned int NM) {
+	initializeDoutWhenReturnSeq(dout, dout_t, t, M, TM, NM);
+}
+
 
 // Performs the operation
 // i = ifog[,1:M]  # input gate, shape (N, M)
@@ -2606,21 +2624,7 @@ __device__ void computeDifog_raw(T *ifog, T *ct, T *dout, T *cache_c, T *c0,
   	int n = index / M;
   	int m = index % M;
   	
-  	T dout_tVal;
-  	if(t == T1-1) {
-  		// Initialize in the first iteration
-	  	// if(return_sequences) {
-	  	//   dout_t = dout[,(t-1)*M+1:t*M]
-	  	// }
-	  	// else {
-	  	//   dout_t = dout;
-	  	// }
-  		dout_tVal = (return_sequences == 0) ? dout[index] : dout[n*T1*M + t*M + m];
-  		dout_t[index] = dout_tVal;
-  	}
-  	else {
-  		dout_tVal = dout_t[index];
-  	}
+  	T dout_tVal = dout_t[index];
   	
   	T i = ifog[n*M4 + m];
   	T f = ifog[n*M4 + M + m];
