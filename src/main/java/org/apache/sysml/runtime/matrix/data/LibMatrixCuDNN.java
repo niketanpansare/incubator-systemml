@@ -868,7 +868,6 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			Pointer dX, Pointer dW, Pointer db, Pointer dout0, Pointer dc0,  	// output
 			boolean return_sequences, long N, long M, long D, long T) throws DMLRuntimeException {
 		Pointer out_prev = gCtx.allocate(instName, N*M*sizeOfDataType);
-		Pointer c_prev = gCtx.allocate(instName, N*M*sizeOfDataType);
 		Pointer input = gCtx.allocate(instName, N*(D+M)*sizeOfDataType);
 		
 		Pointer difog_raw = gCtx.allocate(instName, N*4*M*sizeOfDataType);
@@ -906,15 +905,11 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			
 			if (t == 1) {
 				// out_prev = out0  # shape (N, M)
-				// c_prev = c0  # shape (N, M)
 				cudaMemcpy(out_prev, out0, N*M*sizeOfDataType, cudaMemcpyDeviceToDevice);
-				cudaMemcpy(c_prev, c0, N*M*sizeOfDataType, cudaMemcpyDeviceToDevice);
 			}
 			else {
 				// out_prev = matrix(cache_out[t-1,], rows=N, cols=M)  # shape (N, M)
-				// c_prev = matrix(cache_c[t-1,], rows=N, cols=M)  # shape (N, M)
 				cudaMemcpy(out_prev, cache_out.withByteOffset((t-1)*N*M*sizeOfDataType), N*M*sizeOfDataType, cudaMemcpyDeviceToDevice);
-				cudaMemcpy(c_prev, cache_c.withByteOffset((t-1)*N*M*sizeOfDataType), N*M*sizeOfDataType, cudaMemcpyDeviceToDevice);
 			}
 			
 			// X_t = X[,(t-1)*D+1:t*D]  # shape (N, D)
@@ -987,7 +982,6 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		}
 		
 		gCtx.cudaFreeHelper(instName, out_prev, gCtx.EAGER_CUDA_FREE);
-		gCtx.cudaFreeHelper(instName, c_prev, gCtx.EAGER_CUDA_FREE);
 		gCtx.cudaFreeHelper(instName, dout_t, gCtx.EAGER_CUDA_FREE);
 		gCtx.cudaFreeHelper(instName, input, gCtx.EAGER_CUDA_FREE);
 		gCtx.cudaFreeHelper(instName, difog_raw, gCtx.EAGER_CUDA_FREE);
