@@ -971,7 +971,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			int size = toInt(Math.max(N*D, N*M));
 			getCudaKernels(gCtx).launchKernel("postProcessNNLstmBackward",
 					ExecutionConfig.getConfigForSimpleVectorOperations(size),
-					dinput, dout0, dout, dout_t, dX, return_sequences ? 1 : 0, t, N, D, M, 
+					dinput, dout0, dout, dout_t, dX, return_sequences ? 1 : 0, t-1, N, D, M, 
 					toInt(N*D), toInt(N*M), toInt(T*D), toInt(T*M), toInt(D+M), size);
 			
 		}
