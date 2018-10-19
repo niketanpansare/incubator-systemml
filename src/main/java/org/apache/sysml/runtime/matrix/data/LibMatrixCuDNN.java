@@ -869,7 +869,6 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			boolean return_sequences, long N, long M, long D, long T) throws DMLRuntimeException {
 		Pointer out_prev = gCtx.allocate(instName, N*M*sizeOfDataType);
 		Pointer c_prev = gCtx.allocate(instName, N*M*sizeOfDataType);
-		Pointer dout_t = gCtx.allocate(instName, N*M*sizeOfDataType);
 		Pointer input = gCtx.allocate(instName, N*(D+M)*sizeOfDataType);
 		
 		Pointer difog_raw = gCtx.allocate(instName, N*4*M*sizeOfDataType);
@@ -895,7 +894,11 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		else
 			wDensePointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, W, instName, D+M, 4*M);
 		
+		Pointer dout_t = gCtx.allocate(instName, N*M*sizeOfDataType);
+		
 		for(int t = toInt(T); t >= 1; t--) {
+			printPointerForDebugging(dct, toInt(N), toInt(M), "dout_t");
+			
 			if (t == 1) {
 				// out_prev = out0  # shape (N, M)
 				// c_prev = c0  # shape (N, M)
@@ -925,8 +928,6 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			// ifog = matrix(cache_ifog[t,], rows=N, cols=4*M)
 			Pointer ifog = cache_ifog.withByteOffset((t-1)*N*4*M*sizeOfDataType); // since read-only
 			
-			printPointerForDebugging(dct, toInt(N), toInt(M), "dout_t before 1:");
-			
 			// i = ifog[,1:M]  # input gate, shape (N, M)
 			// f = ifog[,M+1:2*M]  # forget gate, shape (N, M)
 			// o = ifog[,2*M+1:3*M]  # output gate, shape (N, M)
@@ -948,8 +949,6 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 					difog_raw, dct, dout_t, dc0, // output
 					return_sequences ? 1 : 0, t-1, toInt(T), toInt(M), toInt(N*M));
 			
-			printPointerForDebugging(dct, toInt(N), toInt(M), "dout_t after 1:");
-
 			// dW = dW + t(input) %*% difog_raw  # shape (D+M, 4M)
 			LibMatrixCuMatMult.denseDenseMatMult(gCtx.getCublasHandle(), instName, dW, input, difog_raw, param1);
 			
