@@ -903,7 +903,6 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		
 		
 		for(int t = toInt(T); t >= 1; t--) {
-			printPointerForDebugging(dout_t, toInt(N), toInt(M), "dout_t");
 			
 			if (t == 1) {
 				// out_prev = out0  # shape (N, M)
@@ -954,6 +953,8 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 					ifog, ct, dout, cache_c, c0, 
 					difog_raw, dct, dout_t, dc0, // output
 					return_sequences ? 1 : 0, t-1, toInt(T), toInt(M), toInt(N*M));
+			
+			printPointerForDebugging(dct, toInt(N), toInt(M), "dct");
 			
 			// dW = dW + t(input) %*% difog_raw  # shape (D+M, 4M)
 			LibMatrixCuMatMult.denseDenseMatMult(gCtx.getCublasHandle(), instName, dW, input, difog_raw, param1);
