@@ -236,7 +236,7 @@ public class LibMatrixCUDA {
 			System.out.println(matName + ":");
 			for(int i = 0; i < rows; i++) {
 				for(int j = 0; j < cols; j++) {
-					System.out.print(String.format("%.3f", devData[i]) + " ");
+					System.out.print(String.format("%.3f", devData[i*cols+j]) + " ");
 				}
 				System.out.println();
 			}
