@@ -689,12 +689,10 @@ public class DnnGPUInstruction extends GPUInstruction {
 		
 		boolean isWSparse = LibMatrixCUDA.isInSparseFormat(gCtx, W);
 		
-		if(N != N1) {
-			throw new DMLRuntimeException("Unsupported operation: The batch size of previous iteration " + N1 + 
-					" is different than the batch size of current iteration " + N);
-		}
+		
 		
 		if(FORCED_LSTM_OP == LstmOperator.CUDNN || 
+			N != N1 || // Use CuDNN operator when batch size of previous iteration is different that current iteration
 			(!isWSparse && // Don't use CuDNN kernel when w is sparse.
 			// When an operator is not forced, then prefer CuDNN kernel if it can fit in the GPU memory
 			FORCED_LSTM_OP == LstmOperator.NONE && gCtx.getMemoryManager().canAllocate(instName, memRequired))) {
@@ -722,6 +720,11 @@ public class DnnGPUInstruction extends GPUInstruction {
 			gCtx.cudaFreeHelper(instName, cudnnInput, gCtx.EAGER_CUDA_FREE);
 		}
 		else {
+			if(N != N1) {
+				throw new DMLRuntimeException("Unsupported operation: The batch size of previous iteration " + N1 + 
+						" is different than the batch size of current iteration " + N);
+			}
+			
 			Pointer sysmlBiasPointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, bias, instName, 1, 4*M);
 			Pointer xPointer = LibMatrixCUDA.getDensePointer(gCtx, X, instName); 
 			Pointer c0Pointer = LibMatrixCUDA.getDensePointer(gCtx, getMatrixInputForGPUInstruction(ec, _input5.getName()), instName);
@@ -801,12 +804,8 @@ public class DnnGPUInstruction extends GPUInstruction {
 		
 		boolean isWSparse = LibMatrixCUDA.isInSparseFormat(gCtx, W);
 		
-		if(N != N1) {
-			throw new DMLRuntimeException("Unsupported operation: The batch size of previous iteration " + N1 + 
-					" is different than the batch size of current iteration " + N);
-		}
-		
 		if(FORCED_LSTM_OP == LstmOperator.CUDNN || 
+			N != N1 || // Use CuDNN operator when batch size of previous iteration is different that current iteration
 			(!isWSparse && // Don't use CuDNN kernel when w is sparse.
 			// When an operator is not forced, then prefer CuDNN kernel if it can fit in the GPU memory
 			FORCED_LSTM_OP == LstmOperator.NONE && gCtx.getMemoryManager().canAllocate(instName, memRequired))) {
@@ -832,6 +831,11 @@ public class DnnGPUInstruction extends GPUInstruction {
 			gCtx.cudaFreeHelper(instName, cudnnInput, gCtx.EAGER_CUDA_FREE);
 		}
 		else {
+			if(N != N1) {
+				throw new DMLRuntimeException("Unsupported operation: The batch size of previous iteration " + N1 + 
+						" is different than the batch size of current iteration " + N);
+			}
+			
 			Pointer sysmlBiasPointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, bias, instName, 1, 4*M);
 			Pointer xPointer = LibMatrixCUDA.getDensePointer(gCtx, X, instName); 
 			Pointer c0Pointer = LibMatrixCUDA.getDensePointer(gCtx, getMatrixInputForGPUInstruction(ec, _input5.getName()), instName);
