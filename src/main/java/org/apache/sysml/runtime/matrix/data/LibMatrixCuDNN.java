@@ -954,6 +954,8 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 					difog_raw, dct, dout_t, dc0, // output
 					return_sequences ? 1 : 0, t-1, toInt(T), toInt(M), toInt(N*M));
 			
+			printPointerForDebugging(dout_t, toInt(N), toInt(M), "dout_t");
+			printPointerForDebugging(ct, toInt(N), toInt(M), "ct");
 			printPointerForDebugging(dct, toInt(N), toInt(M), "dct");
 			
 			// dW = dW + t(input) %*% difog_raw  # shape (D+M, 4M)
