@@ -201,6 +201,37 @@ public class LstmTest extends GPUTests {
 		testLstmBackwardCuDNNWithNNBuiltinOperator(20, 13, 50, 10, "FALSE", 0.1);
 	}
 	
+	
+	@Test
+	public void testLstmBackward7() {
+		testLstmBackwardCuDNNWithNNLayer(1, 1, 1, 1, "TRUE", 0.9);
+	}
+	
+	@Test
+	public void testLstmBackward8() {
+		testLstmBackwardCuDNNWithNNLayer(1, 1, 1, 1, "FALSE", 0.9);
+	}
+	
+	@Test
+	public void testLstmBackward9() {
+		testLstmBackwardCuDNNWithNNLayer(20, 13, 50, 10, "TRUE", 0.9);
+	}
+	
+	@Test
+	public void testLstmBackward10() {
+		testLstmBackwardCuDNNWithNNLayer(20, 13, 50, 10, "FALSE", 0.9);
+	}
+	
+	@Test
+	public void testLstmBackward11() {
+		testLstmBackwardCuDNNWithNNLayer(20, 13, 50, 10, "TRUE", 0.1);
+	}
+	
+	@Test
+	public void testLstmBackward12() {
+		testLstmBackwardCuDNNWithNNLayer(20, 13, 50, 10, "FALSE", 0.1);
+	}
+	
 	public void testLstmBackwardCuDNNWithNNBuiltinOperator(int N, int T, int D, int M, String returnSequences, double sparsity) {
 		boolean returnSequences1 = returnSequences.equals("TRUE");
 				
@@ -242,5 +273,44 @@ public class LstmTest extends GPUTests {
 		assertEqualObjects(outGPUWithCuDNN.get(2), outGPUWithNN.get(2));
 		assertEqualObjects(outGPUWithCuDNN.get(3), outGPUWithNN.get(3));
 		assertEqualObjects(outGPUWithCuDNN.get(4), outGPUWithNN.get(4));
+	}
+	
+	public void testLstmBackwardCuDNNWithNNLayer(int N, int T, int D, int M, String returnSequences, double sparsity) {
+		boolean returnSequences1 = returnSequences.equals("TRUE");
+		
+		String scriptStr1 = "source(" + builtinDML + ") as lstm;\n "
+				+ "[dX, dW, db, dout0, dc0] = lstm::backward(dout, dc, x, w, b, " + returnSequences + ", out0, c0);";
+		String scriptStr2 = "source(" + nnDML + ") as lstm;\n "
+				+ "[output, c, cache_out, cache_c, cache_ifog] = lstm::forward(x, w, b, " 
+				+ T + ", " + D + ", " + returnSequences + ", out0, c0); \n"
+				+ "[dX, dW, db, dout0, dc0] = lstm::backward(dout, dc, x, w, b, " 
+				+ T + ", " + D + ", " + returnSequences + ", out0, c0, cache_out, cache_c, cache_ifog);";
+		
+		HashMap<String, Object> inputs = new HashMap<>();
+		inputs.put("dout", generateInputMatrix(spark, N, returnSequences1 ? T*M : M, 0, 10, sparsity, seed));
+		inputs.put("dc", generateInputMatrix(spark, N, M, 0, 10, sparsity, seed));
+		inputs.put("x", generateInputMatrix(spark, N, T*D, 0, 10, sparsity, seed));
+		inputs.put("w", generateInputMatrix(spark, D+M, 4*M, 0, 10, sparsity, seed));
+		inputs.put("b", generateInputMatrix(spark, 1, 4*M, 0, 10, sparsity, seed));
+		inputs.put("out0", generateInputMatrix(spark, N, M, 0, 10, sparsity, seed));
+		inputs.put("c0", generateInputMatrix(spark, N, M, 0, 10, sparsity, seed));
+		List<String> outputs = Arrays.asList("dX", "dW", "db", "dout0", "dc0");
+		List<Object> outGPUWithCuDNN = null;
+		List<Object> outCPUWithNN = null;
+		synchronized (DnnGPUInstruction.FORCED_LSTM_OP) {
+			try {
+				DnnGPUInstruction.FORCED_LSTM_OP = LstmOperator.CUDNN;
+				outGPUWithCuDNN = runOnGPU(spark, scriptStr1, inputs, outputs);
+			}
+			finally {
+				DnnGPUInstruction.FORCED_LSTM_OP = LstmOperator.NONE;
+			}
+			outCPUWithNN = runOnCPU(spark, scriptStr2, inputs, outputs);
+		}
+		assertEqualObjects(outGPUWithCuDNN.get(0), outCPUWithNN.get(0));
+		assertEqualObjects(outGPUWithCuDNN.get(1), outCPUWithNN.get(1));
+		assertEqualObjects(outGPUWithCuDNN.get(2), outCPUWithNN.get(2));
+		assertEqualObjects(outGPUWithCuDNN.get(3), outCPUWithNN.get(3));
+		assertEqualObjects(outGPUWithCuDNN.get(4), outCPUWithNN.get(4));
 	}
 }

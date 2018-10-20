@@ -883,7 +883,9 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		
 		CSRPointer wSparsePointer = null;
 		Pointer wDensePointer = null;
-		boolean isWSparse = isInSparseFormat(gCtx, W);
+		
+		// TODO: Only dense weight supported for now
+		boolean isWSparse = false; // isInSparseFormat(gCtx, W);
 		if(isWSparse)
 			wSparsePointer = W.getGPUObject(gCtx).getJcudaSparseMatrixPtr();
 		else
