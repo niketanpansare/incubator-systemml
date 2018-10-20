@@ -2640,7 +2640,8 @@ __device__ void computeDifog_raw(T *ifog, T *ct, T *dout_t, T *cache_c, T *c0,
   	T c_prevVal = (t==0) ? c0[index] : cache_c[t*NM + index];
   	
   	// dct = dct + o*tanh::backward(dout_t, ct)
-  	T dctVal = dct[index] + o*((1-pow(tanh(ctVal), 2)) * dout_tVal);
+  	T tmp = tanh(ctVal);
+  	T dctVal = dct[index] + o*((1-tmp*tmp) * dout_tVal);
   	
   	T dc_prevVal = f * dctVal;
   	
