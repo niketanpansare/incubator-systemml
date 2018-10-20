@@ -867,13 +867,10 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			Pointer cache_out, Pointer cache_c, Pointer cache_ifog,
 			Pointer dX, Pointer dW, Pointer db, Pointer dout0, Pointer dc0,  	// output
 			boolean return_sequences, long N, long M, long D, long T) throws DMLRuntimeException {
-		Pointer input = gCtx.allocate(instName, N*(D+M)*sizeOfDataType);
-		
+		Pointer input = gCtx.allocate(instName, N*(D+M)*sizeOfDataType); 
 		Pointer difog_raw = gCtx.allocate(instName, N*4*M*sizeOfDataType);
 		Pointer dct = copy(gCtx, instName, dc, N*M);
-		
 		Pointer dinput = gCtx.allocate(instName, N*(D+M)*sizeOfDataType); // (N, D+M)
-		
 		Pointer tmpDb = gCtx.allocate(instName, 4*M*sizeOfDataType); // (1, 4M)
 		
 		// dW = dW + t(input) %*% difog_raw  # shape (D+M, 4M)
