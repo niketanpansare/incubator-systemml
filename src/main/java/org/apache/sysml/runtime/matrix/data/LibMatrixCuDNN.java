@@ -896,12 +896,9 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 					dout, dout_t, T-1, toInt(M), toInt(T*M), toInt(N*M));
 		}
 		
-		printPointerForDebugging(c0, toInt(N), toInt(M), "c0");
-		printPointerForDebugging(cache_c, toInt(T), toInt(N*M), "cache_c");
-		
 		for(int t = toInt(T); t >= 1; t--) {
 			// if (t == 1) { out_prev = out0; } else { out_prev = matrix(cache_out[t-1,], rows=N, cols=M) }
-			Pointer out_prev = (t == 1) ? out0 : cache_out.withByteOffset((t-1)*N*M*sizeOfDataType); // since read-only
+			Pointer out_prev = (t == 1) ? out0 : cache_out.withByteOffset((t-2)*N*M*sizeOfDataType); // since read-only
 			
 			// X_t = X[,(t-1)*D+1:t*D]  # shape (N, D)
 			// input = cbind(X_t, out_prev)  # shape (N, D+M)
@@ -914,8 +911,6 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			
 			// ifog = matrix(cache_ifog[t,], rows=N, cols=4*M)
 			Pointer ifog = cache_ifog.withByteOffset((t-1)*N*4*M*sizeOfDataType); // since read-only
-			
-			printPointerForDebugging(dct, toInt(N), toInt(M), "dct before");
 			
 			// i = ifog[,1:M]  # input gate, shape (N, M)
 			// f = ifog[,M+1:2*M]  # forget gate, shape (N, M)
@@ -937,10 +932,6 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 					ifog, ct, dout_t, cache_c, c0, 
 					difog_raw, dct, dc0, // output
 					return_sequences ? 1 : 0, t-1, toInt(T), toInt(M), toInt(N*M));
-			
-			printPointerForDebugging(difog_raw, toInt(N), toInt(4*M), "difog_raw");
-			
-			printPointerForDebugging(dct, toInt(N), toInt(M), "dct after");
 			
 			// dW = dW + t(input) %*% difog_raw  # shape (D+M, 4M)
 			LibMatrixCuMatMult.denseDenseMatMult(gCtx.getCublasHandle(), instName, dW, input, difog_raw, param1);
