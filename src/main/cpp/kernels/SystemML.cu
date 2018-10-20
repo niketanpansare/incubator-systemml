@@ -2637,7 +2637,7 @@ __device__ void computeDifog_raw(T *ifog, T *ct, T *dout_t, T *cache_c, T *c0,
   	// 	 c_prev = c0  # shape (N, M)
   	// else
   	//   c_prev = matrix(cache_c[t-1,], rows=N, cols=M)  # shape (N, M)
-  	T c_prevVal = (t==0) ? c0[index] : cache_c[t*NM + index];
+  	T c_prevVal = (t==0) ? c0[index] : cache_c[(t-1)*NM + index];
   	
   	// dct = dct + o*tanh::backward(dout_t, ct)
   	T tmp = tanh(ctVal);
