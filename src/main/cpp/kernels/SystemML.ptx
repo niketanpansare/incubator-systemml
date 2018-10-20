@@ -16601,12 +16601,11 @@ BB135_2:
 	.param .u64 computeDifog_raw_d_param_5,
 	.param .u64 computeDifog_raw_d_param_6,
 	.param .u64 computeDifog_raw_d_param_7,
-	.param .u64 computeDifog_raw_d_param_8,
+	.param .u32 computeDifog_raw_d_param_8,
 	.param .u32 computeDifog_raw_d_param_9,
 	.param .u32 computeDifog_raw_d_param_10,
 	.param .u32 computeDifog_raw_d_param_11,
-	.param .u32 computeDifog_raw_d_param_12,
-	.param .u32 computeDifog_raw_d_param_13
+	.param .u32 computeDifog_raw_d_param_12
 )
 {
 	.reg .pred 	%p<24>;
@@ -16617,13 +16616,13 @@ BB135_2:
 
 	ld.param.u64 	%rd6, [computeDifog_raw_d_param_0];
 	ld.param.u64 	%rd7, [computeDifog_raw_d_param_1];
-	ld.param.u64 	%rd8, [computeDifog_raw_d_param_3];
-	ld.param.u64 	%rd9, [computeDifog_raw_d_param_4];
-	ld.param.u64 	%rd11, [computeDifog_raw_d_param_6];
-	ld.param.u64 	%rd12, [computeDifog_raw_d_param_7];
-	ld.param.u32 	%r8, [computeDifog_raw_d_param_10];
-	ld.param.u32 	%r9, [computeDifog_raw_d_param_12];
-	ld.param.u32 	%r10, [computeDifog_raw_d_param_13];
+	ld.param.u64 	%rd8, [computeDifog_raw_d_param_2];
+	ld.param.u64 	%rd9, [computeDifog_raw_d_param_3];
+	ld.param.u64 	%rd10, [computeDifog_raw_d_param_4];
+	ld.param.u64 	%rd12, [computeDifog_raw_d_param_6];
+	ld.param.u32 	%r8, [computeDifog_raw_d_param_9];
+	ld.param.u32 	%r9, [computeDifog_raw_d_param_11];
+	ld.param.u32 	%r10, [computeDifog_raw_d_param_12];
 	mov.u32 	%r11, %ntid.x;
 	mov.u32 	%r12, %ctaid.x;
 	mov.u32 	%r13, %tid.x;
@@ -16632,7 +16631,7 @@ BB135_2:
 	@%p2 bra 	BB136_26;
 
 	cvta.to.global.u64 	%rd14, %rd6;
-	cvta.to.global.u64 	%rd15, %rd12;
+	cvta.to.global.u64 	%rd15, %rd8;
 	cvt.s64.s32	%rd1, %r1;
 	mul.wide.s32 	%rd16, %r1, 8;
 	add.s64 	%rd17, %rd15, %rd16;
@@ -16657,21 +16656,21 @@ BB135_2:
 	setp.eq.s32	%p3, %r8, 0;
 	@%p3 bra 	BB136_3;
 
-	cvta.to.global.u64 	%rd26, %rd8;
+	cvta.to.global.u64 	%rd26, %rd9;
 	mad.lo.s32 	%r16, %r10, %r8, %r1;
 	mul.wide.u32 	%rd27, %r16, 8;
 	add.s64 	%rd58, %rd26, %rd27;
 	bra.uni 	BB136_4;
 
 BB136_3:
-	cvta.to.global.u64 	%rd28, %rd9;
+	cvta.to.global.u64 	%rd28, %rd10;
 	shl.b64 	%rd29, %rd1, 3;
 	add.s64 	%rd58, %rd28, %rd29;
 
 BB136_4:
 	ld.global.f64 	%fd7, [%rd58];
 	mad.lo.s32 	%r17, %r2, %r9, %r3;
-	cvta.to.global.u64 	%rd30, %rd11;
+	cvta.to.global.u64 	%rd30, %rd12;
 	mul.wide.s32 	%rd31, %r17, 8;
 	add.s64 	%rd32, %rd30, %rd31;
 	ld.global.f64 	%fd8, [%rd32];
@@ -16929,7 +16928,7 @@ BB136_22:
 	mov.b64 	%fd122, {%r54, %r53};
 
 BB136_23:
-	ld.param.u32 	%r64, [computeDifog_raw_d_param_10];
+	ld.param.u32 	%r64, [computeDifog_raw_d_param_9];
 	mov.f64 	%fd99, 0d3FF0000000000000;
 	sub.f64 	%fd100, %fd99, %fd122;
 	setp.eq.f64	%p22, %fd13, 0d3FF0000000000000;
@@ -16946,7 +16945,7 @@ BB136_23:
 	mov.u32 	%r80, %ntid.x;
 	mad.lo.s32 	%r79, %r80, %r81, %r82;
 	mul.wide.s32 	%rd57, %r79, 8;
-	ld.param.u64 	%rd55, [computeDifog_raw_d_param_8];
+	ld.param.u64 	%rd55, [computeDifog_raw_d_param_7];
 	cvta.to.global.u64 	%rd37, %rd55;
 	add.s64 	%rd39, %rd37, %rd57;
 	st.global.f64 	[%rd39], %fd123;
@@ -16958,12 +16957,12 @@ BB136_25:
 	mov.u32 	%r76, %ntid.x;
 	mad.lo.s32 	%r75, %r76, %r77, %r78;
 	mul.wide.s32 	%rd56, %r75, 8;
-	ld.param.u32 	%r74, [computeDifog_raw_d_param_12];
+	ld.param.u32 	%r74, [computeDifog_raw_d_param_11];
 	mul.wide.s32 	%rd54, %r74, 8;
 	mov.u32 	%r73, %tid.x;
 	mov.u32 	%r72, %ctaid.x;
 	mov.u32 	%r71, %ntid.x;
-	ld.param.u32 	%r70, [computeDifog_raw_d_param_12];
+	ld.param.u32 	%r70, [computeDifog_raw_d_param_11];
 	mad.lo.s32 	%r69, %r71, %r72, %r73;
 	rem.s32 	%r68, %r69, %r70;
 	shl.b32 	%r67, %r70, 2;
@@ -17015,12 +17014,11 @@ BB136_26:
 	.param .u64 computeDifog_raw_f_param_5,
 	.param .u64 computeDifog_raw_f_param_6,
 	.param .u64 computeDifog_raw_f_param_7,
-	.param .u64 computeDifog_raw_f_param_8,
+	.param .u32 computeDifog_raw_f_param_8,
 	.param .u32 computeDifog_raw_f_param_9,
 	.param .u32 computeDifog_raw_f_param_10,
 	.param .u32 computeDifog_raw_f_param_11,
-	.param .u32 computeDifog_raw_f_param_12,
-	.param .u32 computeDifog_raw_f_param_13
+	.param .u32 computeDifog_raw_f_param_12
 )
 {
 	.reg .pred 	%p<25>;
@@ -17032,15 +17030,15 @@ BB136_26:
 
 	ld.param.u64 	%rd6, [computeDifog_raw_f_param_0];
 	ld.param.u64 	%rd7, [computeDifog_raw_f_param_1];
-	ld.param.u64 	%rd8, [computeDifog_raw_f_param_3];
-	ld.param.u64 	%rd9, [computeDifog_raw_f_param_4];
-	ld.param.u64 	%rd10, [computeDifog_raw_f_param_5];
-	ld.param.u64 	%rd11, [computeDifog_raw_f_param_6];
-	ld.param.u64 	%rd12, [computeDifog_raw_f_param_7];
-	ld.param.u64 	%rd13, [computeDifog_raw_f_param_8];
-	ld.param.u32 	%r6, [computeDifog_raw_f_param_10];
-	ld.param.u32 	%r7, [computeDifog_raw_f_param_12];
-	ld.param.u32 	%r8, [computeDifog_raw_f_param_13];
+	ld.param.u64 	%rd8, [computeDifog_raw_f_param_2];
+	ld.param.u64 	%rd9, [computeDifog_raw_f_param_3];
+	ld.param.u64 	%rd10, [computeDifog_raw_f_param_4];
+	ld.param.u64 	%rd11, [computeDifog_raw_f_param_5];
+	ld.param.u64 	%rd12, [computeDifog_raw_f_param_6];
+	ld.param.u64 	%rd13, [computeDifog_raw_f_param_7];
+	ld.param.u32 	%r6, [computeDifog_raw_f_param_9];
+	ld.param.u32 	%r7, [computeDifog_raw_f_param_11];
+	ld.param.u32 	%r8, [computeDifog_raw_f_param_12];
 	mov.u32 	%r9, %ntid.x;
 	mov.u32 	%r10, %ctaid.x;
 	mov.u32 	%r11, %tid.x;
@@ -17049,7 +17047,7 @@ BB136_26:
 	@%p2 bra 	BB137_26;
 
 	cvta.to.global.u64 	%rd14, %rd6;
-	cvta.to.global.u64 	%rd15, %rd12;
+	cvta.to.global.u64 	%rd15, %rd8;
 	cvt.s64.s32	%rd1, %r1;
 	mul.wide.s32 	%rd16, %r1, 4;
 	add.s64 	%rd17, %rd15, %rd16;
@@ -17075,21 +17073,21 @@ BB136_26:
 	setp.eq.s32	%p3, %r6, 0;
 	@%p3 bra 	BB137_3;
 
-	cvta.to.global.u64 	%rd26, %rd8;
+	cvta.to.global.u64 	%rd26, %rd9;
 	mad.lo.s32 	%r14, %r8, %r6, %r1;
 	mul.wide.u32 	%rd27, %r14, 4;
 	add.s64 	%rd50, %rd26, %rd27;
 	bra.uni 	BB137_4;
 
 BB137_3:
-	cvta.to.global.u64 	%rd28, %rd9;
+	cvta.to.global.u64 	%rd28, %rd10;
 	shl.b64 	%rd29, %rd1, 2;
 	add.s64 	%rd50, %rd28, %rd29;
 
 BB137_4:
 	ld.global.f32 	%f7, [%rd50];
 	mad.lo.s32 	%r15, %r2, %r7, %r3;
-	cvta.to.global.u64 	%rd30, %rd11;
+	cvta.to.global.u64 	%rd30, %rd12;
 	mul.wide.s32 	%rd31, %r15, 4;
 	add.s64 	%rd32, %rd30, %rd31;
 	ld.global.f32 	%f8, [%rd32];
@@ -17315,7 +17313,7 @@ BB137_25:
 	sub.f32 	%f47, %f46, %f2;
 	mul.f32 	%f48, %f2, %f47;
 	mul.f32 	%f49, %f48, %f44;
-	cvta.to.global.u64 	%rd43, %rd10;
+	cvta.to.global.u64 	%rd43, %rd11;
 	shl.b64 	%rd44, %rd2, 2;
 	add.s64 	%rd45, %rd43, %rd44;
 	st.global.f32 	[%rd45], %f49;

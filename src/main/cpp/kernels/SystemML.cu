@@ -2615,8 +2615,8 @@ extern "C" __global__ void initializeDoutWhenReturnSeq_f(float *dout, float *dou
 // dg_raw = (1-g^2) * dg
 // difog_raw = cbind(di_raw, df_raw, do_raw, dg_raw)  # shape (N, 4M)
 template <typename T>
-__device__ void computeDifog_raw(T *ifog, T *ct, T *dout, T *cache_c, T *c0, 
-	T *difog_raw, T *dct, T *dout_t, T *dc0, // output
+__device__ void computeDifog_raw(T *ifog, T *ct, T *dout_t, T *cache_c, T *c0, 
+	T *difog_raw, T *dct, T *dc0, // output
 	int return_sequences, int t, int T1, int M, unsigned int NM) {
   int index = blockIdx.x * blockDim.x + threadIdx.x;
   if (index < NM) {
@@ -2664,19 +2664,19 @@ __device__ void computeDifog_raw(T *ifog, T *ct, T *dout, T *cache_c, T *c0,
   }
 }
 
-extern "C" __global__ void computeDifog_raw_d(double *ifog, double *ct, double *dout, double *cache_c, double *c0, 
-	double *difog_raw, double *dct, double *dout_t, double *dc0, // output
+extern "C" __global__ void computeDifog_raw_d(double *ifog, double *ct, double *dout_t, double *cache_c, double *c0, 
+	double *difog_raw, double *dct, double *dc0, // output
 	int return_sequences, int t, int T1, int M, unsigned int NM) {
-	computeDifog_raw(ifog, ct, dout, cache_c, c0, 
-		difog_raw, dct, dout_t, dc0, // output
+	computeDifog_raw(ifog, ct, dout_t, cache_c, c0, 
+		difog_raw, dct, dc0, // output
 		return_sequences, t, T1, M, NM);
 }
 
-extern "C" __global__ void computeDifog_raw_f(float *ifog, float *ct, float *dout, float *cache_c, float *c0, 
-	float *difog_raw, float *dct, float *dout_t, float *dc0, // output
+extern "C" __global__ void computeDifog_raw_f(float *ifog, float *ct, float *dout_t, float *cache_c, float *c0, 
+	float *difog_raw, float *dct, float *dc0, // output
 	int return_sequences, int t, int T1, int M, unsigned int NM) {
-	computeDifog_raw(ifog, ct, dout, cache_c, c0, 
-		difog_raw, dct, dout_t, dc0, // output
+	computeDifog_raw(ifog, ct, dout_t, cache_c, c0, 
+		difog_raw, dct, dc0, // output
 		return_sequences, t, T1, M, NM);
 }
 
