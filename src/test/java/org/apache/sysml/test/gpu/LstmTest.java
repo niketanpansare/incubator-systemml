@@ -173,66 +173,67 @@ public class LstmTest extends GPUTests {
 	
 	@Test
 	public void testLstmBackward1() {
-		testLstmBackwardCuDNNWithNNBuiltinOperator(1, 1, 1, 1, "TRUE", 0.9);
+		testLstmBackwardCuDNNWithNNBuiltinOperator(1, 1, 1, 1, "TRUE", 0.9, 0.9);
 	}
 	
 	@Test
 	public void testLstmBackward2() {
-		testLstmBackwardCuDNNWithNNBuiltinOperator(1, 1, 1, 1, "FALSE", 0.9);
+		testLstmBackwardCuDNNWithNNBuiltinOperator(1, 1, 1, 1, "FALSE", 0.9, 0.9);
 	}
 	
 	@Test
 	public void testLstmBackward3() {
-		testLstmBackwardCuDNNWithNNBuiltinOperator(20, 13, 50, 10, "TRUE", 0.9);
+		testLstmBackwardCuDNNWithNNBuiltinOperator(20, 13, 50, 10, "TRUE", 0.9, 0.9);
 	}
 	
 	@Test
 	public void testLstmBackward4() {
-		testLstmBackwardCuDNNWithNNBuiltinOperator(20, 13, 50, 10, "FALSE", 0.9);
+		testLstmBackwardCuDNNWithNNBuiltinOperator(20, 13, 50, 10, "FALSE", 0.9, 0.9);
 	}
 	
 	@Test
 	public void testLstmBackward5() {
-		testLstmBackwardCuDNNWithNNBuiltinOperator(20, 13, 50, 10, "TRUE", 0.1);
+		testLstmBackwardCuDNNWithNNBuiltinOperator(20, 13, 50, 10, "TRUE", 0.9, 0.1);
 	}
 	
 	@Test
 	public void testLstmBackward6() {
-		testLstmBackwardCuDNNWithNNBuiltinOperator(20, 13, 50, 10, "FALSE", 0.1);
+		testLstmBackwardCuDNNWithNNBuiltinOperator(20, 13, 50, 10, "FALSE", 0.9, 0.1);
 	}
 	
 	
 	@Test
 	public void testLstmBackward7() {
-		testLstmBackwardCuDNNWithNNLayer(1, 1, 1, 1, "TRUE", 0.9);
+		testLstmBackwardCuDNNWithNNLayer(1, 1, 1, 1, "TRUE", 0.9, 0.9);
 	}
 	
 	@Test
 	public void testLstmBackward8() {
-		testLstmBackwardCuDNNWithNNLayer(1, 1, 1, 1, "FALSE", 0.9);
+		testLstmBackwardCuDNNWithNNLayer(1, 1, 1, 1, "FALSE", 0.9, 0.9);
 	}
 	
 	@Test
 	public void testLstmBackward9() {
-		testLstmBackwardCuDNNWithNNLayer(20, 13, 50, 10, "TRUE", 0.9);
+		testLstmBackwardCuDNNWithNNLayer(20, 13, 50, 10, "TRUE", 0.9, 0.9);
 	}
 	
 	@Test
 	public void testLstmBackward10() {
-		testLstmBackwardCuDNNWithNNLayer(20, 13, 50, 10, "FALSE", 0.9);
+		testLstmBackwardCuDNNWithNNLayer(20, 13, 50, 10, "FALSE", 0.9, 0.9);
 	}
 	
 	@Test
 	public void testLstmBackward11() {
-		testLstmBackwardCuDNNWithNNLayer(20, 13, 50, 10, "TRUE", 0.1);
+		testLstmBackwardCuDNNWithNNLayer(20, 13, 50, 10, "TRUE", 0.9, 0.1);
 	}
 	
 	@Test
 	public void testLstmBackward12() {
-		testLstmBackwardCuDNNWithNNLayer(20, 13, 50, 10, "FALSE", 0.1);
+		testLstmBackwardCuDNNWithNNLayer(20, 13, 50, 10, "FALSE", 0.9, 0.1);
 	}
 	
-	public void testLstmBackwardCuDNNWithNNBuiltinOperator(int N, int T, int D, int M, String returnSequences, double sparsity) {
+	public void testLstmBackwardCuDNNWithNNBuiltinOperator(int N, int T, int D, int M, String returnSequences, double sparsity, 
+			double weightSparsity) {
 		boolean returnSequences1 = returnSequences.equals("TRUE");
 				
 		String scriptStr = "source(" + builtinDML + ") as lstm;\n "
@@ -242,7 +243,7 @@ public class LstmTest extends GPUTests {
 		inputs.put("dout", generateInputMatrix(spark, N, returnSequences1 ? T*M : M, 0, 10, sparsity, seed));
 		inputs.put("dc", generateInputMatrix(spark, N, M, 0, 10, sparsity, seed));
 		inputs.put("x", generateInputMatrix(spark, N, T*D, 0, 10, sparsity, seed));
-		inputs.put("w", generateInputMatrix(spark, D+M, 4*M, 0, 10, sparsity, seed));
+		inputs.put("w", generateInputMatrix(spark, D+M, 4*M, 0, 10, weightSparsity, seed));
 		inputs.put("b", generateInputMatrix(spark, 1, 4*M, 0, 10, sparsity, seed));
 		inputs.put("out0", generateInputMatrix(spark, N, M, 0, 10, sparsity, seed));
 		inputs.put("c0", generateInputMatrix(spark, N, M, 0, 10, sparsity, seed));
@@ -257,7 +258,7 @@ public class LstmTest extends GPUTests {
 				inputs.put("dout", generateInputMatrix(spark, N, returnSequences1 ? T*M : M, 0, 10, sparsity, seed));
 				inputs.put("dc", generateInputMatrix(spark, N, M, 0, 10, sparsity, seed));
 				inputs.put("x", generateInputMatrix(spark, N, T*D, 0, 10, sparsity, seed));
-				inputs.put("w", generateInputMatrix(spark, D+M, 4*M, 0, 10, sparsity, seed));
+				inputs.put("w", generateInputMatrix(spark, D+M, 4*M, 0, 10, weightSparsity, seed));
 				inputs.put("b", generateInputMatrix(spark, 1, 4*M, 0, 10, sparsity, seed));
 				inputs.put("out0", generateInputMatrix(spark, N, M, 0, 10, sparsity, seed));
 				inputs.put("c0", generateInputMatrix(spark, N, M, 0, 10, sparsity, seed));
@@ -275,7 +276,8 @@ public class LstmTest extends GPUTests {
 		assertEqualObjects(outGPUWithCuDNN.get(4), outGPUWithNN.get(4));
 	}
 	
-	public void testLstmBackwardCuDNNWithNNLayer(int N, int T, int D, int M, String returnSequences, double sparsity) {
+	public void testLstmBackwardCuDNNWithNNLayer(int N, int T, int D, int M, String returnSequences, double sparsity,
+			double weightSparsity) {
 		boolean returnSequences1 = returnSequences.equals("TRUE");
 		
 		String scriptStr1 = "source(" + builtinDML + ") as lstm;\n "
@@ -290,7 +292,7 @@ public class LstmTest extends GPUTests {
 		inputs.put("dout", generateInputMatrix(spark, N, returnSequences1 ? T*M : M, 0, 10, sparsity, seed));
 		inputs.put("dc", generateInputMatrix(spark, N, M, 0, 10, sparsity, seed));
 		inputs.put("x", generateInputMatrix(spark, N, T*D, 0, 10, sparsity, seed));
-		inputs.put("w", generateInputMatrix(spark, D+M, 4*M, 0, 10, sparsity, seed));
+		inputs.put("w", generateInputMatrix(spark, D+M, 4*M, 0, 10, weightSparsity, seed));
 		inputs.put("b", generateInputMatrix(spark, 1, 4*M, 0, 10, sparsity, seed));
 		inputs.put("out0", generateInputMatrix(spark, N, M, 0, 10, sparsity, seed));
 		inputs.put("c0", generateInputMatrix(spark, N, M, 0, 10, sparsity, seed));
