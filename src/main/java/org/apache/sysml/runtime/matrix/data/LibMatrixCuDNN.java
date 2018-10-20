@@ -889,7 +889,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		else
 			wDensePointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, W, instName, D+M, 4*M);
 		
-		Pointer dout_t = !return_sequences ? copy(gCtx, instName, dout, N*M) : gCtx.allocate(instName, N*M*sizeOfDataType);
+		Pointer dout_t = return_sequences ? gCtx.allocate(instName, N*M*sizeOfDataType) : copy(gCtx, instName, dout, N*M);
 		if(return_sequences) {
 			getCudaKernels(gCtx).launchKernel("initializeDoutWhenReturnSeq",
 					ExecutionConfig.getConfigForSimpleVectorOperations(toInt(N*M)),
