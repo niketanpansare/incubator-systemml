@@ -934,7 +934,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 					difog_raw, dct, dout_t, dc0, // output
 					return_sequences ? 1 : 0, t-1, toInt(T), toInt(M), toInt(N*M));
 			
-			printPointerForDebugging(difog_raw, toInt(N), toInt(4*M), "difog_raw");
+			// printPointerForDebugging(difog_raw, toInt(N), toInt(4*M), "difog_raw");
 			
 			// dW = dW + t(input) %*% difog_raw  # shape (D+M, 4M)
 			LibMatrixCuMatMult.denseDenseMatMult(gCtx.getCublasHandle(), instName, dW, input, difog_raw, param1);
