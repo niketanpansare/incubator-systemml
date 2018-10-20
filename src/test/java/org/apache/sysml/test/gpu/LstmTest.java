@@ -269,7 +269,7 @@ public class LstmTest extends GPUTests {
 				DnnGPUInstruction.FORCED_LSTM_OP = LstmOperator.NONE;
 			}
 		}
-		assertEqualObjects(outGPUWithCuDNN.get(0), outGPUWithNN.get(0));
+		assertEqualObjects(outGPUWithCuDNN.get(0), outGPUWithNN.get(0), 1e-6);
 		assertEqualObjects(outGPUWithCuDNN.get(1), outGPUWithNN.get(1));
 		assertEqualObjects(outGPUWithCuDNN.get(2), outGPUWithNN.get(2));
 		assertEqualObjects(outGPUWithCuDNN.get(3), outGPUWithNN.get(3));
@@ -309,7 +309,7 @@ public class LstmTest extends GPUTests {
 			}
 			outCPUWithNN = runOnCPU(spark, scriptStr2, inputs, outputs);
 		}
-		assertEqualObjects(outGPUWithCuDNN.get(0), outCPUWithNN.get(0));
+		assertEqualObjects(outGPUWithCuDNN.get(0), outCPUWithNN.get(0), 1e-6);
 		assertEqualObjects(outGPUWithCuDNN.get(1), outCPUWithNN.get(1));
 		assertEqualObjects(outGPUWithCuDNN.get(2), outCPUWithNN.get(2));
 		assertEqualObjects(outGPUWithCuDNN.get(3), outCPUWithNN.get(3));
