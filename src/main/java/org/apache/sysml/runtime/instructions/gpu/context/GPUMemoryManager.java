@@ -253,6 +253,9 @@ public class GPUMemoryManager {
 		}
 		if(GPUInstruction.PRINT_REQUIRED_MEMORY) {
 			GPUInstruction.MEMORY_ALLOCATED += size;
+			LOG.info("Requested " + size + (opcode != null ? " bytes in " +  opcode : " bytes ") +  
+					getCallerInfo(Thread.currentThread().getStackTrace(), DEBUG_MEMORY_LEAK_STACKTRACE_DEPTH[0]) + 
+					getCallerInfo(Thread.currentThread().getStackTrace(), DEBUG_MEMORY_LEAK_STACKTRACE_DEPTH[1]));
 		}
 		
 		if(ConfigurationManager.isStatistics()) {
