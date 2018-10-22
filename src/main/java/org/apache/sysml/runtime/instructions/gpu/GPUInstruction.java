@@ -206,7 +206,7 @@ public abstract class GPUInstruction extends Instruction {
 	@Override
 	public void postprocessInstruction(ExecutionContext ec) {
 		if(PRINT_REQUIRED_MEMORY) {
-			System.out.println("Memory required by " + this.getExtendedOpcode() + " is " + MEMORY_ALLOCATED + " bytes."); 
+			LOG.info("Memory required by " + this.getExtendedOpcode() + " is " + MEMORY_ALLOCATED + " bytes."); 
 			MEMORY_ALLOCATED = 0;
 		}
 		if(GPUContext.SYNCHRONIZE_GPU) {
