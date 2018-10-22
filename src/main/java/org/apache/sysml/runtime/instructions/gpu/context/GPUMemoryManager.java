@@ -251,6 +251,9 @@ public class GPUMemoryManager {
 		if(DEBUG_MEMORY_LEAK) {
 			LOG.info("GPU Memory info during malloc:" + toString());
 		}
+		if(GPUInstruction.PRINT_REQUIRED_MEMORY) {
+			GPUInstruction.MEMORY_ALLOCATED += size;
+		}
 		
 		if(ConfigurationManager.isStatistics()) {
 			GPUStatistics.cudaAllocAggSize.add(size);
@@ -450,6 +453,9 @@ public class GPUMemoryManager {
 			throw new RuntimeException("ERROR : Internal state corrupted, attempting to free an unaccounted pointer:" + toFree);
 		}
 		long size = allPointers.get(toFree).getSizeInBytes();
+		if(GPUInstruction.PRINT_REQUIRED_MEMORY) {
+			GPUInstruction.MEMORY_ALLOCATED -= size;
+		}
 		if(ConfigurationManager.isStatistics()) {
 			currentSize -= size;
 		}

@@ -34,6 +34,10 @@ import org.apache.sysml.utils.GPUStatistics;
 import org.apache.sysml.utils.Statistics;
 
 public abstract class GPUInstruction extends Instruction {
+	
+	public static boolean PRINT_REQUIRED_MEMORY = true; 
+	public static long MEMORY_ALLOCATED = 0;
+	
 	public enum GPUINSTRUCTION_TYPE {
 		AggregateUnary,
 		AggregateBinary,
@@ -201,6 +205,10 @@ public abstract class GPUInstruction extends Instruction {
 	
 	@Override
 	public void postprocessInstruction(ExecutionContext ec) {
+		if(PRINT_REQUIRED_MEMORY) {
+			System.out.println("Memory required by " + this.getExtendedOpcode() + " is " + MEMORY_ALLOCATED + " bytes."); 
+			MEMORY_ALLOCATED = 0;
+		}
 		if(GPUContext.SYNCHRONIZE_GPU) {
 			long t0 = ConfigurationManager.isFinegrainedStatistics() ? System.nanoTime() : 0;
 			jcuda.runtime.JCuda.cudaDeviceSynchronize();
