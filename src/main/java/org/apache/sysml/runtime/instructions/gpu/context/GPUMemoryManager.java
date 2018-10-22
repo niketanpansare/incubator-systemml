@@ -224,6 +224,14 @@ public class GPUMemoryManager {
 			return "->" + stackTrace[index].getClassName() + "." + stackTrace[index].getMethodName() + "(" + stackTrace[index].getFileName() + ":" + stackTrace[index].getLineNumber() + ")";
 	}
 	
+	private String getCallerInfo(StackTraceElement [] stackTrace) {
+		String callerInfo = "";
+		for(int i  = 0; i < DEBUG_MEMORY_LEAK_STACKTRACE_DEPTH.length; i++) {
+			callerInfo += getCallerInfo(stackTrace, DEBUG_MEMORY_LEAK_STACKTRACE_DEPTH[i]);
+		}
+		return callerInfo;
+	}
+	
 	public boolean canAllocate(String opcode, long size) {
 		return allocator.canAllocate(size);
 	}
@@ -254,8 +262,7 @@ public class GPUMemoryManager {
 		if(GPUInstruction.PRINT_REQUIRED_MEMORY) {
 			GPUInstruction.MEMORY_ALLOCATED += size;
 			LOG.info("Requested " + size + (opcode != null ? " bytes in " +  opcode : " bytes ") +  
-					getCallerInfo(Thread.currentThread().getStackTrace(), DEBUG_MEMORY_LEAK_STACKTRACE_DEPTH[0]) + 
-					getCallerInfo(Thread.currentThread().getStackTrace(), DEBUG_MEMORY_LEAK_STACKTRACE_DEPTH[1]));
+					getCallerInfo(Thread.currentThread().getStackTrace()));
 		}
 		
 		if(ConfigurationManager.isStatistics()) {
