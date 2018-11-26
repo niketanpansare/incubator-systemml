@@ -302,8 +302,13 @@ public class GPUMemoryManager {
 			if(sizeBasedUnlockedGPUObjects.isPresent()) {
 				evictOrClear(sizeBasedUnlockedGPUObjects.get(), opcode);
 				A = cudaMallocNoWarn(tmpA, size, null);
-				if(A == null)
-					LOG.debug("cudaMalloc failed after clearing/evicting based on size.");
+				if(PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled() )  {
+					if(A == null)
+						LOG.info("Success: after clearing/evicting based on size:" + GPUStatistics.byteCountToDisplaySize(size));
+					else
+						LOG.info("Failed: after clearing/evicting based on size:" + GPUStatistics.byteCountToDisplaySize(size));
+				}
+				
 				if(ConfigurationManager.isStatistics()) {
 					long totalTime = System.nanoTime() - t0;
 					GPUStatistics.cudaEvictTime.add(totalTime);
@@ -336,6 +341,12 @@ public class GPUMemoryManager {
 					// Checking before invoking cudaMalloc reduces the time spent in unnecessary cudaMalloc.
 					// This was the bottleneck for ResNet200 experiments with batch size > 32 on P100+Intel
 					A = cudaMallocNoWarn(tmpA, size, null); 
+					if(PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled() )  {
+						if(A == null)
+							LOG.info("Success: after clearing/evicting based on size:" + GPUStatistics.byteCountToDisplaySize(size));
+						else
+							LOG.info("Failed: after clearing/evicting based on size:" + GPUStatistics.byteCountToDisplaySize(size));
+					}
 				}
 				if(ConfigurationManager.isStatistics()) 
 					GPUStatistics.cudaEvictCount.increment();
@@ -354,6 +365,12 @@ public class GPUMemoryManager {
 			matrixMemoryManager.clearAllUnlocked(opcode);
 			LOG.info("GPU Memory info after evicting all unlocked matrices:" + toString());
 			A = cudaMallocNoWarn(tmpA, size, null);
+			if(PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled() )  {
+				if(A == null)
+					LOG.info("Success: after evicting all unlocked matrices:" + GPUStatistics.byteCountToDisplaySize(size));
+				else
+					LOG.info("Failed: after evicting all unlocked matrices:" + GPUStatistics.byteCountToDisplaySize(size));
+			}
 		}
 		
 		if(A == null) {
