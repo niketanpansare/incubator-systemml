@@ -305,8 +305,10 @@ public class GPUMemoryManager {
 				if(PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled() )  {
 					if(A == null)
 						LOG.info("Success: after clearing/evicting based on size:" + GPUStatistics.byteCountToDisplaySize(size));
-					else
+					else {
 						LOG.info("Failed: after clearing/evicting based on size:" + GPUStatistics.byteCountToDisplaySize(size));
+						LOG.info("GPU Memory info after clearing/evicting based on size:" + toString());
+					}
 				}
 				
 				if(ConfigurationManager.isStatistics()) {
@@ -343,9 +345,11 @@ public class GPUMemoryManager {
 					A = cudaMallocNoWarn(tmpA, size, null); 
 					if(PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled() )  {
 						if(A == null)
-							LOG.info("Success: after clearing/evicting based on size:" + GPUStatistics.byteCountToDisplaySize(size));
-						else
-							LOG.info("Failed: after clearing/evicting based on size:" + GPUStatistics.byteCountToDisplaySize(size));
+							LOG.info("Success: after clearing/evicting without size restriction:" + GPUStatistics.byteCountToDisplaySize(size));
+						else {
+							LOG.info("Failed: after clearing/evicting without size restriction:" + GPUStatistics.byteCountToDisplaySize(size));
+							LOG.info("GPU Memory info after clearing/evicting without size restriction:" + toString());
+						}
 					}
 				}
 				if(ConfigurationManager.isStatistics()) 
@@ -368,8 +372,10 @@ public class GPUMemoryManager {
 			if(PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled() )  {
 				if(A == null)
 					LOG.info("Success: after evicting all unlocked matrices:" + GPUStatistics.byteCountToDisplaySize(size));
-				else
+				else {
 					LOG.info("Failed: after evicting all unlocked matrices:" + GPUStatistics.byteCountToDisplaySize(size));
+					LOG.info("GPU Memory info after evicting all unlocked matrices:" + toString());
+				}
 			}
 		}
 		
