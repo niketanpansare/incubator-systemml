@@ -243,7 +243,7 @@ def _copyRowBlock(i, sc, ret, src, numRowsPerBlock, rlen, clen):
     return i
 
 
-def convertToMatrixBlock(sc, src, maxSizeBlockInMB=8):
+def convertToMatrixBlock(sc, src, maxSizeBlockInMB=128):
     if not isinstance(sc, SparkContext):
         raise TypeError('sc needs to be of type SparkContext')
     isSparse = True if isinstance(src, spmatrix) else False
@@ -256,11 +256,11 @@ def convertToMatrixBlock(sc, src, maxSizeBlockInMB=8):
                         str(len(src.shape)) +
                         '-dimensional ' +
                         src_type)
+    worstCaseSizeInMB = (8*(src.getnnz()*3 if isSparse else src.shape[0]*src.shape[1])) / 1000000
     # Ignoring sparsity for computing numRowsPerBlock for now
     numRowsPerBlock = int(
         math.ceil((maxSizeBlockInMB * 1000000) / (src.shape[1] * 8)))
-    multiBlockTransfer = False if numRowsPerBlock >= src.shape[0] else True
-    if not multiBlockTransfer:
+    if worstCaseSizeInMB <= maxSizeBlockInMB:
         return _convertSPMatrixToMB(
             sc, src) if isSparse else _convertDenseMatrixToMB(sc, src)
     else:
