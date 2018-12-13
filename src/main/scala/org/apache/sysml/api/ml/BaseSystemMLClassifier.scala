@@ -292,7 +292,7 @@ trait BaseSystemMLClassifierModel extends BaseSystemMLEstimatorModel {
     script._1.setScriptString(newDML)
     
     // Modify the output variables -> remove probability matrix and add Prediction
-    val outputVariables = script._1.getOutputVariables
+    val outputVariables = new java.util.HashSet[String](script._1.getOutputVariables)
     outputVariables.remove(probVar)
     outputVariables.add("Prediction")
     script._1.clearOutputs()
