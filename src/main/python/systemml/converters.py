@@ -223,7 +223,7 @@ def _convertDenseMatrixToMB(sc, src):
     numRows = src.shape[0]
     src = np.asarray(src, dtype=np.float64) if not isinstance(src, np.ndarray) else src
     # data_type: 0: int, 1: float and 2: double
-    if src.dtype is np.dtype(np.int32)):
+    if src.dtype is np.dtype(np.int32):
         arr = src.ravel().astype(np.int32)
         dataType = 0
     elif src.dtype is np.dtype(np.float32)):
