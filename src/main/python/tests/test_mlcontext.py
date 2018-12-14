@@ -104,25 +104,25 @@ class TestAPI(unittest.TestCase):
         script = """
         x2 = x1 + 2.15
         """
-        numpy_x1 = np.array(np.random.rand(5, 10), dtype=np.float64)
+        numpy_x1 = np.random.rand(5, 10).astype(np.float32)
         script = dml(script).input(x1=numpy_x1).output("x2")
-        self.assertTrue(np.allclose(ml.execute(script).get("x2"), numpy_x1 + 2.15))
+        self.assertTrue(np.allclose(ml.execute(script).get("x2").toNumPy(), numpy_x1 + 2.15))
 
     def test_numpy_float32(self):
         script = """
         x2 = x1 + 2.15
         """
-        numpy_x1 = np.array(np.random.rand(5, 10), dtype=np.float32)
+        numpy_x1 = np.random.rand(5, 10).astype(np.float32)
         script = dml(script).input(x1=numpy_x1).output("x2")
-        self.assertTrue(np.allclose(ml.execute(script).get("x2"), numpy_x1 + 2.15))
+        self.assertTrue(np.allclose(ml.execute(script).get("x2").toNumPy(), numpy_x1 + 2.15))
 
     def test_numpy_int32(self):
         script = """
         x2 = x1 + 2
         """
-        numpy_x1 = np.random.randint(1000, size=(5, 10))
+        numpy_x1 = np.random.randint(1000, size=(5, 10)).astype(np.int32)
         script = dml(script).input(x1=numpy_x1).output("x2")
-        self.assertTrue(np.allclose(ml.execute(script).get("x2"), numpy_x1 + 2))
+        self.assertTrue(np.allclose(ml.execute(script).get("x2").toNumPy(), numpy_x1 + 2))
 
     def test_rdd(self):
         sums = """
