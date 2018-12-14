@@ -128,11 +128,11 @@ public class RDDConverterUtilsExt
 
 	// data_type: 0: int, 1: float and 2: double
 	public static MatrixBlock convertPy4JArrayToMB(byte [] data, long rlen, long clen, long dataType) {
-		return convertPy4JArrayToMB(data, (int)rlen, (int)clen, false);
+		return convertPy4JArrayToMB(data, (int)rlen, (int)clen, false, dataType);
 	}
 
 	public static MatrixBlock convertPy4JArrayToMB(byte [] data, int rlen, int clen, int dataType) {
-		return convertPy4JArrayToMB(data, rlen, clen, false);
+		return convertPy4JArrayToMB(data, rlen, clen, false, dataType);
 	}
 	
 	public static MatrixBlock convertPy4JArrayToMB(byte [] data, long rlen, long clen, boolean isSparse, long dataType) {
