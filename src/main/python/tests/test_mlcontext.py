@@ -104,7 +104,7 @@ class TestAPI(unittest.TestCase):
         script = """
         x2 = x1 + 2.15
         """
-        numpy_x1 = np.random.rand(5, 10).astype(np.float32)
+        numpy_x1 = np.random.rand(5, 10).astype(np.float64)
         script = dml(script).input(x1=numpy_x1).output("x2")
         self.assertTrue(np.allclose(ml.execute(script).get("x2").toNumPy(), numpy_x1 + 2.15))
 
