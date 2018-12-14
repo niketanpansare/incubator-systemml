@@ -260,7 +260,7 @@ def convertToMatrixBlock(sc, src, maxSizeBlockInMB=128):
         isSparse = True
     else:
         isSparse = False
-        src = np.asarray(src, dtype=np.float64) if not isinstance(src, np.ndarray)) else src
+        src = np.asarray(src, dtype=np.float64) if not isinstance(src, np.ndarray) else src
     if len(src.shape) != 2:
         src_type = str(type(src).__name__)
         raise TypeError('Expected 2-dimensional ' +
