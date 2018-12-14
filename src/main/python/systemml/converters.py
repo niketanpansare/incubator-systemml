@@ -221,11 +221,21 @@ def _convertSPMatrixToMB(sc, src):
 def _convertDenseMatrixToMB(sc, src):
     numCols = getNumCols(src)
     numRows = src.shape[0]
-    arr = src.ravel().astype(np.float64)
+    src = np.asarray(src, dtype=np.float64) if not isinstance(src, np.ndarray) else src
+    # data_type: 0: int, 1: float and 2: double
+    if src.dtype is np.dtype(np.int32)):
+        arr = src.ravel().astype(np.int32)
+        dataType = 0
+    elif src.dtype is np.dtype(np.float32)):
+        arr = src.ravel().astype(np.float32)
+        dataType = 1
+    else:
+        arr = src.ravel().astype(np.float64)
+        dataType = 2 
     buf = bytearray(arr.tostring())
     createJavaObject(sc, 'dummy')
     return sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.convertPy4JArrayToMB(
-        buf, numRows, numCols)
+        buf, numRows, numCols, dataType)
 
 
 def _copyRowBlock(i, sc, ret, src, numRowsPerBlock, rlen, clen):
@@ -246,8 +256,11 @@ def _copyRowBlock(i, sc, ret, src, numRowsPerBlock, rlen, clen):
 def convertToMatrixBlock(sc, src, maxSizeBlockInMB=128):
     if not isinstance(sc, SparkContext):
         raise TypeError('sc needs to be of type SparkContext')
-    isSparse = True if isinstance(src, spmatrix) else False
-    src = np.asarray(src, dtype=np.float64) if not isSparse else src
+    if isinstance(src, spmatrix):
+        isSparse = True
+    else:
+        isSparse = False
+        src = np.asarray(src, dtype=np.float64) if not isinstance(src, np.ndarray)) else src
     if len(src.shape) != 2:
         src_type = str(type(src).__name__)
         raise TypeError('Expected 2-dimensional ' +
