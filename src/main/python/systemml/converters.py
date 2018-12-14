@@ -226,7 +226,7 @@ def _convertDenseMatrixToMB(sc, src):
     if src.dtype is np.dtype(np.int32):
         arr = src.ravel().astype(np.int32)
         dataType = 0
-    elif src.dtype is np.dtype(np.float32)):
+    elif src.dtype is np.dtype(np.float32):
         arr = src.ravel().astype(np.float32)
         dataType = 1
     else:
