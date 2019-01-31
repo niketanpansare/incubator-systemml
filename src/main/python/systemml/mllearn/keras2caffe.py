@@ -334,10 +334,11 @@ def convertKerasToCaffeNetwork(
         layer) in supportedLayers else True, 'Unsupported Layers:')
     with open(outCaffeNetworkFilePath, 'w') as f:
         # Append an Input layer if not present: required for versions 2.1.5 (works with 2.1.5, but not with 2.2.4)
+        input_layer = []
         if not any([isinstance(l, keras.layers.InputLayer) for l in kerasModel.layers]):
-            _appendKerasLayers(f, keras.layers.InputLayer(input_shape=kerasModel.layers[0].input_shape), batch_size)
+            input_layer = [ keras.layers.InputLayer(input_shape=kerasModel.layers[0].input_shape) ]
         # Write the parsed layers for all but the last layer
-        _appendKerasLayers(f, kerasModel.layers[:-1], batch_size)
+        _appendKerasLayers(f, input_layer + kerasModel.layers[:-1], batch_size)
         # Now process the last layer with loss
         lastLayer = kerasModel.layers[-1]
         if _isMeanSquaredError(kerasModel.loss):
