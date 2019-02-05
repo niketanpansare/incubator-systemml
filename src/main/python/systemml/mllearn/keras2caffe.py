@@ -56,7 +56,8 @@ except ImportError:
 supportedCaffeActivations = {
     'relu': 'ReLU',
     'softmax': 'Softmax',
-    'sigmoid': 'Sigmoid'}
+    'sigmoid': 'Sigmoid'
+}
 supportedLayers = {
     keras.layers.InputLayer: 'Data',
     keras.layers.Dense: 'InnerProduct',
@@ -70,7 +71,7 @@ supportedLayers = {
     keras.layers.AveragePooling2D: 'Pooling',
     keras.layers.SimpleRNN: 'RNN',
     keras.layers.LSTM: 'LSTM',
-    keras.layers.Flatten: 'None',
+    keras.layers.Flatten: 'Flatten',
     keras.layers.BatchNormalization: 'None',
     keras.layers.Activation: 'None'
 }
@@ -84,9 +85,10 @@ def _getInboundLayers(layer):
     for node in inbound_nodes:
         node_list = node.inbound_layers  # get layers pointing to this node
         in_names = in_names + node_list
+    return list(in_names)
     # For Caffe2DML to reroute any use of Flatten layers
-    return list(chain.from_iterable([_getInboundLayers(l) if isinstance(
-        l, keras.layers.Flatten) else [l] for l in in_names]))
+    #return list(chain.from_iterable([_getInboundLayers(l) if isinstance(
+    #    l, keras.layers.Flatten) else [l] for l in in_names]))
 
 
 def _getCompensatedAxis(layer):
@@ -193,7 +195,6 @@ def _parseBatchNorm(layer):
 
 # The special are redirected to their custom parse function in _parseKerasLayer
 specialLayers = {
-    keras.layers.Flatten: lambda x: [],
     keras.layers.BatchNormalization: _parseBatchNorm
 }
 
@@ -267,6 +268,7 @@ layerParamMapping = {
     {'recurrent_param': getRecurrentParam(l)},
     keras.layers.LSTM: lambda l:
     {'recurrent_param': getRecurrentParam(l)},
+    keras.layers.Flatten: lambda l: {},
 }
 
 
