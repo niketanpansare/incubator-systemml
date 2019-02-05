@@ -162,23 +162,19 @@ def _parseKerasLayer(layer):
     elif layerType == keras.layers.Activation:
         return [_parseActivation(layer)]
     param = layerParamMapping[layerType](layer)
-    paramName = param.keys()[0]
+    layerArgs = {}
+    layerArgs['name'] = layer.name
     if layerType == keras.layers.InputLayer:
-        ret = {
-            'layer': {
-                'name': layer.name,
-                'type': 'Data',
-                paramName: param[paramName],
-                'top': layer.name,
-                'top': 'label'}}
+        layerArgs['type'] = 'Data'
+        layerArgs['top'] = 'label' # layer.name: TODO
     else:
-        ret = {
-            'layer': {
-                'name': layer.name,
-                'type': supportedLayers[layerType],
-                'bottom': _getBottomLayers(layer),
-                'top': layer.name,
-                paramName: param[paramName]}}
+        layerArgs['type'] = supportedLayers[layerType]
+        layerArgs['bottom'] = _getBottomLayers(layer)
+        layerArgs['top'] = layer.name
+    if len(param) > 0:
+        paramName = param.keys()[0]
+        layerArgs[paramName] = param[paramName]
+    ret = { 'layer': layerArgs }
     return [ret, _parseActivation(
         layer, layer.name + '_activation')] if _shouldParseActivation(layer) else [ret]
 
