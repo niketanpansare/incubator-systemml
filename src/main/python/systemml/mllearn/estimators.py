@@ -1051,13 +1051,7 @@ class Keras2DML(Caffe2DML):
         self.name = keras_model.name
         createJavaObject(sparkSession._sc, 'dummy')
         if not hasattr(keras_model, 'optimizer'):
-            keras_model.compile(
-                loss='categorical_crossentropy',
-                optimizer=keras.optimizers.SGD(
-                    lr=0.01,
-                    momentum=0.95,
-                    decay=weight_decay,
-                    nesterov=True))
+            raise Exception('Please compile the model before passing it to Keras2DML')
         convertKerasToCaffeNetwork(
             keras_model,
             self.name + ".proto",

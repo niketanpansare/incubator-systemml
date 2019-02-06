@@ -129,27 +129,32 @@ def base_test(layers, add_dense=False, test_backward=True):
     sysml_model = get_sysml_model(keras_model)
     # --------------------------------------
     sysml_preds = sysml_model.predict_proba(sysml_matrix).flatten()
-    keras_preds = keras_model.predict(keras_tensor).flatten()
     if test_backward:
         one_hot_labels = get_one_hot_encoded_labels(keras_model.layers[-1].output_shape)
         sysml_model.fit(sysml_matrix, one_hot_labels)
-        keras_model.train_on_batch(keras_tensor, one_hot_labels)
         sysml_preds = sysml_model.predict_proba(sysml_matrix).flatten()
+    keras_preds = keras_model.predict(keras_tensor).flatten()
+    if test_backward:
+        keras_model.train_on_batch(keras_tensor, one_hot_labels)
         keras_preds = keras_model.predict(keras_tensor).flatten()
-    return sysml_preds, keras_preds
+    return sysml_preds, keras_preds, keras_model
 
 def test_forward(layers):
-    sysml_preds, keras_preds = base_test(layers, test_backward=False)
+    sysml_preds, keras_preds, keras_model = base_test(layers, test_backward=False)
     ret = np.allclose(sysml_preds, keras_preds)
     if not ret:
-        print('Forward:' + str(sysml_preds) + ' == ' + str(keras_preds) + '?')
+        print('The forward test failed for the model:' + str(keras_model.summary()))
+        print('SystemML output:' + str(sysml_preds))
+        print('Keras output:' + str(keras_preds))
     return ret
 
 def test_backward(layers):
-    sysml_preds, keras_preds = base_test(layers, test_backward=True)
+    sysml_preds, keras_preds, keras_model = base_test(layers, test_backward=True)
     ret = np.allclose(sysml_preds, keras_preds)
     if not ret:
-        print('Backward:' + str(sysml_preds) + ' == ' + str(keras_preds) + '?')
+        print('The backward test failed for the model:' + str(keras_model.summary()))
+        print('SystemML output:' + str(sysml_preds))
+        print('Keras output:' + str(keras_preds))
     return ret
 
 
@@ -168,19 +173,6 @@ class TestNNLibrary(unittest.TestCase):
     def test_dense2d_backward(self):
         with self.assertRaises(Exception):
             test_backward(Dense(10, input_shape=[30, 20]))
-
-    def test_dense_relu_forward(self):
-        self.failUnless(test_forward(Dense(10, activation='relu', input_shape=[30])))
-
-    def test_dense_relu_backward(self):
-        self.failUnless(test_backward(Dense(10, activation='relu', input_shape=[30])))
-
-    def test_conv2d_forward(self):
-        self.failUnless(test_forward(Conv2D(32, kernel_size=(3, 3), input_shape=(3, 64, 64), padding='valid')))
-
-    def test_conv2d_backward(self):
-        self.failUnless(test_backward(Conv2D(32, kernel_size=(3, 3), input_shape=(3, 64, 64), padding='valid')))
-
 
 if __name__ == '__main__':
     unittest.main()
