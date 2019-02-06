@@ -249,7 +249,7 @@ layerParamMapping = {
     keras.layers.InputLayer: lambda l:
     {'data_param': {'batch_size': l.batch_size}},
     keras.layers.Dense: lambda l:
-    {'inner_product_param': getDenseParam(l)},
+    {'inner_product_param': getInnerProductParam(l)},
     keras.layers.Dropout: lambda l:
     {'dropout_param': {'dropout_ratio': l.rate}},
     keras.layers.Add: lambda l:
