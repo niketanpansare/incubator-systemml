@@ -85,8 +85,8 @@ def get_one_hot_encoded_labels(output_shape):
     one_hot_labels = np_utils.to_categorical(y, num_classes=output_cells)
     return one_hot_labels
 
-def get_sysml_model(keras_model, sysml_input_shape):
-    sysml_model = Keras2DML(spark, keras_model, input_shape=sysml_input_shape, weights=tmp_dir, test_iter=0, max_iter=1, batch_size=batch_size, weight_decay=0)
+def get_sysml_model(keras_model):
+    sysml_model = Keras2DML(spark, keras_model, weights=tmp_dir)
     # For apples-to-apples comparison of output probabilities:
     # By performing one-hot encoding outside, we ensure that the ordering of the TF columns
     # matches that of SystemML
@@ -106,21 +106,15 @@ def base_test(layers, add_dense=False, test_backward=True):
         keras_model.add(Flatten())
     if len(output_shape) == 4:
         # 3-D model
-        sysml_input_shape = (in_shape[1], in_shape[2], in_shape[3])
-        keras_tensor = get_tensor((batch_size, sysml_input_shape[0], sysml_input_shape[1], sysml_input_shape[2]),
-                                  random=False)
+        keras_tensor = get_tensor((batch_size, in_shape[1], in_shape[2], in_shape[3]), random=False)
         sysml_matrix = keras_tensor.reshape((batch_size, -1))
     elif len(output_shape) == 3:
         # 2-D model
-        sysml_input_shape = (in_shape[1], in_shape[2], 1)
-        keras_tensor = get_tensor((batch_size, sysml_input_shape[0], sysml_input_shape[1]),
-                                  random=False)
+        keras_tensor = get_tensor((batch_size, in_shape[1], in_shape[2]), random=False)
         sysml_matrix = keras_tensor.reshape((batch_size, -1))
     elif len(output_shape) == 2:
         # 1-D model
-        sysml_input_shape = (in_shape[1], 1, 1)
-        keras_tensor = get_tensor((batch_size, sysml_input_shape[0]),
-                                  random=False)
+        keras_tensor = get_tensor((batch_size, in_shape[1]), random=False)
         sysml_matrix = keras_tensor.reshape((batch_size, -1))
     else:
         raise Exception('Model with output shape ' + str(output_shape) + ' is not supported.')
@@ -132,7 +126,7 @@ def base_test(layers, add_dense=False, test_backward=True):
     print(keras_model.summary())
     # --------------------------------------
     keras_model = initialize_weights(keras_model)
-    sysml_model = get_sysml_model(keras_model, sysml_input_shape)
+    sysml_model = get_sysml_model(keras_model)
     # --------------------------------------
     sysml_preds = sysml_model.predict_proba(sysml_matrix).flatten()
     keras_preds = keras_model.predict(keras_tensor).flatten()
@@ -174,6 +168,19 @@ class TestNNLibrary(unittest.TestCase):
     def test_dense2d_backward(self):
         with self.assertRaises(Exception):
             test_backward(Dense(10, input_shape=[30, 20]))
+
+    def test_dense_relu_forward(self):
+        self.failUnless(test_forward(Dense(10, activation='relu', input_shape=[30])))
+
+    def test_dense_relu_backward(self):
+        self.failUnless(test_backward(Dense(10, activation='relu', input_shape=[30])))
+
+    def test_conv2d_forward(self):
+        self.failUnless(test_forward(Conv2D(32, kernel_size=(3, 3), input_shape=(3, 64, 64), padding='valid')))
+
+    def test_conv2d_backward(self):
+        self.failUnless(test_backward(Conv2D(32, kernel_size=(3, 3), input_shape=(3, 64, 64), padding='valid')))
+
 
 if __name__ == '__main__':
     unittest.main()

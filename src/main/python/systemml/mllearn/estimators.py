@@ -1009,8 +1009,8 @@ class Keras2DML(Caffe2DML):
 
     """
 
-    def __init__(self, sparkSession, keras_model, input_shape, transferUsingDF=False, load_keras_weights=True, weights=None, labels=None,
-                 batch_size=64, max_iter=2000, test_iter=10, test_interval=500, display=100, lr_policy="step", weight_decay=5e-4, regularization_type="L2"):
+    def __init__(self, sparkSession, keras_model, input_shape=None, transferUsingDF=False, load_keras_weights=True, weights=None, labels=None,
+                 batch_size=64, max_iter=2000, test_iter=0, test_interval=500, display=100, lr_policy="step", weight_decay=0, regularization_type="L2"):
         """
         Performs training/prediction for a given keras model.
 
@@ -1024,12 +1024,12 @@ class Keras2DML(Caffe2DML):
         weights: directory whether learned weights are stored (default: None)
         labels: file containing mapping between index and string labels (default: None)
         batch_size: size of the input batch (default: 64)
-        max_iter: maximum number of iterations (default: 1)
-        test_iter: test_iter for caffe solver (default: 10)
+        max_iter: maximum number of iterations (default: 2000)
+        test_iter: test_iter for caffe solver (default: 0)
         test_interval: test_interval for caffe solver (default: 500)
         display: display for caffe solver (default: 100)
         lr_policy: learning rate policy for caffe solver (default: "step")
-        weight_decay: regularation strength (default: 5e-4)
+        weight_decay: regularation strength (default: 0, recommended: 5e-4)
         regularization_type: regularization type (default: "L2")
         """
         from .keras2caffe import convertKerasToCaffeNetwork, convertKerasToCaffeSolver, convertKerasToSystemMLModel
@@ -1039,6 +1039,15 @@ class Keras2DML(Caffe2DML):
             if keras_model.model is None:
                 keras_model.build()
             keras_model = keras_model.model
+        if input_shape is None:
+            keras_shape = keras_model.layers[0].input_shape
+            input_shape = (1, 1, 1)
+            if len(keras_shape) > 4:
+                raise Exception('Input shape ' + str(input_shape) + ' is not supported.')
+            for i in range(len(keras_shape)-1):
+                input_shape[i] = keras_shape[i+1] # Ignore batch size
+        elif len(input_shape) > 4:
+            raise Exception('Input shape ' + str(input_shape) + ' is not supported.')
         self.name = keras_model.name
         createJavaObject(sparkSession._sc, 'dummy')
         if not hasattr(keras_model, 'optimizer'):
