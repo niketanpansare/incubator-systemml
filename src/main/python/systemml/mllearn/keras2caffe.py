@@ -239,7 +239,7 @@ def getRecurrentParam(layer):
 
 
 def getInnerProductParam(layer):
-    if layer.output_shape >= 3:
+    if len(layer.output_shape) != 2:
         raise Exception('Only 2-D input is supported for the Dense layer in the current implementation, but found '
                         + str(layer.input_shape) + '. Consider adding a Flatten before ' + str(layer.name))
     return {'num_output': layer.units}

@@ -158,19 +158,6 @@ def test_backward(layers):
         print('Backward:' + str(sysml_preds) + ' == ' + str(keras_preds) + '?')
     return ret
 
-def throws_exception_forward(layers):
-    try:
-        test_forward(layers)
-        return False
-    except Exception:
-        return True
-
-def throws_exception_backward(layers):
-    try:
-        test_backward(layers)
-        return False
-    except Exception:
-        return True
 
 class TestNNLibrary(unittest.TestCase):
 
@@ -181,10 +168,12 @@ class TestNNLibrary(unittest.TestCase):
         self.failUnless(test_backward(Dense(10, input_shape=[30])))
 
     def test_dense2d_forward(self):
-        self.failUnless(not throws_exception_forward(Dense(10, input_shape=[30, 20])))
+        with self.assertRaises(Exception):
+            test_forward(Dense(10, input_shape=[30, 20]))
 
     def test_dense2d_backward(self):
-        self.failUnless(not throws_exception_backward(Dense(10, input_shape=[30, 20])))
+        with self.assertRaises(Exception):
+            test_backward(Dense(10, input_shape=[30, 20]))
 
 if __name__ == '__main__':
     unittest.main()
