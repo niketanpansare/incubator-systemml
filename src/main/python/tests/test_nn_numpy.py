@@ -86,7 +86,7 @@ def get_one_hot_encoded_labels(output_shape):
     return one_hot_labels
 
 def get_sysml_model(keras_model):
-    sysml_model = Keras2DML(spark, keras_model, weights=tmp_dir)
+    sysml_model = Keras2DML(spark, keras_model, weights=tmp_dir, max_iter=1)
     # For apples-to-apples comparison of output probabilities:
     # By performing one-hot encoding outside, we ensure that the ordering of the TF columns
     # matches that of SystemML

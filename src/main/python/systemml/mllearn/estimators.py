@@ -1042,11 +1042,11 @@ class Keras2DML(Caffe2DML):
         if input_shape is None:
             keras_shape = keras_model.layers[0].input_shape
             input_shape = [1, 1, 1]
-            if len(keras_shape) > 4:
-                raise Exception('Input shape ' + str(input_shape) + ' is not supported.')
+            if len(keras_shape) > 4 or len(keras_shape) <= 1:
+                raise Exception('Input shape ' + str(keras_shape) + ' is not supported.')
             for i in range(len(keras_shape)-1):
                 input_shape[i] = keras_shape[i+1] # Ignore batch size
-        elif len(input_shape) > 4:
+        elif len(input_shape) > 3 or len(input_shape) == 0:
             raise Exception('Input shape ' + str(input_shape) + ' is not supported.')
         self.name = keras_model.name
         createJavaObject(sparkSession._sc, 'dummy')
@@ -1056,7 +1056,7 @@ class Keras2DML(Caffe2DML):
                 optimizer=keras.optimizers.SGD(
                     lr=0.01,
                     momentum=0.95,
-                    decay=5e-4,
+                    decay=weight_decay,
                     nesterov=True))
         convertKerasToCaffeNetwork(
             keras_model,
