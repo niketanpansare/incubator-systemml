@@ -1041,7 +1041,7 @@ class Keras2DML(Caffe2DML):
             keras_model = keras_model.model
         if input_shape is None:
             keras_shape = keras_model.layers[0].input_shape
-            input_shape = (1, 1, 1)
+            input_shape = [1, 1, 1]
             if len(keras_shape) > 4:
                 raise Exception('Input shape ' + str(input_shape) + ' is not supported.')
             for i in range(len(keras_shape)-1):
