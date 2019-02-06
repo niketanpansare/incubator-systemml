@@ -51,8 +51,6 @@ from scipy import stats
 from operator import mul
 
 batch_size = 32
-input_shape = (3, 28, 28)
-input_shape2d = (15, 10)
 K.set_image_data_format('channels_first')
 # K.set_image_dim_ordering("th")
 
@@ -63,11 +61,6 @@ def get_tensor(shape, random=True):
         size = reduce(mul, list(shape), 1)
         return stats.zscore(np.arange(size).reshape(shape))
 
-keras_3dtensor = get_tensor((batch_size, input_shape[0], input_shape[1], input_shape[2]), random=False)
-keras_2dtensor = get_tensor((batch_size, input_shape2d[0], input_shape2d[1]), random=False)
-sysml_3dmatrix = keras_3dtensor.reshape((batch_size, -1))
-sysml_2dmatrix = keras_2dtensor.reshape((batch_size, -1))
-num_labels = 10
 tmp_dir = 'tmp_dir'
 
 spark = SparkSession.builder.getOrCreate()
@@ -79,11 +72,11 @@ def initialize_weights(model):
                                          model.layers[l].get_weights()])
     return model
 
-def get_output_shape(layers):
+def get_input_output_shape(layers):
     tmp_keras_model = Sequential()
     for layer in layers:
         tmp_keras_model.add(layer)
-    return tmp_keras_model.layers[-1].output_shape
+    return tmp_keras_model.layers[0].input_shape, tmp_keras_model.layers[-1].output_shape
 
 def get_one_hot_encoded_labels(output_shape):
     output_cells = reduce(mul, list(output_shape[1:]), 1)
@@ -102,23 +95,33 @@ def get_sysml_model(keras_model, sysml_input_shape):
 
 def base_test(layers, add_dense=False, test_backward=True):
     layers = [layers] if not isinstance(layers, list) else layers
-    output_shape = get_output_shape(layers)
+    in_shape, output_shape = get_input_output_shape(layers)
+    print('Output shape:' + str(output_shape))
     # --------------------------------------
     # Create Keras model
     keras_model = Sequential()
     for layer in layers:
         keras_model.add(layer)
     if len(output_shape) > 2:
-        # 3-D model
-        sysml_input_shape = input_shape
-        sysml_matrix = sysml_3dmatrix
-        keras_tensor = keras_3dtensor
         keras_model.add(Flatten())
-    elif len(output_shape) == 2:
+    if len(output_shape) == 4:
+        # 3-D model
+        sysml_input_shape = (in_shape[1], in_shape[2], in_shape[3])
+        keras_tensor = get_tensor((batch_size, sysml_input_shape[0], sysml_input_shape[1], sysml_input_shape[2]),
+                                  random=False)
+        sysml_matrix = keras_tensor.reshape((batch_size, -1))
+    elif len(output_shape) == 3:
         # 2-D model
-        sysml_input_shape = (input_shape2d[0], input_shape2d[1], 1)
-        sysml_matrix = sysml_2dmatrix
-        keras_tensor = keras_2dtensor
+        sysml_input_shape = (in_shape[1], in_shape[2], 1)
+        keras_tensor = get_tensor((batch_size, sysml_input_shape[0], sysml_input_shape[1]),
+                                  random=False)
+        sysml_matrix = keras_tensor.reshape((batch_size, -1))
+    elif len(output_shape) == 2:
+        # 1-D model
+        sysml_input_shape = (in_shape[1], 1, 1)
+        keras_tensor = get_tensor((batch_size, sysml_input_shape[0]),
+                                  random=False)
+        sysml_matrix = keras_tensor.reshape((batch_size, -1))
     else:
         raise Exception('Model with output shape ' + str(output_shape) + ' is not supported.')
     if add_dense:
@@ -143,21 +146,45 @@ def base_test(layers, add_dense=False, test_backward=True):
 
 def test_forward(layers):
     sysml_preds, keras_preds = base_test(layers, test_backward=False)
-    print('Forward:' + str(sysml_preds) + ' == ' + str(keras_preds) + '?')
-    return np.allclose(sysml_preds, keras_preds)
+    ret = np.allclose(sysml_preds, keras_preds)
+    if not ret:
+        print('Forward:' + str(sysml_preds) + ' == ' + str(keras_preds) + '?')
+    return ret
 
 def test_backward(layers):
     sysml_preds, keras_preds = base_test(layers, test_backward=True)
-    print('Backward:' + str(sysml_preds) + ' == ' + str(keras_preds) + '?')
-    return np.allclose(sysml_preds, keras_preds)
+    ret = np.allclose(sysml_preds, keras_preds)
+    if not ret:
+        print('Backward:' + str(sysml_preds) + ' == ' + str(keras_preds) + '?')
+    return ret
+
+def throws_exception_forward(layers):
+    try:
+        test_forward(layers)
+        return False
+    except Exception:
+        return True
+
+def throws_exception_backward(layers):
+    try:
+        test_backward(layers)
+        return False
+    except Exception:
+        return True
 
 class TestNNLibrary(unittest.TestCase):
 
-    def test_flatten_forward(self):
-        self.failUnless(test_forward(Flatten(input_shape=input_shape)))
+    def test_dense_forward(self):
+        self.failUnless(test_forward(Dense(10, input_shape=[30])))
 
-    def test_flatten_backward(self):
-        self.failUnless(test_backward(Flatten(input_shape=input_shape)))
+    def test_dense_backward(self):
+        self.failUnless(test_backward(Dense(10, input_shape=[30])))
+
+    def test_dense2d_forward(self):
+        self.failUnless(not throws_exception_forward(Dense(10, input_shape=[30, 20])))
+
+    def test_dense2d_backward(self):
+        self.failUnless(not throws_exception_backward(Dense(10, input_shape=[30, 20])))
 
 if __name__ == '__main__':
     unittest.main()

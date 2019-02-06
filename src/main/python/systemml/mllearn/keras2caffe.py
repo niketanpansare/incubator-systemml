@@ -238,12 +238,18 @@ def getRecurrentParam(layer):
         layer.return_sequences).lower()}
 
 
+def getInnerProductParam(layer):
+    if layer.output_shape >= 3:
+        raise Exception('Only 2-D input is supported for the Dense layer in the current implementation, but found '
+                        + str(layer.input_shape) + '. Consider adding a Flatten before ' + str(layer.name))
+    return {'num_output': layer.units}
+
 # TODO: Update AveragePooling2D when we add maxpooling support
 layerParamMapping = {
     keras.layers.InputLayer: lambda l:
     {'data_param': {'batch_size': l.batch_size}},
     keras.layers.Dense: lambda l:
-    {'inner_product_param': {'num_output': l.units}},
+    {'inner_product_param': getDenseParam(l)},
     keras.layers.Dropout: lambda l:
     {'dropout_param': {'dropout_ratio': l.rate}},
     keras.layers.Add: lambda l:
