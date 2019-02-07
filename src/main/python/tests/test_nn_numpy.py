@@ -51,7 +51,7 @@ from scipy import stats
 from operator import mul
 
 batch_size = 32
-#K.set_image_data_format('channels_first')
+K.set_image_data_format('channels_first')
 # K.set_image_dim_ordering("th")
 
 def get_tensor(shape, random=True):
@@ -98,7 +98,6 @@ def get_sysml_model(keras_model):
     return sysml_model
 
 def base_test(layers, add_dense=False, test_backward=True):
-    K.set_image_data_format('channels_first')
     layers = [layers] if not isinstance(layers, list) else layers
     in_shape, output_shape = get_input_output_shape(layers)
     # --------------------------------------
