@@ -61,7 +61,6 @@ def get_tensor(shape, random=True):
         shape = list(shape)
         shape[0] = batch_size
     if random:
-        np.random.seed(10)
         return (np.random.randint(100, size=shape) + 1) / 100 # stats.zscore(np.random.randint(100, size=shape))
     else:
         size = reduce(mul, list(shape), 1)
