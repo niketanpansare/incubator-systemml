@@ -479,7 +479,6 @@ def convertKerasToCaffeSolver(kerasModel, caffeNetworkFilePath, outCaffeSolverFi
             raise Exception(
                 'Only sgd (with/without momentum/nesterov), Adam and Adagrad supported.')
 
-
 def getInputMatrices(layer):
     if isinstance(layer, keras.layers.SimpleRNN):
         weights = layer.get_weights()
@@ -507,7 +506,8 @@ def getInputMatrices(layer):
         return [np.vstack((np.hstack((W_i, W_f, W_o, W_c)), np.hstack((U_i, U_f, U_o, U_c)))).reshape((-1, 4*units)), np.hstack((b_i, b_f, b_o, b_c)).reshape((1, -1))]
     elif isinstance(layer, keras.layers.Conv2D):
         weights = layer.get_weights()
-        filter = np.swapaxes(weights[0].T, 2, 3) # convert RSCK => KCRS format
+        #filter = np.swapaxes(weights[0].T, 2, 3)  # convert RSCK => KCRS format
+        filter = np.swapaxes(np.swapaxes(np.swapaxes(weights[0], 1, 3), 0, 1), 1, 2)
         return [ filter.reshape((filter.shape[0], -1)) , getNumPyMatrixFromKerasWeight(weights[1])]
     else:
         return [getNumPyMatrixFromKerasWeight(
