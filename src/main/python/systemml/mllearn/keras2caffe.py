@@ -355,6 +355,9 @@ def convertKerasToCaffeNetwork(
         kerasModel, outCaffeNetworkFilePath, batch_size):
     _checkIfValid(kerasModel.layers, lambda layer: False if type(
         layer) in supportedLayers else True, 'Unsupported Layers:')
+    from keras import backend as K
+    if K.image_data_format() != 'channels_first':
+        throw Exception('Keras2DML only supports channels_first format, but found ' + str(K.image_data_format()) + '. Hint: Use K.set_image_data_format(\'channels_first\')')
     with open(outCaffeNetworkFilePath, 'w') as f:
         layers = _appendInputLayerIfNecessary(kerasModel)
         # Write the parsed layers for all but the last layer

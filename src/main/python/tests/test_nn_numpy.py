@@ -51,7 +51,7 @@ from scipy import stats
 from operator import mul
 
 batch_size = 32
-K.set_image_data_format('channels_first')
+#K.set_image_data_format('channels_first')
 # K.set_image_dim_ordering("th")
 
 def get_tensor(shape, random=True):
@@ -98,6 +98,7 @@ def get_sysml_model(keras_model):
     return sysml_model
 
 def base_test(layers, add_dense=False, test_backward=True):
+    K.set_image_data_format('channels_first')
     layers = [layers] if not isinstance(layers, list) else layers
     in_shape, output_shape = get_input_output_shape(layers)
     # --------------------------------------
@@ -157,6 +158,36 @@ class TestNNLibrary(unittest.TestCase):
     def test_dense_backward(self):
         self.failUnless(test_backward(Dense(10, input_shape=[30])))
 
+    def test_lstm_forward1(self):
+        self.failUnless(test_forward(LSTM(10, return_sequences=True, activation='tanh', stateful=False, recurrent_activation='sigmoid', input_shape=(30, 20))))
+
+    def test_lstm_backward1(self):
+        self.failUnless(test_backward(LSTM(10, return_sequences=True, activation='tanh', stateful=False, recurrent_activation='sigmoid',  input_shape=(30, 20))))
+
+    def test_lstm_forward2(self):
+        self.failUnless(test_forward(LSTM(10, return_sequences=False, activation='tanh', stateful=False, recurrent_activation='sigmoid', input_shape=(30, 20))))
+
+    def test_lstm_backward2(self):
+        self.failUnless(test_backward(LSTM(10, return_sequences=False, activation='tanh', stateful=False, recurrent_activation='sigmoid',  input_shape=(30, 20))))
+
+    def test_dense_relu_forward(self):
+        self.failUnless(test_forward(Dense(10, activation='relu', input_shape=[30])))
+
+    def test_dense_relu_backward(self):
+        self.failUnless(test_backward(Dense(10, activation='relu', input_shape=[30])))
+
+    def test_dense_sigmoid_forward(self):
+        self.failUnless(test_forward(Dense(10, activation='sigmoid', input_shape=[30])))
+
+    def test_dense_sigmoid_backward(self):
+        self.failUnless(test_backward(Dense(10, activation='sigmoid', input_shape=[30])))
+
+    def test_lstm_backward_channel_last(self):
+        K.set_image_data_format('channels_last')
+        with self.assertRaises(Exception):
+            test_backward(LSTM(10, return_sequences=False, activation='tanh', stateful=False, recurrent_activation='sigmoid',  input_shape=(30, 20)))
+        K.set_image_data_format('channels_first')
+
     def test_dense2d_forward(self):
         with self.assertRaises(Exception):
             test_forward(Dense(10, input_shape=[30, 20]))
@@ -164,12 +195,6 @@ class TestNNLibrary(unittest.TestCase):
     def test_dense2d_backward(self):
         with self.assertRaises(Exception):
             test_backward(Dense(10, input_shape=[30, 20]))
-
-    def test_lstm_forward2(self):
-        self.failUnless(test_forward(LSTM(10, return_sequences=False, activation='tanh', stateful=False, recurrent_activation='sigmoid', input_shape=(30, 20))))
-
-    def test_lstm_backward2(self):
-        self.failUnless(test_backward(LSTM(10, return_sequences=False, activation='tanh', stateful=False, recurrent_activation='sigmoid',  input_shape=(30, 20))))
 
 if __name__ == '__main__':
     unittest.main()
