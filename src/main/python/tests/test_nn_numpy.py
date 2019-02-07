@@ -52,7 +52,7 @@ from sklearn.preprocessing import normalize
 from operator import mul
 
 batch_size = 32
-K.set_image_data_format('channels_first')
+#K.set_image_data_format('channels_first')
 # K.set_image_dim_ordering("th")
 
 def get_tensor(shape, random=True):
@@ -201,12 +201,6 @@ class TestNNLibrary(unittest.TestCase):
 
     # --------------------------------------------------------------------------------------------------------
     # Controlled errors for unsupported configuration:
-    def test_channel_last(self):
-        # channel_last data format is not supported
-        K.set_image_data_format('channels_last')
-        with self.assertRaises(Exception):
-            test_backward(LSTM(10, return_sequences=False, activation='tanh', stateful=False, recurrent_activation='sigmoid',  input_shape=(30, 20)))
-        K.set_image_data_format('channels_first')
 
     def test_dense2d_forward(self):
         # affine2d is not implemented

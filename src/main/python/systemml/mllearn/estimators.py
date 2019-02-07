@@ -1034,9 +1034,6 @@ class Keras2DML(Caffe2DML):
         """
         from .keras2caffe import convertKerasToCaffeNetwork, convertKerasToCaffeSolver, convertKerasToSystemMLModel
         import tempfile, keras
-        if keras.backend.image_data_format() != 'channels_first':
-            raise Exception('Keras2DML only supports channels_first format, but found ' + str(
-                K.image_data_format()) + '. Hint: Use keras.backend.set_image_data_format("channels_first")')
         if isinstance(keras_model, keras.models.Sequential):
             # Convert the sequential model to functional model
             if keras_model.model is None:
