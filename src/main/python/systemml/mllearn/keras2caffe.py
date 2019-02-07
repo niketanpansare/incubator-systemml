@@ -505,6 +505,10 @@ def getInputMatrices(layer):
         b_c = b[units * 2: units * 3]
         b_o = b[units * 3:]
         return [np.vstack((np.hstack((W_i, W_f, W_o, W_c)), np.hstack((U_i, U_f, U_o, U_c)))).reshape((-1, 4*units)), np.hstack((b_i, b_f, b_o, b_c)).reshape((1, -1))]
+    elif isinstance(layer, keras.layers.Conv2D):
+        weights = layer.get_weights()
+        filter = np.swapaxes(weights[0].T, 2, 3) # convert RSCK => KCRS format
+        return [ , getNumPyMatrixFromKerasWeight(weights[1])]
     else:
         return [getNumPyMatrixFromKerasWeight(
             param) for param in layer.get_weights()]

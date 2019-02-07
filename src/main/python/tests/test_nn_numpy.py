@@ -52,7 +52,7 @@ from sklearn.preprocessing import normalize
 from operator import mul
 
 batch_size = 32
-#K.set_image_data_format('channels_first')
+K.set_image_data_format('channels_first')
 # K.set_image_dim_ordering("th")
 
 def get_tensor(shape, random=True):
@@ -60,12 +60,7 @@ def get_tensor(shape, random=True):
         # Use the first dimension is None, use batch size:
         shape = list(shape)
         shape[0] = batch_size
-    if random:
-        return (np.random.randint(100, size=shape) + 1) / 100 # stats.zscore(np.random.randint(100, size=shape))
-    else:
-        size = reduce(mul, list(shape), 1)
-        return stats.zscore(np.arange(size)).reshape(shape)
-        #return normalize(np.arange(size).reshape(-1, reduce(mul, list(shape[1:]), 1))).reshape(shape)
+    return (np.random.randint(100, size=shape) + 1) / 100
 
 tmp_dir = 'tmp_dir'
 
@@ -74,8 +69,7 @@ spark = SparkSession.builder.getOrCreate()
 def initialize_weights(model):
     for l in range(len(model.layers)):
         if model.layers[l].get_weights() is not None or len(model.layers[l].get_weights()) > 0:
-            model.layers[l].set_weights([get_tensor(elem.shape, random=True) for elem in
-                                         model.layers[l].get_weights()])
+            model.layers[l].set_weights([get_tensor(elem.shape) for elem in model.layers[l].get_weights()])
     return model
 
 def get_input_output_shape(layers):
@@ -118,7 +112,7 @@ def base_test(layers, add_dense=False, test_backward=True):
     # --------------------------------------
     keras_model = initialize_weights(keras_model)
     sysml_model = get_sysml_model(keras_model)
-    keras_tensor = get_tensor(in_shape, random=False)
+    keras_tensor = get_tensor(in_shape)
     sysml_matrix = keras_tensor.reshape((batch_size, -1))
     # --------------------------------------
     sysml_preds = sysml_model.predict_proba(sysml_matrix)
@@ -132,7 +126,9 @@ def base_test(layers, add_dense=False, test_backward=True):
         keras_preds = keras_model.predict(keras_tensor)
     # --------------------------------------
     #if len(output_shape) == 4:
-    #    keras_preds = np.swapaxes(keras_preds.reshape((-1, output_shape[1], output_shape[2], output_shape[3])), 2, 3)
+    #    keras_preds = keras_preds.reshape((-1, output_shape[1], output_shape[2], output_shape[3]))
+    #    keras_preds = np.swapaxes(keras_preds, 2, 3) # (c,h,w) -> (c,w,h)
+    #    keras_preds = np.swapaxes(keras_preds, 1, 3) # (c,w,h) -> (h,w,c)
     #elif len(output_shape) > 4:
     #    raise Exception('Unsupported output shape:' + str(output_shape))
     # --------------------------------------
@@ -143,8 +139,8 @@ def test_forward(layers):
     ret = np.allclose(sysml_preds.flatten(), keras_preds.flatten())
     if not ret:
         print('The forward test failed for the model:' + str(keras_model.summary()))
-        print('SystemML output:' + str(sysml_preds))
-        print('Keras output:' + str(keras_preds))
+        print('SystemML output:' + str(sysml_preds.flatten()))
+        print('Keras output:' + str(keras_preds.flatten()))
     return ret
 
 def test_backward(layers):
@@ -152,8 +148,8 @@ def test_backward(layers):
     ret = np.allclose(sysml_preds.flatten(), keras_preds.flatten())
     if not ret:
         print('The backward test failed for the model:' + str(keras_model.summary()))
-        print('SystemML output:' + str(sysml_preds))
-        print('Keras output:' + str(keras_preds))
+        print('SystemML output:' + str(sysml_preds.flatten()))
+        print('Keras output:' + str(keras_preds.flatten()))
     return ret
 
 
