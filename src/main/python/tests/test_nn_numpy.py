@@ -55,11 +55,15 @@ K.set_image_data_format('channels_first')
 # K.set_image_dim_ordering("th")
 
 def get_tensor(shape, random=True):
+    if shape[0] is None:
+        # Use the first dimension is None, use batch size:
+        shape = list(shape)
+        shape[0] = batch_size
     if random:
         return stats.zscore(np.random.randint(100, size=shape))
     else:
         size = reduce(mul, list(shape), 1)
-        return stats.zscore(np.arange(size).reshape(shape))
+        return stats.zscore(np.arange(size)).reshape(shape)
 
 tmp_dir = 'tmp_dir'
 
@@ -86,7 +90,7 @@ def get_one_hot_encoded_labels(output_shape):
     return one_hot_labels
 
 def get_sysml_model(keras_model):
-    sysml_model = Keras2DML(spark, keras_model, weights=tmp_dir, max_iter=1)
+    sysml_model = Keras2DML(spark, keras_model, weights=tmp_dir, max_iter=1, batch_size=batch_size)
     # For apples-to-apples comparison of output probabilities:
     # By performing one-hot encoding outside, we ensure that the ordering of the TF columns
     # matches that of SystemML
@@ -96,37 +100,24 @@ def get_sysml_model(keras_model):
 def base_test(layers, add_dense=False, test_backward=True):
     layers = [layers] if not isinstance(layers, list) else layers
     in_shape, output_shape = get_input_output_shape(layers)
-    print('Output shape:' + str(output_shape))
     # --------------------------------------
     # Create Keras model
     keras_model = Sequential()
     for layer in layers:
         keras_model.add(layer)
     if len(output_shape) > 2:
+        # Flatten the last layer activation before feeding it to the softmax loss
         keras_model.add(Flatten())
-    if len(output_shape) == 4:
-        # 3-D model
-        keras_tensor = get_tensor((batch_size, in_shape[1], in_shape[2], in_shape[3]), random=False)
-        sysml_matrix = keras_tensor.reshape((batch_size, -1))
-    elif len(output_shape) == 3:
-        # 2-D model
-        keras_tensor = get_tensor((batch_size, in_shape[1], in_shape[2]), random=False)
-        sysml_matrix = keras_tensor.reshape((batch_size, -1))
-    elif len(output_shape) == 2:
-        # 1-D model
-        keras_tensor = get_tensor((batch_size, in_shape[1]), random=False)
-        sysml_matrix = keras_tensor.reshape((batch_size, -1))
-    else:
-        raise Exception('Model with output shape ' + str(output_shape) + ' is not supported.')
     if add_dense:
         keras_model.add(Dense(num_labels, activation='softmax'))
     else:
         keras_model.add(Activation('softmax'))
-    keras_model.compile(loss='categorical_crossentropy', optimizer=SGD(lr=0.1, decay=0, momentum=0, nesterov=False))
-    print(keras_model.summary())
+    keras_model.compile(loss='categorical_crossentropy', optimizer=SGD(lr=1, decay=0, momentum=0, nesterov=False))
     # --------------------------------------
     keras_model = initialize_weights(keras_model)
     sysml_model = get_sysml_model(keras_model)
+    keras_tensor = get_tensor(in_shape, random=False)
+    sysml_matrix = keras_tensor.reshape((batch_size, -1))
     # --------------------------------------
     sysml_preds = sysml_model.predict_proba(sysml_matrix).flatten()
     if test_backward:
@@ -173,6 +164,12 @@ class TestNNLibrary(unittest.TestCase):
     def test_dense2d_backward(self):
         with self.assertRaises(Exception):
             test_backward(Dense(10, input_shape=[30, 20]))
+
+    def test_lstm_forward2(self):
+        self.failUnless(test_forward(LSTM(10, return_sequences=False, activation='tanh', stateful=False, recurrent_activation='sigmoid', input_shape=(30, 20))))
+
+    def test_lstm_backward2(self):
+        self.failUnless(test_backward(LSTM(10, return_sequences=False, activation='tanh', stateful=False, recurrent_activation='sigmoid',  input_shape=(30, 20))))
 
 if __name__ == '__main__':
     unittest.main()

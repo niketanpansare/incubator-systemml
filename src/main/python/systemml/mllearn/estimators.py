@@ -1018,7 +1018,7 @@ class Keras2DML(Caffe2DML):
         ----------
         sparkSession: PySpark SparkSession
         keras_model: keras model
-        input_shape: 3-element list (number of channels, input height, input width)
+        input_shape: 3-element list (number of channels, input height, input width). If not provided, it is inferred from the input shape of the first layer.
         transferUsingDF: whether to pass the input dataset via PySpark DataFrame (default: False)
         load_keras_weights: whether to load weights from the keras_model. If False, the weights will be initialized to random value using NN libraries' init method  (default: True)
         weights: directory whether learned weights are stored (default: None)
