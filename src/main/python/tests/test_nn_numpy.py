@@ -46,6 +46,7 @@ from keras import backend as K
 from keras.models import Model
 from systemml.mllearn import Keras2DML
 from pyspark.sql import SparkSession
+from pyspark import SparkContext
 from keras.utils import np_utils
 from scipy import stats
 from sklearn.preprocessing import normalize
@@ -64,7 +65,9 @@ def get_tensor(shape, random=True):
 
 tmp_dir = 'tmp_dir'
 
+sc  = SparkContext()
 spark = SparkSession.builder.getOrCreate()
+sc.setLogLevel('ERROR')
 
 def initialize_weights(model):
     for l in range(len(model.layers)):
@@ -193,7 +196,7 @@ class TestNNLibrary(unittest.TestCase):
 
     def test_conv2d_forward1(self):
         # multi-channel input/output
-        self.failUnless(test_forward(Conv2D(32, kernel_size=(3, 3), input_shape=(3, 64, 64), activation='relu', padding='valid')))
+        self.failUnless(test_forward(Conv2D(32, kernel_size=(3, 3), input_shape=(3, 64, 64), padding='valid')))
 
     # --------------------------------------------------------------------------------------------------------
     # Controlled errors for unsupported configuration:
