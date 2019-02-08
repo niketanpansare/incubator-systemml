@@ -94,6 +94,7 @@ def get_sysml_model(keras_model):
     # By performing one-hot encoding outside, we ensure that the ordering of the TF columns
     # matches that of SystemML
     sysml_model.set(train_algo='batch', perform_one_hot_encoding=False)
+    # print('Script:' + str(sysml_model.get_training_script()))
     return sysml_model
 
 def base_test(layers, add_dense=False, test_backward=True):
@@ -194,23 +195,10 @@ class TestNNLibrary(unittest.TestCase):
     def test_dense_softmax_backward(self):
         self.failUnless(test_backward(Dense(10, activation='softmax', input_shape=[30])))
 
-    def test_conv2d_forward1(self):
-        # multi-channel input/output
-        self.failUnless(test_forward(Conv2D(32, kernel_size=(3, 3), input_shape=(3, 64, 64), padding='valid')))
+    def test_maxpool2d_forward(self):
+        self.failUnless(test_forward(MaxPooling2D(pool_size=(2, 2), input_shape=(3, 64, 32))))
 
-    # --------------------------------------------------------------------------------------------------------
-    # Controlled errors for unsupported configuration:
 
-    def test_dense2d_forward(self):
-        # affine2d is not implemented
-        with self.assertRaises(Exception):
-            test_forward(Dense(10, input_shape=[30, 20]))
-
-    def test_dense2d_backward(self):
-        # affine2d is not implemented
-        with self.assertRaises(Exception):
-            test_backward(Dense(10, input_shape=[30, 20]))
-    # --------------------------------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     unittest.main()

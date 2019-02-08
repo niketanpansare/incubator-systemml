@@ -543,6 +543,9 @@ def convertKerasToSystemMLModel(spark, kerasModel, outDirectory):
                     i == 1 and type(layer) in biasToTranspose) else inputMatrices[i]
             py4j.java_gateway.get_method(script_java, "in")(
                 potentialVar[i], convertToMatrixBlock(sc, mat))
-    script_java.setScriptString(''.join(dmlLines))
-    ml = sc._jvm.org.apache.sysml.api.mlcontext.MLContext(sc._jsc)
-    ml.execute(script_java)
+    script_str = ''.join(dmlLines)
+    if script_str.strip() != '':
+        # Only execute if the script is not empty
+        script_java.setScriptString(script_str)
+        ml = sc._jvm.org.apache.sysml.api.mlcontext.MLContext(sc._jsc)
+        ml.execute(script_java)
