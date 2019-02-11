@@ -131,12 +131,13 @@ def base_test(layers, add_dense=False, test_backward=True):
         keras_model.train_on_batch(keras_tensor, one_hot_labels)
         keras_preds = keras_model.predict(keras_tensor)
     # --------------------------------------
-    #if len(output_shape) == 4:
-    #    keras_preds = keras_preds.reshape((-1, output_shape[1], output_shape[2], output_shape[3]))
-    #    keras_preds = np.swapaxes(keras_preds, 2, 3) # (c,h,w) -> (c,w,h)
-    #    keras_preds = np.swapaxes(keras_preds, 1, 3) # (c,w,h) -> (h,w,c)
-    #elif len(output_shape) > 4:
-    #    raise Exception('Unsupported output shape:' + str(output_shape))
+    if len(output_shape) == 4:
+        # Flatten doesnot respect channel_first, so reshuffle the dimensions:
+        keras_preds = keras_preds.reshape((batch_size, output_shape[2], output_shape[3], output_shape[1]))
+        keras_preds = np.swapaxes(keras_preds, 2, 3)  # (h,w,c) -> (h,c,w)
+        keras_preds = np.swapaxes(keras_preds, 1, 2)  # (h,c,w) -> (c,h,w)
+    elif len(output_shape) > 4:
+        raise Exception('Unsupported output shape:' + str(output_shape))
     # --------------------------------------
     return sysml_preds, keras_preds, keras_model, output_shape
 
@@ -149,10 +150,10 @@ def test_forward(layers):
     ret = np.allclose(sysml_preds.flatten(), keras_preds.flatten())
     if not ret:
         print('The forward test failed for the model:' + str(keras_model.summary()))
-        print('SystemML output:' + str(sysml_preds.reshape((-1, output_shape[1], output_shape[2], output_shape[3]))))
-        print('Keras output:' + str(keras_preds.reshape((-1, output_shape[1], output_shape[2], output_shape[3]))))
-        debug_layout(sysml_preds.flatten(),
-                     keras_preds.reshape((-1, output_shape[1], output_shape[2], output_shape[3])))
+        print('SystemML output:' + str(sysml_preds))
+        print('Keras output:' + str(keras_preds))
+        #debug_layout(sysml_preds.flatten(),
+        #             keras_preds.reshape((-1, output_shape[1], output_shape[2], output_shape[3])))
     return ret
 
 def test_backward(layers):
@@ -160,10 +161,10 @@ def test_backward(layers):
     ret = np.allclose(sysml_preds.flatten(), keras_preds.flatten())
     if not ret:
         print('The backward test failed for the model:' + str(keras_model.summary()))
-        print('SystemML output:' + str(sysml_preds.reshape((-1, output_shape[1], output_shape[2], output_shape[3]))))
-        print('Keras output:' + str(keras_preds.reshape((-1, output_shape[1], output_shape[2], output_shape[3]))))
-        debug_layout(sysml_preds.flatten(),
-                     keras_preds.reshape((-1, output_shape[1], output_shape[2], output_shape[3])))
+        print('SystemML output:' + str(sysml_preds))
+        print('Keras output:' + str(keras_preds))
+        # debug_layout(sysml_preds.flatten(),
+        #             keras_preds.reshape((-1, output_shape[1], output_shape[2], output_shape[3])))
     return ret
 
 
@@ -175,6 +176,7 @@ class TestNNLibrary(unittest.TestCase):
     def test_dense_backward(self):
         self.failUnless(test_backward(Dense(10, input_shape=[30])))
 
+    # TODO:
     #def test_lstm_forward1(self):
     #    self.failUnless(test_forward(LSTM(10, return_sequences=True, activation='tanh', stateful=False, recurrent_activation='sigmoid', input_shape=(30, 20))))
 
@@ -211,8 +213,55 @@ class TestNNLibrary(unittest.TestCase):
     def test_maxpool2d_backward(self):
         self.failUnless(test_backward(MaxPooling2D(pool_size=(2, 2), input_shape=(1, 64, 32))))
 
-    #def test_maxpool2d_forward1(self):
-    #    self.failUnless(test_forward(MaxPooling2D(pool_size=(2, 2), input_shape=(3, 64, 32))))
+    def test_maxpool2d_multi_channel_forward(self):
+        self.failUnless(test_forward(MaxPooling2D(pool_size=(2, 2), input_shape=(3, 64, 32))))
+
+    def test_maxpool2d_multi_channel_backward(self):
+        self.failUnless(test_backward(MaxPooling2D(pool_size=(2, 2), input_shape=(3, 64, 32))))
+
+    def test_conv2d_forward_single_channel_input_output(self):
+        # 1-channel input and output
+        self.failUnless(
+            test_forward(Conv2D(1, kernel_size=(3, 3), input_shape=(1, 64, 64), activation='relu', padding='valid')))
+
+    def test_conv2d_forward_single_channel_input(self):
+        # 1-channel input
+        self.failUnless(
+            test_forward(Conv2D(32, kernel_size=(3, 3), input_shape=(1, 64, 64), activation='relu', padding='valid')))
+
+    def test_conv2d_forward_single_channel_output(self):
+        # 1-channel output
+        self.failUnless(
+            test_forward(Conv2D(1, kernel_size=(3, 3), input_shape=(3, 64, 64), activation='relu', padding='valid')))
+
+    def test_conv2d_forward(self):
+        self.failUnless(
+            test_forward(Conv2D(32, kernel_size=(3, 3), input_shape=(3, 64, 32), activation='relu', padding='valid')))
+
+    def test_conv2d_backward_single_channel_input_output(self):
+        # 1-channel input and output
+        self.failUnless(
+            test_backward(Conv2D(1, kernel_size=(3, 3), input_shape=(1, 64, 64), activation='relu', padding='valid')))
+
+    def test_conv2d_backward_single_channel_input(self):
+        # 1-channel input
+        self.failUnless(
+            test_backward(Conv2D(32, kernel_size=(3, 3), input_shape=(1, 64, 64), activation='relu', padding='valid')))
+
+    def test_conv2d_backward_single_channel_output(self):
+        # 1-channel output
+        self.failUnless(
+            test_backward(Conv2D(1, kernel_size=(3, 3), input_shape=(3, 64, 64), activation='relu', padding='valid')))
+
+    def test_conv2d_backward(self):
+        self.failUnless(
+            test_backward(Conv2D(32, kernel_size=(3, 3), input_shape=(3, 64, 32), activation='relu', padding='valid')))
+
+    def test_upsampling_forward(self):
+        self.failUnless(test_forward(UpSampling2D(size=(2, 2), input_shape=(3, 64, 32))))
+
+    def test_upsampling_backward(self):
+        self.failUnless(test_backward(UpSampling2D(size=(2, 2), input_shape=(3, 64, 32))))
 
 if __name__ == '__main__':
     unittest.main()
