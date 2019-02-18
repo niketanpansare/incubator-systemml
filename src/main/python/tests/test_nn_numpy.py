@@ -176,12 +176,11 @@ class TestNNLibrary(unittest.TestCase):
     def test_dense_backward(self):
         self.failUnless(test_backward(Dense(10, input_shape=[30])))
 
-    # TODO:
-    #def test_lstm_forward1(self):
-    #    self.failUnless(test_forward(LSTM(10, return_sequences=True, activation='tanh', stateful=False, recurrent_activation='sigmoid', input_shape=(30, 20))))
+    def test_lstm_forward1(self):
+        self.failUnless(test_forward(LSTM(2, return_sequences=True, activation='tanh', stateful=False, recurrent_activation='sigmoid', input_shape=(3, 4))))
 
-    #def test_lstm_backward1(self):
-    #    self.failUnless(test_backward(LSTM(10, return_sequences=True, activation='tanh', stateful=False, recurrent_activation='sigmoid',  input_shape=(30, 20))))
+    def test_lstm_backward1(self):
+        self.failUnless(test_backward(LSTM(2, return_sequences=True, activation='tanh', stateful=False, recurrent_activation='sigmoid',  input_shape=(3, 4))))
 
     def test_lstm_forward2(self):
         self.failUnless(test_forward(LSTM(10, return_sequences=False, activation='tanh', stateful=False, recurrent_activation='sigmoid', input_shape=(30, 20))))
