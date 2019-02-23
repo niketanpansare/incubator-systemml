@@ -332,7 +332,8 @@ public class LibMatrixDNN {
 			}
 			out_prev = out_t;
 			c_prev = c_t;
-			// TODO:
+			
+			// TODO: Add this when implementing lstm_backward
 //			cache_out[t,] = matrix(out_t, rows=1, cols=N*M)  # reshape
 //		    cache_c[t,] = matrix(c, rows=1, cols=N*M)  # reshape
 //		    cache_ifog[t,] = matrix(cbind(ifo, g), rows=1, cols=N*4*M)  # reshape
@@ -344,47 +345,6 @@ public class LibMatrixDNN {
 		else
 			c.copy(c0);
 		
-		
-//		MatrixBlock input = new MatrixBlock(N, D+M, false);
-//		input.allocateDenseBlock();
-//		copyOutT(input, out0, N, D, M);
-//		double [] c_prev = new double[N*M];
-//		copy(c0, c_prev);
-//		
-//		double[] out_t = new double[N*M];
-//		double [] outArr = ensureDenseFormat(out);
-//		
-//		for(int t = 1; t <= T; t++) {
-//			copyXT(input, X, t-1, N, T, D, M); // X_t = X[,(t-1)*D+1:t*D]  # shape (N, D)
-//			input.recomputeNonZeros();
-//			
-//			// input = cbind(X_t, out_prev) performed by previous call to copyOutT
-//			
-//			// ifog_raw = input %*% W + b  # input, forget, output, and g gates; shape (N, 4M)
-//			MatrixBlock ifog_raw = add(matmult(input, W, numThreads), b);
-//			
-//			applyLstmActivations(ifog_raw, c_prev, c, out_t);
-//			
-//			if(return_seq) {
-//				for(int n = 0; n < N; n++) {
-//					for(int m = 0; m < M; m++) {
-//						outArr[n*T*M + t*M + m] = out_t[n*M + m];
-//					}
-//				}
-//			}
-//			
-//			copyOutT(input, out_t, N, D, numThreads); // out_prev = out_t
-//			copy(c, c_prev); // c_prev = c
-//			
-//			// TODO:
-////		    cache_out[t,] = matrix(out_t, rows=1, cols=N*M)  # reshape
-////		    cache_c[t,] = matrix(c, rows=1, cols=N*M)  # reshape
-////		    cache_ifog[t,] = matrix(cbind(ifo, g), rows=1, cols=N*4*M)  # reshape
-//		}
-//		c.recomputeNonZeros();
-//		if(!return_seq)
-//			System.arraycopy(out_t, 0, outArr, 0, out_t.length);
-//		out.recomputeNonZeros();
 	}
 	
 	/**
