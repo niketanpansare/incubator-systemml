@@ -291,203 +291,13 @@ public class LibMatrixDNN {
 	
 	// sigmoid(0)*c_prev + sigmoid(0)*tanh(0);
 	
-	private static double computeCarryCell(double f, double c_prev, double i, double g) {
-		return f*c_prev + i*g;
-	}
-	
 	private static Builtin sigmoidOp = Builtin.getBuiltinFnObject(BuiltinCode.SIGMOID);
 	private static Builtin tanhOp = Builtin.getBuiltinFnObject(BuiltinCode.TANH);
-	private static double sigmoid(double in) {
-		return sigmoidOp.execute(in);
-	}
 	private static MatrixBlock sigmoid(MatrixBlock in, int numThreads, boolean inPlace) {
 		return (MatrixBlock) in.unaryOperations(new UnaryOperator(sigmoidOp, numThreads, inPlace), new MatrixBlock());
 	}
-	private static double tanh(double in) {
-		return tanhOp.execute(in);
-	}
 	private static MatrixBlock tanh(MatrixBlock in, int numThreads, boolean inPlace) {
 		return (MatrixBlock) in.unaryOperations(new UnaryOperator(tanhOp, numThreads, inPlace), new MatrixBlock());
-	}
-	
-	private static void applyLstmActivationHelper(MatrixBlock ifog_raw, int r,
-			double [] ifo, double [] g, int M) {
-		if(ifog_raw.isInSparseFormat()) {
-			SparseBlock sblock = ifog_raw.getSparseBlock();
-			Arrays.fill(ifo, sigmoid(0));
-			Arrays.fill(g, tanh(0));
-			if( sblock.isEmpty(r) ) {
-				return;
-			}
-			else {
-				int apos = sblock.pos(r);
-				int alen = sblock.size(r);
-				int[] aix = sblock.indexes(r);
-				double[] avals = sblock.values(r);
-				for(int j=apos; j<apos+alen; j++) {
-					int index = aix[j];
-					if(index < 3*M) {
-						ifo[index] = sigmoid(avals[j]);
-					}
-					else {
-						g[index-3*M] = tanh(avals[j]);
-					}
-				}
-			}
-		}
-		else {
-			double [] arr = ifog_raw.getDenseBlockValues();
-			if(arr == null) {
-				Arrays.fill(ifo, sigmoid(0));
-				Arrays.fill(g, tanh(0));
-			}
-			else {
-				int offset = r*4*M;
-				for(int index = 0; index < 3*M; index++) {
-					ifo[index] = sigmoid(arr[offset + index]);
-				}
-				offset += 3*M;
-				for(int index = 0; index < M; index++) {
-					g[index] = tanh(arr[offset + index]);
-				}
-			}
-		}
-	}
-	
-	private static double [] ensureDenseFormat(MatrixBlock matBlock) {
-		if(!matBlock.isAllocated()) {
-			matBlock.allocateDenseBlock();
-			return matBlock.getDenseBlockValues();
-		}
-		else {
-			if(matBlock.isInSparseFormat()) {
-				matBlock.sparseToDense();
-			}
-			double [] arr = matBlock.getDenseBlockValues();
-			if(arr == null) {
-				matBlock.allocateDenseBlock();
-			}
-			return arr;
-		}
-	}
-	
-	private static void applyLstmActivations(MatrixBlock ifog_raw, double [] c_prev,
-			MatrixBlock cMB, double [] out_t) {
-		double [] c = ensureDenseFormat(cMB);
-		
-		int N = cMB.getNumRows();
-		int M = cMB.getNumColumns();
-		double [] ifo = new double[3*M];
-		double [] g = new double[M];
-		for(int n = 0; n < N; n++) {
-			applyLstmActivationHelper(ifog_raw, n, ifo, g, M);
-			for(int m = 0 ; m < M; m++) {
-				c[m] = ifo[M + m]*c_prev[m] + ifo[m]*g[m];
-				out_t[m] = ifo[M*2 + m]*tanh(c[m]);
-			}
-		}
-	}
-	
-	private static void copyOutT(MatrixBlock input, double [] out_t, int N, int D, int M) {
-		if(input.isInSparseFormat()) {
-			throw new DMLRuntimeException("Expected input to be in dense format");
-		}
-		double [] arr = input.getDenseBlockValues();
-		if(out_t == null) {
-			for(int n = 0; n < N; n++) {
-				for(int m = 0; m < M; m++) {
-					arr[n*D*M + D + m] = 0;
-				}
-			}
-		}
-		else {
-			for(int n = 0; n < N; n++) {
-				for(int m = 0; m < M; m++) {
-					arr[n*D*M + D + m] = out_t[n*N + m];
-				}
-			}
-		}
-	}
-	
-	private static void copyOutT(MatrixBlock input, MatrixBlock out_t, int N, int D, int M) {
-		if(input.isInSparseFormat()) {
-			throw new DMLRuntimeException("Expected input to be in dense format");
-		}
-		if(out_t.isInSparseFormat()) {
-			double [] inputArr = input.getDenseBlockValues();
-			for(int n = 0; n < N; n++) {
-				for(int m = 0; m < M; m++) {
-					inputArr[n*D*M + D + m] = 0;
-				}
-			}
-			SparseBlock sblock = out_t.getSparseBlock();
-			for(int n = 0; n < out_t.getNumRows(); n++) {
-				if( sblock.isEmpty(n) )
-					continue;
-				int apos = sblock.pos(n);
-				int alen = sblock.size(n);
-				int[] aix = sblock.indexes(n);
-				double[] avals = sblock.values(n);
-				
-				// Iterate over the sparse block
-				for(int j=apos; j<apos+alen; j++) {
-					inputArr[n*D*M + D + aix[j]] = avals[j];
-				}
-			}
-		}
-		else  {
-			copyOutT(input, out_t.getDenseBlockValues(), N, D, M);
-		}
-	}
-	
-	// where X_t = X[,(t-1)*D+1:t*D]  # shape (N, D)
-	private static void copyXT(MatrixBlock input, MatrixBlock X, int t, int N, int T, int D, int M) {
-		if(input.isInSparseFormat()) {
-			throw new DMLRuntimeException("Expected input to be in dense format");
-		}
-		double [] inputArr = input.getDenseBlockValues();
-		if(X.isInSparseFormat()) {
-			for(int n = 0; n < N; n++) {
-				for(int d = 0; d < D; d++) {
-					inputArr[n*D*M + d] = 0;
-				}
-			}
-			SparseBlock sblock = X.getSparseBlock();
-			for(int n = 0; n < N; n++) {
-				if( sblock.isEmpty(n) )
-					continue;
-				int apos = sblock.pos(n);
-				int alen = sblock.size(n);
-				int[] aix = sblock.indexes(n);
-				double[] avals = sblock.values(n);
-				
-				// Iterate over the sparse block
-				for(int j=apos; j<apos+alen; j++) {
-					int td = aix[j];
-					if(td >= t*D && td < (t+1)*D) {
-						int d = td - t*D;
-						inputArr[n*D*M + d] = avals[j];
-					}
-				}
-			}
-		}
-		else  {
-			double [] xArr = X.getDenseBlockValues();
-			if(xArr == null) {
-				for(int n = 0; n < N; n++) {
-					for(int d = 0; d < D; d++) {
-						inputArr[n*D*M + d] = 0;
-					}
-				}
-			}
-			else {
-				for(int n = 0; n < N; n++) {
-					for(int d = 0; d < D; d++) {
-						inputArr[n*D*M + d] = xArr[n*T*D + t*D + d];
-					}
-				}
-			}
-		}
 	}
 	
 	public static void lstm(MatrixBlock X, MatrixBlock W, MatrixBlock b, MatrixBlock out0, MatrixBlock c0, 
@@ -527,7 +337,7 @@ public class LibMatrixDNN {
 //		    cache_c[t,] = matrix(c, rows=1, cols=N*M)  # reshape
 //		    cache_ifog[t,] = matrix(cbind(ifo, g), rows=1, cols=N*4*M)  # reshape
 		}
-		if(out_t != null)
+		if(out_t != null && !return_seq)
 			out.copy(out_t);
 		if(c_t != null)
 			c.copy(c_t);
