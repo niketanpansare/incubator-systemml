@@ -310,8 +310,8 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 		int D = DPlusM - M;
 		int T = TD / D;
 		
-		MatrixBlock out = new MatrixBlock(N, return_seq ? (T*M) : M, false);
-		MatrixBlock c = new MatrixBlock(N, M, false);
+		MatrixBlock out = new MatrixBlock(N, return_seq ? (T*M) : M, false).allocateBlock();
+		MatrixBlock c = new MatrixBlock(N, M, false).allocateBlock();
 		
 		LibMatrixDNN.lstm(X, W, b, out0, c0, 
 				return_seq, N, T, D, M,
