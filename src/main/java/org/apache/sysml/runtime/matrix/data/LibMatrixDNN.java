@@ -32,15 +32,18 @@ import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.functionobjects.KahanPlus;
 import org.apache.sysml.runtime.functionobjects.Multiply;
 import org.apache.sysml.runtime.functionobjects.Plus;
+import org.apache.sysml.runtime.functionobjects.ValueFunction;
 import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysml.runtime.instructions.cp.KahanObject;
 import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysml.runtime.util.CommonThreadPool;
 import org.apache.sysml.runtime.util.DnnUtils;
 import org.apache.sysml.runtime.util.IndexRange;
@@ -282,6 +285,9 @@ public class LibMatrixDNN {
 	private static MatrixBlock add(MatrixBlock matBlock1, MatrixBlock matBlock2) {
 		return (MatrixBlock) matBlock1.binaryOperations(new BinaryOperator(Plus.getPlusFnObject()), matBlock2, new MatrixBlock());
 	}
+	private static MatrixBlock multiply(MatrixBlock matBlock1, MatrixBlock matBlock2) {
+		return (MatrixBlock) matBlock1.binaryOperations(new BinaryOperator(Multiply.getMultiplyFnObject()), matBlock2, new MatrixBlock());
+	}
 	
 	// sigmoid(0)*c_prev + sigmoid(0)*tanh(0);
 	
@@ -294,8 +300,14 @@ public class LibMatrixDNN {
 	private static double sigmoid(double in) {
 		return sigmoidOp.execute(in);
 	}
+	private static MatrixBlock sigmoid(MatrixBlock in, int numThreads, boolean inPlace) {
+		return (MatrixBlock) in.unaryOperations(new UnaryOperator(sigmoidOp, numThreads, inPlace), new MatrixBlock());
+	}
 	private static double tanh(double in) {
 		return tanhOp.execute(in);
+	}
+	private static MatrixBlock tanh(MatrixBlock in, int numThreads, boolean inPlace) {
+		return (MatrixBlock) in.unaryOperations(new UnaryOperator(tanhOp, numThreads, inPlace), new MatrixBlock());
 	}
 	
 	private static void applyLstmActivationHelper(MatrixBlock ifog_raw, int r,
@@ -483,46 +495,86 @@ public class LibMatrixDNN {
 			MatrixBlock out, MatrixBlock c, // output 
 			MatrixBlock cache_out, MatrixBlock cache_c, MatrixBlock cache_ifog, // if null, the cache values are not computed
 			int numThreads) {
-		MatrixBlock input = new MatrixBlock(N, D+M, false);
-		input.allocateDenseBlock();
-		copyOutT(input, out0, N, D, M);
-		double [] c_prev = new double[N*M];
-		copy(c0, c_prev);
+		MatrixBlock out_prev = out0;
+		MatrixBlock c_prev = c0;
 		
-		double[] out_t = new double[N*M];
-		double [] outArr = ensureDenseFormat(out);
-		
+		MatrixBlock W1 = W.slice(0, D-1);
+		MatrixBlock W2 = W.slice(D, D+M-1);
+		MatrixBlock c_t = null;
+		MatrixBlock out_t = null;
 		for(int t = 1; t <= T; t++) {
-			copyXT(input, X, t-1, N, T, D, M); // X_t = X[,(t-1)*D+1:t*D]  # shape (N, D)
-			input.recomputeNonZeros();
-			
-			// input = cbind(X_t, out_prev) performed by previous call to copyOutT
-			
-			// ifog_raw = input %*% W + b  # input, forget, output, and g gates; shape (N, 4M)
-			MatrixBlock ifog_raw = add(matmult(input, W, numThreads), b);
-			
-			applyLstmActivations(ifog_raw, c_prev, c, out_t);
-			
+			MatrixBlock X_t = X.slice(0, N-1, (t-1)*D, t*D-1, new MatrixBlock());
+			MatrixBlock ifog_raw = add(add(matmult(X_t, W1, numThreads), matmult(out_prev, W2, numThreads)), b);
+			MatrixBlock i = ifog_raw.slice(0, N-1, 0, M-1, new MatrixBlock());
+			MatrixBlock f = ifog_raw.slice(0, N-1, M, 2*M-1, new MatrixBlock());
+			MatrixBlock o = ifog_raw.slice(0, N-1, 2*M, 3*M-1, new MatrixBlock());
+			MatrixBlock g = ifog_raw.slice(0, N-1, 3*M, 4*M-1, new MatrixBlock());
+			i = sigmoid(i, numThreads, true);
+			f = sigmoid(f, numThreads, true);
+			o = sigmoid(o, numThreads, true);
+			g = tanh(g, numThreads, true);
+			// c_t = f*c_prev + i*g
+			c_t = add(multiply(f, c_prev) , multiply(i, g));
+			// out_t = o*tanh(c)
+			out_t = multiply(o, tanh(c_t, numThreads, false));
 			if(return_seq) {
-				for(int n = 0; n < N; n++) {
-					for(int m = 0; m < M; m++) {
-						outArr[n*T*M + t*M + m] = out_t[n*M + m];
-					}
-				}
+				out = out.leftIndexingOperations(out_t, 0, N-1, (t-1)*M, t*M-1, new MatrixBlock(), UpdateType.INPLACE);
 			}
-			
-			copyOutT(input, out_t, N, D, numThreads); // out_prev = out_t
-			copy(c, c_prev); // c_prev = c
-			
+			out_prev = out_t;
+			c_prev = c_t;
 			// TODO:
-//		    cache_out[t,] = matrix(out_t, rows=1, cols=N*M)  # reshape
+//			cache_out[t,] = matrix(out_t, rows=1, cols=N*M)  # reshape
 //		    cache_c[t,] = matrix(c, rows=1, cols=N*M)  # reshape
 //		    cache_ifog[t,] = matrix(cbind(ifo, g), rows=1, cols=N*4*M)  # reshape
 		}
-		c.recomputeNonZeros();
-		if(!return_seq)
-			System.arraycopy(out_t, 0, outArr, 0, out_t.length);
-		out.recomputeNonZeros();
+		if(out_t != null)
+			out.copy(out_t);
+		if(c_t != null)
+			c.copy(c_t);
+		else
+			c.copy(c0);
+		
+		
+//		MatrixBlock input = new MatrixBlock(N, D+M, false);
+//		input.allocateDenseBlock();
+//		copyOutT(input, out0, N, D, M);
+//		double [] c_prev = new double[N*M];
+//		copy(c0, c_prev);
+//		
+//		double[] out_t = new double[N*M];
+//		double [] outArr = ensureDenseFormat(out);
+//		
+//		for(int t = 1; t <= T; t++) {
+//			copyXT(input, X, t-1, N, T, D, M); // X_t = X[,(t-1)*D+1:t*D]  # shape (N, D)
+//			input.recomputeNonZeros();
+//			
+//			// input = cbind(X_t, out_prev) performed by previous call to copyOutT
+//			
+//			// ifog_raw = input %*% W + b  # input, forget, output, and g gates; shape (N, 4M)
+//			MatrixBlock ifog_raw = add(matmult(input, W, numThreads), b);
+//			
+//			applyLstmActivations(ifog_raw, c_prev, c, out_t);
+//			
+//			if(return_seq) {
+//				for(int n = 0; n < N; n++) {
+//					for(int m = 0; m < M; m++) {
+//						outArr[n*T*M + t*M + m] = out_t[n*M + m];
+//					}
+//				}
+//			}
+//			
+//			copyOutT(input, out_t, N, D, numThreads); // out_prev = out_t
+//			copy(c, c_prev); // c_prev = c
+//			
+//			// TODO:
+////		    cache_out[t,] = matrix(out_t, rows=1, cols=N*M)  # reshape
+////		    cache_c[t,] = matrix(c, rows=1, cols=N*M)  # reshape
+////		    cache_ifog[t,] = matrix(cbind(ifo, g), rows=1, cols=N*4*M)  # reshape
+//		}
+//		c.recomputeNonZeros();
+//		if(!return_seq)
+//			System.arraycopy(out_t, 0, outArr, 0, out_t.length);
+//		out.recomputeNonZeros();
 	}
 	
 	/**
