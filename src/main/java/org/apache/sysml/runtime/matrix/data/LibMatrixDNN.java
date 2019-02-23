@@ -31,10 +31,19 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.functionobjects.KahanPlus;
+import org.apache.sysml.runtime.functionobjects.Multiply;
+import org.apache.sysml.runtime.functionobjects.Plus;
+import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysml.runtime.instructions.cp.KahanObject;
+import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
+import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
+import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.runtime.util.CommonThreadPool;
 import org.apache.sysml.runtime.util.DnnUtils;
+import org.apache.sysml.runtime.util.IndexRange;
 
 /*
  * This class allows users to invoke deep learning related operations 
@@ -260,6 +269,260 @@ public class LibMatrixDNN {
 		//post-processing: maintain nnz 
 		outputBlock.setNonZeros(nnz);
 		outputBlock.examSparsity();
+	}
+	
+	private static MatrixBlock matmult(MatrixBlock matBlock1, MatrixBlock matBlock2, int numThreads) {
+		AggregateBinaryOperator ab_op = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), 
+				new AggregateOperator(0, Plus.getPlusFnObject()), numThreads);
+		MatrixBlock main = (matBlock2 instanceof CompressedMatrixBlock) ? matBlock2 : matBlock1;
+		MatrixBlock ret = main.aggregateBinaryOperations(matBlock1, matBlock2, new MatrixBlock(), ab_op);
+		return ret;
+	}
+	
+	private static MatrixBlock add(MatrixBlock matBlock1, MatrixBlock matBlock2) {
+		return (MatrixBlock) matBlock1.binaryOperations(new BinaryOperator(Plus.getPlusFnObject()), matBlock2, new MatrixBlock());
+	}
+	
+	// sigmoid(0)*c_prev + sigmoid(0)*tanh(0);
+	
+	private static double computeCarryCell(double f, double c_prev, double i, double g) {
+		return f*c_prev + i*g;
+	}
+	
+	private static Builtin sigmoidOp = Builtin.getBuiltinFnObject(BuiltinCode.SIGMOID);
+	private static Builtin tanhOp = Builtin.getBuiltinFnObject(BuiltinCode.TANH);
+	private static double sigmoid(double in) {
+		return sigmoidOp.execute(in);
+	}
+	private static double tanh(double in) {
+		return tanhOp.execute(in);
+	}
+	
+	private static void applyLstmActivationHelper(MatrixBlock ifog_raw, int r,
+			double [] ifo, double [] g, int M) {
+		if(ifog_raw.isInSparseFormat()) {
+			SparseBlock sblock = ifog_raw.getSparseBlock();
+			Arrays.fill(ifo, sigmoid(0));
+			Arrays.fill(g, tanh(0));
+			if( sblock.isEmpty(r) ) {
+				return;
+			}
+			else {
+				int apos = sblock.pos(r);
+				int alen = sblock.size(r);
+				int[] aix = sblock.indexes(r);
+				double[] avals = sblock.values(r);
+				for(int j=apos; j<apos+alen; j++) {
+					int index = aix[j];
+					if(index < 3*M) {
+						ifo[index] = sigmoid(avals[j]);
+					}
+					else {
+						g[index-3*M] = tanh(avals[j]);
+					}
+				}
+			}
+		}
+		else {
+			double [] arr = ifog_raw.getDenseBlockValues();
+			if(arr == null) {
+				Arrays.fill(ifo, sigmoid(0));
+				Arrays.fill(g, tanh(0));
+			}
+			else {
+				int offset = r*4*M;
+				for(int index = 0; index < 3*M; index++) {
+					ifo[index] = sigmoid(arr[offset + index]);
+				}
+				offset += 3*M;
+				for(int index = 0; index < M; index++) {
+					g[index] = tanh(arr[offset + index]);
+				}
+			}
+		}
+	}
+	
+	private static double [] ensureDenseFormat(MatrixBlock matBlock) {
+		if(!matBlock.isAllocated()) {
+			matBlock.allocateDenseBlock();
+			return matBlock.getDenseBlockValues();
+		}
+		else {
+			if(matBlock.isInSparseFormat()) {
+				matBlock.sparseToDense();
+			}
+			double [] arr = matBlock.getDenseBlockValues();
+			if(arr == null) {
+				matBlock.allocateDenseBlock();
+			}
+			return arr;
+		}
+	}
+	
+	private static void applyLstmActivations(MatrixBlock ifog_raw, double [] c_prev,
+			MatrixBlock cMB, double [] out_t) {
+		double [] c = ensureDenseFormat(cMB);
+		
+		int N = cMB.getNumRows();
+		int M = cMB.getNumColumns();
+		double [] ifo = new double[3*M];
+		double [] g = new double[M];
+		for(int n = 0; n < N; n++) {
+			applyLstmActivationHelper(ifog_raw, n, ifo, g, M);
+			for(int m = 0 ; m < M; m++) {
+				c[m] = ifo[M + m]*c_prev[m] + ifo[m]*g[m];
+				out_t[m] = ifo[M*2 + m]*tanh(c[m]);
+			}
+		}
+	}
+	
+	private static void copyOutT(MatrixBlock input, double [] out_t, int N, int D, int M) {
+		if(input.isInSparseFormat()) {
+			throw new DMLRuntimeException("Expected input to be in dense format");
+		}
+		double [] arr = input.getDenseBlockValues();
+		if(out_t == null) {
+			for(int n = 0; n < N; n++) {
+				for(int m = 0; m < M; m++) {
+					arr[n*D*M + D + m] = 0;
+				}
+			}
+		}
+		else {
+			for(int n = 0; n < N; n++) {
+				for(int m = 0; m < M; m++) {
+					arr[n*D*M + D + m] = out_t[n*N + m];
+				}
+			}
+		}
+	}
+	
+	private static void copyOutT(MatrixBlock input, MatrixBlock out_t, int N, int D, int M) {
+		if(input.isInSparseFormat()) {
+			throw new DMLRuntimeException("Expected input to be in dense format");
+		}
+		if(out_t.isInSparseFormat()) {
+			double [] inputArr = input.getDenseBlockValues();
+			for(int n = 0; n < N; n++) {
+				for(int m = 0; m < M; m++) {
+					inputArr[n*D*M + D + m] = 0;
+				}
+			}
+			SparseBlock sblock = out_t.getSparseBlock();
+			for(int n = 0; n < out_t.getNumRows(); n++) {
+				if( sblock.isEmpty(n) )
+					continue;
+				int apos = sblock.pos(n);
+				int alen = sblock.size(n);
+				int[] aix = sblock.indexes(n);
+				double[] avals = sblock.values(n);
+				
+				// Iterate over the sparse block
+				for(int j=apos; j<apos+alen; j++) {
+					inputArr[n*D*M + D + aix[j]] = avals[j];
+				}
+			}
+		}
+		else  {
+			copyOutT(input, out_t.getDenseBlockValues(), N, D, M);
+		}
+	}
+	
+	// where X_t = X[,(t-1)*D+1:t*D]  # shape (N, D)
+	private static void copyXT(MatrixBlock input, MatrixBlock X, int t, int N, int T, int D, int M) {
+		if(input.isInSparseFormat()) {
+			throw new DMLRuntimeException("Expected input to be in dense format");
+		}
+		double [] inputArr = input.getDenseBlockValues();
+		if(X.isInSparseFormat()) {
+			for(int n = 0; n < N; n++) {
+				for(int d = 0; d < D; d++) {
+					inputArr[n*D*M + d] = 0;
+				}
+			}
+			SparseBlock sblock = X.getSparseBlock();
+			for(int n = 0; n < N; n++) {
+				if( sblock.isEmpty(n) )
+					continue;
+				int apos = sblock.pos(n);
+				int alen = sblock.size(n);
+				int[] aix = sblock.indexes(n);
+				double[] avals = sblock.values(n);
+				
+				// Iterate over the sparse block
+				for(int j=apos; j<apos+alen; j++) {
+					int td = aix[j];
+					if(td >= t*D && td < (t+1)*D) {
+						int d = td - t*D;
+						inputArr[n*D*M + d] = avals[j];
+					}
+				}
+			}
+		}
+		else  {
+			double [] xArr = X.getDenseBlockValues();
+			if(xArr == null) {
+				for(int n = 0; n < N; n++) {
+					for(int d = 0; d < D; d++) {
+						inputArr[n*D*M + d] = 0;
+					}
+				}
+			}
+			else {
+				for(int n = 0; n < N; n++) {
+					for(int d = 0; d < D; d++) {
+						inputArr[n*D*M + d] = xArr[n*T*D + t*D + d];
+					}
+				}
+			}
+		}
+	}
+	
+	public static void lstm(MatrixBlock X, MatrixBlock W, MatrixBlock b, MatrixBlock out0, MatrixBlock c0, 
+			boolean return_seq, int N, int T, int D, int M,
+			MatrixBlock out, MatrixBlock c, // output 
+			MatrixBlock cache_out, MatrixBlock cache_c, MatrixBlock cache_ifog, // if null, the cache values are not computed
+			int numThreads) {
+		MatrixBlock input = new MatrixBlock(N, D+M, false);
+		input.allocateDenseBlock();
+		copyOutT(input, out0, N, D, M);
+		double [] c_prev = new double[N*M];
+		copy(c0, c_prev);
+		
+		double[] out_t = new double[N*M];
+		double [] outArr = ensureDenseFormat(out);
+		
+		for(int t = 1; t <= T; t++) {
+			copyXT(input, X, t-1, N, T, D, M); // X_t = X[,(t-1)*D+1:t*D]  # shape (N, D)
+			input.recomputeNonZeros();
+			
+			// input = cbind(X_t, out_prev) performed by previous call to copyOutT
+			
+			// ifog_raw = input %*% W + b  # input, forget, output, and g gates; shape (N, 4M)
+			MatrixBlock ifog_raw = add(matmult(input, W, numThreads), b);
+			
+			applyLstmActivations(ifog_raw, c_prev, c, out_t);
+			
+			if(return_seq) {
+				for(int n = 0; n < N; n++) {
+					for(int m = 0; m < M; m++) {
+						outArr[n*T*M + t*M + m] = out_t[n*M + m];
+					}
+				}
+			}
+			
+			copyOutT(input, out_t, N, D, numThreads); // out_prev = out_t
+			copy(c, c_prev); // c_prev = c
+			
+			// TODO:
+//		    cache_out[t,] = matrix(out_t, rows=1, cols=N*M)  # reshape
+//		    cache_c[t,] = matrix(c, rows=1, cols=N*M)  # reshape
+//		    cache_ifog[t,] = matrix(cbind(ifo, g), rows=1, cols=N*4*M)  # reshape
+		}
+		c.recomputeNonZeros();
+		if(!return_seq)
+			System.arraycopy(out_t, 0, outArr, 0, out_t.length);
+		out.recomputeNonZeros();
 	}
 	
 	/**
@@ -573,6 +836,9 @@ public class LibMatrixDNN {
 			double [] inputArr = input.getDenseBlockValues();
 			if(inputArr != null) {
 				System.arraycopy(inputArr, 0, output, 0, inputArr.length);
+			}
+			else {
+				Arrays.fill(output, 0);
 			}
 		}
 	}
