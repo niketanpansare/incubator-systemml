@@ -106,6 +106,11 @@ public class FunctionCallCP extends Lop
 			sb.append(_outputNames[i]);
 		}
 		
+		if(_numThreads > 0) {
+			sb.append(Lop.OPERAND_DELIMITOR);
+			sb.append(_numThreads);
+		}
+		
 		return sb.toString();
 	}
 	
