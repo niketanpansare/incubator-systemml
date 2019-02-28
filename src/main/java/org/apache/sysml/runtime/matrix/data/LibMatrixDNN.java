@@ -284,24 +284,24 @@ public class LibMatrixDNN {
 	
 	private static MatrixBlock add(MatrixBlock matBlock1, MatrixBlock matBlock2, boolean inplace) {
 		BinaryOperator bop = new BinaryOperator(Plus.getPlusFnObject());
-		if(inplace) {
-			matBlock1.binaryOperationsInPlace(bop, matBlock2);
-			return matBlock1;
-		}
-		else {
+//		if(inplace) {
+//			matBlock1.binaryOperationsInPlace(bop, matBlock2);
+//			return matBlock1;
+//		}
+//		else {
 			return (MatrixBlock) matBlock1.binaryOperations(bop, matBlock2, new MatrixBlock());
-		}
+//		}
 	}
 	
 	private static MatrixBlock multiply(MatrixBlock matBlock1, MatrixBlock matBlock2, boolean inplace) {
 		BinaryOperator bop = new BinaryOperator(Multiply.getMultiplyFnObject());
-		if(inplace) {
-			matBlock1.binaryOperationsInPlace(bop, matBlock2);
-			return matBlock1;
-		}
-		else {
+//		if(inplace) {
+//			matBlock1.binaryOperationsInPlace(bop, matBlock2);
+//			return matBlock1;
+//		}
+//		else {
 			return (MatrixBlock) matBlock1.binaryOperations(bop, matBlock2, new MatrixBlock());
-		}
+//		}
 	}
 	
 	// sigmoid(0)*c_prev + sigmoid(0)*tanh(0);
