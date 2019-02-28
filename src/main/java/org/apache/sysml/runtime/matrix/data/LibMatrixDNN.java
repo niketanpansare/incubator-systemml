@@ -398,7 +398,8 @@ public class LibMatrixDNN {
 			c.copy(c_t);
 		else
 			c.copy(c0);
-		System.out.println("Time taken in lstm forward call: [X_t indexing:" + String.format("%.3f", t1*1e-9) + 
+		if(profile)
+			System.out.println("Time taken in lstm forward call: [X_t indexing:" + String.format("%.3f", t1*1e-9) + 
 				", ifog_raw computation:" + String.format("%.3f", t2*1e-9) + 
 				", lstm_squash computation:" + String.format("%.3f", t3*1e-9) +  
 				", c_t/out_t computation:" + String.format("%.3f", t4*1e-9) + 
