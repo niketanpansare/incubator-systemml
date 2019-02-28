@@ -323,6 +323,33 @@ public class LibMatrixDNN {
 				matBlock2, matBlock3, new MatrixBlock());
 	}
 	
+	public static MatrixBlock[] lstmSquash(MatrixBlock ifog_raw, int N, int M, ExecutorService executorService, int numThreads) throws InterruptedException, ExecutionException {
+		MatrixBlock i, f, o, g;
+		
+		if(numThreads > 1) {
+			Future<MatrixBlock> future = executorService.submit(() -> 
+			tanh(ifog_raw.slice(0, N-1, 3*M, 4*M-1, new MatrixBlock()), (int)Math.ceil(0.25*((double)numThreads)), true));
+			
+			MatrixBlock ifo = ifog_raw.slice(0, N-1, 0, 3*M-1, new MatrixBlock());
+			ifo = sigmoid(ifo, (int)Math.ceil(0.75*((double)numThreads)), true);
+			i = ifo.slice(0, N-1, 0, M-1, new MatrixBlock());
+			f = ifo.slice(0, N-1, M, 2*M-1, new MatrixBlock());
+			o = ifo.slice(0, N-1, 2*M, 3*M-1, new MatrixBlock());
+			
+			g = future.get();
+		}
+		else {
+			MatrixBlock ifo = ifog_raw.slice(0, N-1, 0, 3*M-1, new MatrixBlock());
+			ifo = sigmoid(ifo, numThreads, true);
+			i = ifo.slice(0, N-1, 0, M-1, new MatrixBlock());
+			f = ifo.slice(0, N-1, M, 2*M-1, new MatrixBlock());
+			o = ifo.slice(0, N-1, 2*M, 3*M-1, new MatrixBlock());
+			
+			g = tanh(ifog_raw.slice(0, N-1, 3*M, 4*M-1, new MatrixBlock()), numThreads, true);
+		}
+		return new MatrixBlock[] {i, f, o, g};
+	}
+	
 	public static void lstm(MatrixBlock X, MatrixBlock W, MatrixBlock b, MatrixBlock out0, MatrixBlock c0, 
 			boolean return_seq, int N, int T, int D, int M,
 			MatrixBlock out, MatrixBlock c, // output 
@@ -331,71 +358,43 @@ public class LibMatrixDNN {
 		MatrixBlock out_prev = out0;
 		MatrixBlock c_prev = c0;
 		
-		MatrixBlock W1 = null;
-		MatrixBlock W2 = null;
+		MatrixBlock W1 = W.slice(0, D-1);
+		MatrixBlock W2 = W.slice(D, D+M-1);
 		MatrixBlock c_t = null;
 		MatrixBlock out_t = null;
-		MatrixBlock input = null;
+		
 		double DPlusM = D+M;
 		ExecutorService executorService = Executors.newSingleThreadExecutor();
-		
 		try {
 			for(int t = 1; t <= T; t++) {
 				final MatrixBlock X_t = (T == 1) ? X : X.slice(0, N-1, (t-1)*D, t*D-1, new MatrixBlock());
 				MatrixBlock ifog_raw = null;
-				// Logic: Exploit sparse matrix multiplication whenever possible:
-				// 1. If W is sparse, perform cbind(X_t, out_prev) %*% W
-				// 2. Else if X_t is sparse, perform X_t %*% W1 + out_prev %*% W2
-				// 3. If none of the case is applicable, perform cbind(X_t, out_prev) %*% W
-				boolean isCase1 = W.isInSparseFormat();
-				boolean isCase2 = !isCase1 && X_t.isInSparseFormat();
-				if(isCase2) {
-					// Perform X_t %*% W1 + out_prev %*% W2
-					if(W1 == null) {
-						// Lazy slicing: applicable only when atleast one X_t is sparse.
-						W1 = W.slice(0, D-1);
-						W2 = W.slice(D, D+M-1);
-					}
-					MatrixBlock tmp = null;
-					if(numThreads > 1) {
-						// Perform two matrix multiplication in parallel whenever possible to avoid resource under-utilization
-						// X_t %*% W1 => [N, D] X [D, M]
-						// out_prev %*% W2 => [N, M] X [M, M]
-						final MatrixBlock tmpW1 = W1;
-						Future<MatrixBlock> future = executorService.submit(() -> matmult(X_t, tmpW1, 
-								(int)Math.ceil(((double)D)/DPlusM) ));
-						tmp = matmult(out_prev, W2, 
-								(int)Math.ceil(((double)M)/DPlusM) );
-						ifog_raw = future.get();
-					}
-					else {
-						// Avoids unnecessary penalty of submitting job to the executor service.
-						ifog_raw = matmult(X_t, W1, numThreads);
-						tmp = matmult(out_prev, W2, numThreads);
-					}
-					// Inplace addition
-					ifog_raw = add(ifog_raw, tmp, true);
-					ifog_raw = add(ifog_raw, b, true);
-				} 
-				else {
-					// Case 1 and 3:
-					// Perform input %*% W, where input = cbind(X_t, out_prev)
-					if(input == null) {
-						input = new MatrixBlock(N, D+M, false);
-						input.allocateDenseBlock();
-					}
-					input = X_t.append(out_prev, input);
-					ifog_raw = matmult(input, W, numThreads);
+				MatrixBlock tmp = null;
+				if(numThreads > 1) {
+					// Perform two matrix multiplication in parallel whenever possible to avoid resource under-utilization
+					// X_t %*% W1 => [N, D] X [D, M]
+					// out_prev %*% W2 => [N, M] X [M, M]
+					final MatrixBlock tmpW1 = W1;
+					Future<MatrixBlock> future = executorService.submit(() -> matmult(X_t, tmpW1, 
+							(int)Math.ceil(((double)D)/DPlusM) ));
+					tmp = matmult(out_prev, W2, 
+							(int)Math.ceil(((double)M)/DPlusM) );
+					ifog_raw = future.get();
 				}
+				else {
+					// Avoids unnecessary penalty of submitting job to the executor service.
+					ifog_raw = matmult(X_t, W1, numThreads);
+					tmp = matmult(out_prev, W2, numThreads);
+				}
+				// Inplace addition
+				ifog_raw = add(ifog_raw, tmp, true);
+				ifog_raw = add(ifog_raw, b, true);
 				
-				MatrixBlock ifo = ifog_raw.slice(0, N-1, 0, 3*M-1, new MatrixBlock());
-				ifo = sigmoid(ifo, numThreads, true);
-				MatrixBlock i = ifo.slice(0, N-1, 0, M-1, new MatrixBlock());
-				MatrixBlock f = ifo.slice(0, N-1, M, 2*M-1, new MatrixBlock());
-				MatrixBlock o = ifo.slice(0, N-1, 2*M, 3*M-1, new MatrixBlock());
-				
-				MatrixBlock g = ifog_raw.slice(0, N-1, 3*M, 4*M-1, new MatrixBlock());
-				g = tanh(g, numThreads, true);
+				MatrixBlock[] ifog = lstmSquash(ifog_raw, N, M, executorService, numThreads);
+				MatrixBlock i = ifog[0];
+				MatrixBlock f = ifog[1];
+				MatrixBlock o = ifog[2];
+				MatrixBlock g = ifog[3];
 				
 				// c_t = f*c_prev + i*g
 				c_t = plusMultiply(multiply(f, c_prev, true), i, g);
@@ -426,6 +425,7 @@ public class LibMatrixDNN {
 		} catch (InterruptedException e) {
 			throw new DMLRuntimeException("Exception occured while executing lstm forward builtin function", e);
 		}
+
 	}
 	
 	/**
