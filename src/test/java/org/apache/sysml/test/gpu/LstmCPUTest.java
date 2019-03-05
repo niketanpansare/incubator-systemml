@@ -153,10 +153,10 @@ public class LstmCPUTest extends GPUTests {
 		testLstmBackwardCuDNNWithNNLayer(20, 13, 1, 10, "TRUE", 0.9, 0.9);
 	}
 	
-	@Test
-	public void testLstmBackward4() {
-		testLstmBackwardCuDNNWithNNLayer(20, 13, 1, 10, "FALSE", 0.9, 0.9);
-	}
+//	@Test
+//	public void testLstmBackward4() {
+//		testLstmBackwardCuDNNWithNNLayer(20, 13, 1, 10, "FALSE", 0.9, 0.9);
+//	}
 	
 	@Test
 	public void testLstmBackward5() {
@@ -188,35 +188,35 @@ public class LstmCPUTest extends GPUTests {
 		testLstmBackwardCuDNNWithNNLayer(20, 13, 50, 10, "FALSE", 0.9, 0.9);
 	}
 	
-	@Test
-	public void testLstmBackward11() {
-		testLstmBackwardCuDNNWithNNLayer(20, 1, 50, 10, "TRUE", 0.2, 0.3);
-	}
+//	@Test
+//	public void testLstmBackward11() {
+//		testLstmBackwardCuDNNWithNNLayer(20, 1, 50, 10, "TRUE", 0.2, 0.3);
+//	}
 	
 	@Test
 	public void testLstmBackward12() {
 		testLstmBackwardCuDNNWithNNLayer(20, 1, 50, 10, "FALSE", 0.2, 0.9);
 	}
 	
-	@Test
-	public void testLstmBackward13() {
-		testLstmBackwardCuDNNWithNNLayer(20, 13, 1, 10, "TRUE", 0.9, 0.1);
-	}
+//	@Test
+//	public void testLstmBackward13() {
+//		testLstmBackwardCuDNNWithNNLayer(20, 13, 1, 10, "TRUE", 0.9, 0.1);
+//	}
 	
-	@Test
-	public void testLstmBackward14() {
-		testLstmBackwardCuDNNWithNNLayer(20, 13, 1, 10, "FALSE", 0.3, 0.6);
-	}
+//	@Test
+//	public void testLstmBackward14() {
+//		testLstmBackwardCuDNNWithNNLayer(20, 13, 1, 10, "FALSE", 0.3, 0.6);
+//	}
 	
 	@Test
 	public void testLstmBackward15() {
 		testLstmBackwardCuDNNWithNNLayer(20, 13, 50, 1, "TRUE", 0.2, 0.9);
 	}
 	
-	@Test
-	public void testLstmBackward16() {
-		testLstmBackwardCuDNNWithNNLayer(20, 13, 50, 1, "FALSE", 0.3, 0.1);
-	}
+//	@Test
+//	public void testLstmBackward16() {
+//		testLstmBackwardCuDNNWithNNLayer(20, 13, 50, 1, "FALSE", 0.3, 0.1);
+//	}
 	
 	@Test
 	public void testLstmBackward17() {
