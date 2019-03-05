@@ -464,7 +464,7 @@ public class LibMatrixDNN {
 	
 	// Performs the following operation: ret = matrix(in[rowIndex+1,], rows=numRows, cols=numCols)
 	public static MatrixBlock sliceAndReshape(MatrixBlock in, MatrixBlock ret, int rowIndex, int numRows, int numCols) {
-		return LibMatrixReorg.reshape(in.slice(rowIndex, rowIndex+1), ret, numRows, numCols, true);
+		return LibMatrixReorg.reshape(in.slice(rowIndex, rowIndex), ret, numRows, numCols, true);
 	}
 	
 	public static void lstm(MatrixBlock X, MatrixBlock W, MatrixBlock b, MatrixBlock out0, MatrixBlock c0, 
