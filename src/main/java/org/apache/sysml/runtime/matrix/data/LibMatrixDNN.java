@@ -468,7 +468,31 @@ public class LibMatrixDNN {
 	
 	// Returns i * (1-i) * di
 	private static MatrixBlock get_raw(MatrixBlock i , MatrixBlock di) {
-		// TODO:
+		MatrixBlock ret = new MatrixBlock(i.getNumRows(), i.getNumColumns(), true);
+		if(i.isEmpty() || di.isEmpty()) {
+			ret.setNonZeros(0);
+			return ret;
+		}
+		else if(!i.isInSparseFormat() && !di.isInSparseFormat()) {
+			double [] iArr = i.getDenseBlockValues();
+			double [] diArr = di.getDenseBlockValues();
+			if(iArr == null || diArr == null) {
+				ret.setNonZeros(0);
+				return ret;
+			}
+			else {
+				ret.allocateDenseBlock();
+				double [] retArr = ret.getDenseBlockValues();
+				for(int index = 0; index < iArr.length; index++) {
+					retArr[index] = iArr[index] * (1-iArr[index]) * diArr[index];
+				}
+				ret.recomputeNonZeros();
+				return ret;
+			}
+		}
+		else if(di.isInSparseFormat()) {
+			return multiply(multiply(minus(1, i), di, true), i, true);
+		}
 		return multiply(multiply(minus(1, i), i, true), di, true);
 	}
 	
