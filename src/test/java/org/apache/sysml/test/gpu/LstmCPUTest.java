@@ -218,6 +218,15 @@ public class LstmCPUTest extends GPUTests {
 		testLstmBackwardCuDNNWithNNLayer(20, 13, 50, 1, "FALSE", 0.3, 0.1);
 	}
 	
+	@Test
+	public void testLstmBackward17() {
+		testLstmBackwardCuDNNWithNNLayer(20, 13, 15, 25, "TRUE", 0.9, 0.9);
+	}
+	
+	@Test
+	public void testLstmBackward18() {
+		testLstmBackwardCuDNNWithNNLayer(20, 13, 15, 25, "FALSE", 0.9, 0.9);
+	}
 	
 	
 	public void testLstmBackwardCuDNNWithNNLayer(int N, int T, int D, int M, String returnSequences, double sparsity,
@@ -243,7 +252,7 @@ public class LstmCPUTest extends GPUTests {
 		List<String> outputs = Arrays.asList("dX", "dW", "db", "dout0", "dc0");
 		List<Object> outGPUWithCuDNN = runOnCPU(spark, scriptStr1, inputs, outputs);
 		List<Object> outCPUWithNN = runOnCPU(spark, scriptStr2, inputs, outputs);
-		assertEqualObjects(outGPUWithCuDNN.get(0), outCPUWithNN.get(0));
+		assertEqualObjects(outGPUWithCuDNN.get(0), outCPUWithNN.get(0), 1e-9);
 		assertEqualObjects(outGPUWithCuDNN.get(1), outCPUWithNN.get(1));
 		assertEqualObjects(outGPUWithCuDNN.get(2), outCPUWithNN.get(2));
 		assertEqualObjects(outGPUWithCuDNN.get(3), outCPUWithNN.get(3));
