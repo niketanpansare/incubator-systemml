@@ -43,6 +43,8 @@ import org.apache.sysml.runtime.instructions.cp.KahanObject;
 import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysml.runtime.matrix.operators.LeftScalarOperator;
+import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysml.runtime.matrix.operators.TernaryOperator;
 import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysml.runtime.util.CommonThreadPool;
@@ -311,6 +313,11 @@ public class LibMatrixDNN {
 		}
 	}
 	
+	private static MatrixBlock multiply(MatrixBlock matBlock1, double scalar, boolean inplace) {
+		ScalarOperator sc_op = new LeftScalarOperator(Multiply.getMultiplyFnObject(), scalar);
+		return (MatrixBlock) matBlock1.scalarOperations(sc_op, new MatrixBlock());
+	}
+	
 	
 	// sigmoid(0)*c_prev + sigmoid(0)*tanh(0);
 	
@@ -321,6 +328,15 @@ public class LibMatrixDNN {
 	}
 	private static MatrixBlock tanh(MatrixBlock in, int numThreads, boolean inPlace) {
 		return (MatrixBlock) in.unaryOperations(new UnaryOperator(tanhOp, numThreads, inPlace), new MatrixBlock());
+	}
+	
+	public static void lstm_backward(MatrixBlock dout, MatrixBlock dc,
+			MatrixBlock X, MatrixBlock W, MatrixBlock b, MatrixBlock out0, MatrixBlock c0, 
+			boolean return_seq, int N, int T, int D, int M,
+			MatrixBlock cache_out, MatrixBlock cache_c, MatrixBlock cache_ifog, // from forward invocation
+			MatrixBlock dX, MatrixBlock dW, MatrixBlock db, MatrixBlock dout0, MatrixBlock dc0,
+			int numThreads) {
+		// TODO:
 	}
 	
 	public static void lstm(MatrixBlock X, MatrixBlock W, MatrixBlock b, MatrixBlock out0, MatrixBlock c0, 
@@ -367,27 +383,84 @@ public class LibMatrixDNN {
 				ifog_raw = add(matmult(input, W, numThreads), b, true);
 			}
 			
-			MatrixBlock ifo = ifog_raw.slice(0, N-1, 0, 3*M-1, new MatrixBlock());
-			ifo = sigmoid(ifo, numThreads, true);
-			MatrixBlock i = ifo.slice(0, N-1, 0, M-1, new MatrixBlock());
-			MatrixBlock f = ifo.slice(0, N-1, M, 2*M-1, new MatrixBlock());
-			MatrixBlock o = ifo.slice(0, N-1, 2*M, 3*M-1, new MatrixBlock());
-			MatrixBlock g = tanh(ifog_raw.slice(0, N-1, 3*M, 4*M-1, new MatrixBlock()), numThreads, true);
-					
-			// c_t = f*c_prev + i*g
-			c_t = plusMultiply(multiply(f, c_prev, true), i, g);
-			// out_t = o*tanh(c)
-			out_t = multiply(o, tanh(c_t, numThreads, false), true);
+			if(!ifog_raw.isInSparseFormat() && !c_prev.isInSparseFormat()) {
+				double [] ifog_rawArr = ifog_raw.getDenseBlockValues();
+				double [] c_prevArr = c_prev.getDenseBlockValues();
+				double [] cache_ifogArr = null;
+				if(cache_ifog != null) {
+					cache_ifogArr = cache_ifog.getDenseBlockValues();
+					if(cache_ifogArr == null)
+						throw new DMLRuntimeException("Expected cache_ifog to be allocated in the dense format");
+				}
+				if(ifog_rawArr == null && c_prevArr == null) {
+					// Both ifog_raw and c_prev are empty matrix
+					c_t = new MatrixBlock(N, M, 0);
+					out_t = new MatrixBlock(N, M, 0);
+					c_t.setNonZeros(0);
+					out_t.setNonZeros(0);
+					updateIfogCache(cache_ifogArr, t, N, M);
+				}
+				else if(ifog_rawArr == null) {
+					// ifog_raw is an empty matrix
+					// c_t = f*c_prev + i*g 
+					//     = 0.5*c_prev
+					c_t = multiply(c_prev, 0.5, false);
+					// out_t = o*tanh(c)
+					//       = 0.5*tanh(c)
+					out_t = multiply(tanh(c_t, numThreads, false), 0.5, false);
+					updateIfogCache(cache_ifogArr, t, N, M);
+				}
+				else {
+					// ifog_raw is not an empty matrix
+					c_t = new MatrixBlock(N, M, false); c_t.allocateDenseBlock();
+					double [] c_tArr = c_t.getDenseBlockValues();
+					out_t = new MatrixBlock(N, M, false); out_t.allocateDenseBlock();
+					double [] out_tArr = out_t.getDenseBlockValues();
+					int index = 0;
+					int offset = (t-1)*N*4*M;
+					for(int n = 0; n < N; n++) {
+						for(int m = 0; m < M; m++, index++) {
+							double c_prevVal = (c_prevArr == null) ? 0 : c_prevArr[index];
+							// c_t = f*c_prev + i*g
+							double i = sigmoidOp.execute(ifog_rawArr[n*4*M + m]);
+							double f = sigmoidOp.execute(ifog_rawArr[n*4*M + M + m]);
+							double o = sigmoidOp.execute(ifog_rawArr[n*4*M + 2*M + m]);
+							double g = tanhOp.execute(ifog_rawArr[n*4*M + 3*M + m]);
+							c_tArr[index] = f*c_prevVal + i*g;
+							// out_t = o*tanh(c)
+							out_tArr[index] = o*tanhOp.execute(c_tArr[index]);
+							updateIfogCache(cache_ifogArr, i, f, o, g, offset, n, m, N, M);
+						}
+					}
+					c_t.recomputeNonZeros();
+					out_t.recomputeNonZeros();
+				}
+			}
+			else {
+				MatrixBlock ifo = ifog_raw.slice(0, N-1, 0, 3*M-1, new MatrixBlock());
+				ifo = sigmoid(ifo, numThreads, true);
+				MatrixBlock i = ifo.slice(0, N-1, 0, M-1, new MatrixBlock());
+				MatrixBlock f = ifo.slice(0, N-1, M, 2*M-1, new MatrixBlock());
+				MatrixBlock o = ifo.slice(0, N-1, 2*M, 3*M-1, new MatrixBlock());
+				MatrixBlock g = tanh(ifog_raw.slice(0, N-1, 3*M, 4*M-1, new MatrixBlock()), numThreads, true);
+						
+				// c_t = f*c_prev + i*g
+				c_t = plusMultiply(multiply(f, c_prev, true), i, g);
+				// out_t = o*tanh(c)
+				out_t = multiply(o, tanh(c_t, numThreads, false), true);
+				updateIfogCache(cache_ifog, ifo, g, t, N, M);
+			}
+			
 			if(return_seq) {
-				out = out.leftIndexingOperations(out_t, 0, N-1, (t-1)*M, t*M-1, new MatrixBlock(), UpdateType.INPLACE);
+				out = out.leftIndexingOperations(out_t, 0, N-1, (t-1)*M, t*M-1, out, UpdateType.INPLACE);
 			}
 			out_prev = out_t;
 			c_prev = c_t;
 			
-			// TODO: Add this when implementing lstm_backward
-//			cache_out[t,] = matrix(out_t, rows=1, cols=N*M)  # reshape
-//		    cache_c[t,] = matrix(c, rows=1, cols=N*M)  # reshape
-//		    cache_ifog[t,] = matrix(cbind(ifo, g), rows=1, cols=N*4*M)  # reshape
+			if(cache_out != null) {
+				reshapeAsRowMatrixAndLeftIndex(cache_out, out_t, t-1, N*M);
+				reshapeAsRowMatrixAndLeftIndex(cache_c, c_t, t-1, N*M);
+			}
 		}
 		if(out_t != null && !return_seq)
 			out.copy(out_t);
@@ -395,6 +468,67 @@ public class LibMatrixDNN {
 			c.copy(c_t);
 		else
 			c.copy(c0);
+		cache_out.recomputeNonZeros();
+		cache_c.recomputeNonZeros();
+		cache_ifog.recomputeNonZeros();
+	}
+	
+	private static void updateIfogCache(MatrixBlock cache_ifog, MatrixBlock ifo, MatrixBlock g, int t, int N, int M) {
+		if(cache_ifog != null) {
+			reshapeAsRowMatrixAndLeftIndex(cache_ifog, ifo.append(g, new MatrixBlock()), t-1, N*M);
+		}
+	}
+	
+	// ifog_raw is an empty matrix
+	private static void updateIfogCache(double[] cache_ifogArr, int t, int N, int M) {
+		if(cache_ifogArr != null) {
+			int offset = (t-1)*N*4*M;
+			for(int n = 0 ; n < N; n++) {
+				int srcIndex = offset + n*4*M;
+				Arrays.fill(cache_ifogArr, srcIndex, srcIndex + 3*M, 0.5);
+			}
+		}
+	}
+	
+	private static void updateIfogCache(double[] cache_ifogArr, double i, double f, double o, double g, int offset, int n, int m, int N, int M) {
+		if(cache_ifogArr != null) {
+			cache_ifogArr[offset + n*4*M + m] = i;
+			cache_ifogArr[offset + n*4*M + M + m] = f;
+			cache_ifogArr[offset + n*4*M + 2*M + m] = o;
+			cache_ifogArr[offset + n*4*M + 3*M + m] = g;
+		}
+	}
+	
+	// Performs operation: lhsMatrix[rowIndex+1, ] =  matrix(rhsMatrix, rows=1, cols=numCols)
+	private static void reshapeAsRowMatrixAndLeftIndex(MatrixBlock lhsMatrix, MatrixBlock rhsMatrix, int rowIndex, int numCols) {
+		double [] lhsArr = lhsMatrix.getDenseBlockValues();
+		if(lhsArr == null)
+			throw new DMLRuntimeException("Incorrect usage: lhsMatrix needs to be allocated in dense format before invocation of this method.");
+		if(rhsMatrix.isInSparseFormat()) {
+			SparseBlock sblock = rhsMatrix.getSparseBlock();
+			for(int n = 0; n < rhsMatrix.getNumRows(); n++) {
+				if( sblock.isEmpty(n) )
+					continue;
+				int apos = sblock.pos(n);
+				int alen = sblock.size(n);
+				int[] aix = sblock.indexes(n);
+				double[] avals = sblock.values(n);
+				
+				// Iterate over the sparse block
+				for(int j=apos; j<apos+alen; j++) {
+					lhsArr[n*numCols + aix[j]] = avals[j];
+				}
+			}
+		}
+		else if(!rhsMatrix.isInSparseFormat()) {
+			double [] rhsArr = rhsMatrix.getDenseBlockValues();
+			if(rhsArr != null) {
+				System.arraycopy(rhsArr, 0, lhsArr, rowIndex*numCols, numCols);
+			}
+			else {
+				// Do nothing: assumption => lhsMatrix is initialized to 0 before invocation.
+			}
+		}
 	}
 	
 	/**
