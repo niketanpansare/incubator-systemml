@@ -596,9 +596,11 @@ public class LibMatrixDNN {
 			c.copy(c_t);
 		else
 			c.copy(c0);
-		cache_out.recomputeNonZeros();
-		cache_c.recomputeNonZeros();
-		cache_ifog.recomputeNonZeros();
+		if(cache_out != null) {
+			cache_out.recomputeNonZeros();
+			cache_c.recomputeNonZeros();
+			cache_ifog.recomputeNonZeros();
+		}
 	}
 	
 	private static void updateIfogCache(MatrixBlock cache_ifog, MatrixBlock ifo, MatrixBlock g, int t, int N, int M) {
