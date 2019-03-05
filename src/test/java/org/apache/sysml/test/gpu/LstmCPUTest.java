@@ -131,10 +131,10 @@ public class LstmCPUTest extends GPUTests {
 		inputs.put("out0", generateInputMatrix(spark, N, M, 0, 10, sparsity, seed));
 		inputs.put("c0", generateInputMatrix(spark, N, M, 0, 10, sparsity, seed));
 		List<String> outputs = Arrays.asList("output", "c");
-		List<Object> outGPUWithCuDNN = runOnCPU(spark, scriptStr1, inputs, outputs);
-		List<Object> outCPUWithNN = runOnCPU(spark, scriptStr2, inputs, outputs);
-		assertEqualObjects(outGPUWithCuDNN.get(0), outCPUWithNN.get(0));
-		assertEqualObjects(outGPUWithCuDNN.get(1), outCPUWithNN.get(1));
+		List<Object> outBuiltin = runOnCPU(spark, scriptStr1, inputs, outputs);
+		List<Object> outNNLayer = runOnCPU(spark, scriptStr2, inputs, outputs);
+		assertEqualObjects(outBuiltin.get(0), outNNLayer.get(0));
+		assertEqualObjects(outBuiltin.get(1), outNNLayer.get(1));
 	}
 	
 	
@@ -250,12 +250,12 @@ public class LstmCPUTest extends GPUTests {
 		inputs.put("out0", generateInputMatrix(spark, N, M, 0, 10, sparsity, seed));
 		inputs.put("c0", generateInputMatrix(spark, N, M, 0, 10, sparsity, seed));
 		List<String> outputs = Arrays.asList("dX", "dW", "db", "dout0", "dc0");
-		List<Object> outGPUWithCuDNN = runOnCPU(spark, scriptStr1, inputs, outputs);
-		List<Object> outCPUWithNN = runOnCPU(spark, scriptStr2, inputs, outputs);
-		assertEqualObjects(outGPUWithCuDNN.get(0), outCPUWithNN.get(0), 1e-9);
-		assertEqualObjects(outGPUWithCuDNN.get(1), outCPUWithNN.get(1));
-		assertEqualObjects(outGPUWithCuDNN.get(2), outCPUWithNN.get(2));
-		assertEqualObjects(outGPUWithCuDNN.get(3), outCPUWithNN.get(3));
-		assertEqualObjects(outGPUWithCuDNN.get(4), outCPUWithNN.get(4));
+		List<Object> outBuiltin = runOnCPU(spark, scriptStr1, inputs, outputs);
+		List<Object> outNN = runOnCPU(spark, scriptStr2, inputs, outputs);
+		assertEqualObjects(outBuiltin.get(0), outNN.get(0), 1e-9);
+		assertEqualObjects(outBuiltin.get(1), outNN.get(1));
+		assertEqualObjects(outBuiltin.get(2), outNN.get(2));
+		assertEqualObjects(outBuiltin.get(3), outNN.get(3));
+		assertEqualObjects(outBuiltin.get(4), outNN.get(4));
 	}
 }
