@@ -598,6 +598,10 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 			processLstmInstruction(ec);
 			return;
 		}
+		else if (instOpcode.equalsIgnoreCase("lstm_backward")) {
+			processLstmBackwardInstruction(ec);
+			return;
+		}
 		
 		// acquire inputs
 		MatrixBlock outputBlock = null;
