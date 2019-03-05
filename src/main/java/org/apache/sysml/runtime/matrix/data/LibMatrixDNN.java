@@ -419,6 +419,7 @@ public class LibMatrixDNN {
 		MatrixBlock ret = new MatrixBlock(1, in.getNumColumns(), false);
 		if(in.isEmpty()) {
 			// Do nothing
+			ret.setNonZeros(0);
 		}
 		else if(in.isInSparseFormat()) {
 			ret.allocateDenseBlock();
@@ -451,6 +452,9 @@ public class LibMatrixDNN {
 					}
 				}
 				ret.recomputeNonZeros();
+			}
+			else {
+				ret.setNonZeros(0);
 			}
 		}
 		return ret;
