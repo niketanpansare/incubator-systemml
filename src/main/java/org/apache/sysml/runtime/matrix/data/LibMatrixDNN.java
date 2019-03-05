@@ -20,6 +20,7 @@ package org.apache.sysml.runtime.matrix.data;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -378,16 +379,12 @@ public class LibMatrixDNN {
 			MatrixBlock o = ifog.slice(0, N-1, 2*M, 3*M-1, new MatrixBlock());
 			MatrixBlock g = ifog.slice(0, N-1, 3*M, 4*M-1, new MatrixBlock());
 			dct = plusMultiply(dct, o, tanh_backward(dout_t, ct, numThreads));
-			MatrixBlock do1 = multiply(tanh(ct, numThreads, false), dout_t, true);
-			MatrixBlock df = multiply(c_prev, dct, false);
 			MatrixBlock dc_prev = multiply(f, dct, false);
-			MatrixBlock di = multiply(g, dct, false);
-			MatrixBlock dg = multiply(i, dct, false);
 			
-			MatrixBlock di_raw = get_raw(i, di);
-			MatrixBlock df_raw = get_raw(f, df);
-			MatrixBlock do_raw = get_raw(o, do1);
-			MatrixBlock dg_raw = minusMultiply(dg, power(g, 2), dg);
+			MatrixBlock di_raw = multiply(new MatrixBlock[] {i, minus(1, i), g, dct}); 
+			MatrixBlock df_raw = multiply(new MatrixBlock[] {f, minus(1, f), c_prev, dct});
+			MatrixBlock do_raw = multiply(new MatrixBlock[] {o, minus(1, o), tanh(ct, numThreads, false), dout_t});
+			MatrixBlock dg_raw = multiply(new MatrixBlock[] {minus(1, power(g, 2)), i, dct});
 			MatrixBlock difog_raw = di_raw.append(new MatrixBlock[] { df_raw, do_raw, dg_raw}, new MatrixBlock(), true);
 			
 			// dW = dW + t(input) %*% difog_raw
@@ -466,34 +463,49 @@ public class LibMatrixDNN {
 		return (MatrixBlock) (in.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0));
 	}
 	
-	// Returns i * (1-i) * di
-	private static MatrixBlock get_raw(MatrixBlock i , MatrixBlock di) {
-		MatrixBlock ret = new MatrixBlock(i.getNumRows(), i.getNumColumns(), true);
-		if(i.isEmpty() || di.isEmpty()) {
-			ret.setNonZeros(0);
-			return ret;
+	private static MatrixBlock multiply(MatrixBlock [] in) {
+		boolean allDense = true;
+		int rows = 0; int cols = 0;
+		for(MatrixBlock mb : in) {
+			rows = Math.max(rows, mb.getNumRows());
+			cols = Math.max(cols, mb.getNumColumns());
 		}
-		else if(!i.isInSparseFormat() && !di.isInSparseFormat()) {
-			double [] iArr = i.getDenseBlockValues();
-			double [] diArr = di.getDenseBlockValues();
-			if(iArr == null || diArr == null) {
+		for(MatrixBlock mb : in) {
+			if(mb.isEmpty() || (!mb.isInSparseFormat() && mb.getDenseBlockValues() == null)) {
+				MatrixBlock ret = new MatrixBlock(rows, cols, true);
 				ret.setNonZeros(0);
 				return ret;
 			}
-			else {
-				ret.allocateDenseBlock();
-				double [] retArr = ret.getDenseBlockValues();
-				for(int index = 0; index < iArr.length; index++) {
-					retArr[index] = iArr[index] * (1-iArr[index]) * diArr[index];
+			allDense = allDense && !mb.isInSparseFormat();
+		}
+		if(allDense) {
+			MatrixBlock ret = new MatrixBlock(rows, cols, false);
+			ret.allocateDenseBlock();
+			double [] retArr = null;
+			// Avoids (in.length-1) recomputeNonZeros calls
+			for(MatrixBlock mb : in) {
+				if(retArr == null) {
+					retArr = ret.getDenseBlockValues();
+					System.arraycopy(mb.getDenseBlockValues(), 0, retArr, 0, retArr.length);
 				}
-				ret.recomputeNonZeros();
-				return ret;
+				else {
+					double [] inArr = mb.getDenseBlockValues();
+					for(int index = 0; index < retArr.length; index++) {
+						retArr[index] *= inArr[index];
+					}
+				}
 			}
+			ret.recomputeNonZeros();
+			return ret;
 		}
-		else if(di.isInSparseFormat()) {
-			return multiply(multiply(minus(1, i), di, true), i, true);
+		else {
+			Arrays.sort(in, (mb1, mb2) -> Long.compare(mb1.getNonZeros(), mb2.getNonZeros()));
+			MatrixBlock ret = new MatrixBlock(rows, cols, in[0].isInSparseFormat());
+			for(MatrixBlock mb : in) {
+				ret = multiply(ret, mb, true);
+			}
+			return ret;
 		}
-		return multiply(multiply(minus(1, i), i, true), di, true);
 	}
 	
 	// Performs the following operation: ret = matrix(in[rowIndex+1,], rows=numRows, cols=numCols)
