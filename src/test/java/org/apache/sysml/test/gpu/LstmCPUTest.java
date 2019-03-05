@@ -228,6 +228,16 @@ public class LstmCPUTest extends GPUTests {
 		testLstmBackwardCuDNNWithNNLayer(20, 13, 15, 25, "FALSE", 0.9, 0.9);
 	}
 	
+	@Test
+	public void testLstmBackward19() {
+		testLstmBackwardCuDNNWithNNLayer(12, 17, 15, 26, "TRUE", 0.9, 0.9);
+	}
+	
+	@Test
+	public void testLstmBackward20() {
+		testLstmBackwardCuDNNWithNNLayer(12, 17, 15, 26, "FALSE", 0.9, 0.9);
+	}
+	
 	
 	public void testLstmBackwardCuDNNWithNNLayer(int N, int T, int D, int M, String returnSequences, double sparsity,
 			double weightSparsity) {
