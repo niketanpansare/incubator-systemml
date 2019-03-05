@@ -417,9 +417,12 @@ public class LibMatrixDNN {
 	
 	private static MatrixBlock colSums(MatrixBlock in) {
 		MatrixBlock ret = new MatrixBlock(1, in.getNumColumns(), false);
-		ret.allocateDenseBlock();
-		double [] retArr = ret.getDenseBlockValues();
-		if(in.isInSparseFormat()) {
+		if(in.isEmpty()) {
+			// Do nothing
+		}
+		else if(in.isInSparseFormat()) {
+			ret.allocateDenseBlock();
+			double [] retArr = ret.getDenseBlockValues();
 			SparseBlock sblock = in.getSparseBlock();
 			for(int n = 0; n < in.getNumRows(); n++) {
 				if( sblock.isEmpty(n) )
@@ -440,6 +443,8 @@ public class LibMatrixDNN {
 			double [] inArr = in.getDenseBlockValues();
 			if(inArr != null) {
 				int index = 0;
+				ret.allocateDenseBlock();
+				double [] retArr = ret.getDenseBlockValues();
 				for(int r = 0; r < in.getNumRows(); r++) {
 					for(int c = 0; c < in.getNumColumns(); c++, index++) {
 						retArr[c] += inArr[index];
