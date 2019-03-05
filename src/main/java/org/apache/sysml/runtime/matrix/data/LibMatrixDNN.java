@@ -35,20 +35,28 @@ import org.apache.sysml.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.functionobjects.KahanPlus;
+import org.apache.sysml.runtime.functionobjects.MinusMultiply;
 import org.apache.sysml.runtime.functionobjects.Multiply;
 import org.apache.sysml.runtime.functionobjects.Plus;
 import org.apache.sysml.runtime.functionobjects.PlusMultiply;
+import org.apache.sysml.runtime.functionobjects.Power;
+import org.apache.sysml.runtime.functionobjects.Power2;
+import org.apache.sysml.runtime.functionobjects.SwapIndex;
 import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysml.runtime.instructions.cp.KahanObject;
 import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.LeftScalarOperator;
+import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
+import org.apache.sysml.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysml.runtime.matrix.operators.TernaryOperator;
 import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysml.runtime.util.CommonThreadPool;
 import org.apache.sysml.runtime.util.DnnUtils;
+
+import com.sun.org.apache.xpath.internal.operations.Minus;
 
 /*
  * This class allows users to invoke deep learning related operations 
@@ -299,6 +307,10 @@ public class LibMatrixDNN {
 		return matBlock1.ternaryOperations(new TernaryOperator(PlusMultiply.getFnObject()), 
 				matBlock2, matBlock3, new MatrixBlock());
 	}
+	private static MatrixBlock minusMultiply(MatrixBlock matBlock1, MatrixBlock matBlock2, MatrixBlock matBlock3) {
+		return matBlock1.ternaryOperations(new TernaryOperator(MinusMultiply.getFnObject()), 
+				matBlock2, matBlock3, new MatrixBlock());
+	}
 	
 		
 	private static MatrixBlock multiply(MatrixBlock matBlock1, MatrixBlock matBlock2, boolean inplace) {
@@ -329,14 +341,130 @@ public class LibMatrixDNN {
 	private static MatrixBlock tanh(MatrixBlock in, int numThreads, boolean inPlace) {
 		return (MatrixBlock) in.unaryOperations(new UnaryOperator(tanhOp, numThreads, inPlace), new MatrixBlock());
 	}
+	private static MatrixBlock power(MatrixBlock in, double exponent) {
+		return (MatrixBlock) in.scalarOperations(new RightScalarOperator(Power.getPowerFnObject(), exponent), new MatrixBlock());
+	}
+	private static MatrixBlock minus(double scalar, MatrixBlock in) {
+		return (MatrixBlock) in.scalarOperations(new LeftScalarOperator(org.apache.sysml.runtime.functionobjects.Minus.getMinusFnObject(), scalar), new MatrixBlock());
+	}
+	private static MatrixBlock tanh_backward(MatrixBlock dout, MatrixBlock X, int numThreads) {
+		MatrixBlock out = tanh(X, numThreads, false);
+		return minusMultiply(dout, power(out, 2), dout);
+	}
 	
 	public static void lstm_backward(MatrixBlock dout, MatrixBlock dc,
 			MatrixBlock X, MatrixBlock W, MatrixBlock b, MatrixBlock out0, MatrixBlock c0, 
-			boolean return_seq, int N, int T, int D, int M,
+			boolean given_sequences, int N, int T, int D, int M,
 			MatrixBlock cache_out, MatrixBlock cache_c, MatrixBlock cache_ifog, // from forward invocation
 			MatrixBlock dX, MatrixBlock dW, MatrixBlock db, MatrixBlock dout0, MatrixBlock dc0,
 			int numThreads) {
+		MatrixBlock dct = dc;
+		if (!given_sequences) {
+			// only given dout for output at final timestep, so prepend empty douts for all other timesteps
+			dout = new MatrixBlock(N, (T-1)*M, true).append(dout, new MatrixBlock());
+		}
+		MatrixBlock dW_ret = dW;
+		MatrixBlock db_ret = db;
+		MatrixBlock dout_t = dout.slice(0, N-1, (T-1)*M, T*M-1, new MatrixBlock());
+		for(int t = T; t > 0; t--) {
+			MatrixBlock X_t = (T == 1) ? X : X.slice(0, N-1, (t-1)*D, t*D-1, new MatrixBlock());
+			MatrixBlock ct = sliceAndReshape(cache_c, new MatrixBlock(), t-1, N, M);
+			MatrixBlock out_prev = (t == 1) ? out0 : sliceAndReshape(cache_out, new MatrixBlock(), t-2, N, M);
+			MatrixBlock c_prev = (t == 1) ? c0 : sliceAndReshape(cache_c, new MatrixBlock(), t-2, N, M);
+			MatrixBlock input = X_t.append(out_prev, new MatrixBlock());
+			MatrixBlock ifog = sliceAndReshape(cache_ifog, new MatrixBlock(), t-1, N, 4*M);
+			MatrixBlock i = ifog.slice(0, N-1, 0, M-1, new MatrixBlock());
+			MatrixBlock f = ifog.slice(0, N-1, M, 2*M-1, new MatrixBlock());
+			MatrixBlock o = ifog.slice(0, N-1, 2*M, 3*M-1, new MatrixBlock());
+			MatrixBlock g = ifog.slice(0, N-1, 3*M, 4*M-1, new MatrixBlock());
+			dct = plusMultiply(dct, o, tanh_backward(dout_t, ct, numThreads));
+			MatrixBlock do1 = multiply(tanh(ct, numThreads, false), dout_t, true);
+			MatrixBlock df = multiply(c_prev, dct, false);
+			MatrixBlock dc_prev = multiply(f, dct, false);
+			MatrixBlock di = multiply(g, dct, false);
+			MatrixBlock dg = multiply(i, dct, false);
+			
+			MatrixBlock di_raw = get_raw(i, di);
+			MatrixBlock df_raw = get_raw(f, df);
+			MatrixBlock do_raw = get_raw(o, do1);
+			MatrixBlock dg_raw = minusMultiply(dg, power(g, 2), dg);
+			MatrixBlock difog_raw = di_raw.append(new MatrixBlock[] { df_raw, do_raw, dg_raw}, new MatrixBlock(), true);
+			
+			// dW = dW + t(input) %*% difog_raw
+			dW = add(matmult(transpose(input, numThreads), difog_raw, numThreads), dW, true);
+			// db = db + colSums(difog_raw)
+			db = add(colSums(difog_raw), db, true);
+			// dinput = difog_raw %*% t(W)
+			MatrixBlock dinput = matmult(difog_raw, transpose(W, numThreads), numThreads);
+			// dX[,(t-1)*D+1:t*D] = dinput[,1:D]
+			dX.leftIndexingOperations(dinput.slice(0, N-1, 0, D-1, new MatrixBlock()), 0, N-1, (t-1)*D, t*D-1, dX, UpdateType.INPLACE);
+			// dout_prev = dinput[,D+1:D+M]
+			MatrixBlock dout_prev = dinput.slice(0, N-1, D, D+M-1, new MatrixBlock());
+			
+			if(t == 1) {
+				dout0.copy(dout_prev);
+				dc0.copy(dc_prev);
+			}
+			else {
+				dout_t = add(dout.slice(0, N-1, (t-2)*M, (t-1)*M-1, new MatrixBlock()), dout_prev, true);
+				dct = dc_prev;
+			}
+		}
+		dW_ret.copy(dW);
+		db_ret.copy(db);
+	}
+	
+	
+	private static MatrixBlock colSums(MatrixBlock in) {
+		MatrixBlock ret = new MatrixBlock(1, in.getNumColumns(), false);
+		ret.allocateDenseBlock();
+		double [] retArr = ret.getDenseBlockValues();
+		if(in.isInSparseFormat()) {
+			SparseBlock sblock = in.getSparseBlock();
+			for(int n = 0; n < in.getNumRows(); n++) {
+				if( sblock.isEmpty(n) )
+					continue;
+				int apos = sblock.pos(n);
+				int alen = sblock.size(n);
+				int[] aix = sblock.indexes(n);
+				double[] avals = sblock.values(n);
+				
+				// Iterate over the sparse block
+				for(int j=apos; j<apos+alen; j++) {
+					retArr[aix[j]] += avals[j];
+				}
+			}
+			ret.recomputeNonZeros();
+		}
+		else {
+			double [] inArr = in.getDenseBlockValues();
+			if(inArr != null) {
+				int index = 0;
+				for(int r = 0; r < in.getNumRows(); r++) {
+					for(int c = 0; c < in.getNumColumns(); c++, index++) {
+						retArr[c] += inArr[index];
+					}
+				}
+				ret.recomputeNonZeros();
+			}
+		}
+		return ret;
+	}
+	
+	private static MatrixBlock transpose(MatrixBlock in, int numThreads) {
+		ReorgOperator r_op = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), numThreads);
+		return (MatrixBlock) (in.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0));
+	}
+	
+	// Returns i * (1-i) * di
+	private static MatrixBlock get_raw(MatrixBlock i , MatrixBlock di) {
 		// TODO:
+		return multiply(multiply(minus(1, i), i, true), di, true);
+	}
+	
+	// Performs the following operation: ret = matrix(in[rowIndex+1,], rows=numRows, cols=numCols)
+	public static MatrixBlock sliceAndReshape(MatrixBlock in, MatrixBlock ret, int rowIndex, int numRows, int numCols) {
+		return LibMatrixReorg.reshape(in.slice(rowIndex, rowIndex+1), ret, numRows, numCols, true);
 	}
 	
 	public static void lstm(MatrixBlock X, MatrixBlock W, MatrixBlock b, MatrixBlock out0, MatrixBlock c0, 

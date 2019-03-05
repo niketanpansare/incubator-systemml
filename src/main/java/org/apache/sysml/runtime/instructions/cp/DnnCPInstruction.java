@@ -367,7 +367,11 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 			throw new DMLRuntimeException("Incorrect dimensions of bias in lstm_backward instruction. Expected [1, " + (M*4) + "], "
 					+ "but found [" + b.getNumRows() + "," + b.getNumColumns() + "]");
 		}
-		if(out0.getNumRows() != N || out0.getNumColumns() != M) {
+		if(out0.getNumRows() != N) {
+			throw new DMLRuntimeException("Unsupported operation: The batch size of previous iteration " + out0.getNumRows() + 
+					" is different than the batch size of current iteration " + N);
+		}
+		if(out0.getNumColumns() != M) {
 			throw new DMLRuntimeException("Incorrect dimensions of out0 in lstm_backward instruction. Expected [" + N + ", " + M + "], "
 					+ "but found [" + out0.getNumRows() + "," + out0.getNumColumns() + "]");
 		}
