@@ -252,7 +252,7 @@ public class LstmCPUTest extends GPUTests {
 		List<String> outputs = Arrays.asList("dX", "dW", "db", "dout0", "dc0");
 		List<Object> outBuiltin = runOnCPU(spark, scriptStr1, inputs, outputs);
 		List<Object> outNN = runOnCPU(spark, scriptStr2, inputs, outputs);
-		assertEqualObjects(outBuiltin.get(0), outNN.get(0), 1e-9);
+		assertEqualObjects(outBuiltin.get(0), outNN.get(0));
 		assertEqualObjects(outBuiltin.get(1), outNN.get(1));
 		assertEqualObjects(outBuiltin.get(2), outNN.get(2));
 		assertEqualObjects(outBuiltin.get(3), outNN.get(3));
