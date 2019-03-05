@@ -409,7 +409,6 @@ public class LibMatrixDNN {
 		}
 		dW_ret.copy(dW);
 		db_ret.copy(db);
-		dX.recomputeNonZeros();
 	}
 	
 	
