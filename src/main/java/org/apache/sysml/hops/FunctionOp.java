@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.conf.DMLConfig;
+import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.lops.FunctionCallCP;
 import org.apache.sysml.lops.FunctionCallCPSingle;
 import org.apache.sysml.lops.Lop;
@@ -259,14 +261,56 @@ public class FunctionOp extends MultiThreadedHop
 			numThreads = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		}
 		
-		Lop fcall = _singleOutFun ? new FunctionCallCPSingle( tmp, _fnamespace, _fname, et ) :
-			new FunctionCallCP(tmp, _fnamespace, _fname, _inputNames, _outputNames, _outputHops, et, numThreads);
+		Lop fcall = null;
+		if(_singleOutFun) {
+			fcall = new FunctionCallCPSingle( tmp, _fnamespace, _fname, et );
+		}
+		else if(getFunctionType() == FunctionType.MULTIRETURN_BUILTIN && isBuiltinFunction() 
+				&& et == ExecType.CP  // TODO: Support both CPU and GPU implementation
+				&& getFunctionName().equalsIgnoreCase("lstm") && 
+				ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.ALLOCATE_LSTM_CACHE)) {
+			// Add additional outputs:
+			ArrayList<Hop> outputHopsWithCache = new ArrayList<>(_outputHops);
+			String [] outputNamesWithCache = appendLSTMCacheOutputNames(_outputNames, 3);
+			for(int i = _outputNames.length-3; i < _outputNames.length; i++) {
+				Hop output = new DataOp(outputNamesWithCache[i], DataType.MATRIX, ValueType.DOUBLE, 
+						getInput().get(0), DataOpTypes.FUNCTIONOUTPUT, getInput().get(0).getFilename());
+				outputHopsWithCache.add(output);
+			}
+			fcall = new FunctionCallCP(tmp, _fnamespace, _fname, _inputNames, 
+					outputNamesWithCache, outputHopsWithCache, et, numThreads);
+		}
+//		else if(getFunctionType() == FunctionType.MULTIRETURN_BUILTIN && isBuiltinFunction() 
+//				&& et == ExecType.CP // TODO: Support both CPU and GPU implementation
+//				&& getFunctionName().equalsIgnoreCase("lstm_backward") && 
+//				ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.ALLOCATE_LSTM_CACHE)) {
+//			// Add additional inputs:
+//			
+//		}
+		else {
+			fcall = new FunctionCallCP(tmp, _fnamespace, _fname, _inputNames, _outputNames, _outputHops, et, numThreads);
+		}
+		
 		setLineNumbers(fcall);
 		setLops(fcall);
 		
 		//note: no reblock lop because outputs directly bound
 		
 		return getLops();
+	}
+	
+	private static int _CACHE_INDEX = 0;
+	private String[] appendLSTMCacheOutputNames(String[] _outputNames, int numTempVariables) {
+		String [] ret = new String[_outputNames.length + numTempVariables];
+		for(int i = 0; i < _outputNames.length + numTempVariables; i++) {
+			if(i < _outputNames.length) {
+				ret[i] = _outputNames[i];
+			}
+			else {
+				ret[i] = "__lstmCache" + i + "_" + (_CACHE_INDEX++);
+			}
+		}
+		return ret;
 	}
 
 	@Override
