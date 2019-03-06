@@ -21,6 +21,7 @@ package org.apache.sysml.runtime.instructions.cp;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
@@ -847,7 +848,7 @@ public class VariableCPInstruction extends CPInstruction {
 		if( dat != null )
 			ec.cleanupDataObject(dat);
 		if(ConfigurationManager.allocateNNCache() && dat instanceof MatrixObject) {
-			ArrayList<String> tmpVars = ((MatrixObject)dat).getTemporaryCacheData();
+			HashSet<String> tmpVars = ((MatrixObject)dat).getTemporaryCacheData();
 			for(String tmpVar : tmpVars) {
 				processRemoveVariableInstruction(ec, tmpVar);
 			}
