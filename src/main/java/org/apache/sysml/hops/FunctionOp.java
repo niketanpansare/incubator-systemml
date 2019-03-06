@@ -276,6 +276,15 @@ public class FunctionOp extends MultiThreadedHop
 				Hop output = new DataOp(outputNamesWithCache[i], DataType.MATRIX, ValueType.DOUBLE, 
 						getInput().get(0), DataOpTypes.FUNCTIONOUTPUT, getInput().get(0).getFilename());
 				outputHopsWithCache.add(output);
+				long [] NMTD = getNMTDForLSTM(getInput().get(0), getInput().get(1));
+				output.setDim1(NMTD[2]); // T
+				long NM = NMTD[0]> 0 && NMTD[1] > 0 ? NMTD[0]*NMTD[1] : -1;
+				if(i == outputNamesWithCache.length-1) {
+					output.setDim2(NM > 0 ? 4*NM : -1); // cache_ifog: NM*4
+				}
+				else {
+					output.setDim2(NM); // cache_c and cache_out: NM
+				}
 			}
 			fcall = new FunctionCallCP(tmp, _fnamespace, _fname, _inputNames, 
 					outputNamesWithCache, outputHopsWithCache, et, numThreads);
@@ -297,6 +306,24 @@ public class FunctionOp extends MultiThreadedHop
 		//note: no reblock lop because outputs directly bound
 		
 		return getLops();
+	}
+	
+	private long [] getNMTDForLSTM(Hop X, Hop W) {
+		long [] ret = new long[4];
+		ret[0] = X.getDim1(); // N
+		long M = W.getDim2() > 0 ? (W.getDim2()/4) : -1;
+		ret[1] = M;
+		if(M > 0 && W.getDim1() > 0 && X.getDim2() > 0) {
+			long D = W.getDim1() - M;
+			long T = X.getDim2() / D;
+			ret[2] = T;
+			ret[3] = D;
+		}
+		else {
+			ret[2] = -1;
+			ret[3] = -1;
+		}
+		return ret;
 	}
 	
 	private static int _CACHE_INDEX = 0;
