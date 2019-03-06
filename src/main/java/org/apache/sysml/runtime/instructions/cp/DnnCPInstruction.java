@@ -262,7 +262,23 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 			return new DnnCPInstruction(in1, in2, in3, in4, in5, in6, null, null, out, out2, out3, null, null, opcode, str, 0, 0);
 		}
 		else if (opcode.equalsIgnoreCase("lstm")) {
-			InstructionUtils.checkNumFields(parts, 9);
+			int numThreads = 1;
+			CPOperand cache_out = null;
+			CPOperand cache_c = null;
+			CPOperand cache_ifog = null;
+			
+			if(parts.length-1 == 12) {
+				InstructionUtils.checkNumFields(parts, 12);
+				// cache_out = new CPOperand(parts[9]); // cache_out
+				// cache_c = new CPOperand(parts[10]); // cache_c
+				// cache_ifog = new CPOperand(parts[11]); // cache_ifog
+				numThreads = Integer.parseInt(parts[12]);
+			}
+			else {
+				InstructionUtils.checkNumFields(parts, 9);
+				numThreads = Integer.parseInt(parts[9]);
+			}
+			
 			CPOperand in1 = new CPOperand(parts[1]); // X
 			CPOperand in2 = new CPOperand(parts[2]); // W
 			CPOperand in3 = new CPOperand(parts[3]); // b
@@ -271,8 +287,7 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 			CPOperand in6 = new CPOperand(parts[6]); // return_seq
 			CPOperand out = new CPOperand(parts[7]);  // out
 			CPOperand out2 = new CPOperand(parts[8]); // c
-			int numThreads = Integer.parseInt(parts[9]);
-			return new DnnCPInstruction(in1, in2, in3, in4, in5, in6, null, null, out, out2, null, null, null, opcode, str, 0, numThreads);
+			return new DnnCPInstruction(in1, in2, in3, in4, in5, in6, null, null, out, out2, cache_out, cache_c, cache_ifog, opcode, str, 0, numThreads);
 		}
 		else if (opcode.equalsIgnoreCase("lstm_backward")) {
 			InstructionUtils.checkNumFields(parts, 14);
