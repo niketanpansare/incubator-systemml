@@ -272,9 +272,10 @@ public class FunctionOp extends MultiThreadedHop
 			// Add additional outputs:
 			ArrayList<Hop> outputHopsWithCache = new ArrayList<>(_outputHops);
 			String [] outputNamesWithCache = appendLSTMCacheOutputNames(_outputNames, 3);
+			Hop X = getInput().get(0);
 			for(int i = _outputNames.length; i < outputNamesWithCache.length; i++) {
 				Hop output = new DataOp(outputNamesWithCache[i], DataType.MATRIX, ValueType.DOUBLE, 
-						getInput().get(0), DataOpTypes.FUNCTIONOUTPUT, getInput().get(0).getFilename());
+						X, DataOpTypes.FUNCTIONOUTPUT, X.getFilename());
 				outputHopsWithCache.add(output);
 				long [] NMTD = getNMTDForLSTM(getInput().get(0), getInput().get(1));
 				output.setDim1(NMTD[2]); // T
@@ -285,6 +286,8 @@ public class FunctionOp extends MultiThreadedHop
 				else {
 					output.setDim2(NM); // cache_c and cache_out: NM
 				}
+				output.setRowsInBlock(X.getRowsInBlock());
+				output.setColsInBlock(X.getColsInBlock());
 			}
 			fcall = new FunctionCallCP(tmp, _fnamespace, _fname, _inputNames, 
 					outputNamesWithCache, outputHopsWithCache, et, numThreads);
