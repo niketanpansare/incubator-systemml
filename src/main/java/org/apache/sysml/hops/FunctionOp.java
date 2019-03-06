@@ -272,7 +272,7 @@ public class FunctionOp extends MultiThreadedHop
 			// Add additional outputs:
 			ArrayList<Hop> outputHopsWithCache = new ArrayList<>(_outputHops);
 			String [] outputNamesWithCache = appendLSTMCacheOutputNames(_outputNames, 3);
-			for(int i = _outputNames.length-3; i < _outputNames.length; i++) {
+			for(int i = _outputNames.length; i < outputNamesWithCache.length; i++) {
 				Hop output = new DataOp(outputNamesWithCache[i], DataType.MATRIX, ValueType.DOUBLE, 
 						getInput().get(0), DataOpTypes.FUNCTIONOUTPUT, getInput().get(0).getFilename());
 				outputHopsWithCache.add(output);
