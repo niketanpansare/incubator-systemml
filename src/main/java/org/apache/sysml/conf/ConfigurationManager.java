@@ -105,6 +105,7 @@ public class ConfigurationManager
 		_ldmlconf = new ThreadLocalDMLConfig();
 		
 		FINEGRAINED_STATISTICS = conf.getBooleanValue(DMLConfig.EXTRA_FINEGRAINED_STATS);
+		ALLOCATE_NN_CACHE = conf.getBooleanValue(DMLConfig.ALLOCATE_NN_CACHE);
 	}
 	
 	/**
@@ -132,6 +133,7 @@ public class ConfigurationManager
 		_ldmlconf.set(conf);
 		
 		FINEGRAINED_STATISTICS = conf.getBooleanValue(DMLConfig.EXTRA_FINEGRAINED_STATS);
+		ALLOCATE_NN_CACHE = conf.getBooleanValue(DMLConfig.ALLOCATE_NN_CACHE);
 	}
 	
 	/**
@@ -268,6 +270,14 @@ public class ConfigurationManager
 		return _ldmlOptions.get().getExecutionMode();
 	}
 	
+	/**
+	 * 
+	 * @return true if the instruction can allocate temporary cache variables for NN variables.
+	 */
+	public static boolean allocateNNCache() {
+		return ALLOCATE_NN_CACHE;
+	}
+	
 	// -------------------------------------------------------------------------------
 	// This needs to be revisited in context of multi-threaded execution: JMLC.
 	// Since STATISTICS and FINEGRAINED_STATISTICS are frequently used flags,
@@ -276,6 +286,7 @@ public class ConfigurationManager
 	private static boolean STATISTICS = false;
 	private static boolean FINEGRAINED_STATISTICS = false;
 	private static boolean JMLC_MEM_STATISTICS = false;
+	private static boolean ALLOCATE_NN_CACHE = Boolean.parseBoolean(DMLConfig.getDefaultTextValue(DMLConfig.ALLOCATE_NN_CACHE));
 	
 	/**
 	 * @return true if statistics is enabled

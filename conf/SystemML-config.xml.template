@@ -118,4 +118,11 @@
    <!-- Should perform recomputation of activations such as ReLU to reduce memory consumption. Set this to true
    when performing inference or for training very large networks (default: false) -->
    <sysml.gpu.recompute.activations>false</sysml.gpu.recompute.activations>
+   
+   <!-- Allocate temporary cache in nn forward functions (default: true)
+   This flags allows the developers to test a newly added optimization as well as is useful for comparing the performance as well as
+   the scalability of this approach (i.e. allocating temporary cache).
+   Also, in some scenario (such as prediction-only scenario under memory pressure), the user may want to explicitly turn this flag-off. 
+   -->
+   <sysml.allocate.nn.temp.cache>true</sysml.allocate.nn.temp.cache>
 </root>

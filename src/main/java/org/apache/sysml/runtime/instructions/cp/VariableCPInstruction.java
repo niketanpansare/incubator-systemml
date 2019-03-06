@@ -846,6 +846,13 @@ public class VariableCPInstruction extends CPInstruction {
 		//cleanup matrix data on fs/hdfs (if necessary)
 		if( dat != null )
 			ec.cleanupDataObject(dat);
+		if(ConfigurationManager.allocateNNCache() && dat instanceof MatrixObject) {
+			ArrayList<String> tmpVars = ((MatrixObject)dat).getTemporaryCacheData();
+			for(String tmpVar : tmpVars) {
+				processRemoveVariableInstruction(ec, tmpVar);
+			}
+			tmpVars.clear();
+		}
 	}
 	
 	/**

@@ -20,6 +20,8 @@
 package org.apache.sysml.runtime.instructions.cp;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -302,6 +304,11 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 			aL.get(index).getValueType(), aL.get(index).isLiteral()).getLongValue();
 	}
 	
+	private String getTemporaryLSTMCachePrefix() {
+		return "___cache_" + input1.getName() + _in2.getName() + _in3.getName() + 
+				_in4.getName() + _in5.getName() + _in5.getName() + _in6.getName();
+	}
+	
 	public void processLstmInstruction(ExecutionContext ec) {
 		MatrixBlock X = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
 		MatrixBlock W = ec.getMatrixInput(_in2.getName(), getExtendedOpcode());
@@ -332,10 +339,29 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 		MatrixBlock out = new MatrixBlock(N, return_seq ? (T*M) : M, false);
 		MatrixBlock c = new MatrixBlock(N, M, false);
 		
-		LibMatrixDNN.lstm(X, W, b, out0, c0, 
-				return_seq, N, T, D, M,
-				out,  c, null, null, null,
-				_numThreads);
+		if(ConfigurationManager.allocateNNCache()) {
+			MatrixBlock cache_out = new MatrixBlock(T, N*M, false);
+			MatrixBlock cache_c = new MatrixBlock(T, N*M, false);
+			MatrixBlock cache_ifog = new MatrixBlock(T, N*4*M, false);
+			LibMatrixDNN.lstm(X, W, b, out0, c0, 
+					return_seq, N, T, D, M,
+					out,  c, cache_out, cache_c, cache_ifog,
+					_numThreads);
+			String prefix = getTemporaryLSTMCachePrefix();
+			ec.setMatrixOutput(prefix + "_cp_cache_out", cache_out, getExtendedOpcode());
+			ec.setMatrixOutput(prefix + "_cp_cache_c", cache_c, getExtendedOpcode());
+			ec.setMatrixOutput(prefix + "_cp_cache_ifog", cache_ifog, getExtendedOpcode());
+			HashSet<String> _temporaryCacheData = ec.getMatrixObject(input1.getName()).getTemporaryCacheData();
+			_temporaryCacheData.add(prefix + "_cp_cache_out");
+			_temporaryCacheData.add(prefix + "_cp_cache_c");
+			_temporaryCacheData.add(prefix + "_cp_cache_ifog");
+		}
+		else {
+			LibMatrixDNN.lstm(X, W, b, out0, c0, 
+					return_seq, N, T, D, M,
+					out,  c, null, null, null,
+					_numThreads);
+		}
 		
 		// release inputs/outputs
 		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
@@ -388,21 +414,40 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 					+ "but found [" + dc.getNumRows() + "," + dc.getNumColumns() + "]");
 		}
 		
-		MatrixBlock cache_out = new MatrixBlock(T, N*M, false);
-		MatrixBlock cache_c = new MatrixBlock(T, N*M, false);
-		MatrixBlock cache_ifog = new MatrixBlock(T, N*4*M, false);
+		MatrixBlock cache_out = null;
+		MatrixBlock cache_c = null;
+		MatrixBlock cache_ifog = null;
+		if(ConfigurationManager.allocateNNCache()) {
+			String prefix = getTemporaryLSTMCachePrefix();
+			HashSet<String> _temporaryCacheData = ec.getMatrixObject(input1.getName()).getTemporaryCacheData();
+			if(_temporaryCacheData.contains(prefix + "_cp_cache_out") && 
+					_temporaryCacheData.contains(prefix + "_cp_cache_c") &&
+					_temporaryCacheData.contains(prefix + "_cp_cache_ifog")) {
+				cache_out = ec.getMatrixInput(prefix + "_cp_cache_out", getExtendedOpcode());
+				cache_c = ec.getMatrixInput(prefix + "_cp_cache_c", getExtendedOpcode());
+				cache_ifog = ec.getMatrixInput(prefix + "_cp_cache_ifog", getExtendedOpcode());
+			}
+			else {
+				// Only warn when ConfigurationManager.allocateNNCache() is true
+				LOG.warn("Invoking lstm forward function redundantly in lstm_backward call. "
+						+ "Note: This can sometime happen due to copy or move instruction.");
+			}
+		}
 		
-		// In the initial implementation, invoke lstm redundantly.
-		// TODO: Optimize this later.
-		cache_out.allocateDenseBlock();
-		cache_c.allocateDenseBlock();
-		cache_ifog.allocateDenseBlock();
-		LibMatrixDNN.lstm(X, W, b, out0, c0, 
-				return_seq, N, T, D, M,
-				// Avoid out and c computation in lstm forward call
-				null, null, 
-				cache_out, cache_c, cache_ifog,
-				_numThreads);
+		if(cache_out == null) {
+			cache_out = new MatrixBlock(T, N*M, false);
+			cache_c = new MatrixBlock(T, N*M, false);
+			cache_ifog = new MatrixBlock(T, N*4*M, false);
+			cache_out.allocateDenseBlock();
+			cache_c.allocateDenseBlock();
+			cache_ifog.allocateDenseBlock();
+			LibMatrixDNN.lstm(X, W, b, out0, c0, 
+					return_seq, N, T, D, M,
+					// Avoid out and c computation in lstm forward call
+					null, null, 
+					cache_out, cache_c, cache_ifog,
+					_numThreads);
+		}
 		
 		MatrixBlock dX = new MatrixBlock(N, T*D, false);
 		MatrixBlock dW = new MatrixBlock(D+M, 4*M, false);

@@ -21,6 +21,7 @@ package org.apache.sysml.runtime.controlprogram.caching;
 
 import java.io.IOException;
 import java.lang.ref.SoftReference;
+import java.util.HashSet;
 
 import org.apache.commons.lang.mutable.MutableBoolean;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -78,6 +79,11 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	private int _partitionSize = -1; //indicates n for BLOCKWISE_N
 	private String _partitionCacheName = null; //name of cache block
 	private MatrixBlock _partitionInMemory = null;
+	
+	protected HashSet<String> _temporaryCacheData = new HashSet<>();
+	public HashSet<String> getTemporaryCacheData() {
+		return _temporaryCacheData;
+	}
 	
 	/**
 	 * Constructor that takes the value type and the HDFS filename.
