@@ -343,6 +343,9 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 			MatrixBlock cache_out = new MatrixBlock(T, N*M, false);
 			MatrixBlock cache_c = new MatrixBlock(T, N*M, false);
 			MatrixBlock cache_ifog = new MatrixBlock(T, N*4*M, false);
+			cache_out.allocateDenseBlock();
+			cache_c.allocateDenseBlock();
+			cache_ifog.allocateDenseBlock();
 			LibMatrixDNN.lstm(X, W, b, out0, c0, 
 					return_seq, N, T, D, M,
 					out,  c, cache_out, cache_c, cache_ifog,
