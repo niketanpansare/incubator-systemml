@@ -21,6 +21,7 @@ package org.apache.sysml.runtime.controlprogram.context;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -487,7 +488,7 @@ public class ExecutionContext {
 		setVariable(varName, mo);
 	}
 	
-	public void setTemporaryCacheMatrix(String varName, MatrixBlock outputData) {
+	public void setTemporaryCacheMatrix(String varName, MatrixBlock outputData, String scopeVarName) {
 		int blocksize = ConfigurationManager.getBlocksize();
 		MatrixCharacteristics mc = new MatrixCharacteristics(outputData.getNumRows(), outputData.getNumColumns(), blocksize, blocksize);
 		MetaDataFormat meta = new MetaDataFormat(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
@@ -495,6 +496,12 @@ public class ExecutionContext {
 		mo.acquireModify(outputData);
 		mo.release();
 		setVariable(varName, mo);
+		getMatrixObject(scopeVarName).getTemporaryCacheData().add(varName);
+	}
+	
+	public boolean containsTemporaryCacheMatrix(String varName, String scopeVarName) {
+		HashSet<String> _temporaryCacheData = getMatrixObject(scopeVarName).getTemporaryCacheData();
+		return _temporaryCacheData.contains(varName);
 	}
 	
 	public void setMatrixOutput(String varName, MatrixBlock outputData, String opcode) {

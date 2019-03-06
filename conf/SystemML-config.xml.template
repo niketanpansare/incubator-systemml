@@ -122,7 +122,8 @@
    <!-- Allocate temporary cache in nn forward functions (default: true)
    This flags allows the developers to test a newly added optimization as well as is useful for comparing the performance as well as
    the scalability of this approach (i.e. allocating temporary cache).
-   Also, in some scenario (such as prediction-only scenario under memory pressure), the user may want to explicitly turn this flag-off. 
+   Also, in some scenario (such as prediction-only scenario under memory pressure), the user may want to explicitly turn this flag-off.
+   Developer design document for this flag is available in org.apache.sysml.runtime.controlprogram.caching.MatrixObject class. 
    -->
    <sysml.allocate.nn.temp.cache>true</sysml.allocate.nn.temp.cache>
 </root>

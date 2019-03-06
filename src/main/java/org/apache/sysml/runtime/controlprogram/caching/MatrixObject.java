@@ -80,10 +80,31 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	private String _partitionCacheName = null; //name of cache block
 	private MatrixBlock _partitionInMemory = null;
 	
+	// ---------------------------------------------------------------
+	// Design doc for temporary cache data:
+	// Temporary cache variables are used to store temporary variable required for subsequent backward calls.
+	// 
+	// A typical usage is as follows:
+	// - The forward instruction defines two functions: getPrefixForTempCacheVar() and getScopeVarForTempCacheVar().
+	// - getPrefixForTempCacheVar() can return any prefix that is necessary to uniquely identify the forward invocation.
+	// - getScopeVarForTempCacheVar() determines the scope of the temporary cache variables i.e., the variables are cleaned up
+	//   when rmvar is invoked on the variable returned by getScopeVarForTempCacheVar()
+	// - The forward instruction adds the MatrixBlock cache_out into the symbol table using the following function:
+	//   ec.setTemporaryCacheMatrix(getPrefixForTempCacheVar() + "_cp_cache_out", cache_out, getScopeVarForTempCacheVar());
+	// - The backward function then retrive the cache variables using the following code:
+	//   if(ConfigurationManager.allocateNNCache() && 
+	//       ec.containsTemporaryCacheMatrix(prefix + "_cp_cache_out", getScopeVarForTempCacheVar())) {
+	//      cache_out = ec.getMatrixInput(prefix + "_cp_cache_out", getExtendedOpcode());
+	//   }
+	// - For simplicity, this mechanism is not extended to assign, cpvar or mvvar instruction.
+	// - Hence, it is possible that containsTemporaryCacheMatrix() can return false even if ConfigurationManager.allocateNNCache() returns true.
+	// - In that case, it might be prudent to warn the user of redundant forward call in the backward instruction.
+	// - The user can use the configuration flag sysml.allocate.nn.temp.cache to disable/enable this functionality.
 	protected HashSet<String> _temporaryCacheData = new HashSet<>();
 	public HashSet<String> getTemporaryCacheData() {
 		return _temporaryCacheData;
 	}
+	// ---------------------------------------------------------------
 	
 	/**
 	 * Constructor that takes the value type and the HDFS filename.

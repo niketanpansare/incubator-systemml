@@ -20,8 +20,6 @@
 package org.apache.sysml.runtime.instructions.cp;
 
 import java.util.ArrayList;
-import java.util.HashSet;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -304,9 +302,22 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 			aL.get(index).getValueType(), aL.get(index).isLiteral()).getLongValue();
 	}
 	
-	private String getTemporaryLSTMCachePrefix() {
-		return "___cache_" + input1.getName() + _in2.getName() + _in3.getName() + 
+	private String getPrefixForTempCacheVar() {
+		if(instOpcode.equalsIgnoreCase("lstm") || instOpcode.equalsIgnoreCase("lstm_backward")) {
+			return "___cache_" + input1.getName() + _in2.getName() + _in3.getName() + 
 				_in4.getName() + _in5.getName() + _in5.getName() + _in6.getName();
+		}
+		else {
+			throw new DMLRuntimeException("The instruction " + instOpcode + " is not eligible for temporary cache variable");
+		}
+	}
+	private String getScopeVarForTempCacheVar() {
+		if(instOpcode.equalsIgnoreCase("lstm") || instOpcode.equalsIgnoreCase("lstm_backward")) {
+			return input1.getName();
+		}
+		else {
+			throw new DMLRuntimeException("The instruction " + instOpcode + " is not eligible for temporary cache variable");
+		}
 	}
 	
 	public void processLstmInstruction(ExecutionContext ec) {
@@ -350,14 +361,10 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 					return_seq, N, T, D, M,
 					out,  c, cache_out, cache_c, cache_ifog,
 					_numThreads);
-			String prefix = getTemporaryLSTMCachePrefix();
-			ec.setTemporaryCacheMatrix(prefix + "_cp_cache_out", cache_out);
-			ec.setTemporaryCacheMatrix(prefix + "_cp_cache_c", cache_c);
-			ec.setTemporaryCacheMatrix(prefix + "_cp_cache_ifog", cache_ifog);
-			HashSet<String> _temporaryCacheData = ec.getMatrixObject(input1.getName()).getTemporaryCacheData();
-			_temporaryCacheData.add(prefix + "_cp_cache_out");
-			_temporaryCacheData.add(prefix + "_cp_cache_c");
-			_temporaryCacheData.add(prefix + "_cp_cache_ifog");
+			String prefix = getPrefixForTempCacheVar();
+			ec.setTemporaryCacheMatrix(prefix + "_cp_cache_out", cache_out, getScopeVarForTempCacheVar());
+			ec.setTemporaryCacheMatrix(prefix + "_cp_cache_c", cache_c, getScopeVarForTempCacheVar());
+			ec.setTemporaryCacheMatrix(prefix + "_cp_cache_ifog", cache_ifog, getScopeVarForTempCacheVar());
 		}
 		else {
 			LibMatrixDNN.lstm(X, W, b, out0, c0, 
@@ -421,11 +428,10 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 		MatrixBlock cache_c = null;
 		MatrixBlock cache_ifog = null;
 		if(ConfigurationManager.allocateNNCache()) {
-			String prefix = getTemporaryLSTMCachePrefix();
-			HashSet<String> _temporaryCacheData = ec.getMatrixObject(input1.getName()).getTemporaryCacheData();
-			if(_temporaryCacheData.contains(prefix + "_cp_cache_out") && 
-					_temporaryCacheData.contains(prefix + "_cp_cache_c") &&
-					_temporaryCacheData.contains(prefix + "_cp_cache_ifog")) {
+			String prefix = getPrefixForTempCacheVar();
+			if(ec.containsTemporaryCacheMatrix(prefix + "_cp_cache_out", getScopeVarForTempCacheVar()) && 
+					ec.containsTemporaryCacheMatrix(prefix + "_cp_cache_c", getScopeVarForTempCacheVar()) &&
+					ec.containsTemporaryCacheMatrix(prefix + "_cp_cache_ifog", getScopeVarForTempCacheVar())) {
 				cache_out = ec.getMatrixInput(prefix + "_cp_cache_out", getExtendedOpcode());
 				cache_c = ec.getMatrixInput(prefix + "_cp_cache_c", getExtendedOpcode());
 				cache_ifog = ec.getMatrixInput(prefix + "_cp_cache_ifog", getExtendedOpcode());
