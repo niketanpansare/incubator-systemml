@@ -351,9 +351,9 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 					out,  c, cache_out, cache_c, cache_ifog,
 					_numThreads);
 			String prefix = getTemporaryLSTMCachePrefix();
-			ec.setMatrixOutput(prefix + "_cp_cache_out", cache_out, getExtendedOpcode());
-			ec.setMatrixOutput(prefix + "_cp_cache_c", cache_c, getExtendedOpcode());
-			ec.setMatrixOutput(prefix + "_cp_cache_ifog", cache_ifog, getExtendedOpcode());
+			ec.setTemporaryCacheMatrix(prefix + "_cp_cache_out", cache_out);
+			ec.setTemporaryCacheMatrix(prefix + "_cp_cache_c", cache_c);
+			ec.setTemporaryCacheMatrix(prefix + "_cp_cache_ifog", cache_ifog);
 			HashSet<String> _temporaryCacheData = ec.getMatrixObject(input1.getName()).getTemporaryCacheData();
 			_temporaryCacheData.add(prefix + "_cp_cache_out");
 			_temporaryCacheData.add(prefix + "_cp_cache_c");

@@ -31,6 +31,7 @@ import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.debug.DMLFrame;
 import org.apache.sysml.debug.DMLProgramCounter;
 import org.apache.sysml.debug.DebugState;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -481,6 +482,16 @@ public class ExecutionContext {
 	
 	public void setMatrixOutput(String varName, MatrixBlock outputData) {
 		MatrixObject mo = getMatrixObject(varName);
+		mo.acquireModify(outputData);
+		mo.release();
+		setVariable(varName, mo);
+	}
+	
+	public void setTemporaryCacheMatrix(String varName, MatrixBlock outputData) {
+		int blocksize = ConfigurationManager.getBlocksize();
+		MatrixCharacteristics mc = new MatrixCharacteristics(outputData.getNumRows(), outputData.getNumColumns(), blocksize, blocksize);
+		MetaDataFormat meta = new MetaDataFormat(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
+		MatrixObject mo = new MatrixObject(ValueType.DOUBLE, OptimizerUtils.getUniqueTempFileName(), meta);
 		mo.acquireModify(outputData);
 		mo.release();
 		setVariable(varName, mo);
