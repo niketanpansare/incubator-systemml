@@ -528,7 +528,10 @@ public class InterProceduralAnalysis
 		String[] funArgNames = fop.getInputVariableNames();
 		ArrayList<Hop> inputOps = fop.getInput();
 		if(inputOps.size() != funArgNames.length) {
-			throw new HopsException("The function definition has " + funArgNames.length + " arguments, but the function invocation has " + inputOps.size() + " arguments.");
+			String argsList = funArgNames.length > 0 ? funArgNames[0] : "";
+			for( int i=1; i<funArgNames.length; i++ )
+				argsList += ", " + funArgNames[i];
+			throw new HopsException("The function definition has " + funArgNames.length + " arguments (" + argsList + "), but the function invocation has " + inputOps.size() + " arguments.");
 		}
 		String fkey = fop.getFunctionKey();
 		
