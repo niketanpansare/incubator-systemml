@@ -51,6 +51,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -59,6 +60,8 @@ import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.context.CSRPointer;
 import org.apache.sysml.runtime.instructions.gpu.context.ExecutionConfig;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCuMatMult.CuMatMultParameters;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNN.PoolingType;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
@@ -940,11 +943,42 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		return LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, output, instName, numRows, numCols);
 	}
 	
+	public static Pointer getDenseInputPointer(ExecutionContext ec, GPUContext gCtx, String instName, String inputName) throws DMLRuntimeException {
+		MatrixObject output = ec.getMatrixInputForGPUInstruction(inputName, instName);
+		return LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, output, instName);
+	}
+	
 	public static Pointer getDenseOutputPointer(ExecutionContext ec, GPUContext gCtx, String instName, String outputName,
 			long numRows, long numCols) throws DMLRuntimeException {
 		MatrixObject output = ec.getMatrixObject(outputName);
 		getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, numRows, numCols); // Allocated the dense output matrix
 		return getDensePointerForCuDNN(gCtx, output, instName, numRows, numCols);
+	}
+	
+	public static Pointer getTemporaryCacheDensePointer(ExecutionContext ec, GPUContext gCtx, String instName, String varName,
+			String scopeVarName, long sizeInBytes) throws DMLRuntimeException {
+		int numRows = LibMatrixCUDA.toInt((long)Math.ceil( ((double) sizeInBytes) / sizeOfDataType ));;
+		MatrixObject mo = null;
+		if(ec.containsTemporaryCacheMatrix(varName, scopeVarName)) {
+			// If this throws an exception, then something wierd has happened.
+			// scopeVarName is part of the execution context as the instruction passed them both,
+			// and varName is marked as temporary cache data of scopeVarName
+			// but for some reason varName is not available in the execution context.
+			mo = ec.getMatrixObject(varName);  
+		}
+		else {
+			int blocksize = ConfigurationManager.getBlocksize();
+			MatrixCharacteristics mc = new MatrixCharacteristics(numRows, 1, blocksize, blocksize);
+			MetaDataFormat meta = new MetaDataFormat(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
+			mo = new MatrixObject(ValueType.DOUBLE, OptimizerUtils.getUniqueTempFileName(), meta);
+			mo.acquireModify(new MatrixBlock(numRows, 1, false));
+			mo.release();
+			ec.setVariable(varName, mo);
+			ec.getMatrixObject(scopeVarName).getTemporaryCacheData().add(varName);
+		}
+		
+		getDenseMatrixOutputForGPUInstruction(ec, instName, varName, numRows, 1); // Allocated the dense output matrix
+		return getDensePointerForCuDNN(gCtx, mo, instName, numRows, 1);
 	}
 	
 	public static void nnLstmBackward(ExecutionContext ec, GPUContext gCtx, String instName,
@@ -1177,18 +1211,22 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @param M hidden size
 	 * @param D number of features
 	 * @param T sequence length
+	 * @param prefixTempCache prefix for temporary cache variable or null if not eligible.
+	 * @param scopeVar scope variable for temporary cache
 	 * @throws DMLRuntimeException if error
 	 */
 	public static void cuDNNLstm(ExecutionContext ec, GPUContext gCtx, String instName,
 			Pointer X,  Pointer wPointer, Pointer out0, Pointer c0, boolean return_sequences,
-			String outputName, String cyName, int N, int M, int D, int T) throws DMLRuntimeException {
-		cuDNNSingleLayerUnidirectionalRNNForward(ec, gCtx, instName, X, out0, c0, wPointer, outputName, cyName, "lstm", return_sequences, N, M, D, T);
+			String outputName, String cyName, int N, int M, int D, int T, String prefixTempCache, String scopeVar) throws DMLRuntimeException {
+		cuDNNSingleLayerUnidirectionalRNNForward(ec, gCtx, instName, X, out0, c0, wPointer, outputName, cyName, 
+				"lstm", return_sequences, N, M, D, T, prefixTempCache, scopeVar);
 	}
 	
 	private static void cuDNNSingleLayerUnidirectionalRNNForward(ExecutionContext ec, GPUContext gCtx, String instName,
 			Pointer x, Pointer hx, Pointer cx, Pointer wPointer,  // input
 			String outputName, String cyName,  					 // output
-			String rnnMode, boolean return_sequences, int N, int M, int D, int T) throws DMLRuntimeException {
+			String rnnMode, boolean return_sequences, int N, int M, int D, int T, 
+			String prefixTempCache, String scopeVar) throws DMLRuntimeException {
 		boolean hasCarry = rnnMode.equalsIgnoreCase("lstm");
 		if(LOG.isDebugEnabled()) {
 			long memRequired = (N*T*M + 2*N*M + N*T*M)*sizeOfDataType;
@@ -1202,6 +1240,20 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		// Pointer wPointer = getDensePointerForCuDNN(gCtx, w, instName, D+M+2, 4*M);
 		
 		try(LibMatrixCuDNNRnnAlgorithm algo = new LibMatrixCuDNNRnnAlgorithm(ec, gCtx, instName, rnnMode, N, T, M, D, true, wPointer)) {
+			Pointer reserveSpace = null;
+			if (algo.reserveSpaceSizeInBytes != 0) {
+				if(ConfigurationManager.allocateNNCache()) {
+					reserveSpace = LibMatrixCuDNN.getTemporaryCacheDensePointer(ec, gCtx, instName, prefixTempCache + "_cudnn_reserveSpace",
+							scopeVar, algo.reserveSpaceSizeInBytes);
+				}
+				else {
+					reserveSpace = gCtx.allocate(instName, algo.reserveSpaceSizeInBytes);
+				}
+			}
+			else {
+				reserveSpace = new Pointer();
+			}
+			
 			JCudnn.cudnnRNNForwardTraining(gCtx.getCudnnHandle(), algo.rnnDesc, T, 
 					algo.xDesc, x, 
 					algo.hxDesc, hx, 
@@ -1211,7 +1263,16 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 					algo.hyDesc, hyPointer, 
 					algo.cyDesc, cyPointer, 
 					algo.workSpace, algo.sizeInBytes, 
-					algo.reserveSpace, algo.reserveSpaceSizeInBytes);
+					reserveSpace, algo.reserveSpaceSizeInBytes);
+			if (algo.reserveSpaceSizeInBytes != 0) {
+				if(ConfigurationManager.allocateNNCache()) {
+					// Release the temporary cache variable for the reserve space
+					ec.releaseMatrixOutputForGPUInstruction(prefixTempCache + "_cudnn_reserveSpace");
+				}
+				else {
+					gCtx.cudaFreeHelper(instName, reserveSpace, gCtx.EAGER_CUDA_FREE);
+				}
+			}
 		}
 		
 		if(return_sequences) {
@@ -1227,7 +1288,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	public static void cuDNNLstmBackward(ExecutionContext ec, GPUContext gCtx, String instName,
 			Pointer x, Pointer hx, Pointer cx, Pointer wPointer, String doutName, String dcyName,  // input
 			String dxName, String dwName, String dbName, String dhxName, String dcxName,  	// output
-			boolean return_sequences, long N, long M, long D, long T) throws DMLRuntimeException {
+			boolean return_sequences, long N, long M, long D, long T, String prefixTempCache, String scopeVar) throws DMLRuntimeException {
 		
 		if(LOG.isDebugEnabled()) {
 			long memRequired = (D+M)*4*M // sysmlWPointer
@@ -1252,18 +1313,47 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 				
 		// Allocate intermediate pointers computed by forward
 		Pointer yPointer = gCtx.allocate(instName, N*T*M*sizeOfDataType);
+		
 		try(LibMatrixCuDNNRnnAlgorithm algo = new LibMatrixCuDNNRnnAlgorithm(ec, gCtx, instName, "lstm", toInt(N), toInt(T), 
 				toInt(M), toInt(D), true, wPointer)) {
-			JCudnn.cudnnRNNForwardTraining(gCtx.getCudnnHandle(), algo.rnnDesc, toInt(T), 
-					algo.xDesc, x, 
-					algo.hxDesc, hx, 
-					algo.cxDesc, cx, 
-					algo.wDesc, wPointer, 
-					algo.yDesc, yPointer, 
-					algo.hyDesc, new Pointer(), 
-					algo.cyDesc, new Pointer(), 
-					algo.workSpace, algo.sizeInBytes, 
-					algo.reserveSpace, algo.reserveSpaceSizeInBytes);
+			boolean invokeForward = true;
+			Pointer reserveSpace = null;
+			if (algo.reserveSpaceSizeInBytes != 0) {
+				if(ConfigurationManager.allocateNNCache()) {
+					if(ec.containsTemporaryCacheMatrix(prefixTempCache + "_cudnn_reserveSpace", scopeVar)) {
+						invokeForward = false;
+						reserveSpace = LibMatrixCuDNN.getDenseInputPointer(ec, gCtx, instName, prefixTempCache + "_cudnn_reserveSpace");
+					}
+					else {
+						// Only warn when ConfigurationManager.allocateNNCache() is true
+						LOG.warn("Invoking cudnnRNNForwardTraining function redundantly in lstm_backward call. "
+								+ "Note: This can sometime happen due to copy or move instruction.");
+					}
+				}
+			}
+			else {
+				invokeForward = false;
+				reserveSpace = new Pointer();
+			}
+			
+			if(invokeForward) {
+				reserveSpace = new Pointer();
+				if (algo.reserveSpaceSizeInBytes != 0) {
+					if(LOG.isDebugEnabled()) 
+						LOG.debug("Allocating " +  algo.reserveSpaceSizeInBytes + " bytes for lstm reserve space.");
+					reserveSpace = gCtx.allocate(instName, algo.reserveSpaceSizeInBytes);
+				}
+				JCudnn.cudnnRNNForwardTraining(gCtx.getCudnnHandle(), algo.rnnDesc, toInt(T), 
+						algo.xDesc, x, 
+						algo.hxDesc, hx, 
+						algo.cxDesc, cx, 
+						algo.wDesc, wPointer, 
+						algo.yDesc, yPointer, 
+						algo.hyDesc, new Pointer(), 
+						algo.cyDesc, new Pointer(), 
+						algo.workSpace, algo.sizeInBytes, 
+						reserveSpace, algo.reserveSpaceSizeInBytes);
+			}
 			
 			Pointer cudnnDx = gCtx.allocate(instName, N*T*D*LibMatrixCUDA.sizeOfDataType);
 			JCudnn.cudnnRNNBackwardData(gCtx.getCudnnHandle(), algo.rnnDesc, toInt(T), 
@@ -1284,7 +1374,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 					algo.dcxDesc, getDenseOutputPointer(ec, gCtx, instName, dcxName, N, M),
 					// ----------------------
 					algo.workSpace, algo.sizeInBytes, 
-					algo.reserveSpace, algo.reserveSpaceSizeInBytes);
+					reserveSpace, algo.reserveSpaceSizeInBytes);
 			gCtx.cudaFreeHelper(instName, dy, gCtx.EAGER_CUDA_FREE);
 			ec.releaseMatrixInputForGPUInstruction(dcyName);
 			ec.releaseMatrixOutputForGPUInstruction(dhxName);
@@ -1305,7 +1395,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 					algo.yDesc, yPointer, 
 					algo.workSpace, algo.sizeInBytes, 
 					algo.dwDesc, cudnnDwPointer, 
-					algo.reserveSpace, algo.reserveSpaceSizeInBytes);
+					reserveSpace, algo.reserveSpaceSizeInBytes);
 			LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("prepare_lstm_dweight",
 					ExecutionConfig.getConfigForSimpleVectorOperations(toInt((D+M+2)*(4*M))),
 					getDenseOutputPointer(ec, gCtx, instName, dwName, D+M, 4*M), 
@@ -1316,6 +1406,16 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			// -------------------------------------------------------------------------------------------
 			
 			gCtx.cudaFreeHelper(instName, yPointer, gCtx.EAGER_CUDA_FREE);
+			if (algo.reserveSpaceSizeInBytes != 0) {
+				if(invokeForward) {
+					// Free the allocated reserve space
+					gCtx.cudaFreeHelper(instName, reserveSpace, gCtx.EAGER_CUDA_FREE);
+				}
+				else {
+					// Release the temporary cache variable for the reserve space
+					ec.releaseMatrixInputForGPUInstruction(prefixTempCache + "_cudnn_reserveSpace");
+				}
+			}
 		}
 	}
 	

@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import jcuda.Pointer;
 import jcuda.jcudnn.JCudnn;
 
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -661,6 +662,24 @@ public class DnnGPUInstruction extends GPUInstruction {
 		return (long)memRequired;
 	}
 	
+	private String getPrefixForTempCacheVar() {
+		if(instOpcode.equalsIgnoreCase("lstm") || instOpcode.equalsIgnoreCase("lstm_backward")) {
+			return "___cache_" + _input1.getName() + _input2.getName() + _input3.getName() + 
+					_input4.getName() + _input5.getName()  + _input6.getName();
+		}
+		else {
+			throw new DMLRuntimeException("The instruction " + instOpcode + " is not eligible for temporary cache variable");
+		}
+	}
+	private String getScopeVarForTempCacheVar() {
+		if(instOpcode.equalsIgnoreCase("lstm") || instOpcode.equalsIgnoreCase("lstm_backward")) {
+			return _input1.getName();
+		}
+		else {
+			throw new DMLRuntimeException("The instruction " + instOpcode + " is not eligible for temporary cache variable");
+		}
+	}
+	
 	private void processLstmBackwardInstruction(ExecutionContext ec) throws DMLRuntimeException {
 		MatrixObject out0 = getMatrixInputForGPUInstruction(ec, _input4.getName());
 		long M = out0.getNumColumns(); // hiddenSize .. since out0: (N, M)
@@ -690,8 +709,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 		long memRequired = getMemRequiredForCuDNNLSTMBackward(N, T, M, D, return_sequences);
 		
 		boolean isWSparse = LibMatrixCUDA.isInSparseFormat(gCtx, W);
-		
-		
+		String prefixTempCache = ConfigurationManager.allocateNNCache()? getPrefixForTempCacheVar() : null;
 		
 		if(FORCED_LSTM_OP == LstmOperator.CUDNN || 
 			N != N1 || // Use CuDNN operator when batch size of previous iteration is different that current iteration
@@ -717,7 +735,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 			LibMatrixCuDNN.cuDNNLstmBackward(ec, gCtx, instName, 
 					cudnnInput, out0Pointer, c0Pointer, cudnnWPointer, doutName, dcyName,  // input
 					dxName, dwName, dbName, dhxName, dcxName, // output 
-					return_sequences, N, M, D, T);
+					return_sequences, N, M, D, T, prefixTempCache, _input1.getName());
 			gCtx.cudaFreeHelper(instName, cudnnWPointer, gCtx.EAGER_CUDA_FREE);
 			gCtx.cudaFreeHelper(instName, cudnnInput, gCtx.EAGER_CUDA_FREE);
 		}
@@ -806,6 +824,8 @@ public class DnnGPUInstruction extends GPUInstruction {
 		
 		boolean isWSparse = LibMatrixCUDA.isInSparseFormat(gCtx, W);
 		
+		String prefixTempCache = ConfigurationManager.allocateNNCache()? getPrefixForTempCacheVar() : null;
+		
 		if(FORCED_LSTM_OP == LstmOperator.CUDNN || 
 			N != N1 || // Use CuDNN operator when batch size of previous iteration is different that current iteration
 			(!isWSparse && // Don't use CuDNN kernel when w is sparse.
@@ -828,7 +848,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 			ec.releaseMatrixInputForGPUInstruction(_input1.getName());
 			Pointer c0Pointer = LibMatrixCUDA.getDensePointer(gCtx, getMatrixInputForGPUInstruction(ec, _input5.getName()), instName); 
 			LibMatrixCuDNN.cuDNNLstm(ec, gCtx, instName, cudnnInput, cudnnWPointer, out0Pointer, c0Pointer, return_sequences, _output.getName(), _output2.getName(), 
-					toInt(N), toInt(M), toInt(D), toInt(T));
+					toInt(N), toInt(M), toInt(D), toInt(T), prefixTempCache);
 			gCtx.cudaFreeHelper(instName, cudnnWPointer, gCtx.EAGER_CUDA_FREE);
 			gCtx.cudaFreeHelper(instName, cudnnInput, gCtx.EAGER_CUDA_FREE);
 		}

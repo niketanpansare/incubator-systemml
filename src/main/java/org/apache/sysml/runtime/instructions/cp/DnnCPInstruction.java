@@ -305,7 +305,7 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 	private String getPrefixForTempCacheVar() {
 		if(instOpcode.equalsIgnoreCase("lstm") || instOpcode.equalsIgnoreCase("lstm_backward")) {
 			return "___cache_" + input1.getName() + _in2.getName() + _in3.getName() + 
-				_in4.getName() + _in5.getName() + _in5.getName() + _in6.getName();
+				_in4.getName() + _in5.getName() + _in6.getName();
 		}
 		else {
 			throw new DMLRuntimeException("The instruction " + instOpcode + " is not eligible for temporary cache variable");
@@ -361,10 +361,10 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 					return_seq, N, T, D, M,
 					out,  c, cache_out, cache_c, cache_ifog,
 					_numThreads);
-			String prefix = getPrefixForTempCacheVar();
-			ec.setTemporaryCacheMatrix(prefix + "_cp_cache_out", cache_out, getScopeVarForTempCacheVar());
-			ec.setTemporaryCacheMatrix(prefix + "_cp_cache_c", cache_c, getScopeVarForTempCacheVar());
-			ec.setTemporaryCacheMatrix(prefix + "_cp_cache_ifog", cache_ifog, getScopeVarForTempCacheVar());
+			String prefixTempCache = getPrefixForTempCacheVar();
+			ec.setTemporaryCacheMatrix(prefixTempCache + "_cp_cache_out", cache_out, getScopeVarForTempCacheVar());
+			ec.setTemporaryCacheMatrix(prefixTempCache + "_cp_cache_c", cache_c, getScopeVarForTempCacheVar());
+			ec.setTemporaryCacheMatrix(prefixTempCache + "_cp_cache_ifog", cache_ifog, getScopeVarForTempCacheVar());
 		}
 		else {
 			LibMatrixDNN.lstm(X, W, b, out0, c0, 
@@ -428,13 +428,13 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 		MatrixBlock cache_c = null;
 		MatrixBlock cache_ifog = null;
 		if(ConfigurationManager.allocateNNCache()) {
-			String prefix = getPrefixForTempCacheVar();
-			if(ec.containsTemporaryCacheMatrix(prefix + "_cp_cache_out", getScopeVarForTempCacheVar()) && 
-					ec.containsTemporaryCacheMatrix(prefix + "_cp_cache_c", getScopeVarForTempCacheVar()) &&
-					ec.containsTemporaryCacheMatrix(prefix + "_cp_cache_ifog", getScopeVarForTempCacheVar())) {
-				cache_out = ec.getMatrixInput(prefix + "_cp_cache_out", getExtendedOpcode());
-				cache_c = ec.getMatrixInput(prefix + "_cp_cache_c", getExtendedOpcode());
-				cache_ifog = ec.getMatrixInput(prefix + "_cp_cache_ifog", getExtendedOpcode());
+			String prefixTempCache = getPrefixForTempCacheVar();
+			if(ec.containsTemporaryCacheMatrix(prefixTempCache + "_cp_cache_out", getScopeVarForTempCacheVar()) && 
+					ec.containsTemporaryCacheMatrix(prefixTempCache + "_cp_cache_c", getScopeVarForTempCacheVar()) &&
+					ec.containsTemporaryCacheMatrix(prefixTempCache + "_cp_cache_ifog", getScopeVarForTempCacheVar())) {
+				cache_out = ec.getMatrixInput(prefixTempCache + "_cp_cache_out", getExtendedOpcode());
+				cache_c = ec.getMatrixInput(prefixTempCache + "_cp_cache_c", getExtendedOpcode());
+				cache_ifog = ec.getMatrixInput(prefixTempCache + "_cp_cache_ifog", getExtendedOpcode());
 			}
 			else {
 				// Only warn when ConfigurationManager.allocateNNCache() is true

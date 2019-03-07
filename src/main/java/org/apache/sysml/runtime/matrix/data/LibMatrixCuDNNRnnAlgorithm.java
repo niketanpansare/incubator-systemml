@@ -56,10 +56,14 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 	cudnnFilterDescriptor wDesc;
 	cudnnFilterDescriptor dwDesc;
 	long sizeInBytes; Pointer workSpace;
-	long reserveSpaceSizeInBytes; Pointer reserveSpace;
+	long reserveSpaceSizeInBytes; 
 	long dropOutSizeInBytes; Pointer dropOutStateSpace;
+	String prefixTempCache; ExecutionContext ec;
+	String scopeVar;
+	
 	public LibMatrixCuDNNRnnAlgorithm(ExecutionContext ec, GPUContext gCtx, String instName, 
 			String rnnMode, int N, int T, int M, int D, boolean isTraining, Pointer w) throws DMLRuntimeException {
+		this.ec = ec;
 		this.gCtx = gCtx;
 		this.instName = instName;
 		
@@ -82,6 +86,8 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 		dhyDesc = allocateTensorDescriptorWithStride(1, N, M);
 		cyDesc = allocateTensorDescriptorWithStride(1, N, M);
 		dcyDesc = allocateTensorDescriptorWithStride(1, N, M);
+		this.prefixTempCache = prefixTempCache;
+		this.scopeVar = scopeVar;
 		
 		// Initial dropout descriptor
 		dropoutDesc = new cudnnDropoutDescriptor();
@@ -113,7 +119,7 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 		dwDesc = allocateFilterDescriptor(expectedNumWeights);
 		
 		// Setup workspace
-		workSpace = new Pointer(); reserveSpace = new Pointer();
+		workSpace = new Pointer();
 		sizeInBytes = getWorkspaceSize(T);
 		if(sizeInBytes != 0) {
 			if(LOG.isDebugEnabled()) 
@@ -123,11 +129,6 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 		reserveSpaceSizeInBytes = 0;
 		if(isTraining) {
 			reserveSpaceSizeInBytes = getReservespaceSize(T);
-			if (reserveSpaceSizeInBytes != 0) {
-				if(LOG.isDebugEnabled()) 
-					LOG.debug("Allocating " +  reserveSpaceSizeInBytes + " bytes for lstm reserve space.");
-				reserveSpace = gCtx.allocate(instName, reserveSpaceSizeInBytes);
-			}
 		}
 	}
 	
@@ -277,14 +278,6 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 			}
 		}
 		workSpace = null;
-		if(reserveSpaceSizeInBytes != 0) {
-			try {
-				gCtx.cudaFreeHelper(instName, reserveSpace, gCtx.EAGER_CUDA_FREE);
-			} catch (DMLRuntimeException e) {
-				throw new RuntimeException(e);
-			}
-		}	
-		reserveSpace = null;
 		if(dropOutSizeInBytes != 0) {
 			try {
 				gCtx.cudaFreeHelper(instName, dropOutStateSpace, gCtx.EAGER_CUDA_FREE);
