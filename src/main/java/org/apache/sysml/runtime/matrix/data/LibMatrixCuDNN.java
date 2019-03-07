@@ -1323,11 +1323,15 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 				toInt(M), toInt(D), true, wPointer)) {
 			boolean invokeForward = true;
 			Pointer reserveSpace = null;
+			MatrixObject reserveSpaceMO = null;
 			if (algo.reserveSpaceSizeInBytes != 0) {
 				if(ConfigurationManager.allocateNNCache()) {
 					if(ec.containsTemporaryCacheMatrix(prefixTempCache + "_cudnn_reserveSpace", scopeVar)) {
 						invokeForward = false;
-						reserveSpace = LibMatrixCuDNN.getDenseInputPointer(ec, gCtx, instName, prefixTempCache + "_cudnn_reserveSpace");
+						Pair<MatrixObject, Pointer> tmp = LibMatrixCuDNN.getTemporaryCacheDensePointer(ec, gCtx, instName, 
+								prefixTempCache + "_cudnn_reserveSpace", scopeVar, algo.reserveSpaceSizeInBytes);
+						reserveSpaceMO = tmp.getKey();
+						reserveSpace = tmp.getValue();
 					}
 					else {
 						// Only warn when ConfigurationManager.allocateNNCache() is true
@@ -1418,7 +1422,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 				}
 				else {
 					// Release the temporary cache variable for the reserve space
-					ec.releaseMatrixInputForGPUInstruction(prefixTempCache + "_cudnn_reserveSpace");
+					ec.releaseTemporaryCacheMatrixForGPUInstruction(reserveSpaceMO, false);
 				}
 			}
 		}
