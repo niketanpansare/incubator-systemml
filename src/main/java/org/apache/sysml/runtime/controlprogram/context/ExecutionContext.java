@@ -323,6 +323,20 @@ public class ExecutionContext {
 		mo.getMatrixCharacteristics().setNonZeros(-1);
 		return new Pair<>(mo, allocated);
 	}
+	
+	/**
+	 * Allocates a dense matrix on the GPU (for output)
+	 * @param mo	matrix object
+	 * @param numRows number of rows of matrix object
+	 * @param numCols number of columns of matrix object
+	 * @return a pair containing the wrapping {@link MatrixObject} and a boolean indicating whether a cuda memory allocation took place (as opposed to the space already being allocated)
+	 */
+	public Pair<MatrixObject, Boolean> getDenseMatrixOutputForGPUInstruction(MatrixObject mo, long numRows, long numCols) {
+		mo = allocateGPUMatrixObject(mo, numRows, numCols);
+		boolean allocated = mo.getGPUObject(getGPUContext(0)).acquireDeviceModifyDense();
+		mo.getMatrixCharacteristics().setNonZeros(-1);
+		return new Pair<>(mo, allocated);
+	}
 
 	/**
 	 * Allocates a sparse matrix in CSR format on the GPU.
@@ -340,7 +354,7 @@ public class ExecutionContext {
 		boolean allocated = mo.getGPUObject(getGPUContext(0)).acquireDeviceModifySparse();
 		return new Pair<>(mo, allocated);
 	}
-
+	
 	/**
 	 * Allocates the {@link GPUObject} for a given LOPS Variable (eg. _mVar3)
 	 * @param varName variable name
@@ -350,6 +364,10 @@ public class ExecutionContext {
 	 */
 	public MatrixObject allocateGPUMatrixObject(String varName, long numRows, long numCols) {
 		MatrixObject mo = getMatrixObject(varName);
+		return allocateGPUMatrixObject(mo, numRows, numCols);
+	}
+	
+	public MatrixObject allocateGPUMatrixObject(MatrixObject mo, long numRows, long numCols) {
 		long dim1 = -1; long dim2 = -1;
 		DMLRuntimeException e = null;
 		try {
@@ -504,12 +522,16 @@ public class ExecutionContext {
 		getMatrixObject(scopeVarName).getTemporaryCacheData().put(varName, mo);
 	}
 	
-	public MatrixBlock getTemporaryCacheMatrix(String varName, String scopeVarName) {
+	public MatrixBlock getTemporaryCacheMatrixBlock(String varName, String scopeVarName) {
+		return getTemporaryCacheMatrixObject(varName, scopeVarName).acquireRead();
+	}
+	
+	public MatrixObject getTemporaryCacheMatrixObject(String varName, String scopeVarName) {
 		MatrixObject mo = getMatrixObject(scopeVarName).getTemporaryCacheData().get(varName);
 		if(mo == null) {
 			throw new DMLRuntimeException("Please invoke containsTemporaryCacheMatrix before attempting to getTemporaryCacheMatrix");
 		}
-		return mo.acquireRead();
+		return mo;
 	}
 	
 	public boolean containsTemporaryCacheMatrix(String varName, String scopeVarName) {

@@ -960,11 +960,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		int numRows = LibMatrixCUDA.toInt((long)Math.ceil( ((double) sizeInBytes) / sizeOfDataType ));;
 		MatrixObject mo = null;
 		if(ec.containsTemporaryCacheMatrix(varName, scopeVarName)) {
-			// If this throws an exception, then something wierd has happened.
-			// scopeVarName is part of the execution context as the instruction passed them both,
-			// and varName is marked as temporary cache data of scopeVarName
-			// but for some reason varName is not available in the execution context.
-			mo = ec.getMatrixObject(varName);  
+			mo = ec.getTemporaryCacheMatrixObject(varName, scopeVarName);  
 		}
 		else {
 			int blocksize = ConfigurationManager.getBlocksize();
@@ -978,7 +974,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			ec.getMatrixObject(scopeVarName).getTemporaryCacheData().put(varName, mo);
 		}
 		
-		getDenseMatrixOutputForGPUInstruction(ec, instName, varName, numRows, 1); // Allocated the dense output matrix
+		ec.getDenseMatrixOutputForGPUInstruction(mo, numRows, 1); // Allocated the dense output matrix
 		return getDensePointerForCuDNN(gCtx, mo, instName, numRows, 1);
 	}
 	

@@ -437,9 +437,9 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 			if(ec.containsTemporaryCacheMatrix(prefixTempCache + "_cp_cache_out", scopeVar) && 
 					ec.containsTemporaryCacheMatrix(prefixTempCache + "_cp_cache_c", scopeVar) &&
 					ec.containsTemporaryCacheMatrix(prefixTempCache + "_cp_cache_ifog", scopeVar)) {
-				cache_out = ec.getTemporaryCacheMatrix(prefixTempCache + "_cp_cache_out", scopeVar);
-				cache_c = ec.getTemporaryCacheMatrix(prefixTempCache + "_cp_cache_c", scopeVar);
-				cache_ifog = ec.getTemporaryCacheMatrix(prefixTempCache + "_cp_cache_ifog", scopeVar);
+				cache_out = ec.getTemporaryCacheMatrixBlock(prefixTempCache + "_cp_cache_out", scopeVar);
+				cache_c = ec.getTemporaryCacheMatrixBlock(prefixTempCache + "_cp_cache_c", scopeVar);
+				cache_ifog = ec.getTemporaryCacheMatrixBlock(prefixTempCache + "_cp_cache_ifog", scopeVar);
 			}
 			else {
 				// Only warn when ConfigurationManager.allocateNNCache() is true
