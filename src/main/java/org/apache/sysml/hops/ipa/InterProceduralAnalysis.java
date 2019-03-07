@@ -528,10 +528,7 @@ public class InterProceduralAnalysis
 		String[] funArgNames = fop.getInputVariableNames();
 		ArrayList<Hop> inputOps = fop.getInput();
 		if(inputOps.size() != funArgNames.length) {
-			String fnName = fstmt.getName() != null ? " " + fstmt.getName() : "";
-			fnName += " [" + fstmt.getFilename() != null ? fstmt.getFilename() : "";
-			fnName += fstmt + " " + fstmt.getBeginLine() + ":" + fstmt.getBeginColumn() + "-" + fstmt.getEndLine() + ":" + fstmt.getEndColumn() + "]";
-			throw new HopsException("The incorrect number of inputs passed to the function" + fnName + ":" + inputOps.size()  + " != " + funArgNames.length);
+			throw new HopsException("The function definition has " + funArgNames.length + " arguments, but the function invocation has " + inputOps.size() + " arguments.");
 		}
 		String fkey = fop.getFunctionKey();
 		
