@@ -442,6 +442,12 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 				cache_ifog = ec.getMatrixInput(prefixTempCache + "_cp_cache_ifog", getExtendedOpcode());
 			}
 			else {
+				System.out.print(ec.containsVariable(prefixTempCache + "_cp_cache_out") 
+						+ " " + ec.containsVariable(prefixTempCache + "_cp_cache_c")
+						+ " " + ec.containsVariable(prefixTempCache + "_cp_cache_ifog")
+						+ " " + ec.containsTemporaryCacheMatrix(prefixTempCache + "_cp_cache_out", getScopeVarForTempCacheVar())
+						+ " " + ec.containsTemporaryCacheMatrix(prefixTempCache + "_cp_cache_c", getScopeVarForTempCacheVar())
+						+ " " + ec.containsTemporaryCacheMatrix(prefixTempCache + "_cp_cache_ifog", getScopeVarForTempCacheVar()));
 				// Only warn when ConfigurationManager.allocateNNCache() is true
 				LOG.warn("Invoking lstm forward function redundantly in lstm_backward call. "
 						+ "Note: This can sometime happen due to copy or move instruction.");
