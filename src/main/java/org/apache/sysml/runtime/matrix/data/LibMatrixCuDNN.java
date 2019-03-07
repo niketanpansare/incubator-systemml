@@ -958,9 +958,11 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	public static Pair<MatrixObject, Pointer> getTemporaryCacheDensePointer(ExecutionContext ec, GPUContext gCtx, String instName, String varName,
 			String scopeVarName, long sizeInBytes) throws DMLRuntimeException {
 		int numRows = LibMatrixCUDA.toInt((long)Math.ceil( ((double) sizeInBytes) / sizeOfDataType ));;
-		MatrixObject mo = null;
+		MatrixObject mo = null; Pointer ptr = null;
 		if(ec.containsTemporaryCacheMatrix(varName, scopeVarName)) {
-			mo = ec.getTemporaryCacheMatrixObject(varName, scopeVarName);  
+			mo = ec.getTemporaryCacheMatrixObject(varName, scopeVarName); 
+			ec.getMatrixInputForGPUInstruction(mo, instName);
+			ptr = getDensePointerForCuDNN(gCtx, mo, instName, numRows, 1);
 		}
 		else {
 			int blocksize = ConfigurationManager.getBlocksize();
@@ -972,10 +974,10 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			// Donot set the matrix object in the symbol table
 			// ec.setVariable(varName, mo);
 			ec.getMatrixObject(scopeVarName).getTemporaryCacheData().put(varName, mo);
+			ec.getDenseMatrixOutputForGPUInstruction(mo, numRows, 1); // Allocated the dense output matrix
+			ptr = getDensePointerForCuDNN(gCtx, mo, instName, numRows, 1);
 		}
 		
-		ec.getDenseMatrixOutputForGPUInstruction(mo, numRows, 1); // Allocated the dense output matrix
-		Pointer ptr = getDensePointerForCuDNN(gCtx, mo, instName, numRows, 1);
 		return new Pair<MatrixObject, Pointer>(mo, ptr);
 	}
 	
@@ -1240,8 +1242,10 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		try(LibMatrixCuDNNRnnAlgorithm algo = new LibMatrixCuDNNRnnAlgorithm(ec, gCtx, instName, rnnMode, N, T, M, D, true, wPointer)) {
 			Pointer reserveSpace = null;
 			MatrixObject reserveSpaceMO = null;
+			boolean isOutput = false;
 			if (algo.reserveSpaceSizeInBytes != 0) {
 				if(ConfigurationManager.allocateNNCache()) {
+					isOutput = !ec.containsTemporaryCacheMatrix(prefixTempCache + "_cudnn_reserveSpace", scopeVar);
 					Pair<MatrixObject, Pointer> tmp = LibMatrixCuDNN.getTemporaryCacheDensePointer(ec, gCtx, instName, 
 							prefixTempCache + "_cudnn_reserveSpace", scopeVar, algo.reserveSpaceSizeInBytes);
 					reserveSpaceMO = tmp.getKey();
@@ -1268,7 +1272,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			if (algo.reserveSpaceSizeInBytes != 0) {
 				if(ConfigurationManager.allocateNNCache()) {
 					// Release the temporary cache variable for the reserve space
-					ec.releaseTemporaryCacheMatrixForGPUInstruction(reserveSpaceMO);
+					ec.releaseTemporaryCacheMatrixForGPUInstruction(reserveSpaceMO, isOutput);
 				}
 				else {
 					gCtx.cudaFreeHelper(instName, reserveSpace, gCtx.EAGER_CUDA_FREE);

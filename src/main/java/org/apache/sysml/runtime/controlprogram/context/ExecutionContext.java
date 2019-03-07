@@ -419,6 +419,23 @@ public class ExecutionContext {
 		return mo;
 	}
 	
+	public MatrixObject getMatrixInputForGPUInstruction(MatrixObject mo, String opcode) {
+		return getMatrixInputForGPUInstruction(mo, opcode, true);
+	}
+	
+	public MatrixObject getMatrixInputForGPUInstruction(MatrixObject mo, String opcode, boolean acquireDeviceRead) {
+		GPUContext gCtx = getGPUContext(0);
+		if( mo.getGPUObject(gCtx) == null ) {
+			GPUObject newGObj = gCtx.createGPUObject(mo);
+			mo.setGPUObject(gCtx, newGObj);
+		}
+		if(acquireDeviceRead) {
+			// No need to perform acquireRead here because it is performed in copyFromHostToDevice
+			mo.getGPUObject(gCtx).acquireDeviceRead(opcode);
+		}
+		return mo;
+	}
+	
 	/**
 	 * Unpins a currently pinned matrix variable and update fine-grained statistics. 
 	 * 
@@ -522,12 +539,15 @@ public class ExecutionContext {
 		getMatrixObject(scopeVarName).getTemporaryCacheData().put(varName, mo);
 	}
 	
-	public void releaseTemporaryCacheMatrixForGPUInstruction(MatrixObject mo) {
+	public void releaseTemporaryCacheMatrixForGPUInstruction(MatrixObject mo, boolean isOutput) {
 		if(mo.getGPUObject(getGPUContext(0)) == null || !mo.getGPUObject(getGPUContext(0)).isAllocated()) {
 			throw new DMLRuntimeException("No output is allocated on GPU");
 		}
 		// setMetaData(varName, new MetaDataFormat(mo.getMatrixCharacteristics(), OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
-		mo.getGPUObject(getGPUContext(0)).releaseOutput();
+		if(isOutput)
+			mo.getGPUObject(getGPUContext(0)).releaseOutput();
+		else
+			mo.getGPUObject(getGPUContext(0)).releaseInput();
 	}
 	
 	public MatrixBlock getTemporaryCacheMatrixBlock(String varName, String scopeVarName) {
