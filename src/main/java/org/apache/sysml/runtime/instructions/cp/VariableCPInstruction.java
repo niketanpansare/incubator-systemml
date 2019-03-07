@@ -846,7 +846,8 @@ public class VariableCPInstruction extends CPInstruction {
 		// remove variable from symbol table
 		Data dat = ec.removeVariable(varname);
 				
-		if(ConfigurationManager.allocateNNCache() && dat instanceof MatrixObject) {
+		if(ConfigurationManager.allocateNNCache() && dat instanceof MatrixObject &&
+			((MatrixObject)dat).getTemporaryCacheData().size() > 0) {
 			MatrixObject mo = ((MatrixObject)dat);
 			if(mo.isCleanupEnabled() && !ec.getVariables().hasReferences(mo)) {
 				// Only cleanup if the original variable variable is eligible for cleanup
