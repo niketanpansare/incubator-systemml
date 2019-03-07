@@ -529,7 +529,8 @@ public class InterProceduralAnalysis
 		String[] funArgNames = fop.getInputVariableNames();
 		ArrayList<Hop> inputOps = fop.getInput();
 		if(inputOps.size() != funArgNames.length) {
-			throw new DMLRuntimeException("The incorrect number of inputs passed to the function:" + inputOps.size()  + " != " + funArgNames.length);
+			String fnName = fstmt.getName() != null ? " " + fstmt.getName() : "";
+			throw new DMLRuntimeException("The incorrect number of inputs passed to the function" + fnName + ":" + inputOps.size()  + " != " + funArgNames.length);
 		}
 		String fkey = fop.getFunctionKey();
 		
