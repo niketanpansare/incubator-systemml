@@ -973,8 +973,9 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			mo = new MatrixObject(ValueType.DOUBLE, OptimizerUtils.getUniqueTempFileName(), meta);
 			mo.acquireModify(new MatrixBlock(numRows, 1, false));
 			mo.release();
-			ec.setVariable(varName, mo);
-			ec.getMatrixObject(scopeVarName).getTemporaryCacheData().add(varName);
+			// Donot set the matrix object in the symbol table
+			// ec.setVariable(varName, mo);
+			ec.getMatrixObject(scopeVarName).getTemporaryCacheData().put(varName, mo);
 		}
 		
 		getDenseMatrixOutputForGPUInstruction(ec, instName, varName, numRows, 1); // Allocated the dense output matrix

@@ -21,6 +21,7 @@ package org.apache.sysml.runtime.controlprogram.caching;
 
 import java.io.IOException;
 import java.lang.ref.SoftReference;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Random;
 
@@ -101,8 +102,8 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	// - Hence, it is possible that containsTemporaryCacheMatrix() can return false even if ConfigurationManager.allocateNNCache() returns true.
 	// - In that case, it might be prudent to warn the user of redundant forward call in the backward instruction.
 	// - The user can use the configuration flag sysml.allocate.nn.temp.cache to disable/enable this functionality.
-	protected HashSet<String> _temporaryCacheData = new HashSet<>();
-	public HashSet<String> getTemporaryCacheData() {
+	protected HashMap<String, MatrixObject> _temporaryCacheData = new HashMap<String, MatrixObject>();
+	public HashMap<String, MatrixObject> getTemporaryCacheData() {
 		return _temporaryCacheData;
 	}
 	// ---------------------------------------------------------------

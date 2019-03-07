@@ -21,6 +21,7 @@ package org.apache.sysml.runtime.instructions.cp;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
@@ -849,10 +850,10 @@ public class VariableCPInstruction extends CPInstruction {
 			MatrixObject mo = ((MatrixObject)dat);
 			if(mo.isCleanupEnabled() && !ec.getVariables().hasReferences(mo)) {
 				// Only cleanup if the original variable variable is eligible for cleanup
-				HashSet<String> tmpVars = ((MatrixObject)dat).getTemporaryCacheData();
-				for(String tmpVar : tmpVars) {
-					processRemoveVariableInstruction(ec, tmpVar);
-					System.out.println("Invoking rmvar on temporary cache data:" + tmpVar + " " +  ((MatrixObject)dat).isCleanupEnabled());
+				HashMap<String, MatrixObject> tmpVars = ((MatrixObject)dat).getTemporaryCacheData();
+				for(MatrixObject tempCacheMo : tmpVars.values()) {
+					if(tempCacheMo != null)
+						ec.cleanupDataObject(tempCacheMo);
 				}
 				tmpVars.clear();
 			}

@@ -20,14 +20,11 @@
 package org.apache.sysml.runtime.instructions.cp;
 
 import java.util.ArrayList;
-import java.util.Map.Entry;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.DnnParameters;
@@ -439,35 +436,13 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 			if(ec.containsTemporaryCacheMatrix(prefixTempCache + "_cp_cache_out", getScopeVarForTempCacheVar()) && 
 					ec.containsTemporaryCacheMatrix(prefixTempCache + "_cp_cache_c", getScopeVarForTempCacheVar()) &&
 					ec.containsTemporaryCacheMatrix(prefixTempCache + "_cp_cache_ifog", getScopeVarForTempCacheVar())) {
-				cache_out = ec.getMatrixInput(prefixTempCache + "_cp_cache_out", getExtendedOpcode());
-				cache_c = ec.getMatrixInput(prefixTempCache + "_cp_cache_c", getExtendedOpcode());
-				cache_ifog = ec.getMatrixInput(prefixTempCache + "_cp_cache_ifog", getExtendedOpcode());
+				cache_out = ec.getTemporaryCacheMatrix(prefixTempCache + "_cp_cache_out", getExtendedOpcode());
+				cache_c = ec.getTemporaryCacheMatrix(prefixTempCache + "_cp_cache_c", getExtendedOpcode());
+				cache_ifog = ec.getTemporaryCacheMatrix(prefixTempCache + "_cp_cache_ifog", getExtendedOpcode());
 			}
 			else {
-				System.out.print("processLstmBackwardInstruction: [");
-				for(Entry<String, Data> kv : ec.getVariables().entrySet()) {
-					if(kv.getValue() instanceof MatrixObject) {
-						System.out.print(" " + kv.getKey() + "->" + 
-								((MatrixObject)kv.getValue()).getUniqueIdVersion() + "{");
-						for(String cacheData : ((MatrixObject)kv.getValue()).getTemporaryCacheData()) {
-							System.out.print(" " + cacheData);
-						}
-						System.out.print("}");
-					}
-				}
-				System.out.println("]");
 				// Only warn when ConfigurationManager.allocateNNCache() is true
-				ArrayList<String> varList = ec.getVarList();
-				if(varList.contains(prefixTempCache + "_cp_cache_out") && 
-						varList.contains(prefixTempCache + "_cp_cache_c") &&
-						varList.contains(prefixTempCache + "_cp_cache_ifog")) {
-					LOG.warn("Invoking lstm forward function redundantly in lstm_backward call. "
-							+ "Note: the cache variables are present in the execution context but not associated with the scope variables."
-							+ " This can sometime happen due to cpvar/mvvar");
-				}
-				else {
-					LOG.warn("Invoking lstm forward function redundantly in lstm_backward call.");
-				}
+				LOG.warn("Invoking lstm forward function redundantly in lstm_backward call.");
 			}
 		}
 		
