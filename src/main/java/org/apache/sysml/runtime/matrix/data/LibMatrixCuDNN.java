@@ -955,7 +955,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		return getDensePointerForCuDNN(gCtx, output, instName, numRows, numCols);
 	}
 	
-	public static Pointer getTemporaryCacheDensePointer(ExecutionContext ec, GPUContext gCtx, String instName, String varName,
+	public static Pair<MatrixObject, Pointer> getTemporaryCacheDensePointer(ExecutionContext ec, GPUContext gCtx, String instName, String varName,
 			String scopeVarName, long sizeInBytes) throws DMLRuntimeException {
 		int numRows = LibMatrixCUDA.toInt((long)Math.ceil( ((double) sizeInBytes) / sizeOfDataType ));;
 		MatrixObject mo = null;
@@ -975,7 +975,8 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		}
 		
 		ec.getDenseMatrixOutputForGPUInstruction(mo, numRows, 1); // Allocated the dense output matrix
-		return getDensePointerForCuDNN(gCtx, mo, instName, numRows, 1);
+		Pointer ptr = getDensePointerForCuDNN(gCtx, mo, instName, numRows, 1);
+		return new Pair<MatrixObject, Pointer>(mo, ptr);
 	}
 	
 	public static void nnLstmBackward(ExecutionContext ec, GPUContext gCtx, String instName,
@@ -1238,10 +1239,13 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		
 		try(LibMatrixCuDNNRnnAlgorithm algo = new LibMatrixCuDNNRnnAlgorithm(ec, gCtx, instName, rnnMode, N, T, M, D, true, wPointer)) {
 			Pointer reserveSpace = null;
+			MatrixObject reserveSpaceMO = null;
 			if (algo.reserveSpaceSizeInBytes != 0) {
 				if(ConfigurationManager.allocateNNCache()) {
-					reserveSpace = LibMatrixCuDNN.getTemporaryCacheDensePointer(ec, gCtx, instName, 
+					Pair<MatrixObject, Pointer> tmp = LibMatrixCuDNN.getTemporaryCacheDensePointer(ec, gCtx, instName, 
 							prefixTempCache + "_cudnn_reserveSpace", scopeVar, algo.reserveSpaceSizeInBytes);
+					reserveSpaceMO = tmp.getKey();
+					reserveSpace = tmp.getValue();
 				}
 				else {
 					reserveSpace = gCtx.allocate(instName, algo.reserveSpaceSizeInBytes);
@@ -1264,7 +1268,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			if (algo.reserveSpaceSizeInBytes != 0) {
 				if(ConfigurationManager.allocateNNCache()) {
 					// Release the temporary cache variable for the reserve space
-					ec.releaseMatrixOutputForGPUInstruction(prefixTempCache + "_cudnn_reserveSpace");
+					ec.releaseTemporaryCacheMatrixForGPUInstruction(reserveSpaceMO);
 				}
 				else {
 					gCtx.cudaFreeHelper(instName, reserveSpace, gCtx.EAGER_CUDA_FREE);

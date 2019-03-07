@@ -522,6 +522,14 @@ public class ExecutionContext {
 		getMatrixObject(scopeVarName).getTemporaryCacheData().put(varName, mo);
 	}
 	
+	public void releaseTemporaryCacheMatrixForGPUInstruction(MatrixObject mo) {
+		if(mo.getGPUObject(getGPUContext(0)) == null || !mo.getGPUObject(getGPUContext(0)).isAllocated()) {
+			throw new DMLRuntimeException("No output is allocated on GPU");
+		}
+		// setMetaData(varName, new MetaDataFormat(mo.getMatrixCharacteristics(), OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
+		mo.getGPUObject(getGPUContext(0)).releaseOutput();
+	}
+	
 	public MatrixBlock getTemporaryCacheMatrixBlock(String varName, String scopeVarName) {
 		return getTemporaryCacheMatrixObject(varName, scopeVarName).acquireRead();
 	}
