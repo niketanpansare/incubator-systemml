@@ -846,12 +846,16 @@ public class VariableCPInstruction extends CPInstruction {
 		Data dat = ec.removeVariable(varname);
 				
 		if(ConfigurationManager.allocateNNCache() && dat instanceof MatrixObject) {
-			HashSet<String> tmpVars = ((MatrixObject)dat).getTemporaryCacheData();
-			for(String tmpVar : tmpVars) {
-				processRemoveVariableInstruction(ec, tmpVar);
-				System.out.println("Invoking rmvar on temporary cache data:" + tmpVar);
+			MatrixObject mo = ((MatrixObject)dat);
+			if(mo.isCleanupEnabled() && !ec.getVariables().hasReferences(mo)) {
+				// Only cleanup if the original variable variable is eligible for cleanup
+				HashSet<String> tmpVars = ((MatrixObject)dat).getTemporaryCacheData();
+				for(String tmpVar : tmpVars) {
+					processRemoveVariableInstruction(ec, tmpVar);
+					System.out.println("Invoking rmvar on temporary cache data:" + tmpVar + " " +  ((MatrixObject)dat).isCleanupEnabled());
+				}
+				tmpVars.clear();
 			}
-			tmpVars.clear();
 		}
 		
 		//cleanup matrix data on fs/hdfs (if necessary)
