@@ -444,13 +444,13 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 				cache_ifog = ec.getMatrixInput(prefixTempCache + "_cp_cache_ifog", getExtendedOpcode());
 			}
 			else {
-				System.out.print("[");
+				System.out.print("processLstmBackwardInstruction: [");
 				for(Entry<String, Data> kv : ec.getVariables().entrySet()) {
 					if(kv.getValue() instanceof MatrixObject) {
 						System.out.print(" " + kv.getKey() + "->" + ((MatrixObject)kv.getValue()).getUniqueIdVersion());
 					}
 				}
-				System.out.print("]");
+				System.out.println("]");
 				// Only warn when ConfigurationManager.allocateNNCache() is true
 				ArrayList<String> varList = ec.getVarList();
 				if(varList.contains(prefixTempCache + "_cp_cache_out") && 

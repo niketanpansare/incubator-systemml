@@ -503,13 +503,13 @@ public class ExecutionContext {
 		mo.release();
 		setVariable(varName, mo);
 		getMatrixObject(scopeVarName).getTemporaryCacheData().add(varName);
-		System.out.print("[");
+		System.out.print("setTemporaryCacheMatrix: [");
 		for(Entry<String, Data> kv : getVariables().entrySet()) {
 			if(kv.getValue() instanceof MatrixObject) {
 				System.out.print(" " + kv.getKey() + "->" + ((MatrixObject)kv.getValue()).getUniqueIdVersion());
 			}
 		}
-		System.out.print("]");
+		System.out.println("]");
 	}
 	
 	public boolean containsTemporaryCacheMatrix(String varName, String scopeVarName) {
