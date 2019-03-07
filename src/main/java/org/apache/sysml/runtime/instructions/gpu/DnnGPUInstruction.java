@@ -913,7 +913,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 		}
 		else {
 			// cudnnInput was created earlier, so reuse it
-			ec.releaseTemporaryCacheMatrixForGPUInstruction(cudnnWMo, isForward);
+			ec.releaseTemporaryCacheMatrixForGPUInstruction(cudnnInputMo, isForward);
 		}
 	}
 	
