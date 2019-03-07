@@ -892,9 +892,10 @@ public class DnnGPUInstruction extends GPUInstruction {
 		}
 		else {
 			// cudnnInput was created earlier, so reuse it
-			cudnnInput = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, 
-					getMatrixInputForGPUInstruction(ec, prefixTempInput + "_cudnnInputPointer"), 
-					instName, (N*T*D), 1);
+			Pair<MatrixObject, Pointer> tmp = LibMatrixCuDNN.getTemporaryCacheDensePointer(ec, gCtx, instName, 
+					prefixTempInput + "_cudnnInputPointer", _input1.getName(), (N*T*D)*LibMatrixCUDA.sizeOfDataType);
+			cudnnInputMo = tmp.getKey();
+			cudnnInput = tmp.getValue();
 		}
 		return cudnnInput;
 	}
