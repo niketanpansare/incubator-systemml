@@ -1243,8 +1243,8 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			Pointer reserveSpace = null;
 			if (algo.reserveSpaceSizeInBytes != 0) {
 				if(ConfigurationManager.allocateNNCache()) {
-					reserveSpace = LibMatrixCuDNN.getTemporaryCacheDensePointer(ec, gCtx, instName, prefixTempCache + "_cudnn_reserveSpace",
-							scopeVar, algo.reserveSpaceSizeInBytes);
+					reserveSpace = LibMatrixCuDNN.getTemporaryCacheDensePointer(ec, gCtx, instName, 
+							prefixTempCache + "_cudnn_reserveSpace", scopeVar, algo.reserveSpaceSizeInBytes);
 				}
 				else {
 					reserveSpace = gCtx.allocate(instName, algo.reserveSpaceSizeInBytes);

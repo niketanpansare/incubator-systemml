@@ -760,6 +760,7 @@ public class GPUObject {
 		// Hence, allowing resetting releaseOutput again. 
 		// Ideally, we would want to throw CacheException("Attempting to release an output that was not acquired via acquireDeviceModify") if !isDirty()
 		dirty = true;
+		mat.updateVersion();
 		if (!isAllocated())
 			throw new DMLRuntimeException("Attempting to release an output before allocating it");
 	}

@@ -25,6 +25,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.DnnParameters;
@@ -302,10 +303,14 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 			aL.get(index).getValueType(), aL.get(index).isLiteral()).getLongValue();
 	}
 	
-	private String getPrefixForTempCacheVar() {
+	private String getPrefixForTempCacheVar(ExecutionContext ec) {
 		if(instOpcode.equalsIgnoreCase("lstm") || instOpcode.equalsIgnoreCase("lstm_backward")) {
-			return "___cache_" + input1.getName() + _in2.getName() + _in3.getName() + 
-				_in4.getName() + _in5.getName() + _in6.getName();
+			return "___cache_" + ec.getMatrixObject(input1.getName()).getUniqueIdVersion() 
+					+ "_" + ec.getMatrixObject(_in2.getName()).getUniqueIdVersion()
+					+ "_" + ec.getMatrixObject(_in3.getName()).getUniqueIdVersion()
+					+ "_" + ec.getMatrixObject(_in4.getName()).getUniqueIdVersion()
+					+ "_" + ec.getMatrixObject(_in5.getName()).getUniqueIdVersion()
+					+ "_" + ec.getScalarInput(_in6.getName(), _in6.getValueType(), _in6.isLiteral());
 		}
 		else {
 			throw new DMLRuntimeException("The instruction " + instOpcode + " is not eligible for temporary cache variable");
@@ -361,7 +366,7 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 					return_seq, N, T, D, M,
 					out,  c, cache_out, cache_c, cache_ifog,
 					_numThreads);
-			String prefixTempCache = getPrefixForTempCacheVar();
+			String prefixTempCache = getPrefixForTempCacheVar(ec);
 			ec.setTemporaryCacheMatrix(prefixTempCache + "_cp_cache_out", cache_out, getScopeVarForTempCacheVar());
 			ec.setTemporaryCacheMatrix(prefixTempCache + "_cp_cache_c", cache_c, getScopeVarForTempCacheVar());
 			ec.setTemporaryCacheMatrix(prefixTempCache + "_cp_cache_ifog", cache_ifog, getScopeVarForTempCacheVar());
@@ -428,7 +433,7 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 		MatrixBlock cache_c = null;
 		MatrixBlock cache_ifog = null;
 		if(ConfigurationManager.allocateNNCache()) {
-			String prefixTempCache = getPrefixForTempCacheVar();
+			String prefixTempCache = getPrefixForTempCacheVar(ec);
 			if(ec.containsTemporaryCacheMatrix(prefixTempCache + "_cp_cache_out", getScopeVarForTempCacheVar()) && 
 					ec.containsTemporaryCacheMatrix(prefixTempCache + "_cp_cache_c", getScopeVarForTempCacheVar()) &&
 					ec.containsTemporaryCacheMatrix(prefixTempCache + "_cp_cache_ifog", getScopeVarForTempCacheVar())) {

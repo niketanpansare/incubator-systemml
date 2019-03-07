@@ -224,6 +224,10 @@ public abstract class GPUInstruction extends Instruction {
 	protected MatrixObject getMatrixInputForGPUInstruction(ExecutionContext ec, String name) {
 		return ec.getMatrixInputForGPUInstruction(name, getExtendedOpcode());
 	}
+	
+	protected MatrixObject getMatrixInputForGPUInstruction(ExecutionContext ec, String name, boolean acquireDeviceRead) {
+		return ec.getMatrixInputForGPUInstruction(name, getExtendedOpcode(), acquireDeviceRead);
+	}
 
 	/**
 	 * Helper method to get the output block (allocated on the GPU)

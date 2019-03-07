@@ -142,6 +142,18 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 */
 	private final long _uniqueID;
 	
+	// The _uniqueVersion along with _uniqueID is used to track the MatrixObject as well as its content.
+	// _uniqueID uniquely identifies the matrix object and _uniqueVersion identifies the content. 
+	private long _uniqueVersion = 1;
+	public String getUniqueIdVersion() {
+		return _uniqueID + "_" + _uniqueVersion;
+	}
+	// The version is updated everytime we modify the content of the MatrixObject:
+	// acquireModify, releaseOutput, setBroadcastHandle, setRDDHandle
+	public void updateVersion() {
+		_uniqueVersion++;
+	}
+	
 	/** The cache status of the data blob (whether it can be or is evicted, etc. */
 	private CacheStatus _cacheStatus = null;
 	
@@ -324,6 +336,8 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	}
 
 	public void setRDDHandle( RDDObject rdd ) {
+		updateVersion();
+		
 		//cleanup potential old back reference
 		if( _rddHandle != null )
 			_rddHandle.setBackReference(null);
@@ -340,6 +354,8 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public void setBroadcastHandle( BroadcastObject bc ) {
+		updateVersion();
+		
 		//cleanup potential old back reference
 		if( _bcHandle != null )
 			_bcHandle.setBackReference(null);
@@ -488,6 +504,8 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 */
 	public T acquireModify(T newData) {
 		long t0 = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
+		
+		updateVersion();
 		
 		//core internal acquire (synchronized per object)
 		T ret = acquireModifyIntern(newData);
