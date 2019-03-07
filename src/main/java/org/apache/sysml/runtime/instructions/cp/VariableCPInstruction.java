@@ -844,16 +844,19 @@ public class VariableCPInstruction extends CPInstruction {
 	public static void processRemoveVariableInstruction( ExecutionContext ec, String varname ) {
 		// remove variable from symbol table
 		Data dat = ec.removeVariable(varname);
-		//cleanup matrix data on fs/hdfs (if necessary)
-		if( dat != null )
-			ec.cleanupDataObject(dat);
+				
 		if(ConfigurationManager.allocateNNCache() && dat instanceof MatrixObject) {
 			HashSet<String> tmpVars = ((MatrixObject)dat).getTemporaryCacheData();
 			for(String tmpVar : tmpVars) {
 				processRemoveVariableInstruction(ec, tmpVar);
+				System.out.println("Invoking rmvar on temporary cache data:" + tmpVar);
 			}
 			tmpVars.clear();
 		}
+		
+		//cleanup matrix data on fs/hdfs (if necessary)
+		if( dat != null )
+			ec.cleanupDataObject(dat);
 	}
 	
 	/**
