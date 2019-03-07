@@ -740,8 +740,8 @@ public class DnnGPUInstruction extends GPUInstruction {
 					cudnnInput, out0Pointer, c0Pointer, cudnnWPointer, doutName, dcyName,  // input
 					dxName, dwName, dbName, dhxName, dcxName, // output 
 					return_sequences, N, M, D, T, prefixTempCache, getScopeVarForTempCacheVar());
-			releaseCudnnWPointerForLSTM(ec, cudnnWPointer, false);
-			releaseCudnnInputPointerForLSTM(ec, cudnnInput, false);
+			releaseCudnnWPointerForLSTM(ec, cudnnWPointer, prepare_lstm_weight);
+			releaseCudnnInputPointerForLSTM(ec, cudnnInput, prepare_lstm_input);
 		}
 		else {
 			if(N != N1) {
@@ -848,11 +848,11 @@ public class DnnGPUInstruction extends GPUInstruction {
 		return cudnnWPointer;
 	}
 	
-	private void releaseCudnnWPointerForLSTM(ExecutionContext ec, Pointer cudnnWPointer, boolean isForward) {
+	private void releaseCudnnWPointerForLSTM(ExecutionContext ec, Pointer cudnnWPointer, boolean isOutput) {
 		if(prepare_lstm_weight) {
 			if(ConfigurationManager.allocateNNCache()) {
 				// We are creating cudnnWPointer for the first time, but it can be reused later
-				ec.releaseTemporaryCacheMatrixForGPUInstruction(cudnnWMo, isForward);
+				ec.releaseTemporaryCacheMatrixForGPUInstruction(cudnnWMo, isOutput);
 			}
 			else {
 				// Free cudnnWPointer immediately.
@@ -861,7 +861,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 		}
 		else {
 			// cudnnWPointer was created earlier, so reuse it
-			ec.releaseTemporaryCacheMatrixForGPUInstruction(cudnnWMo, isForward);
+			ec.releaseTemporaryCacheMatrixForGPUInstruction(cudnnWMo, isOutput);
 		}
 	}
 	
@@ -900,11 +900,11 @@ public class DnnGPUInstruction extends GPUInstruction {
 		return cudnnInput;
 	}
 	
-	private void releaseCudnnInputPointerForLSTM(ExecutionContext ec, Pointer cudnnInput, boolean isForward) {
+	private void releaseCudnnInputPointerForLSTM(ExecutionContext ec, Pointer cudnnInput, boolean isOutput) {
 		if(prepare_lstm_input) {
 			if(ConfigurationManager.allocateNNCache()) {
 				// We are creating cudnnInput for the first time, but it can be reused later
-				ec.releaseTemporaryCacheMatrixForGPUInstruction(cudnnInputMo, isForward);
+				ec.releaseTemporaryCacheMatrixForGPUInstruction(cudnnInputMo, isOutput);
 			}
 			else {
 				// Free cudnnInput immediately.
@@ -913,7 +913,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 		}
 		else {
 			// cudnnInput was created earlier, so reuse it
-			ec.releaseTemporaryCacheMatrixForGPUInstruction(cudnnInputMo, isForward);
+			ec.releaseTemporaryCacheMatrixForGPUInstruction(cudnnInputMo, isOutput);
 		}
 	}
 	
@@ -951,8 +951,8 @@ public class DnnGPUInstruction extends GPUInstruction {
 			Pointer c0Pointer = LibMatrixCUDA.getDensePointer(gCtx, getMatrixInputForGPUInstruction(ec, _input5.getName()), instName); 
 			LibMatrixCuDNN.cuDNNLstm(ec, gCtx, instName, cudnnInput, cudnnWPointer, out0Pointer, c0Pointer, return_sequences, _output.getName(), _output2.getName(), 
 					toInt(N), toInt(M), toInt(D), toInt(T), prefixTempCache, getScopeVarForTempCacheVar());
-			releaseCudnnWPointerForLSTM(ec, cudnnWPointer, true);
-			releaseCudnnInputPointerForLSTM(ec, cudnnInput, true);
+			releaseCudnnWPointerForLSTM(ec, cudnnWPointer, prepare_lstm_weight);
+			releaseCudnnInputPointerForLSTM(ec, cudnnInput, prepare_lstm_input);
 		}
 		else {
 			if(N != N1) {
