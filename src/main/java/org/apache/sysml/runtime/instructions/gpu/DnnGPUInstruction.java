@@ -806,11 +806,12 @@ public class DnnGPUInstruction extends GPUInstruction {
 		ec.releaseMatrixInputForGPUInstruction(_input5.getName());
 	}
 	
+	boolean prepare_lstm_weight; String prefixTempWBias;
 	private Pointer getCudnnWPointerForLSTM(ExecutionContext ec, long D, long M) {
-		String prefixTempWBias = ConfigurationManager.allocateNNCache() ? ( "__cache_" + 
+		prefixTempWBias = ConfigurationManager.allocateNNCache() ? ( "__cache_" + 
 				ec.getMatrixObject(_input2.getName()).getUniqueIdVersion() + 
 				ec.getMatrixObject(_input3.getName()).getUniqueIdVersion()) : null;
-		boolean prepare_lstm_weight = !(ConfigurationManager.allocateNNCache() && 
+		prepare_lstm_weight = !(ConfigurationManager.allocateNNCache() && 
 				ec.containsTemporaryCacheMatrix(prefixTempWBias + "_cudnnWPointer", _input2.getName()));
 		Pointer cudnnWPointer = null;
 		if(prepare_lstm_weight) {
@@ -844,11 +845,6 @@ public class DnnGPUInstruction extends GPUInstruction {
 	}
 	
 	private void releaseCudnnWPointerForLSTM(ExecutionContext ec, Pointer cudnnWPointer) {
-		String prefixTempWBias = ConfigurationManager.allocateNNCache() ? ( "__cache_" + 
-				ec.getMatrixObject(_input2.getName()).getUniqueIdVersion() + 
-				ec.getMatrixObject(_input3.getName()).getUniqueIdVersion()) : null;
-		boolean prepare_lstm_weight = !(ConfigurationManager.allocateNNCache() && 
-				ec.containsTemporaryCacheMatrix(prefixTempWBias + "_cudnnWPointer", _input2.getName()));
 		if(prepare_lstm_weight) {
 			if(ConfigurationManager.allocateNNCache()) {
 				// We are creating cudnnWPointer for the first time, but it can be reused later
@@ -865,10 +861,11 @@ public class DnnGPUInstruction extends GPUInstruction {
 		}
 	}
 	
+	String prefixTempInput; boolean prepare_lstm_input;
 	private Pointer getCudnnInputForLSTM(ExecutionContext ec, long N, long T, long D) {
-		String prefixTempInput = ConfigurationManager.allocateNNCache() ? ( "__cache_" + 
+		prefixTempInput = ConfigurationManager.allocateNNCache() ? ( "__cache_" + 
 				ec.getMatrixObject(_input1.getName()).getUniqueIdVersion()) : null;
-		boolean prepare_lstm_input = !(ConfigurationManager.allocateNNCache() && 
+		prepare_lstm_input = !(ConfigurationManager.allocateNNCache() && 
 				ec.containsTemporaryCacheMatrix(prefixTempInput + "_cudnnInputPointer", _input1.getName()));
 		Pointer cudnnInput = null;
 		if(prepare_lstm_input) {
@@ -897,10 +894,6 @@ public class DnnGPUInstruction extends GPUInstruction {
 	}
 	
 	private void releaseCudnnInputPointerForLSTM(ExecutionContext ec, Pointer cudnnInput) {
-		String prefixTempInput = ConfigurationManager.allocateNNCache() ? ( "__cache_" + 
-				ec.getMatrixObject(_input1.getName()).getUniqueIdVersion()) : null;
-		boolean prepare_lstm_input = !(ConfigurationManager.allocateNNCache() && 
-				ec.containsTemporaryCacheMatrix(prefixTempInput + "_cudnnInputPointer", _input1.getName()));
 		if(prepare_lstm_input) {
 			if(ConfigurationManager.allocateNNCache()) {
 				// We are creating cudnnInput for the first time, but it can be reused later
