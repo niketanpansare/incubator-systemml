@@ -502,6 +502,7 @@ public class ExecutionContext {
 		mo.release();
 		setVariable(varName, mo);
 		getMatrixObject(scopeVarName).getTemporaryCacheData().add(varName);
+		System.out.println(getVarList());
 	}
 	
 	public boolean containsTemporaryCacheMatrix(String varName, String scopeVarName) {
