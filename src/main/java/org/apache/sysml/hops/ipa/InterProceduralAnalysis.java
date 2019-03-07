@@ -51,6 +51,7 @@ import org.apache.sysml.parser.IfStatementBlock;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.WhileStatement;
 import org.apache.sysml.parser.WhileStatementBlock;
+import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.instructions.cp.Data;
@@ -527,6 +528,9 @@ public class InterProceduralAnalysis
 		//we cannot use the sequence as defined in the function signature
 		String[] funArgNames = fop.getInputVariableNames();
 		ArrayList<Hop> inputOps = fop.getInput();
+		if(inputOps.size() != funArgNames.length) {
+			throw new DMLRuntimeException("The incorrect number of inputs passed to the function:" + inputOps.size()  + " != " + funArgNames.length);
+		}
 		String fkey = fop.getFunctionKey();
 		
 		for( int i=0; i<funArgNames.length; i++ )
