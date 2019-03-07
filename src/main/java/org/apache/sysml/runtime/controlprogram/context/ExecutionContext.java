@@ -506,7 +506,11 @@ public class ExecutionContext {
 		System.out.print("setTemporaryCacheMatrix: [");
 		for(Entry<String, Data> kv : getVariables().entrySet()) {
 			if(kv.getValue() instanceof MatrixObject) {
-				System.out.print(" " + kv.getKey() + "->" + ((MatrixObject)kv.getValue()).getUniqueIdVersion());
+				System.out.print(" " + kv.getKey() + "->" + ((MatrixObject)kv.getValue()).getUniqueIdVersion() + "{");
+				for(String cacheData : ((MatrixObject)kv.getValue()).getTemporaryCacheData()) {
+					System.out.print(" " + cacheData);
+				}
+				System.out.print("}");
 			}
 		}
 		System.out.println("]");
