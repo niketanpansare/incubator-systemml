@@ -51,7 +51,6 @@ import org.apache.sysml.parser.IfStatementBlock;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.WhileStatement;
 import org.apache.sysml.parser.WhileStatementBlock;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.instructions.cp.Data;
@@ -530,7 +529,9 @@ public class InterProceduralAnalysis
 		ArrayList<Hop> inputOps = fop.getInput();
 		if(inputOps.size() != funArgNames.length) {
 			String fnName = fstmt.getName() != null ? " " + fstmt.getName() : "";
-			throw new DMLRuntimeException("The incorrect number of inputs passed to the function" + fnName + ":" + inputOps.size()  + " != " + funArgNames.length);
+			fnName += " [" + fstmt.getFilename() != null ? fstmt.getFilename() : "";
+			fnName += fstmt + " " + fstmt.getBeginLine() + ":" + fstmt.getBeginColumn() + "-" + fstmt.getEndLine() + ":" + fstmt.getEndColumn() + "]";
+			throw new HopsException("The incorrect number of inputs passed to the function" + fnName + ":" + inputOps.size()  + " != " + funArgNames.length);
 		}
 		String fkey = fop.getFunctionKey();
 		
