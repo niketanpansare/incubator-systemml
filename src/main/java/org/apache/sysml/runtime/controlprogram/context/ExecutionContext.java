@@ -504,7 +504,7 @@ public class ExecutionContext {
 		getMatrixObject(scopeVarName).getTemporaryCacheData().put(varName, mo);
 	}
 	
-	public MatrixBlock getTemporaryCacheMatrix(String scopeVarName, String varName) {
+	public MatrixBlock getTemporaryCacheMatrix(String varName, String scopeVarName) {
 		MatrixObject mo = getMatrixObject(scopeVarName).getTemporaryCacheData().get(varName);
 		if(mo == null) {
 			throw new DMLRuntimeException("Please invoke containsTemporaryCacheMatrix before attempting to getTemporaryCacheMatrix");
