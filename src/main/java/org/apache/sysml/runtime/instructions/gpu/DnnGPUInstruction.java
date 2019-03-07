@@ -735,7 +735,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 			LibMatrixCuDNN.cuDNNLstmBackward(ec, gCtx, instName, 
 					cudnnInput, out0Pointer, c0Pointer, cudnnWPointer, doutName, dcyName,  // input
 					dxName, dwName, dbName, dhxName, dcxName, // output 
-					return_sequences, N, M, D, T, prefixTempCache, _input1.getName());
+					return_sequences, N, M, D, T, prefixTempCache, getScopeVarForTempCacheVar());
 			gCtx.cudaFreeHelper(instName, cudnnWPointer, gCtx.EAGER_CUDA_FREE);
 			gCtx.cudaFreeHelper(instName, cudnnInput, gCtx.EAGER_CUDA_FREE);
 		}
@@ -848,7 +848,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 			ec.releaseMatrixInputForGPUInstruction(_input1.getName());
 			Pointer c0Pointer = LibMatrixCUDA.getDensePointer(gCtx, getMatrixInputForGPUInstruction(ec, _input5.getName()), instName); 
 			LibMatrixCuDNN.cuDNNLstm(ec, gCtx, instName, cudnnInput, cudnnWPointer, out0Pointer, c0Pointer, return_sequences, _output.getName(), _output2.getName(), 
-					toInt(N), toInt(M), toInt(D), toInt(T), prefixTempCache);
+					toInt(N), toInt(M), toInt(D), toInt(T), prefixTempCache, getScopeVarForTempCacheVar());
 			gCtx.cudaFreeHelper(instName, cudnnWPointer, gCtx.EAGER_CUDA_FREE);
 			gCtx.cudaFreeHelper(instName, cudnnInput, gCtx.EAGER_CUDA_FREE);
 		}
