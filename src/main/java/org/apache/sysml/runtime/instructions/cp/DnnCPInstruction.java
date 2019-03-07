@@ -20,6 +20,8 @@
 package org.apache.sysml.runtime.instructions.cp;
 
 import java.util.ArrayList;
+import java.util.Map.Entry;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -442,7 +444,13 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 				cache_ifog = ec.getMatrixInput(prefixTempCache + "_cp_cache_ifog", getExtendedOpcode());
 			}
 			else {
-				System.out.println(ec.getVarList());
+				System.out.print("[");
+				for(Entry<String, Data> kv : ec.getVariables().entrySet()) {
+					if(kv.getValue() instanceof MatrixObject) {
+						System.out.print(" " + kv.getKey() + "->" + ((MatrixObject)kv.getValue()).getUniqueIdVersion());
+					}
+				}
+				System.out.print("]");
 				// Only warn when ConfigurationManager.allocateNNCache() is true
 				ArrayList<String> varList = ec.getVarList();
 				if(varList.contains(prefixTempCache + "_cp_cache_out") && 

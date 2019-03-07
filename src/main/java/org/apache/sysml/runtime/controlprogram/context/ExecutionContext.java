@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
@@ -502,7 +503,13 @@ public class ExecutionContext {
 		mo.release();
 		setVariable(varName, mo);
 		getMatrixObject(scopeVarName).getTemporaryCacheData().add(varName);
-		System.out.println(getVarList());
+		System.out.print("[");
+		for(Entry<String, Data> kv : getVariables().entrySet()) {
+			if(kv.getValue() instanceof MatrixObject) {
+				System.out.print(" " + kv.getKey() + "->" + ((MatrixObject)kv.getValue()).getUniqueIdVersion());
+			}
+		}
+		System.out.print("]");
 	}
 	
 	public boolean containsTemporaryCacheMatrix(String varName, String scopeVarName) {
