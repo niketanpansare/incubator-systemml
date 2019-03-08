@@ -732,16 +732,21 @@ public class DnnGPUInstruction extends GPUInstruction {
 			// When an operator is not forced, then prefer CuDNN kernel if it can fit in the GPU memory
 			FORCED_LSTM_OP == LstmOperator.NONE && gCtx.getMemoryManager().canAllocate(instName, memRequired))) {
 			// Use CuDNN LSTM kernel
-			Pointer cudnnWPointer = getCudnnWPointerForLSTM(ec, D, M);
-			Pointer cudnnInput = getCudnnInputForLSTM(ec, N, T, D);
+			Pair<MatrixObject, Pointer> tmp = null;
+			tmp = getCudnnWPointerForLSTM(ec, D, M);
+			MatrixObject cudnnWMo = tmp.getKey();
+			Pointer cudnnWPointer = tmp.getValue();
+			tmp = getCudnnInputForLSTM(ec, N, T, D);
+			MatrixObject cudnnInputMo = tmp.getKey();
+			Pointer cudnnInput = tmp.getValue();
 			
 			Pointer c0Pointer = LibMatrixCUDA.getDensePointer(gCtx, getMatrixInputForGPUInstruction(ec, _input5.getName()), instName);
 			LibMatrixCuDNN.cuDNNLstmBackward(ec, gCtx, instName, 
 					cudnnInput, out0Pointer, c0Pointer, cudnnWPointer, doutName, dcyName,  // input
 					dxName, dwName, dbName, dhxName, dcxName, // output 
 					return_sequences, N, M, D, T, prefixTempCache, getScopeVarForTempCacheVar());
-			releaseCudnnWPointerForLSTM(ec, cudnnWPointer, prepare_lstm_weight);
-			releaseCudnnInputPointerForLSTM(ec, cudnnInput, prepare_lstm_input);
+			releaseCudnnWPointerForLSTM(ec, cudnnWMo, cudnnWPointer, prepare_lstm_weight);
+			releaseCudnnInputPointerForLSTM(ec, cudnnInputMo, cudnnInput, prepare_lstm_input);
 		}
 		else {
 			if(N != N1) {
@@ -807,15 +812,16 @@ public class DnnGPUInstruction extends GPUInstruction {
 		ec.releaseMatrixInputForGPUInstruction(_input5.getName());
 	}
 	
-	boolean prepare_lstm_weight; String prefixTempWBias; MatrixObject cudnnWMo = null;
-	private Pointer getCudnnWPointerForLSTM(ExecutionContext ec, long D, long M) {
+	boolean prepare_lstm_weight; String prefixTempWBias;
+	private Pair<MatrixObject, Pointer> getCudnnWPointerForLSTM(ExecutionContext ec, long D, long M) {
 		prefixTempWBias = ConfigurationManager.allocateNNCache() ? ( "__cache_" + 
 				ec.getMatrixObject(_input2.getName()).getUniqueIdVersion() + 
 				ec.getMatrixObject(_input3.getName()).getUniqueIdVersion()) : null;
 		prepare_lstm_weight = !(ConfigurationManager.allocateNNCache() && 
 				ec.containsTemporaryCacheMatrix(prefixTempWBias + "_cudnnWPointer", _input2.getName()));
-		Pointer cudnnWPointer = null;
 		if(prepare_lstm_weight) {
+			MatrixObject cudnnWMo = null;
+			Pointer cudnnWPointer = null;
 			MatrixObject W = getMatrixInputForGPUInstruction(ec, _input2.getName());
 			MatrixObject bias = getMatrixInputForGPUInstruction(ec, _input3.getName());
 			Pointer sysmlWPointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, W, instName, D+M, 4*M);
@@ -836,19 +842,16 @@ public class DnnGPUInstruction extends GPUInstruction {
 					sysmlWPointer, sysmlBiasPointer, cudnnWPointer, toInt(D), toInt(M));
 			ec.releaseMatrixInputForGPUInstruction(_input2.getName()); // W
 			ec.releaseMatrixInputForGPUInstruction(_input3.getName()); // bias
+			return new Pair<MatrixObject, Pointer>(cudnnWMo, cudnnWPointer);
 		}
 		else {
 			// cudnnWPointer was created earlier, so reuse it
-			Pair<MatrixObject, Pointer> tmp = LibMatrixCuDNN.getTemporaryCacheDensePointer(ec, gCtx, instName, 
+			return LibMatrixCuDNN.getTemporaryCacheDensePointer(ec, gCtx, instName, 
 					prefixTempWBias + "_cudnnWPointer", _input2.getName(), (D+M+2)*(4*M)*LibMatrixCUDA.sizeOfDataType);
-			cudnnWMo = tmp.getKey();
-			cudnnWPointer = tmp.getValue();
 		}
-		
-		return cudnnWPointer;
 	}
 	
-	private void releaseCudnnWPointerForLSTM(ExecutionContext ec, Pointer cudnnWPointer, boolean isOutput) {
+	private void releaseCudnnWPointerForLSTM(ExecutionContext ec, MatrixObject cudnnWMo, Pointer cudnnWPointer, boolean isOutput) {
 		if(prepare_lstm_weight) {
 			if(ConfigurationManager.allocateNNCache()) {
 				// We are creating cudnnWPointer for the first time, but it can be reused later
@@ -865,16 +868,17 @@ public class DnnGPUInstruction extends GPUInstruction {
 		}
 	}
 	
-	String prefixTempInput; boolean prepare_lstm_input; MatrixObject cudnnInputMo = null;
-	private Pointer getCudnnInputForLSTM(ExecutionContext ec, long N, long T, long D) {
+	String prefixTempInput; boolean prepare_lstm_input; 
+	private Pair<MatrixObject, Pointer> getCudnnInputForLSTM(ExecutionContext ec, long N, long T, long D) {
 		prefixTempInput = ConfigurationManager.allocateNNCache() ? ( "__cache_" + 
 				ec.getMatrixObject(_input1.getName()).getUniqueIdVersion()) : null;
 		prepare_lstm_input = !(ConfigurationManager.allocateNNCache() && 
 				ec.containsTemporaryCacheMatrix(prefixTempInput + "_cudnnInputPointer", _input1.getName()));
-		Pointer cudnnInput = null;
 		if(prepare_lstm_input) {
 			MatrixObject X = getMatrixInputForGPUInstruction(ec, _input1.getName());
 			Pointer xPointer = LibMatrixCUDA.getDensePointer(gCtx, X, instName); 
+			Pointer cudnnInput = null;
+			MatrixObject cudnnInputMo = null;
 			if(ConfigurationManager.allocateNNCache()) {
 				// We are creating cudnnInput for the first time, but it can be reused later
 				Pair<MatrixObject, Pointer> tmp = LibMatrixCuDNN.getTemporaryCacheDensePointer(ec, gCtx, instName, 
@@ -889,18 +893,16 @@ public class DnnGPUInstruction extends GPUInstruction {
 			LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("prepare_lstm_input",
 					ExecutionConfig.getConfigForSimpleVectorOperations(toInt(N*T*D)),
 					xPointer, cudnnInput, toInt(N), toInt(D), toInt(T*D), toInt(N*T*D));
+			return new Pair<MatrixObject, Pointer>(cudnnInputMo, cudnnInput); 
 		}
 		else {
 			// cudnnInput was created earlier, so reuse it
-			Pair<MatrixObject, Pointer> tmp = LibMatrixCuDNN.getTemporaryCacheDensePointer(ec, gCtx, instName, 
+			return LibMatrixCuDNN.getTemporaryCacheDensePointer(ec, gCtx, instName, 
 					prefixTempInput + "_cudnnInputPointer", _input1.getName(), (N*T*D)*LibMatrixCUDA.sizeOfDataType);
-			cudnnInputMo = tmp.getKey();
-			cudnnInput = tmp.getValue();
 		}
-		return cudnnInput;
 	}
 	
-	private void releaseCudnnInputPointerForLSTM(ExecutionContext ec, Pointer cudnnInput, boolean isOutput) {
+	private void releaseCudnnInputPointerForLSTM(ExecutionContext ec, MatrixObject cudnnInputMo, Pointer cudnnInput, boolean isOutput) {
 		if(prepare_lstm_input) {
 			if(ConfigurationManager.allocateNNCache()) {
 				// We are creating cudnnInput for the first time, but it can be reused later
@@ -944,15 +946,20 @@ public class DnnGPUInstruction extends GPUInstruction {
 			(!isWSparse && // Don't use CuDNN kernel when w is sparse.
 			// When an operator is not forced, then prefer CuDNN kernel if it can fit in the GPU memory
 			FORCED_LSTM_OP == LstmOperator.NONE && gCtx.getMemoryManager().canAllocate(instName, memRequired))) {
+			Pair<MatrixObject, Pointer> tmp = null;
+			tmp = getCudnnWPointerForLSTM(ec, D, M);
+			MatrixObject cudnnWMo = tmp.getKey();
+			Pointer cudnnWPointer = tmp.getValue();
 			
-			Pointer cudnnWPointer = getCudnnWPointerForLSTM(ec, D, M);
-			Pointer cudnnInput = getCudnnInputForLSTM(ec, N, T, D);
+			tmp = getCudnnInputForLSTM(ec, N, T, D);
+			MatrixObject cudnnInputMo = tmp.getKey();
+			Pointer cudnnInput = tmp.getValue();
 			
 			Pointer c0Pointer = LibMatrixCUDA.getDensePointer(gCtx, getMatrixInputForGPUInstruction(ec, _input5.getName()), instName); 
 			LibMatrixCuDNN.cuDNNLstm(ec, gCtx, instName, cudnnInput, cudnnWPointer, out0Pointer, c0Pointer, return_sequences, _output.getName(), _output2.getName(), 
 					toInt(N), toInt(M), toInt(D), toInt(T), prefixTempCache, getScopeVarForTempCacheVar());
-			releaseCudnnWPointerForLSTM(ec, cudnnWPointer, prepare_lstm_weight);
-			releaseCudnnInputPointerForLSTM(ec, cudnnInput, prepare_lstm_input);
+			releaseCudnnWPointerForLSTM(ec, cudnnWMo, cudnnWPointer, prepare_lstm_weight);
+			releaseCudnnInputPointerForLSTM(ec,cudnnInputMo,  cudnnInput, prepare_lstm_input);
 		}
 		else {
 			if(N != N1) {
