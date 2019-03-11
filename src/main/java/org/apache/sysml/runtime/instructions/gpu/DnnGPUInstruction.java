@@ -699,6 +699,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 		return new long[] {N, T, D};
 	}
 	private void processLstmBackwardInstruction(ExecutionContext ec) throws DMLRuntimeException {
+		System.out.println("Memory before LSTM backward:" + gCtx.getMemoryManager().toString());
 		MatrixObject out0 = getMatrixInputForGPUInstruction(ec, _input4.getName());
 		long M = out0.getNumColumns(); // hiddenSize .. since out0: (N, M)
 		long N1 = out0.getNumRows();
