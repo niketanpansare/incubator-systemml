@@ -93,6 +93,7 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 		JCudnn.cudnnDropoutGetStatesSize(gCtx.getCudnnHandle(), _dropOutSizeInBytes);
 		dropOutSizeInBytes = _dropOutSizeInBytes[0];
 		dropOutStateSpace = new Pointer();
+		System.out.println("Allocating " +  dropOutSizeInBytes + " bytes for lstm dropout space.");
 		if (dropOutSizeInBytes != 0) {
 			if(LOG.isDebugEnabled()) 
 				LOG.debug("Allocating " +  dropOutSizeInBytes + " bytes for lstm dropout space.");
