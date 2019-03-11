@@ -58,8 +58,7 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 	long sizeInBytes; Pointer workSpace;
 	long reserveSpaceSizeInBytes; 
 	long dropOutSizeInBytes; Pointer dropOutStateSpace;
-	String prefixTempCache; ExecutionContext ec;
-	String scopeVar;
+	ExecutionContext ec;
 	
 	public LibMatrixCuDNNRnnAlgorithm(ExecutionContext ec, GPUContext gCtx, String instName, 
 			String rnnMode, int N, int T, int M, int D, boolean isTraining, Pointer w) throws DMLRuntimeException {
@@ -86,8 +85,6 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 		dhyDesc = allocateTensorDescriptorWithStride(1, N, M);
 		cyDesc = allocateTensorDescriptorWithStride(1, N, M);
 		dcyDesc = allocateTensorDescriptorWithStride(1, N, M);
-		this.prefixTempCache = prefixTempCache;
-		this.scopeVar = scopeVar;
 		
 		// Initial dropout descriptor
 		dropoutDesc = new cudnnDropoutDescriptor();
@@ -100,6 +97,9 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 			if(LOG.isDebugEnabled()) 
 				LOG.debug("Allocating " +  dropOutSizeInBytes + " bytes for lstm dropout space.");
 			dropOutStateSpace = gCtx.allocate(instName, dropOutSizeInBytes);
+		}
+		else {
+			LOG.warn("Attempting to set dropout descriptor when cudnnDropoutGetStatesSize returned 0.");
 		}
 		JCudnn.cudnnSetDropoutDescriptor(dropoutDesc, gCtx.getCudnnHandle(), 0, dropOutStateSpace, dropOutSizeInBytes, 12345);
 		
