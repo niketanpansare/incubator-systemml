@@ -708,7 +708,6 @@ public class DnnGPUInstruction extends GPUInstruction {
 		Pointer out0Pointer =  LibMatrixCUDA.getDensePointer(gCtx, out0, instName);
 		
 		long [] NTD = getNTDForLSTM(ec, M);
-		boolean isWSparse = isLSTMWSparse(ec);
 		long N = NTD[0]; long T = NTD[1]; long D = NTD[2];
 		
 		boolean return_sequences = ec.getScalarInput(_input6.getName(), _input6.getValueType(), _input6.isLiteral()).getBooleanValue();
@@ -728,8 +727,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 		
 		if(FORCED_LSTM_OP == LstmOperator.CUDNN || 
 			N != N1 || // Use CuDNN operator when batch size of previous iteration is different that current iteration
-			(!isWSparse && // Don't use CuDNN kernel when w is sparse.
-			// When an operator is not forced, then prefer CuDNN kernel if it can fit in the GPU memory
+			(// When an operator is not forced, then prefer CuDNN kernel if it can fit in the GPU memory
 			FORCED_LSTM_OP == LstmOperator.NONE && gCtx.getMemoryManager().canAllocate(instName, memRequired))) {
 			// Use CuDNN LSTM kernel
 			Pair<MatrixObject, Pointer> tmp = null;
@@ -932,7 +930,6 @@ public class DnnGPUInstruction extends GPUInstruction {
 		Pointer out0Pointer =  LibMatrixCUDA.getDensePointer(gCtx, out0, instName);
 		
 		long [] NTD = getNTDForLSTM(ec, M);
-		boolean isWSparse = isLSTMWSparse(ec);
 		long N = NTD[0]; long T = NTD[1]; long D = NTD[2];
 		
 		boolean return_sequences = ec.getScalarInput(_input6.getName(), _input6.getValueType(), _input6.isLiteral()).getBooleanValue();
@@ -943,8 +940,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 		
 		if(FORCED_LSTM_OP == LstmOperator.CUDNN || 
 			N != N1 || // Use CuDNN operator when batch size of previous iteration is different that current iteration
-			(!isWSparse && // Don't use CuDNN kernel when w is sparse.
-			// When an operator is not forced, then prefer CuDNN kernel if it can fit in the GPU memory
+			(// When an operator is not forced, then prefer CuDNN kernel if it can fit in the GPU memory
 			FORCED_LSTM_OP == LstmOperator.NONE && gCtx.getMemoryManager().canAllocate(instName, memRequired))) {
 			Pair<MatrixObject, Pointer> tmp = null;
 			tmp = getCudnnWPointerForLSTM(ec, D, M);

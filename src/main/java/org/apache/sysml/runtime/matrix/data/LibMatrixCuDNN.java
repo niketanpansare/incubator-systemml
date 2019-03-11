@@ -46,7 +46,6 @@ import jcuda.jcudnn.cudnnConvolutionFwdPreference;
 import jcuda.jcudnn.cudnnHandle;
 import jcuda.jcudnn.cudnnStatus;
 import jcuda.jcudnn.cudnnTensorDescriptor;
-import jcuda.runtime.JCuda;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -1034,7 +1033,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			// ifog = matrix(cache_ifog[t,], rows=N, cols=4*M)
 			Pointer ifog = cache_ifog.withByteOffset((t-1)*N*4*M*sizeOfDataType); // since read-only
 			
-			JCuda.cudaDeviceSynchronize();
+			// JCuda.cudaDeviceSynchronize();
 			// i = ifog[,1:M]  # input gate, shape (N, M)
 			// f = ifog[,M+1:2*M]  # forget gate, shape (N, M)
 			// o = ifog[,2*M+1:3*M]  # output gate, shape (N, M)
@@ -1055,7 +1054,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 					ifog, ct, dout_t, cache_c, c0, 
 					difog_raw, dct, dc0, // output
 					return_sequences ? 1 : 0, t-1, toInt(T), toInt(M), toInt(N*M));
-			JCuda.cudaDeviceSynchronize();
+			// JCuda.cudaDeviceSynchronize();
 			
 			// dW = dW + t(input) %*% difog_raw  # shape (D+M, 4M)
 			LibMatrixCuMatMult.denseDenseMatMult(gCtx.getCublasHandle(), instName, dW, input, difog_raw, param1);
