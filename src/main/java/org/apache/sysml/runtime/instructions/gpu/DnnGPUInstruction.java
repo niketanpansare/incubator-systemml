@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import jcuda.Pointer;
 import jcuda.jcudnn.JCudnn;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -48,6 +50,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 	}
 	
 	public static LstmOperator FORCED_LSTM_OP = LstmOperator.NONE;
+	private static final Log LOG = LogFactory.getLog(DnnGPUInstruction.class.getName());
 	
 	private CPOperand _input1;
 	private CPOperand _input2;
@@ -695,12 +698,6 @@ public class DnnGPUInstruction extends GPUInstruction {
 		int T = toInt(numColsX/ D); // since X:(N, T*D) ... seqLength
 		return new long[] {N, T, D};
 	}
-	private boolean isLSTMWSparse(ExecutionContext ec) {
-		MatrixObject wTemp = getMatrixInputForGPUInstruction(ec, _input2.getName(), false);
-		return LibMatrixCUDA.isInSparseFormat(gCtx, wTemp);
-	}
-	
-	
 	private void processLstmBackwardInstruction(ExecutionContext ec) throws DMLRuntimeException {
 		MatrixObject out0 = getMatrixInputForGPUInstruction(ec, _input4.getName());
 		long M = out0.getNumColumns(); // hiddenSize .. since out0: (N, M)
@@ -751,7 +748,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 				throw new DMLRuntimeException("Unsupported operation: The batch size of previous iteration " + N1 + 
 						" is different than the batch size of current iteration " + N);
 			}
-			
+			LOG.warn("Switching to NN implementation as the memory required for lstm operator is " + (memRequired * (1e-6)) + "mb.");
 			MatrixObject X = getMatrixInputForGPUInstruction(ec, _input1.getName());
 			MatrixObject W = getMatrixInputForGPUInstruction(ec, _input2.getName());
 			MatrixObject bias = getMatrixInputForGPUInstruction(ec, _input3.getName());
@@ -962,6 +959,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 				throw new DMLRuntimeException("Unsupported operation: The batch size of previous iteration " + N1 + 
 						" is different than the batch size of current iteration " + N);
 			}
+			LOG.warn("Switching to NN implementation as the memory required for lstm operator is " + (memRequired * (1e-6)) + "mb.");
 			MatrixObject X = getMatrixInputForGPUInstruction(ec, _input1.getName());
 			MatrixObject W = getMatrixInputForGPUInstruction(ec, _input2.getName());
 			MatrixObject bias = getMatrixInputForGPUInstruction(ec, _input3.getName());
