@@ -46,6 +46,7 @@ import jcuda.jcudnn.cudnnConvolutionFwdPreference;
 import jcuda.jcudnn.cudnnHandle;
 import jcuda.jcudnn.cudnnStatus;
 import jcuda.jcudnn.cudnnTensorDescriptor;
+import jcuda.runtime.JCuda;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -1069,8 +1070,9 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			else
 				LibMatrixCuMatMult.denseDenseMatMult(gCtx.getCublasHandle(), instName, dinput, difog_raw, wDensePointer, param2);
 			
+			JCuda.cudaDeviceSynchronize();
 			// db = db + colSums(difog_raw)  # shape (1, 4M)
-			reduceCol(gCtx, instName, "reduce_col_sum", difog_raw, tmpDb, 1, toInt(4*M));
+			reduceCol(gCtx, instName, "reduce_col_sum", difog_raw, tmpDb, toInt(N), toInt(4*M));
 			matrixMatrixOp(gCtx, instName, tmpDb, db, 1, toInt(4*M), VectorShape.NONE.code(), VectorShape.NONE.code(), db, 
 					new BinaryOperator(Plus.getPlusFnObject()));
 			
