@@ -1034,6 +1034,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			// ifog = matrix(cache_ifog[t,], rows=N, cols=4*M)
 			Pointer ifog = cache_ifog.withByteOffset((t-1)*N*4*M*sizeOfDataType); // since read-only
 			
+			JCuda.cudaDeviceSynchronize();
 			// i = ifog[,1:M]  # input gate, shape (N, M)
 			// f = ifog[,M+1:2*M]  # forget gate, shape (N, M)
 			// o = ifog[,2*M+1:3*M]  # output gate, shape (N, M)
@@ -1054,6 +1055,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 					ifog, ct, dout_t, cache_c, c0, 
 					difog_raw, dct, dc0, // output
 					return_sequences ? 1 : 0, t-1, toInt(T), toInt(M), toInt(N*M));
+			JCuda.cudaDeviceSynchronize();
 			
 			// dW = dW + t(input) %*% difog_raw  # shape (D+M, 4M)
 			LibMatrixCuMatMult.denseDenseMatMult(gCtx.getCublasHandle(), instName, dW, input, difog_raw, param1);
@@ -1070,7 +1072,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			else
 				LibMatrixCuMatMult.denseDenseMatMult(gCtx.getCublasHandle(), instName, dinput, difog_raw, wDensePointer, param2);
 			
-			JCuda.cudaDeviceSynchronize();
+			
 			// db = db + colSums(difog_raw)  # shape (1, 4M)
 			reduceCol(gCtx, instName, "reduce_col_sum", difog_raw, tmpDb, toInt(N), toInt(4*M));
 			matrixMatrixOp(gCtx, instName, tmpDb, db, 1, toInt(4*M), VectorShape.NONE.code(), VectorShape.NONE.code(), db, 
