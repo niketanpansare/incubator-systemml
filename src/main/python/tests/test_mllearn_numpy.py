@@ -158,7 +158,9 @@ class TestMLLearn(unittest.TestCase):
 
     def test_decision_tree(self):
         from sklearn.datasets import make_classification
-        X, y = make_classification(n_features=2, n_redundant=0, n_informative=2, random_state=1, n_clusters_per_class=1)
+        from sklearn.model_selection import train_test_split
+        X, y = make_classification(n_samples=3000, n_features=2, n_redundant=0, n_informative=2, random_state=1, n_clusters_per_class=1)
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=42)
         dt = DecisionTreeClassifier(sparkSession, criterion='gini', max_depth=25, min_samples_leaf=10, num_samples=3000, bins=20)
         mllearn_predicted = dt.fit(X_train, y_train).predict(X_test)
         from sklearn import tree
