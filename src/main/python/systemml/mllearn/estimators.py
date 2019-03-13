@@ -879,8 +879,7 @@ class DecisionTreeClassifier(BaseSystemMLClassifier):
         self.estimator.setImpurity(criterion)
         self.transferUsingDF = transferUsingDF
         self.setOutputRawPredictionsToFalse = False
-        self.model = self.sc._jvm.org.apache.sysml.api.ml.DecisionTreeClassifier(
-            self.estimator)
+        self.model = self.sc._jvm.org.apache.sysml.api.ml.DecisionTreeClassifierModel(self.estimator)
 
 class Caffe2DML(BaseSystemMLClassifier):
     """
