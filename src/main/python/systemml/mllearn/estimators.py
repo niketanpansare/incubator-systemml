@@ -860,7 +860,7 @@ class DecisionTreeClassifier(BaseSystemMLClassifier):
         Parameters
         ----------
         sparkSession: PySpark SparkSession
-        criterion: Impurity measure used at internal nodes of the tree for selecting which features to split on. Supported criteria are “gini” for the Gini impurity (default) and “entropy” for the information gain.
+        criterion: Impurity measure used at internal nodes of the tree for selecting which features to split on. Supported criteria are "gini" for the Gini impurity (default) and "entropy" for the information gain.
         max_depth: Maximum depth of the learned tree (default: 25)
         min_samples_leaf: Number of samples when splitting stops and a leaf node is added (default: 10)
         num_samples: Number of samples at which point we switch to in-memory subtree building (default: 3000)
