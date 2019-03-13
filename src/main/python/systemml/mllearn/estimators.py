@@ -646,7 +646,7 @@ class LogisticRegression(BaseSystemMLClassifier):
         solver: Only 'newton-cg' solver supported
         """
         self.sparkSession = sparkSession
-        self.sc = sparkSession._sc
+        self.sc = get_spark_context()
         createJavaObject(self.sc, 'dummy')
         self.uid = "logReg"
         self.estimator = self.sc._jvm.org.apache.sysml.api.ml.LogisticRegression(
@@ -718,7 +718,7 @@ class LinearRegression(BaseSystemMLRegressor):
         input matrix X is either tall or fairly dense; otherwise 'newton-cg' solver is more efficient.
         """
         self.sparkSession = sparkSession
-        self.sc = sparkSession._sc
+        self.sc = get_spark_context()
         createJavaObject(self.sc, 'dummy')
         self.uid = "lr"
         if solver == 'newton-cg' or solver == 'direct-solve':
@@ -779,7 +779,7 @@ class SVM(BaseSystemMLClassifier):
         is_multi_class: Specifies whether to use binary-class SVM or multi-class SVM algorithm (default: False)
         """
         self.sparkSession = sparkSession
-        self.sc = sparkSession._sc
+        self.sc = get_spark_context()
         self.uid = "svm"
         createJavaObject(self.sc, 'dummy')
         self.is_multi_class = is_multi_class
@@ -837,7 +837,7 @@ class NaiveBayes(BaseSystemMLClassifier):
         laplace: Laplace smoothing specified by the user to avoid creation of 0 probabilities (default: 1.0)
         """
         self.sparkSession = sparkSession
-        self.sc = sparkSession._sc
+        self.sc = get_spark_context()
         self.uid = "nb"
         createJavaObject(self.sc, 'dummy')
         self.estimator = self.sc._jvm.org.apache.sysml.api.ml.NaiveBayes(
@@ -867,7 +867,7 @@ class DecisionTreeClassifier(BaseSystemMLClassifier):
         bins: Number of equiheight bins per continuous-valued feature to choose thresholds (default: 20)
         """
         self.sparkSession = sparkSession
-        self.sc = sparkSession._sc
+        self.sc = get_spark_context()
         self.uid = "dt"
         createJavaObject(self.sc, 'dummy')
         self.estimator = self.sc._jvm.org.apache.sysml.api.ml.DecisionTreeClassifier(
@@ -916,7 +916,7 @@ class Caffe2DML(BaseSystemMLClassifier):
         transferUsingDF: whether to pass the input dataset via PySpark DataFrame (default: False)
         """
         self.sparkSession = sparkSession
-        self.sc = sparkSession._sc
+        self.sc = get_spark_context()
         createJavaObject(self.sc, 'dummy')
         self.uid = "Caffe2DML"
         self.model = None
@@ -1086,7 +1086,7 @@ class Keras2DML(Caffe2DML):
         elif len(input_shape) > 3 or len(input_shape) == 0:
             raise Exception('Input shape ' + str(input_shape) + ' is not supported.')
         self.name = keras_model.name
-        createJavaObject(sparkSession._sc, 'dummy')
+        createJavaObject(get_spark_context(), 'dummy')
         if not hasattr(keras_model, 'optimizer'):
             raise Exception('Please compile the model before passing it to Keras2DML')
         convertKerasToCaffeNetwork(

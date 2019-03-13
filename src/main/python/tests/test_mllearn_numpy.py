@@ -21,8 +21,9 @@
 #-------------------------------------------------------------
 
 # To run:
-#   - Python 2: `PYSPARK_PYTHON=python2 spark-submit --master local[*] --driver-class-path SystemML.jar test_mllearn_numpy.py`
-#   - Python 3: `PYSPARK_PYTHON=python3 spark-submit --master local[*] --driver-class-path SystemML.jar test_mllearn_numpy.py`
+# mvn package -P distribution
+#   - Python 2: `PYSPARK_PYTHON=python2 spark-submit --master local[*] --driver-class-path ../../../../target/SystemML.jar test_mllearn_numpy.py`
+#   - Python 3: `PYSPARK_PYTHON=python3 spark-submit --master local[*] --driver-class-path ../../../../target/SystemML.jar test_mllearn_numpy.py`
 
 # Make the `systemml` package importable
 import os
