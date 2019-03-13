@@ -333,6 +333,7 @@ trait BaseSystemMLClassifierModel extends BaseSystemMLEstimatorModel {
       updateML(ml)
       val script = getPredictionScript(isSingleNode)
       replacePredictionWithProb(script, probVar, C, H, W)
+      System.out.println("Executing the script:" + script._1.getScriptString)
       // Now execute the prediction script directly
       val ret = ml.execute(script._1.in(script._2, X, new MatrixMetadata(X.getNumRows, X.getNumColumns, X.getNonZeros)))
                 .getMatrix("Prediction").toMatrixBlock
