@@ -152,7 +152,7 @@ class DecisionTreeClassifierModel(override val uid: String)(estimator: DecisionT
     } else {
       script.in(wVar, w)
     }
-    (ret, "Y_predicted")
+    (ret, "X_test")
   } 
   
   override def allowsTransformProbability() = false
