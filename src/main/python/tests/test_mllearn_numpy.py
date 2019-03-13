@@ -40,7 +40,7 @@ from sklearn import datasets, metrics, neighbors
 from sklearn.datasets import fetch_20newsgroups
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics import accuracy_score, r2_score
-from systemml.mllearn import LinearRegression, LogisticRegression, NaiveBayes, SVM
+from systemml.mllearn import LinearRegression, LogisticRegression, NaiveBayes, SVM, DecisionTreeClassifier
 from sklearn import linear_model
 
 sparkSession = SparkSession.builder.getOrCreate()
@@ -153,6 +153,18 @@ class TestMLLearn(unittest.TestCase):
         sklearn_predicted = clf.fit(X_train, y_train).predict(X_test)
         accuracy = accuracy_score(sklearn_predicted, mllearn_predicted)
         evaluation = 'test_svm accuracy_score(sklearn_predicted, mllearn_predicted) was {}'.format(accuracy)
+        self.failUnless(accuracy > 0.95, evaluation)
+
+    def test_decision_tree(self):
+        from sklearn.datasets import make_classification
+        X, y = make_classification(n_features=2, n_redundant=0, n_informative=2, random_state=1, n_clusters_per_class=1)
+        dt = DecisionTreeClassifier(sparkSession, criterion='gini', max_depth=25, min_samples_leaf=10, num_samples=3000, bins=20)
+        mllearn_predicted = dt.fit(X_train, y_train).predict(X_test)
+        from sklearn import tree
+        dt1 = tree.DecisionTreeClassifier(criterion='gini', max_depth=25, min_samples_leaf=10)
+        sklearn_predicted = dt1.fit(X_train, y_train).predict(X_test)
+        accuracy = accuracy_score(sklearn_predicted, mllearn_predicted)
+        evaluation = 'test_decision_tree accuracy_score(sklearn_predicted, mllearn_predicted) was {}'.format(accuracy)
         self.failUnless(accuracy > 0.95, evaluation)
 
     def test_naive_bayes(self):

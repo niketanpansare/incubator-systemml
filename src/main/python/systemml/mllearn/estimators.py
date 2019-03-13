@@ -23,6 +23,7 @@ __all__ = [
     'LinearRegression',
     'LogisticRegression',
     'SVM',
+    'DecisionTreeClassifier',
     'NaiveBayes',
     'Caffe2DML',
     'Keras2DML']
@@ -847,6 +848,39 @@ class NaiveBayes(BaseSystemMLClassifier):
         self.model = self.sc._jvm.org.apache.sysml.api.ml.NaiveBayesModel(
             self.estimator)
 
+class DecisionTreeClassifier(BaseSystemMLClassifier):
+    """
+    Performs classification using decision tree.
+    """
+
+    def __init__(self, sparkSession, criterion='gini', max_depth=25, min_samples_leaf=10, num_samples=3000, bins=20, transferUsingDF=False):
+        """
+        Performs classification using decision tree.
+
+        Parameters
+        ----------
+        sparkSession: PySpark SparkSession
+        criterion: Impurity measure used at internal nodes of the tree for selecting which features to split on. Supported criteria are “gini” for the Gini impurity (default) and “entropy” for the information gain.
+        max_depth: Maximum depth of the learned tree (default: 25)
+        min_samples_leaf: Number of samples when splitting stops and a leaf node is added (default: 10)
+        num_samples: Number of samples at which point we switch to in-memory subtree building (default: 3000)
+        bins: Number of equiheight bins per continuous-valued feature to choose thresholds (default: 20)
+        """
+        self.sparkSession = sparkSession
+        self.sc = sparkSession._sc
+        self.uid = "dt"
+        createJavaObject(self.sc, 'dummy')
+        self.estimator = self.sc._jvm.org.apache.sysml.api.ml.DecisionTreeClassifier(
+            self.uid, self.sc._jsc.sc())
+        self.estimator.setBins(bins)
+        self.estimator.setDepth(max_depth)
+        self.estimator.setNumLeaf(min_samples_leaf)
+        self.estimator.setNumSamples(num_samples)
+        self.estimator.setImpurity(criterion)
+        self.transferUsingDF = transferUsingDF
+        self.setOutputRawPredictionsToFalse = False
+        self.model = self.sc._jvm.org.apache.sysml.api.ml.DecisionTreeClassifier(
+            self.estimator)
 
 class Caffe2DML(BaseSystemMLClassifier):
     """
