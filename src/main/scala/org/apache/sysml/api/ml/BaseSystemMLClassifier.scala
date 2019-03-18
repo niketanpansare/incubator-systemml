@@ -264,7 +264,6 @@ trait BaseSystemMLClassifierModel extends BaseSystemMLEstimatorModel {
     updateML(ml)
     // getPredictionScript sets the hyperparameter as well as the output parameter 
     val script = getPredictionScript(isSingleNode)
-    var outputVar = probVar
     if(!outputProbability) {
       // Append prediction code:
       val newDML = "source(\"nn/util.dml\") as util;\n" + 
@@ -277,10 +276,9 @@ trait BaseSystemMLClassifierModel extends BaseSystemMLEstimatorModel {
       outputVariables.add("Prediction")
       script._1.clearOutputs()
       script._1.out(outputVariables.toList)
-      outputVar = "Prediction"
     }
     val modelPredict = ml.execute(addInputOutput(script._1, script._2))
-    return modelPredict.getMatrix(probVar)
+    return modelPredict.getMatrix(if(outputProbability) probVar else "Prediction")
   }
   // --------------------------------------------------------------------------------------------------------------
   // Methods where the input and output probability/predictions are MatrixBlock.
