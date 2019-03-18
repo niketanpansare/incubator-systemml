@@ -259,11 +259,12 @@ trait BaseSystemMLClassifierModel extends BaseSystemMLEstimatorModel {
   // Helper method that executes the prediction script:
   def executePredictionScript(sc: SparkContext, C: Int, H: Int, W: Int, isSingleNode:Boolean, 
       outputProbability:Boolean, probVar:String, 
-      addInputOutput: (Script, String) => Script): MLResults = {
+      addInputOutput: (Script, String) => Script): Matrix = {
     val ml = new MLContext(sc)
     updateML(ml)
     // getPredictionScript sets the hyperparameter as well as the output parameter 
     val script = getPredictionScript(isSingleNode)
+    var outputVar = probVar
     if(!outputProbability) {
       // Append prediction code:
       val newDML = "source(\"nn/util.dml\") as util;\n" + 
@@ -276,9 +277,10 @@ trait BaseSystemMLClassifierModel extends BaseSystemMLEstimatorModel {
       outputVariables.add("Prediction")
       script._1.clearOutputs()
       script._1.out(outputVariables.toList)
+      outputVar = "Prediction"
     }
     val modelPredict = ml.execute(addInputOutput(script._1, script._2))
-    return modelPredict
+    return modelPredict.getMatrix(probVar)
   }
   // --------------------------------------------------------------------------------------------------------------
   // Methods where the input and output probability/predictions are MatrixBlock.
@@ -286,7 +288,7 @@ trait BaseSystemMLClassifierModel extends BaseSystemMLEstimatorModel {
     val addInputOutput = (script:Script, xVar: String) => {
       script.in(xVar, X, new MatrixMetadata(X.getNumRows, X.getNumColumns, X.getNonZeros))
     }
-    return executePredictionScript(sc, C, H, W, true, outputProbability, probVar, addInputOutput).getMatrix(probVar).toMatrixBlock
+    return executePredictionScript(sc, C, H, W, true, outputProbability, probVar, addInputOutput).toMatrixBlock
   }
   // Methods that return probabilities:
   def baseTransformProbability(X: MatrixBlock, sc: SparkContext, probVar: String): MatrixBlock =
@@ -309,7 +311,7 @@ trait BaseSystemMLClassifierModel extends BaseSystemMLEstimatorModel {
       script.in(xVar, ml.execute(dml(dmlRead("X", X)).out("X")).getMatrix("X"))
     }
     // Execution 2: Execute the prediction script
-    val Prob =  executePredictionScript(sc, C, H, W, true, outputProbability, probVar, addInputOutput).getMatrix(probVar)
+    val Prob =  executePredictionScript(sc, C, H, W, true, outputProbability, probVar, addInputOutput)
     // Execution 3: Execute the write script to dump the matrix Prob  
     ml.execute(dml(dmlWrite("Prob")).in("Prob", Prob))
     "output.mtx"
