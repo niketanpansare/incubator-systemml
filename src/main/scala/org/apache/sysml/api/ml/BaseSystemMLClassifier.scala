@@ -266,14 +266,13 @@ trait BaseSystemMLClassifierModel extends BaseSystemMLEstimatorModel {
     val script = getPredictionScript(isSingleNode)
     if(!outputProbability) {
       // Append prediction code:
-      val newDML = if(C > 1) {
+      val newDML = if(H == 1 && W == 1) {
         "source(\"nn/util.dml\") as util;\n" +
         script._1.getScriptString + 
         "\nPrediction = util::predict_class(" + probVar + ", " + C + ", " + H + ", " + W + ");\n"
       } else {
         "\nPrediction = rowIndexMax(" + probVar + ");\n" // predictions are 1-based
       }
-        
       script._1.setScriptString(newDML)
       // Modify the output variables -> remove probability matrix and add Prediction
       val outputVariables = new java.util.HashSet[String](script._1.getOutputVariables)
