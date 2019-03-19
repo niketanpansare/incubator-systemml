@@ -173,15 +173,6 @@ class TestMLLearn(unittest.TestCase):
         evaluation = 'test_svm accuracy_score(sklearn_predicted, mllearn_predicted) was {}'.format(accuracy)
         self.failUnless(accuracy > 0.95, evaluation)
 
-    def test_svm_random_data(self):
-        X_train, X_test, y_train, y_test = get_classification_data(n_classes=2)
-        svm = SVM(sparkSession, is_multi_class=False, tol=0.0001)
-        svm.fit(X_train, y_train)
-        mllearn_predicted = svm.predict(X_test)
-        sklearn_logistic = linear_model.LogisticRegression()
-        sklearn_logistic.fit(X_train, y_train)
-        self.failUnless(accuracy_score(sklearn_logistic.predict(X_test), mllearn_predicted) > 0.95) # We are comparable to a similar algorithm in scikit learn
-
     def test_naive_bayes(self):
         digits = datasets.load_digits()
         X_digits = digits.data
