@@ -422,6 +422,9 @@ public class MapReduceTool
 		throws IOException 
 	{
 		Path path = new Path(mtdfile);
+		if(path.getName().equals(" .mtd")) {
+			throw new IOException("Unsupported write of empty path");
+		}
 		FileSystem fs = IOUtilFunctions.getFileSystem(path);
 		try( BufferedWriter br = new BufferedWriter(new OutputStreamWriter(fs.create(path,true))) ) {
 			String mtd = metaDataToString(vt, schema, dt, mc, outinfo, formatProperties);

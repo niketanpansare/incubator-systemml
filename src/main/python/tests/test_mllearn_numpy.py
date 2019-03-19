@@ -25,7 +25,7 @@
 #   - Python 3: `PYSPARK_PYTHON=python3 spark-submit --master local[*] --driver-class-path SystemML.jar test_mllearn_numpy.py`
 
 # Make the `systemml` package importable
-import os
+import os, math
 import sys
 path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
 sys.path.insert(0, path)
@@ -61,7 +61,8 @@ def deleteIfExists(fileName):
 		pass
 
 def get_classification_data(n_samples=10000, n_features=100, n_clusters_per_class=1, n_classes=10):
-    X, y = make_classification(n_samples=n_samples, n_features=n_features, n_redundant=0, n_informative=2, random_state=1,
+    n_informative = int(math.log(n_classes * n_clusters_per_class, 2)) + 1
+    X, y = make_classification(n_samples=n_samples, n_features=n_features, n_redundant=0, n_informative=n_informative, random_state=1,
                                n_clusters_per_class=n_clusters_per_class, n_classes=n_classes)
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
     return X_train, X_test, y_train, y_test
@@ -85,7 +86,7 @@ class TestMLLearn(unittest.TestCase):
         sklearn_logistic.fit(X_train, y_train)
         self.failUnless(accuracy_score(sklearn_logistic.predict(X_test), mllearn_predicted) > 0.95) # We are comparable to a similar algorithm in scikit learn
 
-    def test_logistic_random_binary_data(self):
+    def test_logistic_random_data(self):
         X_train, X_test, y_train, y_test = get_classification_data(n_classes=2)
         logistic = LogisticRegression(sparkSession)
         logistic.fit(X_train, y_train)
@@ -94,15 +95,6 @@ class TestMLLearn(unittest.TestCase):
         sklearn_logistic.fit(X_train, y_train)
         self.failUnless(accuracy_score(sklearn_logistic.predict(X_test), mllearn_predicted) > 0.95) # We are comparable to a similar algorithm in scikit learn
 
-    def test_logistic_random_multiclass_data(self):
-        X_train, X_test, y_train, y_test = get_classification_data(n_classes=10)
-        logistic = LogisticRegression(sparkSession)
-        logistic.fit(X_train, y_train)
-        mllearn_predicted = logistic.predict(X_test)
-        sklearn_logistic = linear_model.LogisticRegression()
-        sklearn_logistic.fit(X_train, y_train)
-        self.failUnless(accuracy_score(sklearn_logistic.predict(X_test), mllearn_predicted) > 0.95) # We are comparable to a similar algorithm in scikit learn
-    
     def test_logistic_mlpipeline(self):
         training = sparkSession.createDataFrame([
             ("a b c d e spark", 1.0),
@@ -181,6 +173,15 @@ class TestMLLearn(unittest.TestCase):
         evaluation = 'test_svm accuracy_score(sklearn_predicted, mllearn_predicted) was {}'.format(accuracy)
         self.failUnless(accuracy > 0.95, evaluation)
 
+    def test_svm_random_data(self):
+        X_train, X_test, y_train, y_test = get_classification_data(n_classes=2)
+        svm = SVM(sparkSession, is_multi_class=False, tol=0.0001)
+        svm.fit(X_train, y_train)
+        mllearn_predicted = svm.predict(X_test)
+        sklearn_logistic = linear_model.LogisticRegression()
+        sklearn_logistic.fit(X_train, y_train)
+        self.failUnless(accuracy_score(sklearn_logistic.predict(X_test), mllearn_predicted) > 0.95) # We are comparable to a similar algorithm in scikit learn
+
     def test_naive_bayes(self):
         digits = datasets.load_digits()
         X_digits = digits.data
@@ -196,7 +197,7 @@ class TestMLLearn(unittest.TestCase):
         clf = MultinomialNB()
         sklearn_predicted = clf.fit(X_train, y_train).predict(X_test)
         self.failUnless(accuracy_score(sklearn_predicted, mllearn_predicted) > 0.95 )
-        
+
     def test_naive_bayes1(self):
         categories = ['alt.atheism', 'talk.religion.misc', 'comp.graphics', 'sci.space']
         newsgroups_train = fetch_20newsgroups(subset='train', categories=categories)
