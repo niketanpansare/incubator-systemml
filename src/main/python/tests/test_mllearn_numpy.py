@@ -210,7 +210,7 @@ class TestMLLearn(unittest.TestCase):
         from sklearn.naive_bayes import MultinomialNB
         clf = MultinomialNB()
         sklearn_predicted = clf.fit(vectors, newsgroups_train.target).predict(vectors_test)
-        self.failUnless(test_accuracy_score(sklearn_predicted, mllearn_predicted, y_test, 0.95))
+        self.failUnless(accuracy_score(sklearn_predicted, mllearn_predicted) > 0.95 )
 
 
 if __name__ == '__main__':

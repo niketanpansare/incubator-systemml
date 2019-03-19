@@ -55,7 +55,7 @@ def test_accuracy_score(sklearn_predicted, mllearn_predicted, y_test, threshold)
         return True
     else:
         return False
-    
+
 # Currently not integrated with JUnit test
 # ~/spark-1.6.1-scala-2.11/bin/spark-submit --master local[*] --driver-class-path SystemML.jar test.py
 class TestMLLearn(unittest.TestCase):
