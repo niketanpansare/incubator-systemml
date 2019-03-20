@@ -59,7 +59,7 @@ should be compiled so that the loss can be accessed for Caffe2DML.
 ```python
 # pyspark --driver-memory 20g
 
-# Disable Tensorflow from using GPU
+# Disable Tensorflow from using GPU to avoid unnecessary evictions by SystemML runtime
 import os
 os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 os.environ['CUDA_VISIBLE_DEVICES'] = ''
@@ -103,7 +103,7 @@ scale = 0.00390625
 X_train = X_train*scale
 X_test = X_test*scale
 from systemml.mllearn import Keras2DML
-sysml_model = Keras2DML(spark, keras_model)
+sysml_model = Keras2DML(spark, keras_model, weights='weights_dir')
 # sysml_model.setConfigProperty("sysml.native.blas", "auto")
 # sysml_model.setGPU(True).setForceGPU(True)
 sysml_model.summary()

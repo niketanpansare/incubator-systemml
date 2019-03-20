@@ -117,7 +117,7 @@ def toKV(key, value):
 
 
 def _parseJSONObject(obj):
-    rootName = obj.keys()[0]
+    rootName = list(obj.keys())[0]
     ret = ['\n', rootName, ' {']
     for key in obj[rootName]:
         if isinstance(obj[rootName][key], dict):
