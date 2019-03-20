@@ -177,7 +177,7 @@ def _parseKerasLayer(layer):
         layerArgs['bottom'] = _getBottomLayers(layer)
         layerArgs['top'] = layer.name
     if len(param) > 0:
-        paramName = param.keys()[0]
+        paramName = list(param.keys())[0]
         layerArgs[paramName] = param[paramName]
     ret = { 'layer': layerArgs }
     return [ret, _parseActivation(
