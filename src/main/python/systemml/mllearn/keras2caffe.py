@@ -25,7 +25,12 @@
 import numpy as np
 import os
 import math
-from itertools import chain, imap
+from itertools import chain
+try:
+    from itertools import imap
+except ImportError:
+    # Support Python 3x
+    imap = map
 from ..converters import *
 from ..classloader import *
 import keras
