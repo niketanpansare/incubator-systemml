@@ -53,14 +53,30 @@ from systemml.mllearn import Keras2DML
 import keras
 from keras.applications.resnet50 import preprocess_input, decode_predictions, ResNet50
 
-keras_model = ResNet50(weights='imagenet',include_top=True,pooling='None',input_shape=(224,224,3))
+# Use channel first layout
+from keras import backend as K
+K.set_image_data_format('channels_first')
+
+# Download ResNet50
+keras_model = ResNet50(weights='imagenet',include_top=True,pooling='None',input_shape=(3,224,224))
 keras_model.compile(optimizer='sgd', loss= 'categorical_crossentropy')
 
-sysml_model = Keras2DML(spark, keras_model,input_shape=(3,224,224))
+# Wrap the model 
+sysml_model = Keras2DML(spark, keras_model)
 sysml_model.summary()
 ```
 
 # Frequently asked questions
+
+#### How can I get the training and prediction DML script for the Keras model?
+
+The training and prediction DML scripts can be generated using `get_training_script()` and `get_prediction_script()` methods.
+
+```python
+from systemml.mllearn import Keras2DML
+sysml_model = Keras2DML(spark, keras_model, input_shape=(3,224,224))
+print(sysml_model.get_training_script())
+```
 
 #### What is the mapping between Keras' parameters and Caffe's solver specification ? 
 
@@ -133,4 +149,10 @@ To monitor loss, please set the parameters `display`, `test_iter` and `test_inte
 For example: for the expression `Keras2DML(..., display=100, test_iter=10, test_interval=500)`, we
 - display the training loss and accuracy every 100 iterations and
 - carry out validation every 500 training iterations and display validation loss and accuracy.
+
+#### How do you ensure that Keras2DML produce same results as other Keras' backend?
+
+To verify that Keras2DML produce same results as other Keras' backend, we have [Python unit tests](https://github.com/apache/systemml/blob/master/src/main/python/tests/test_nn_numpy.py)
+that compare the results of Keras2DML with that of TensorFlow. We assume that Keras team ensure that all their backends are consistent with their TensorFlow backend.
+
 
