@@ -41,21 +41,40 @@ $ cat /usr/local/cuda/include/cudnn.h | grep "CUDNN_MAJOR\|CUDNN_MINOR"
 #define CUDNN_VERSION    (CUDNN_MAJOR * 1000 + CUDNN_MINOR * 100 + CUDNN_PATCHLEVEL)
 ```
 
-There are four ways to use the GPU backend in SystemML:
+Depending on the API, the GPU backend can be enabled in different way:
 
-1. Command-line: `-gpu` flag.
-2. Programmatic interfaces:
-- Python MLContext or MLLearn (includes Caffe2DML and Keras2DML) APIs: `setGPU` method.
-- Scala MLContext API: `setGPU` method.
-- JMLC API: `useGpu` parameter in `org.apache.sysml.api.jmlc.Connection` class's `prepareScript` method.
+1. When invoking SystemML from command-line, the GPU backend can be enabled by providing the command-line `-gpu` flag.
+2. When invoking SystemML using the (Python or Scala) MLContext and MLLearn (includes Caffe2DML and Keras2DML) APIs, please use the `setGPU(enable)` method.
+3. When invoking SystemML using the JMLC API, please set the `useGpu` parameter in `org.apache.sysml.api.jmlc.Connection` class's `prepareScript` method.
 
-These APIs are described in more detail below.
+Python users do not need to explicitly provide the jar during their invocation. 
+For all other APIs, please remember to include the `systemml-*-extra.jar` in the classpath as described below.
+
+## Command-line users
+
+To enable the GPU backend via command-line, please provide `systemml-1.*-extra.jar` in the classpath and `-gpu` flag.
+
+```
+spark-submit --jars systemml-*-extra.jar SystemML.jar -f myDML.dml -gpu
+``` 
+
+To skip memory-checking and force all GPU-enabled operations on the GPU, please provide `force` option to the `-gpu` flag.
+
+```
+spark-submit --jars systemml-*-extra.jar SystemML.jar -f myDML.dml -gpu force
+``` 
 
 ## Python users
 
 Please install SystemML using pip:
 - For released version: `pip install systemml`
-- For bleeding edge version: `pip install https://sparktc.ibmcloud.com/repo/latest/systemml-1.2.0-SNAPSHOT-python.tar.gz`
+- For bleeding edge version: 
+```
+git clone https://github.com/apache/systemml.git
+cd systemml
+mvn package -P distribution
+pip install target/systemml-*-SNAPSHOT-python.tar.gz
+```
 
 Then you can use the `setGPU(True)` method of [MLContext](http://apache.github.io/systemml/spark-mlcontext-programming-guide.html) and 
 [MLLearn](http://apache.github.io/systemml/beginners-guide-python.html#invoke-systemmls-algorithms) APIs to enable the GPU usage.
@@ -73,27 +92,13 @@ lenet = Caffe2DML(spark, solver='lenet_solver.proto', input_shape=(1, 28, 28))
 lenet.setGPU(True).setForceGPU(True)
 ```
 
-## Command-line users
-
-To enable the GPU backend via command-line, please provide `systemml-1.*-extra.jar` in the classpath and `-gpu` flag.
-
-```
-spark-submit --jars systemml-1.*-extra.jar SystemML.jar -f myDML.dml -gpu
-``` 
-
-To skip memory-checking and force all GPU-enabled operations on the GPU, please provide `force` option to the `-gpu` flag.
-
-```
-spark-submit --jars systemml-1.*-extra.jar SystemML.jar -f myDML.dml -gpu force
-``` 
-
 ## Scala users
 
-To enable the GPU backend via command-line, please provide `systemml-1.*-extra.jar` in the classpath and use 
+To enable the GPU backend via command-line, please provide `systemml-*-extra.jar` in the classpath and use 
 the `setGPU(True)` method of [MLContext](http://apache.github.io/systemml/spark-mlcontext-programming-guide.html) API to enable the GPU usage.
 
 ```
-spark-shell --jars systemml-1.*-extra.jar,SystemML.jar
+spark-shell --jars systemml-*-extra.jar,SystemML.jar
 ``` 
 
 # Advanced Configuration
