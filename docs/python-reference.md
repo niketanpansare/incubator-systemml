@@ -412,7 +412,8 @@ expects that labels have been converted to 1-based value.
 This avoids unnecessary decoding overhead for large dataset if the label columns has already been decoded.
 For scikit-learn API, there is no such requirement.
 
-The table below describes the parameter available for mllearn algorithms:
+The table below describes the parameter available for mllearn algorithms.
+These parameters are also specified in the usage section of the [Algorithms Reference](algorithms-reference):
 
 | Parameters | Description of the Parameters | LogisticRegression | LinearRegression | SVM | NaiveBayes |
 |----------------|-----------------------------------------------------------------------------------------------|-----------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----|------------|
