@@ -45,25 +45,69 @@ Keras models are parsed based on their layer structure and corresponding weights
 configuration. Be aware that currently this is a translation into Caffe and there will be loss of information from keras models such as 
 intializer information, and other layers which do not exist in Caffe. 
 
+First, install SystemML and other dependencies for the below demo:
+
+```
+pip install systemml keras tensorflow mlxtend
+``` 
+
 To create a Keras2DML object, simply pass the keras object to the Keras2DML constructor. It's also important to note that your models
-should be compiled so that the loss can be accessed for Caffe2DML
+should be compiled so that the loss can be accessed for Caffe2DML.
+
+
 
 ```python
-from systemml.mllearn import Keras2DML
-import keras
-from keras.applications.resnet50 import preprocess_input, decode_predictions, ResNet50
+# pyspark --driver-memory 20g
 
-# Use channel first layout
+# Disable Tensorflow from using GPU
+import os
+os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
+os.environ['CUDA_VISIBLE_DEVICES'] = ''
+
+# Import dependencies
+from mlxtend.data import mnist_data
+import numpy as np
+from sklearn.utils import shuffle
+from keras.models import Sequential
+from keras.layers import Input, Dense, Conv2D, MaxPooling2D, Dropout,Flatten
 from keras import backend as K
+from keras.models import Model
+
+# Set channel first layer
 K.set_image_data_format('channels_first')
 
-# Download ResNet50
-keras_model = ResNet50(weights='imagenet',include_top=True,pooling='None',input_shape=(3,224,224))
-keras_model.compile(optimizer='sgd', loss= 'categorical_crossentropy')
+# Download the MNIST dataset
+X, y = mnist_data()
+X, y = shuffle(X, y)
 
-# Wrap the model 
+# Split the data into training and test
+n_samples = len(X)
+X_train = X[:int(.9 * n_samples)]
+y_train = y[:int(.9 * n_samples)]
+X_test = X[int(.9 * n_samples):]
+y_test = y[int(.9 * n_samples):]
+
+
+keras_model = Sequential()
+keras_model.add(Conv2D(32, kernel_size=(5, 5), activation='relu', input_shape=(1,28,28), padding='same'))
+keras_model.add(MaxPooling2D(pool_size=(2, 2)))
+keras_model.add(Conv2D(64, (5, 5), activation='relu', padding='same'))
+keras_model.add(MaxPooling2D(pool_size=(2, 2)))
+keras_model.add(Flatten())
+keras_model.add(Dense(512, activation='relu'))
+keras_model.add(Dropout(0.5))
+keras_model.add(Dense(10, activation='softmax'))
+keras_model.summary()
+# Scale the input features
+scale = 0.00390625
+X_train = X_train*scale
+X_test = X_test*scale
+from systemml.mllearn import Keras2DML
 sysml_model = Keras2DML(spark, keras_model)
+# sysml_model.setConfigProperty("sysml.native.blas", "auto")
+# sysml_model.setGPU(True).setForceGPU(True)
 sysml_model.summary()
+sysml_model.fit(X_train, y_train)
 ```
 
 # Frequently asked questions
