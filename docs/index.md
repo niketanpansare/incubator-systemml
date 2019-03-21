@@ -60,8 +60,8 @@ This version of SystemML supports: Java 8+, Scala 2.11+, Python 2.7/3.5+, Hadoop
   * [R](https://www.r-project.org/about.html), consider implementing your algorithm in [DML](dml-language-reference) (recommended)
   * [Python](https://www.python.org/), you can implement your algorithm in [PyDML](beginners-guide-to-dml-and-pydml) or using the [matrix class](http://apache.github.io/systemml/python-reference.html#matrix-class)
 * If you want to try out SystemML on single machine (for example, your laptop), consider
-  * downloading [Apache Spark](https://spark.apache.org/downloads.html) and using the above mentioned APIs (recommended)
-  * OR run it using java in [standalone mode](standalone-guide)
+  * using the above mentioned APIs with [Apache Spark](https://spark.apache.org/downloads.html) (recommended). Please refer to our [installation guide](http://systemml.apache.org/install-systemml.html).
+  * OR running it using java in [standalone mode](standalone-guide)
 
 ## Running SystemML
 
