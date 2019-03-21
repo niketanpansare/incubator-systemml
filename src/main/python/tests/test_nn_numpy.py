@@ -268,7 +268,7 @@ class TestNNLibrary(unittest.TestCase):
             test_backward(Conv2D(32, kernel_size=(3, 3), input_shape=(3, 64, 32), activation='relu', padding='valid')))
 
     def test_upsampling_forward(self):
-        self.failUnless(test_forward(UpSampling2D(size=(2, 2), input_shape=(3, 64, 32)), reshuffle_keras_output=True))
+        self.failUnless(test_forward(UpSampling2D(size=(2, 2), input_shape=(3, 64, 32))))
 
     def test_upsampling_backward(self):
         self.failUnless(test_backward(UpSampling2D(size=(2, 2), input_shape=(3, 64, 32))))
