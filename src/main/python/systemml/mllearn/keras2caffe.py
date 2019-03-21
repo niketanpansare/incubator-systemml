@@ -199,20 +199,20 @@ specialLayers = {
     keras.layers.BatchNormalization: _parseBatchNorm
 }
 
+def getPadding(kernel_size, padding):
+    if padding.lower() == 'same':
+        return int(kernel_size/2)
+    elif padding.lower() == 'valid':
+        return 0
+    else:
+        raise ValueError('Unsupported padding:' + str(padding))
 
 def getConvParam(layer):
     stride = (1, 1) if layer.strides is None else layer.strides
-    padding = [
-        layer.kernel_size[0] /
-        2,
-        layer.kernel_size[1] /
-        2] if layer.padding == 'same' else [
-        0,
-        0]
     config = layer.get_config()
     return {'num_output': layer.filters, 'bias_term': str(config['use_bias']).lower(
     ), 'kernel_h': layer.kernel_size[0], 'kernel_w': layer.kernel_size[1], 'stride_h': stride[0], 'stride_w': stride[1],
-            'pad_h': padding[0], 'pad_w': padding[1]}
+            'pad_h': getPadding(layer.kernel_size[0], layer.padding), 'pad_w': getPadding(layer.kernel_size[1], layer.padding)}
 
 
 def getUpSamplingParam(layer):
@@ -221,15 +221,9 @@ def getUpSamplingParam(layer):
 
 def getPoolingParam(layer, pool='MAX'):
     stride = (1, 1) if layer.strides is None else layer.strides
-    padding = [
-        layer.pool_size[0] /
-        2,
-        layer.pool_size[1] /
-        2] if layer.padding == 'same' else [
-        0,
-        0]
     return {'pool': pool, 'kernel_h': layer.pool_size[0], 'kernel_w': layer.pool_size[1],
-            'stride_h': stride[0], 'stride_w': stride[1], 'pad_h': padding[0], 'pad_w': padding[1]}
+            'stride_h': stride[0], 'stride_w': stride[1], 'pad_h': getPadding(layer.pool_size[0], layer.padding),
+            'pad_w': getPadding(layer.pool_size[1], layer.padding)}
 
 
 def getRecurrentParam(layer):

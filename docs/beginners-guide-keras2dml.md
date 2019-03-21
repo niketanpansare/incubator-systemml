@@ -87,7 +87,6 @@ y_train = y[:int(.9 * n_samples)]
 X_test = X[int(.9 * n_samples):]
 y_test = y[int(.9 * n_samples):]
 
-
 keras_model = Sequential()
 keras_model.add(Conv2D(32, kernel_size=(5, 5), activation='relu', input_shape=(1,28,28), padding='same'))
 keras_model.add(MaxPooling2D(pool_size=(2, 2)))
@@ -97,6 +96,7 @@ keras_model.add(Flatten())
 keras_model.add(Dense(512, activation='relu'))
 keras_model.add(Dropout(0.5))
 keras_model.add(Dense(10, activation='softmax'))
+keras_model.compile(loss='categorical_crossentropy', optimizer='sgd')
 keras_model.summary()
 # Scale the input features
 scale = 0.00390625
