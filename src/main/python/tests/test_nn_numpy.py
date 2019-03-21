@@ -81,7 +81,12 @@ def get_input_output_shape(layers):
     return tmp_keras_model.layers[0].input_shape, tmp_keras_model.layers[-1].output_shape
 
 def get_one_hot_encoded_labels(output_shape):
-    output_cells = reduce(mul, list(output_shape[1:]), 1)
+    try:
+        output_cells = reduce(mul, list(output_shape[1:]), 1)
+    except NameError:
+        # As per https://www.artima.com/weblogs/viewpost.jsp?thread=98196, reduce was moved to functools in later versions
+        from functools import reduce
+        output_cells = reduce(mul, list(output_shape[1:]), 1)
     y = np.array(np.random.choice(output_cells, batch_size))
     y[0] = output_cells - 1
     one_hot_labels = np_utils.to_categorical(y, num_classes=output_cells)
