@@ -157,7 +157,7 @@ def allclose(sysml_preds, keras_preds, output_shape):
     return ret
 
 def test_forward(layers):
-    sysml_preds, keras_preds, keras_model, output_shape = base_test(layers, test_backward=False, reshuffle_keras_output=reshuffle_keras_output)
+    sysml_preds, keras_preds, keras_model, output_shape = base_test(layers, test_backward=False)
     ret = allclose(sysml_preds, keras_preds, output_shape)
     if not ret:
         print('The forward test failed for the model:' + str(keras_model.summary()))
@@ -167,8 +167,8 @@ def test_forward(layers):
         #             keras_preds.reshape((-1, output_shape[1], output_shape[2], output_shape[3])))
     return ret
 
-def test_backward(layers, reshuffle_keras_output=False):
-    sysml_preds, keras_preds, keras_model, output_shape = base_test(layers, test_backward=True, reshuffle_keras_output=reshuffle_keras_output)
+def test_backward(layers):
+    sysml_preds, keras_preds, keras_model, output_shape = base_test(layers, test_backward=True)
     ret = allclose(sysml_preds, keras_preds, output_shape)
     if not ret:
         print('The backward test failed for the model:' + str(keras_model.summary()))
