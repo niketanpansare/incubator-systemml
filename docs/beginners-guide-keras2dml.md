@@ -72,6 +72,7 @@ from keras.models import Sequential
 from keras.layers import Input, Dense, Conv2D, MaxPooling2D, Dropout,Flatten
 from keras import backend as K
 from keras.models import Model
+from keras.optimizers import SGD
 
 # Set channel first layer
 K.set_image_data_format('channels_first')
@@ -87,6 +88,7 @@ y_train = y[:int(.9 * n_samples)]
 X_test = X[int(.9 * n_samples):]
 y_test = y[int(.9 * n_samples):]
 
+
 keras_model = Sequential()
 keras_model.add(Conv2D(32, kernel_size=(5, 5), activation='relu', input_shape=(1,28,28), padding='same'))
 keras_model.add(MaxPooling2D(pool_size=(2, 2)))
@@ -96,7 +98,7 @@ keras_model.add(Flatten())
 keras_model.add(Dense(512, activation='relu'))
 keras_model.add(Dropout(0.5))
 keras_model.add(Dense(10, activation='softmax'))
-keras_model.compile(loss='categorical_crossentropy', optimizer='sgd')
+keras_model.compile(loss='categorical_crossentropy', optimizer=SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True))
 keras_model.summary()
 # Scale the input features
 scale = 0.00390625
@@ -106,7 +108,6 @@ from systemml.mllearn import Keras2DML
 sysml_model = Keras2DML(spark, keras_model, weights='weights_dir')
 # sysml_model.setConfigProperty("sysml.native.blas", "auto")
 # sysml_model.setGPU(True).setForceGPU(True)
-sysml_model.summary()
 sysml_model.fit(X_train, y_train)
 ```
 
