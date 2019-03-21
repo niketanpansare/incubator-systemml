@@ -102,7 +102,7 @@ def get_sysml_model(keras_model):
     # print('Script:' + str(sysml_model.get_training_script()))
     return sysml_model
 
-def base_test(layers, add_dense=False, test_backward=True, reshuffle_keras_output=False):
+def base_test(layers, add_dense=False, test_backward=True):
     layers = [layers] if not isinstance(layers, list) else layers
     in_shape, output_shape = get_input_output_shape(layers)
     # --------------------------------------
@@ -138,12 +138,6 @@ def base_test(layers, add_dense=False, test_backward=True, reshuffle_keras_outpu
     # --------------------------------------
     if len(output_shape) > 4:
         raise Exception('Unsupported output shape:' + str(output_shape))
-    if len(output_shape) == 4 and reshuffle_keras_output:
-        # This is not required as of Keras 2.1.5 and Tensorflow 1.11.0, but keeping it for backward compatibility.
-        # Flatten doesnot respect channel_first, so reshuffle the dimensions:
-        keras_preds = keras_preds.reshape((batch_size, output_shape[2], output_shape[3], output_shape[1]))
-        keras_preds = np.swapaxes(keras_preds, 2, 3)  # (h,w,c) -> (h,c,w)
-        keras_preds = np.swapaxes(keras_preds, 1, 2)  # (h,c,w) -> (c,h,w)
     # --------------------------------------
     return sysml_preds, keras_preds, keras_model, output_shape
 
@@ -151,9 +145,20 @@ def debug_layout(sysml_preds, keras_preds):
     for i in range(len(keras_preds.shape)):
         print('After flipping along axis=' + str(i) + ' => ' + str(np.allclose(sysml_preds, np.flip(keras_preds, i).flatten())))
 
-def test_forward(layers):
-    sysml_preds, keras_preds, keras_model, output_shape = base_test(layers, test_backward=False)
+def allclose(sysml_preds, keras_preds, output_shape):
     ret = np.allclose(sysml_preds.flatten(), keras_preds.flatten())
+    if len(output_shape) == 4 and not ret:
+        # Required only for older version of TensorFlow where
+        # Flatten doesnot respect channel_first, so reshuffle the dimensions:
+        keras_preds = keras_preds.reshape((batch_size, output_shape[2], output_shape[3], output_shape[1]))
+        keras_preds = np.swapaxes(keras_preds, 2, 3)  # (h,w,c) -> (h,c,w)
+        keras_preds = np.swapaxes(keras_preds, 1, 2)  # (h,c,w) -> (c,h,w)
+        ret = np.allclose(sysml_preds.flatten(), keras_preds.flatten())
+    return ret
+
+def test_forward(layers):
+    sysml_preds, keras_preds, keras_model, output_shape = base_test(layers, test_backward=False, reshuffle_keras_output=reshuffle_keras_output)
+    ret = allclose(sysml_preds, keras_preds, output_shape)
     if not ret:
         print('The forward test failed for the model:' + str(keras_model.summary()))
         print('SystemML output:' + str(sysml_preds))
@@ -162,9 +167,9 @@ def test_forward(layers):
         #             keras_preds.reshape((-1, output_shape[1], output_shape[2], output_shape[3])))
     return ret
 
-def test_backward(layers):
-    sysml_preds, keras_preds, keras_model, output_shape = base_test(layers, test_backward=True)
-    ret = np.allclose(sysml_preds.flatten(), keras_preds.flatten())
+def test_backward(layers, reshuffle_keras_output=False):
+    sysml_preds, keras_preds, keras_model, output_shape = base_test(layers, test_backward=True, reshuffle_keras_output=reshuffle_keras_output)
+    ret = allclose(sysml_preds, keras_preds, output_shape)
     if not ret:
         print('The backward test failed for the model:' + str(keras_model.summary()))
         print('SystemML output:' + str(sysml_preds))
@@ -264,7 +269,7 @@ class TestNNLibrary(unittest.TestCase):
             test_backward(Conv2D(32, kernel_size=(3, 3), input_shape=(3, 64, 32), activation='relu', padding='valid')))
 
     def test_upsampling_forward(self):
-        self.failUnless(test_forward(UpSampling2D(size=(2, 2), input_shape=(3, 64, 32))))
+        self.failUnless(test_forward(UpSampling2D(size=(2, 2), input_shape=(3, 64, 32)), reshuffle_keras_output=True))
 
     def test_upsampling_backward(self):
         self.failUnless(test_backward(UpSampling2D(size=(2, 2), input_shape=(3, 64, 32))))
