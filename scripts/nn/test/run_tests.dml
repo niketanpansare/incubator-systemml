@@ -67,6 +67,7 @@ grad_check::sigmoid()
 grad_check::softmax()
 grad_check::softmax2d()
 grad_check::tanh()
+grad_check::zero_pad2d()
 print("")
 
 # Example model

@@ -44,7 +44,7 @@ import unittest
 
 import numpy as np
 from keras.models import Sequential
-from keras.layers import Input, Dense, Conv2D, MaxPooling2D, Dropout, Flatten, LSTM, UpSampling2D, SimpleRNN, Activation
+from keras.layers import Input, Dense, Conv2D, MaxPooling2D, Dropout, Flatten, LSTM, UpSampling2D, SimpleRNN, Activation, ZeroPadding2D
 from keras.optimizers import SGD
 from keras import backend as K
 from keras.models import Model
