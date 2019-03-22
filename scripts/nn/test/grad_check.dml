@@ -58,7 +58,7 @@ source("nn/test/max_pool2d_simple.dml") as max_pool2d_simple
 source("nn/test/util.dml") as test_util
 source("nn/util.dml") as util
 source("nn/layers/elu.dml") as elu
-source("nn/layers/zero_pad2d") as zero_pad2d
+source("nn/layers/zero_pad2d.dml") as zero_pad2d
 
 affine = function() {
   /*
