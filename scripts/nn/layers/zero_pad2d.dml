@@ -43,20 +43,18 @@ forward = function(matrix[double] img, int C, int Hin, int Win, int top_pad, int
    *      dimensions, of shape (N, C*(Hin+top_pad+bottom_pad)*(Win+left_pad+right_pad)).
    */
   N = nrow(img)
-  Hout = Hin+top_pad+bottom_pad
-  Wout = Win+left_pad+right_pad
-  img_padded = matrix(0, rows=N, cols=C*Hout*Wout)  # zeros
+  img_padded = matrix(0, rows=N, cols=C*(Hin+top_pad+bottom_pad)*(Win+left_pad+right_pad))  # zeros
   img_index = 1
   img_padded_index = 1
   for(c in 1:C) {
-    img_index = (c-1)*Hin*Win + 1
-    img_padded_index = (c-1)*Hout*Wout + 1
   	img_padded_index = img_padded_index + top_pad*(Win+left_pad+right_pad)
-    parfor(h in 1:Hin) {
-      img_padded_index1 = img_padded_index + left_pad + (h-1)*(Win + right_pad)
-      img_index1 = img_index + (h-1)*Win
-  	  img_padded[,img_padded_index1:(img_padded_index1+Win-1)] = img[,img_index1:(img_index1+Win-1)] # vectorized over all images
+    for(h in 1:Hin) {
+      img_padded_index = img_padded_index + left_pad
+  	  img_padded[,img_padded_index:(img_padded_index+Win-1)] = img[,img_index:(img_index+Win-1)] # vectorized over all images
+  	  img_padded_index = img_padded_index + Win + right_pad
+  	  img_index = img_index + Win
   	}
+  	img_padded_index = img_padded_index + bottom_pad*(Win+left_pad+right_pad)
   }
 }
 
@@ -83,14 +81,13 @@ backward = function(matrix[double] dout, int C, int Hin, int Win, int top_pad, i
   img_index = 1
   img_padded_index = 1
   for(c in 1:C) {
-    img_index = (c-1)*Hin*Win + 1
-    img_padded_index = (c-1)*Hout*Wout + 1
   	img_padded_index = img_padded_index + top_pad*(Win+left_pad+right_pad)
-    parfor(h in 1:Hin) {
-      img_padded_index1 = img_padded_index + left_pad + (h-1)*(Win + right_pad)
-      img_index1 = img_index + (h-1)*Win
-  	  dX[,img_index1:(img_index1+Win-1)] = dout[,img_padded_index1:(img_padded_index1+Win-1)] # vectorized over all images
+    for(h in 1:Hin) {
+      img_padded_index = img_padded_index + left_pad
+  	  dX[,img_index:(img_index+Win-1)] = dout[,img_padded_index:(img_padded_index+Win-1)] # vectorized over all images
+  	  img_padded_index = img_padded_index + Win + right_pad
+  	  img_index = img_index + Win
   	}
+  	img_padded_index = img_padded_index + bottom_pad*(Win+left_pad+right_pad)
   }
 }
-
