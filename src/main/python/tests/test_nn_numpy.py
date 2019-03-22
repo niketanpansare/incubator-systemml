@@ -28,6 +28,8 @@
 #   - Python 2: `PYSPARK_PYTHON=python2 spark-submit --master local[*] --driver-memory 10g  --driver-class-path ../../../../target/SystemML.jar,../../../../target/systemml-*-extra.jar test_nn_numpy.py`
 #   - Python 3: `PYSPARK_PYTHON=python3 spark-submit --master local[*] --driver-memory 10g --driver-class-path SystemML.jar,systemml-*-extra.jar test_nn_numpy.py`
 
+# Test with Keras 2.1.5 and Tensorflow 1.11.0
+
 # Make the `systemml` package importable
 import os
 os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
