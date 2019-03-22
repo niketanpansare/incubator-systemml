@@ -1846,12 +1846,12 @@ zero_pad2d = function() {
   C = 3 # number channels
   H = 32 # height
   W = 64 # width
-  X = rand(rows=N, cols=C*H*W, min=-5, max=5)
-  y = rand(rows=N, cols=C*H*W)
   top_pad = 1
   bottom_pad = 3
   left_pad = 4
   right_pad = 2
+  X = rand(rows=N, cols=C*H*W, min=-5, max=5)
+  y = rand(rows=N, cols=C*(H+top_pad+bottom_pad)*(W+left_pad+right_pad))
 
   # Compute analytical gradients of loss wrt parameters
   out = zero_pad2d::forward(X, C, H, W, top_pad, bottom_pad, left_pad, right_pad)
