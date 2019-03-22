@@ -695,7 +695,7 @@ class Padding(val param: LayerParameter, val id: Int, val net: CaffeNetwork) ext
   def bottom_pad = param.getPaddingParam.getBottomPad.toString
   def left_pad = param.getPaddingParam.getLeftPad.toString
   def right_pad = param.getPaddingParam.getRightPad.toString
-  def numChannels  = bottomLayerOutputShape._2
+  def numChannels  = bottomLayerOutputShape._1
   def Hin          = bottomLayerOutputShape._2
   def Win          = bottomLayerOutputShape._3
 }
