@@ -1828,7 +1828,7 @@ relu = function() {
   }
 }
 
-zero_padding2d = function() {
+zero_pad2d = function() {
   /*
    * Gradient check for the Zero-padding layer for 2D input.
    *
