@@ -307,6 +307,10 @@ class Caffe2DML(val sc: SparkContext,
       if (inputs.containsKey("$use_builtin_lstm_fn")) 
         net.getCaffeLayer(layer).asInstanceOf[LSTM].useBuiltinFunction(inputs.get("$use_builtin_lstm_fn").toLowerCase.toBoolean)
      })
+    net.getLayers.filter(layer => net.getCaffeLayer(layer).isInstanceOf[Padding]).map(layer => {
+      if (inputs.containsKey("$use_builtin_zeropadding_fn")) 
+        net.getCaffeLayer(layer).asInstanceOf[Padding].useBuiltinFunction(inputs.get("$use_builtin_zeropadding_fn").toLowerCase.toBoolean)
+    })
   }
   
   // Comma is included
@@ -325,7 +329,7 @@ class Caffe2DML(val sc: SparkContext,
     assign(tabDMLScript, "debug", if (DEBUG_TRAINING) "TRUE" else "FALSE")
     setDebugFlags(DEBUG_TRAINING)
 
-    appendHeaders(net, solver, true) // Appends DML corresponding to source and externalFunction statements.
+    appendHeaders(net, solver, true, inputs) // Appends DML corresponding to source and externalFunction statements.
     val performOneHotEncoding = !inputs.containsKey("$perform_one_hot_encoding") || inputs.get("$perform_one_hot_encoding").toBoolean
     readInputData(net, true, performOneHotEncoding)         // Read X_full and y_full
     // Initialize the layers and solvers. Reads weights and bias if $weights is set.
@@ -735,7 +739,7 @@ class Caffe2DMLModel(val numClasses: String, val sc: SparkContext, val solver: C
     assign(tabDMLScript, "debug", if (DEBUG_PREDICTION) "TRUE" else "FALSE")
     estimator.setDebugFlags(DEBUG_PREDICTION)
 
-    appendHeaders(net, solver, false) // Appends DML corresponding to source and externalFunction statements.
+    appendHeaders(net, solver, false, estimator.inputs) // Appends DML corresponding to source and externalFunction statements.
     val performOneHotEncoding = !estimator.inputs.containsKey("$perform_one_hot_encoding") || estimator.inputs.get("$perform_one_hot_encoding").toBoolean
     readInputData(net, false, performOneHotEncoding)         // Read X_full and y_full
     assign(tabDMLScript, "X", "X_full")
