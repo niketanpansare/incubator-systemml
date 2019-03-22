@@ -43,9 +43,6 @@ forward = function(matrix[double] img, int C, int Hin, int Win, int top_pad, int
    *      dimensions, of shape (N, C*(Hin+top_pad+bottom_pad)*(Win+left_pad+right_pad)).
    */
   N = nrow(img)
-  if(ncol(img) != C*Hin*Win) {
-  	stop("Incorrect number of input columns:" + ncol(img) + " where C=" + C + ", H=" + Hin + " and Win=" + Win)
-  }
   img_padded = matrix(0, rows=N, cols=C*(Hin+top_pad+bottom_pad)*(Win+left_pad+right_pad))  # zeros
   img_index = 1
   img_padded_index = 1
