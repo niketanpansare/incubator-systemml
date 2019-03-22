@@ -249,7 +249,8 @@ trait DMLGenerator extends SourceDMLGenerator with NextBatchGenerator {
     source(net, solver, if (isTraining) Array[String]("l1_reg") else null)
     source(net, solver, if (isTraining) Array[String]("l2_reg") else null)
     source(dmlScript, numTabs, "util", Caffe2DML.nnDir)
-    if (inputs.containsKey("$use_builtin_zeropadding_fn")) {
+    if(!inputs.containsKey("$use_builtin_zeropadding_fn") || 
+        inputs.get("$use_builtin_zeropadding_fn").toLowerCase.toBoolean) {
       tabDMLScript.append(
           "zero_padding2d = externalFunction(matrix[double] X, int C, int Hin, int Win, int top_pad, int bottom_pad, int left_pad, int right_pad, int isForward) return (matrix[double] out) implemented in (classname=\"org.apache.sysml.udf.lib.ZeroPadding2D\",exectype=\"mem\");  \n"
         )
