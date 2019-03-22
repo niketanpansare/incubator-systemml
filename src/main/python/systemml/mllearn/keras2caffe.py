@@ -85,7 +85,7 @@ supportedLayers = {
     keras.layers.Flatten: 'Flatten',
     keras.layers.BatchNormalization: 'None',
     keras.layers.Activation: 'None',
-    keras.layers.ZeroPadding2D: 'Padding',
+    keras.layers.ZeroPadding2D: 'Padding'
 }
 
 
