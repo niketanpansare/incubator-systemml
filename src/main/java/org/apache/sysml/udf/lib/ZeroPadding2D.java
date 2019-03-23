@@ -31,6 +31,7 @@ import org.apache.sysml.udf.PackageFunction;
 import org.apache.sysml.udf.Scalar;
 import org.apache.sysml.udf.Matrix.ValueType;
 
+// TODO: Move this from external builtin function to language-level builtin function
 public class ZeroPadding2D extends PackageFunction {
 
 	private static final long serialVersionUID = 1L;
@@ -71,37 +72,23 @@ public class ZeroPadding2D extends PackageFunction {
 			for(int n = 0; n < N; n++) {
 				for(int c = 0; c < C; c++) {
 					for(int h = 0; h < Hin; h++) {
-						int img_padded_col_offset = c*Hout*Wout + top_pad*Wout + left_pad + (h-1)*(Win + right_pad);
-						int img_padded_index = n*C*Hout*Wout + img_padded_col_offset;
-						int img_col_offset = c*Hin*Win + h*Win;
-						int img_index = n*C*Hin*Win + img_col_offset;
-						if(!in.isInSparseFormat()) {
-							double [] inArr = in.getDenseBlockValues();
-							if(inArr != null) {
-								for(int w = 0; w < Win; w++) {
-									if(isForward) {
-										outputArr[img_padded_index + w] = inArr[img_index + w];
-									}
-									else {
-										outputArr[img_index + w] = inArr[img_padded_index + w];
-									}
-								}
+						int pad_col_offset = c*Hout*Wout + (h + top_pad)*Wout;
+						int pad_offset = n*C*Hout*Wout + pad_col_offset;
+						int col_offset = c*Hin*Win;
+						int offset = n*C*Hin*Win + col_offset;
+						for(int w = 0; w < Win; w++) {
+							int padded_w = w + left_pad;
+							if(isForward) {
+								outputArr[pad_offset + padded_w] = in.getValue(n, col_offset + w);
 							}
-						}
-						else {
-							for(int w = 0; w < Win; w++) {
-								if(isForward) {
-									outputArr[img_padded_index + w] = in.getValue(n, img_col_offset + w);
-								}
-								else {
-									outputArr[img_index + w] = in.getValue(n, img_padded_col_offset + w);
-								}
+							else {
+								outputArr[offset + w] = in.getValue(n, pad_col_offset + padded_w);
 							}
 						}
 					}
 				}
 			}
-			outputMB.recomputeNonZeros();
+			outputMB.setNonZeros(in.getNonZeros());
 			output.setMatrixDoubleArray(outputMB, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
 		} 
 		catch (IOException e) {
