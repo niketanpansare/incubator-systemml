@@ -644,21 +644,21 @@ class Caffe2DML(val sc: SparkContext,
   private def backwardUpdate(): Unit = {
     tabDMLScript.append("# Perform backward pass and update the parameters\n")
     var skipedLayer:String = null
-    net.getLayers.reverse.map(layer => {
+    for(layer <- net.getLayers.reverse) {
       val caffeLayer = net.getCaffeLayer(layer)
       caffeLayer.backward(tabDMLScript, "")
-      if(caffeLayer.isInstanceOf[Scale]) {
+      if(caffeLayer.isInstanceOf[Scale] && caffeLayer.asInstanceOf[Scale].isPartOfBatchNorm) {
         skipedLayer = layer // Skip update
       }
       else {
-        solver.update(tabDMLScript, caffeLayer)
+        solver.update(tabDMLScript, caffeLayer) // Perform update of the current layer
         if(skipedLayer != null) {
-          // Also update the skipped layer
+          // And then update the skipped layer (if any)
           solver.update(tabDMLScript, net.getCaffeLayer(skipedLayer))
           skipedLayer = null
         }
       }
-    })
+    }
   }
   private def initializeGradients(parallel_batches: String): Unit = {
     tabDMLScript.append("# Data structure to store gradients computed in parallel\n")
