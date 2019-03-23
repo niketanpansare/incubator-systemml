@@ -307,10 +307,6 @@ class Caffe2DML(val sc: SparkContext,
       if (inputs.containsKey("$use_builtin_lstm_fn")) 
         net.getCaffeLayer(layer).asInstanceOf[LSTM].useBuiltinFunction(inputs.get("$use_builtin_lstm_fn").toLowerCase.toBoolean)
      })
-    net.getLayers.filter(layer => net.getCaffeLayer(layer).isInstanceOf[Padding]).map(layer => {
-      if (inputs.containsKey("$use_builtin_zeropadding_fn")) 
-        net.getCaffeLayer(layer).asInstanceOf[Padding].useBuiltinFunction(inputs.get("$use_builtin_zeropadding_fn").toLowerCase.toBoolean)
-    })
   }
   
   // Comma is included

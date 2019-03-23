@@ -673,28 +673,17 @@ class TanH(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extend
 
 class Padding(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extends CaffeLayer {
   override def sourceFileName                       = {
-    if(param.getPaddingParam.getPadValue == 0) {
-      if(_useBuiltinFunction) null  else "zero_pad2d" 
-    }
+    if(param.getPaddingParam.getPadValue == 0) "zero_pad2d"
     else throw new DMLRuntimeException("Only pad_value = 0 is supported. Found: " + param.getPaddingParam.getPadValue)
   }
   override def init(dmlScript: StringBuilder): Unit = {}
-  var _useBuiltinFunction = true
-  def useBuiltinFunction(enabled:Boolean): Unit = {
-    _useBuiltinFunction = enabled
-  }
+  
   override def forward(dmlScript: StringBuilder, isPrediction: Boolean) = {
     if(skipPadding) {
       assign(dmlScript, out, X)
     }
     else {
-      if(_useBuiltinFunction) {
-        dmlScript.append("\n" + out + " = zero_padding2d(" + X + ", " +  numChannels + ", " 
-            +  Hin + ", " +  Win + ", " + top_pad + ", " + bottom_pad + ", " + left_pad + ", " +  right_pad + ", 1); \n");
-      }
-      else {
-        invokeForward(dmlScript, List[String](out), X, numChannels, Hin, Win, top_pad, bottom_pad, left_pad, right_pad)
-      }
+      invokeForward(dmlScript, List[String](out), X, numChannels, Hin, Win, top_pad, bottom_pad, left_pad, right_pad)
     }
   }
   override def backward(dmlScript: StringBuilder, outSuffix: String): Unit = {
@@ -702,18 +691,7 @@ class Padding(val param: LayerParameter, val id: Int, val net: CaffeNetwork) ext
       assignDoutToDX(dmlScript, outSuffix)
     }
     else {
-      if(_useBuiltinFunction) {
-        val resultVar = "dOut" + id + outSuffix
-        dmlScript.append("\n" + resultVar + " = zero_padding2d(" + dout + ", " +  numChannels + ", " 
-            +  Hin + ", " +  Win + ", " + top_pad + ", " + bottom_pad + ", " + left_pad + ", " +  right_pad + ", 0); \n");
-        val bottomLayerIDs = net.getBottomLayers(param.getName).map(l => net.getCaffeLayer(l).id)
-        dmlScript.append("; ")
-        bottomLayerIDs.map(bottomLayerID => dmlScript.append(dX(bottomLayerID) + outSuffix + " = " + resultVar + "; "))
-        dmlScript.append("\n")
-      }
-      else {
-        invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id), dout, numChannels, Hin, Win, top_pad, bottom_pad, left_pad, right_pad)
-      }
+      invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id), dout, numChannels, Hin, Win, top_pad, bottom_pad, left_pad, right_pad)
     }
   }
   override def weightShape(): Array[Int]                             = null
