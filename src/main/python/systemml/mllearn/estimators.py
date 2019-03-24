@@ -938,7 +938,7 @@ class Caffe2DML(BaseSystemMLClassifier):
         parfor_parameters: dictionary for parfor parameters when using allreduce-style algorithms (default: "")
         inline_nn_library: whether to inline the NN library when generating DML using Caffe2DML (default: False)
         use_builtin_lstm_fn: whether to use builtin lstm function for LSTM layer (default: True)
-        perform_fused_backward_update: whether to perform update immediately after backward pass at the script level. Supported for minibatch and batch algorithms. (default: False)
+        perform_fused_backward_update: whether to perform update immediately after backward pass at the script level. Supported for minibatch and batch algorithms. (default: True)
         """
         if debug is not None:
             self.estimator.setInput("$debug", str(debug).upper())
