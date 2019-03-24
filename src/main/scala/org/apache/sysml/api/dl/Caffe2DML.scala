@@ -320,7 +320,7 @@ class Caffe2DML(val sc: SparkContext,
         case "$perform_one_hot_encoding" => true
         case "$inline_nn_library" => false
         case "$use_builtin_lstm_fn" => true
-        case "$perform_fused_backward_update" => false
+        case "$perform_fused_backward_update" => true
         case _ => throw new DMLRuntimeException("Unsupported input:" + key)
       }
     } 
