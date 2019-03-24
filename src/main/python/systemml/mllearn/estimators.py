@@ -934,11 +934,11 @@ class Caffe2DML(BaseSystemMLClassifier):
         test_algo: can be minibatch, batch, allreduce_parallel_batches or allreduce (default: minibatch)
         parallel_batches: number of parallel batches
         output_activations: (developer flag) directory to output activations of each layer as csv while prediction. To be used only in batch mode (default: None)
-        perform_one_hot_encoding: should perform one-hot encoding in DML using table function (default: False)
+        perform_one_hot_encoding: should perform one-hot encoding in DML using table function (default: True)
         parfor_parameters: dictionary for parfor parameters when using allreduce-style algorithms (default: "")
         inline_nn_library: whether to inline the NN library when generating DML using Caffe2DML (default: False)
         use_builtin_lstm_fn: whether to use builtin lstm function for LSTM layer (default: True)
-        perform_fused_backward_update: whether to perform update immediately after backward pass at the script level. Supported for minibatch and batch algorithms. (default: True)
+        perform_fused_backward_update: whether to perform update immediately after backward pass at the script level. Supported for minibatch and batch algorithms. (default: False)
         """
         if debug is not None:
             self.estimator.setInput("$debug", str(debug).upper())
