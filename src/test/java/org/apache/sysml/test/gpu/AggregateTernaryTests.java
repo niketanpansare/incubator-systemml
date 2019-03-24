@@ -25,9 +25,9 @@ import org.junit.Test;
 /**
  * Tests Ternary Aggregate ops
  */
-public class TernaryAggregateTests extends UnaryOpTestsBase {
+public class AggregateTernaryTests extends UnaryOpTestsBase {
 
-	private final static String TEST_NAME = "TernaryAggregateTests";
+	private final static String TEST_NAME = "AggregateTernaryTests";
 
 	@Override
 	public void setUp() {

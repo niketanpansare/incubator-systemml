@@ -388,7 +388,7 @@ file and remove all the `@Ignore` annotations from all the tests. Then run the N
 # Run other GPU Unit Tests 
 
 	rm result.txt
-	for t in AggregateUnaryOpTests TernaryAggregateTests  BinaryOpTests  MatrixMatrixElementWiseOpTests  RightIndexingTests AppendTest  MatrixMultiplicationOpTest ReorgOpTests ScalarMatrixElementwiseOpTests UnaryOpTests LstmTest LstmCPUTest
+	for t in AggregateUnaryOpTests AggregateTernaryTests  BinaryOpTests  MatrixMatrixElementWiseOpTests  RightIndexingTests AppendTest  MatrixMultiplicationOpTest ReorgOpTests ScalarMatrixElementwiseOpTests UnaryOpTests LstmTest LstmCPUTest
 	do
 		mvn -Dit.test="org.apache.sysml.test.gpu."$t verify -PgpuTests &> tmp.txt
 		SUCCESS=`grep "BUILD SUCCESS" tmp.txt`
