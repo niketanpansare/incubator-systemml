@@ -304,14 +304,27 @@ class Caffe2DML(val sc: SparkContext,
     net.getLayers.map(layer => {net.getCaffeLayer(layer).debugLayer = isDebug})
     net.getLayers.map(layer => {net.getCaffeLayer(layer).caffe2dmlObj = this})
     net.getLayers.filter(layer => net.getCaffeLayer(layer).isInstanceOf[LSTM]).map(layer => {
-      if (inputs.containsKey("$use_builtin_lstm_fn")) 
-        net.getCaffeLayer(layer).asInstanceOf[LSTM].useBuiltinFunction(inputs.get("$use_builtin_lstm_fn").toLowerCase.toBoolean)
+      net.getCaffeLayer(layer).asInstanceOf[LSTM].useBuiltinFunction(getInputBooleanValue("$use_builtin_lstm_fn")) 
      })
   }
   
   // Comma is included
   def getParforParameters():String = if (inputs.containsKey("$parfor_parameters")) inputs.get("$parfor_parameters") else ""
 
+  def getInputBooleanValue(key:String):Boolean = {
+    if(inputs.containsKey(key))
+      return inputs.get(key).toLowerCase.toBoolean
+    else {
+      key match {
+        case "$debug" => false
+        case "$perform_one_hot_encoding" => true
+        case "$inline_nn_library" => false
+        case "$use_builtin_lstm_fn" => true
+        case "$perform_fused_backward_update" => false
+        case _ => throw new DMLRuntimeException("Unsupported input:" + key)
+      }
+    } 
+  }
   // ================================================================================================
   // The below method parses the provided network and solver file and generates DML script.
   def getTrainingScript(isSingleNode: Boolean): (Script, String, String) = {
@@ -320,18 +333,18 @@ class Caffe2DML(val sc: SparkContext,
     reset // Reset the state of DML generator for training script.
 
     // Flags passed by user
-    val DEBUG_TRAINING = if (inputs.containsKey("$debug")) inputs.get("$debug").toLowerCase.toBoolean else false
-    Caffe2DML.INLINE_NN_LIBRARY = if (inputs.containsKey("$inline_nn_library")) inputs.get("$inline_nn_library").toLowerCase.toBoolean else false
+    val DEBUG_TRAINING = getInputBooleanValue("$debug")
+    Caffe2DML.INLINE_NN_LIBRARY = getInputBooleanValue("$inline_nn_library")
     assign(tabDMLScript, "debug", if (DEBUG_TRAINING) "TRUE" else "FALSE")
     setDebugFlags(DEBUG_TRAINING)
 
     appendHeaders(net, solver, true) // Appends DML corresponding to source and externalFunction statements.
-    val performOneHotEncoding = !inputs.containsKey("$perform_one_hot_encoding") || inputs.get("$perform_one_hot_encoding").toBoolean
+    val performOneHotEncoding = getInputBooleanValue("$perform_one_hot_encoding")
     readInputData(net, true, performOneHotEncoding)         // Read X_full and y_full
     // Initialize the layers and solvers. Reads weights and bias if $weights is set.
     initWeights(net, solver, inputs.containsKey("$weights"), layersToIgnore)
     
-    val performFusedBackwardUpdate = !inputs.containsKey("$perform_fused_backward_update") || inputs.get("$perform_fused_backward_update").toBoolean
+    val performFusedBackwardUpdate = getInputBooleanValue("$perform_fused_backward_update")
 
     // Split into training and validation set
     // Initializes Caffe2DML.X, Caffe2DML.y, Caffe2DML.XVal, Caffe2DML.yVal and Caffe2DML.numImages
@@ -535,7 +548,7 @@ class Caffe2DML(val sc: SparkContext,
   }
   
   private def displayTrainingLoss(lossLayer: IsLossLayer, performOneHotEncoding:Boolean): Unit = {
-    val DEBUG_TRAINING = if (inputs.containsKey("$debug")) inputs.get("$debug").toLowerCase.toBoolean else false
+    val DEBUG_TRAINING = getInputBooleanValue("$debug")
     tabDMLScript.append("# Compute training loss & accuracy\n")
     assign(tabDMLScript, "loss", "0"); assign(tabDMLScript, "accuracy", "0")
     lossLayer.computeLoss(dmlScript, numTabs)
@@ -771,13 +784,13 @@ class Caffe2DMLModel(val numClasses: String, val sc: SparkContext, val solver: C
 
     reset // Reset the state of DML generator for training script.
 
-    val DEBUG_PREDICTION = if (estimator.inputs.containsKey("$debug")) estimator.inputs.get("$debug").toLowerCase.toBoolean else false
-    Caffe2DML.INLINE_NN_LIBRARY = if (estimator.inputs.containsKey("$inline_nn_library")) estimator.inputs.get("$inline_nn_library").toLowerCase.toBoolean else false
+    val DEBUG_PREDICTION =  estimator.getInputBooleanValue("$debug")
+    Caffe2DML.INLINE_NN_LIBRARY = estimator.getInputBooleanValue("$inline_nn_library")
     assign(tabDMLScript, "debug", if (DEBUG_PREDICTION) "TRUE" else "FALSE")
     estimator.setDebugFlags(DEBUG_PREDICTION)
 
     appendHeaders(net, solver, false) // Appends DML corresponding to source and externalFunction statements.
-    val performOneHotEncoding = !estimator.inputs.containsKey("$perform_one_hot_encoding") || estimator.inputs.get("$perform_one_hot_encoding").toBoolean
+    val performOneHotEncoding = estimator.getInputBooleanValue("$perform_one_hot_encoding")
     readInputData(net, false, performOneHotEncoding)         // Read X_full and y_full
     assign(tabDMLScript, "X", "X_full")
 
