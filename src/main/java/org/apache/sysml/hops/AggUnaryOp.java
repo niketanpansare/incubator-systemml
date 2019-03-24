@@ -93,8 +93,11 @@ public class AggUnaryOp extends MultiThreadedHop
 			return false;
 		
 		try {
-			if( isTernaryAggregateRewriteApplicable() || isUnaryAggregateOuterCPRewriteApplicable() ) {
+			if(isUnaryAggregateOuterCPRewriteApplicable()) {
 				return false;
+			}
+			else if(isTernaryAggregateRewriteApplicable()) {
+				return true;
 			}
 			else if ((_op == AggOp.SUM    && (_direction == Direction.RowCol || _direction == Direction.Row || _direction == Direction.Col))
 					 || (_op == AggOp.SUM_SQ && (_direction == Direction.RowCol || _direction == Direction.Row || _direction == Direction.Col))
@@ -497,10 +500,6 @@ public class AggUnaryOp extends MultiThreadedHop
 	private boolean isTernaryAggregateRewriteApplicable() 
 	{
 		boolean ret = false;
-		
-		// TODO: Disable ternary aggregate rewrite on GPU backend.
-		if(!ConfigurationManager.isGPU())
-			return false;
 		
 		//currently we support only sum over binary multiply but potentially 
 		//it can be generalized to any RC aggregate over two common binary operations
