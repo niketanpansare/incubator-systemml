@@ -712,8 +712,6 @@ public class AggUnaryOp extends MultiThreadedHop
 		// The execution type of a unary aggregate instruction should depend on the execution type of inputs to avoid OOM
 		// Since we only support matrix-vector and not vector-matrix, checking the execution type of input1 should suffice.
 		ExecType et_input = input1.optFindExecType();
-		// Because ternary aggregate are not supported on GPU
-		et_input = et_input == ExecType.GPU ? ExecType.CP :  et_input;
 		DirectionTypes dir = HopsDirection2Lops.get(_direction);
 		
 		return new TernaryAggregate(in1, in2, in3, Aggregate.OperationTypes.KahanSum, 
