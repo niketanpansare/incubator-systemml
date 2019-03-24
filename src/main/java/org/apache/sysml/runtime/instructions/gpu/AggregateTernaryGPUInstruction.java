@@ -91,7 +91,7 @@ public class AggregateTernaryGPUInstruction extends GPUInstruction {
 		int clenOut = Math.max(clenA, clenB);
 		int sizeOfOutput =  rlenOut*clenOut;
 		Pointer out = gCtx.allocate(instName, sizeOfOutput*LibMatrixCUDA.sizeOfDataType);
-		
+	
 		// out = in1 * in2
 		Pointer A = LibMatrixCUDA.getDensePointer(gCtx, in1, instName); 
 		Pointer B = LibMatrixCUDA.getDensePointer(gCtx, in2, instName);
@@ -125,25 +125,6 @@ public class AggregateTernaryGPUInstruction extends GPUInstruction {
 			ec.releaseMatrixOutputForGPUInstruction(_output.getName());
 		}
 		
-		
-		
-//		MatrixBlock matBlock1 = ec.getMatrixInput(_input1.getName(), getExtendedOpcode());
-//		MatrixBlock matBlock2 = ec.getMatrixInput(_input1.getName(), getExtendedOpcode());
-//		MatrixBlock matBlock3 = _input1.isLiteral() ? null : //matrix or literal 1
-//			ec.getMatrixInput(_input1.getName(), getExtendedOpcode());
-//		
-//		AggregateTernaryOperator ab_op = (AggregateTernaryOperator) _optr;
-//		MatrixBlock ret = matBlock1.aggregateTernaryOperations(
-//				matBlock1, matBlock2, matBlock3, new MatrixBlock(), ab_op, true);
-//		
-//		//release inputs/outputs
-//		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
-//		ec.releaseMatrixInput(input2.getName(), getExtendedOpcode());
-//		if( !input3.isLiteral() )
-//			ec.releaseMatrixInput(input3.getName(), getExtendedOpcode());
-//		if( output.getDataType().isScalar() )
-//			ec.setScalarOutput(output.getName(), new DoubleObject(ret.quickGetValue(0, 0)));
-//		else
-//			ec.setMatrixOutput(output.getName(), ret, getExtendedOpcode());	
+		gCtx.cudaFreeHelper(instName, out, gCtx.EAGER_CUDA_FREE);
 	}
 }
