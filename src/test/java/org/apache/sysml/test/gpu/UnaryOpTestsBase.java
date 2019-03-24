@@ -117,7 +117,7 @@ public abstract class UnaryOpTestsBase extends GPUTests {
 		inputs.put(inStr3, in3);
 		List<Object> outCPU = runOnCPU(spark, scriptStr, inputs, Arrays.asList(outStr));
 		List<Object> outGPU = runOnGPU(spark, scriptStr, inputs, Arrays.asList(outStr));
-		//assertHeavyHitterPresent(heavyHitterOpCode);
+		assertHeavyHitterPresent(heavyHitterOpCode);
 		assertEqualObjects(outCPU.get(0), outGPU.get(0));
 	}
 

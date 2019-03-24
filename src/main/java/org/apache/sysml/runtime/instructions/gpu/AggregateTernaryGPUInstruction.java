@@ -26,10 +26,8 @@ import org.apache.sysml.runtime.functionobjects.Multiply;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.cp.DoubleObject;
-import org.apache.sysml.runtime.instructions.gpu.GPUInstruction.GPUINSTRUCTION_TYPE;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.AggregateTernaryOperator;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
@@ -59,19 +57,18 @@ public class AggregateTernaryGPUInstruction extends GPUInstruction {
 		String opcode = parts[0];
 		
 		if ( opcode.equalsIgnoreCase("tak+*") || opcode.equalsIgnoreCase("tack+*") ) {
-			InstructionUtils.checkNumFields( parts, 5 );
+			InstructionUtils.checkNumFields( parts, 4 );
 			
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
 			CPOperand in3 = new CPOperand(parts[3]);
 			CPOperand out = new CPOperand(parts[4]);
-			int numThreads = Integer.parseInt(parts[5]);
 			
-			AggregateTernaryOperator op = InstructionUtils.parseAggregateTernaryOperator(opcode, numThreads);
+			AggregateTernaryOperator op = InstructionUtils.parseAggregateTernaryOperator(opcode, 1);
 			return new AggregateTernaryGPUInstruction(op, in1, in2, in3, out, opcode, str);
 		} 
 		else {
-			throw new DMLRuntimeException("AggregateTernaryInstruction.parseInstruction():: Unknown opcode " + opcode);
+			throw new DMLRuntimeException("AggregateTernaryGPUInstruction.parseInstruction():: Unknown opcode " + opcode);
 		}		
 	}
 	
