@@ -923,7 +923,7 @@ class Caffe2DML(BaseSystemMLClassifier):
 
     def set(self, debug=None, train_algo=None, test_algo=None, parallel_batches=None,
             output_activations=None, perform_one_hot_encoding=None, parfor_parameters=None, inline_nn_library=None, use_builtin_lstm_fn=None,
-            perform_fused_backward_update=None):
+            perform_fused_backward_update=None, weight_parallel_batches=None):
         """
         Set input to Caffe2DML
 
