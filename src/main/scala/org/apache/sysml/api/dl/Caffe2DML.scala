@@ -708,19 +708,26 @@ class Caffe2DML(val sc: SparkContext,
     }
   }
   private def flattenGradients(): Unit = {
+    val isLoopedMinibatch = getTrainAlgo.toLowerCase.equals(Caffe2DML.LOOPED_MINIBATCH_ALGORITHM)
     if(Caffe2DML.USE_PLUS_EQ) {
+      val suffixDML = if(isLoopedMinibatch) "" else  "*weighting"
       // Note: We multiply by a weighting to allow for proper gradient averaging during the
       // aggregation even with uneven batch sizes.
-      assign(tabDMLScript, "weighting", "1/parallel_batches") // "nrow(Xb)/X_group_batch_size")
+      if(!isLoopedMinibatch) {
+        assign(tabDMLScript, "weighting", "1/parallel_batches") // "nrow(Xb)/X_group_batch_size")
+      }
       net.getLayers
         .map(layer => net.getCaffeLayer(layer))
         .map(l => {
-          if (l.shouldUpdateWeight) assignPlusEq(tabDMLScript, l.dWeight + "_agg", l.dWeight + "*weighting")
-          if (l.shouldUpdateExtraWeight) assignPlusEq(tabDMLScript, l.dExtraWeight + "_agg", l.dExtraWeight + "*weighting")
-          if (l.shouldUpdateWeight) assignPlusEq(tabDMLScript, l.dBias + "_agg", l.dBias + "*weighting")
+          if (l.shouldUpdateWeight) assignPlusEq(tabDMLScript, l.dWeight + "_agg", l.dWeight + suffixDML)
+          if (l.shouldUpdateExtraWeight) assignPlusEq(tabDMLScript, l.dExtraWeight + "_agg", l.dExtraWeight + suffixDML)
+          if (l.shouldUpdateWeight) assignPlusEq(tabDMLScript, l.dBias + "_agg", l.dBias + suffixDML)
         })
     }
     else {
+      if(isLoopedMinibatch) {
+        throw new DMLRuntimeException("Flattening and storing gradients is not supported for looped_minibatch algorithm")
+      }
       tabDMLScript.append("# Flatten and store gradients for this parallel execution\n")
       // Note: We multiply by a weighting to allow for proper gradient averaging during the
       // aggregation even with uneven batch sizes.
