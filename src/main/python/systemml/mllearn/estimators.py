@@ -930,9 +930,9 @@ class Caffe2DML(BaseSystemMLClassifier):
         Parameters
         ----------
         debug: to add debugging DML code such as classification report, print DML script, etc (default: False)
-        train_algo: can be minibatch, batch, allreduce_parallel_batches or allreduce (default: minibatch)
-        test_algo: can be minibatch, batch, allreduce_parallel_batches or allreduce (default: minibatch)
-        parallel_batches: number of parallel batches
+        train_algo: can be minibatch, batch, allreduce_parallel_batches, looped_minibatch or allreduce (default: minibatch)
+        test_algo: can be minibatch, batch, allreduce_parallel_batches, looped_minibatch or allreduce (default: minibatch)
+        parallel_batches: number of parallel batches (required for allreduce_parallel_batches or looped_minibatch)
         output_activations: (developer flag) directory to output activations of each layer as csv while prediction. To be used only in batch mode (default: None)
         perform_one_hot_encoding: should perform one-hot encoding in DML using table function (default: True)
         parfor_parameters: dictionary for parfor parameters when using allreduce-style algorithms (default: "")
