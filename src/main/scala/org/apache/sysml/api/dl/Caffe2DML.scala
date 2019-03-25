@@ -322,6 +322,7 @@ class Caffe2DML(val sc: SparkContext,
         case "$inline_nn_library" => false
         case "$use_builtin_lstm_fn" => true
         case "$perform_fused_backward_update" => true
+        case "$weight_parallel_batches" => true
         case _ => throw new DMLRuntimeException("Unsupported input:" + key)
       }
     } 
@@ -708,14 +709,17 @@ class Caffe2DML(val sc: SparkContext,
     }
   }
   private def flattenGradients(): Unit = {
+    if(!Caffe2DML.USE_PLUS_EQ) {
+      tabDMLScript.append("# Flatten and store gradients for this parallel execution\n")
+    }
     val isLoopedMinibatch = getTrainAlgo.toLowerCase.equals(Caffe2DML.LOOPED_MINIBATCH_ALGORITHM)
+    val suffixDML = if(getInputBooleanValue("$weight_parallel_batches")) " * weighting" else ""
+    // Note: We multiply by a weighting to allow for proper gradient averaging during the
+    // aggregation even with uneven batch sizes.
+    if(getInputBooleanValue("$weight_parallel_batches")) {
+      assign(tabDMLScript, "weighting", "1/parallel_batches") // "nrow(Xb)/X_group_batch_size")
+    }
     if(Caffe2DML.USE_PLUS_EQ) {
-      val suffixDML = if(isLoopedMinibatch) "" else  "*weighting"
-      // Note: We multiply by a weighting to allow for proper gradient averaging during the
-      // aggregation even with uneven batch sizes.
-      if(!isLoopedMinibatch) {
-        assign(tabDMLScript, "weighting", "1/parallel_batches") // "nrow(Xb)/X_group_batch_size")
-      }
       net.getLayers
         .map(layer => net.getCaffeLayer(layer))
         .map(l => {
@@ -728,16 +732,12 @@ class Caffe2DML(val sc: SparkContext,
       if(isLoopedMinibatch) {
         throw new DMLRuntimeException("Flattening and storing gradients is not supported for looped_minibatch algorithm")
       }
-      tabDMLScript.append("# Flatten and store gradients for this parallel execution\n")
-      // Note: We multiply by a weighting to allow for proper gradient averaging during the
-      // aggregation even with uneven batch sizes.
-      assign(tabDMLScript, "weighting", "1/parallel_batches") // "nrow(Xb)/X_group_batch_size")
       net.getLayers
         .map(layer => net.getCaffeLayer(layer))
         .map(l => {
-          if (l.shouldUpdateWeight) assign(tabDMLScript, l.dWeight + "_agg[j,]", matrix(l.dWeight, "1", multiply(nrow(l.weight), ncol(l.weight))) + " * weighting")
-          if (l.shouldUpdateExtraWeight) assign(tabDMLScript, l.dExtraWeight + "_agg[j,]", matrix(l.dExtraWeight, "1", multiply(nrow(l.extraWeight), ncol(l.extraWeight))) + " * weighting")
-          if (l.shouldUpdateWeight) assign(tabDMLScript, l.dBias + "_agg[j,]", matrix(l.dBias, "1", multiply(nrow(l.bias), ncol(l.bias))) + " * weighting")
+          if (l.shouldUpdateWeight) assign(tabDMLScript, l.dWeight + "_agg[j,]", matrix(l.dWeight, "1", multiply(nrow(l.weight), ncol(l.weight))) + suffixDML)
+          if (l.shouldUpdateExtraWeight) assign(tabDMLScript, l.dExtraWeight + "_agg[j,]", matrix(l.dExtraWeight, "1", multiply(nrow(l.extraWeight), ncol(l.extraWeight))) + suffixDML)
+          if (l.shouldUpdateWeight) assign(tabDMLScript, l.dBias + "_agg[j,]", matrix(l.dBias, "1", multiply(nrow(l.bias), ncol(l.bias))) + suffixDML)
         })
     }
   }
