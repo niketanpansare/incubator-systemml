@@ -84,7 +84,7 @@ public class MatrixReshapeGPUInstruction extends GPUInstruction {
 		}
 		// We currently support only dense rshape
 		Pointer inPtr = LibMatrixCUDA.getDensePointer(gCtx, mat, instName);
-		MatrixObject out = LibMatrixCUDA.getDenseMatrixOutputForGPUInstruction(ec, instName, _output.getName(), rows, cols);
+		MatrixObject out = LibMatrixCUDA.getDenseMatrixOutputForGPUInstruction(ec, instName, _output.getName(), rows, cols, false);
 		Pointer outPtr = LibMatrixCUDA.getDensePointer(gCtx, out, instName);
 		if(byRow.getBooleanValue()) {
 			// byrow = TRUE is simple memcpy and metadata update

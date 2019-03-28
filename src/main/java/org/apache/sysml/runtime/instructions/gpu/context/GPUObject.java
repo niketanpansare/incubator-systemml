@@ -214,7 +214,7 @@ public class GPUObject {
 				long rows = me.mat.getNumRows();
 				long cols = me.mat.getNumColumns();
 				long size = rows * cols * LibMatrixCUDA.sizeOfDataType;
-				that.setDensePointer(allocate(size));
+				that.setDensePointer(allocate(size, false));
 				cudaMemcpy(that.getDensePointer(), me.getDensePointer(), size, cudaMemcpyDeviceToDevice);
 			}
 
@@ -230,8 +230,8 @@ public class GPUObject {
 		return that;
 	}
 
-	private Pointer allocate(long size) {
-		return getGPUContext().allocate(null, size);
+	private Pointer allocate(long size, boolean forceMemset0) {
+		return getGPUContext().allocate(null, size, forceMemset0);
 	}
 
 	public GPUContext getGPUContext() {
@@ -518,13 +518,17 @@ public class GPUObject {
 		long cols = mat.getNumColumns();
 		int numElems = toIntExact(rows * cols);
 		long size = getDatatypeSizeOf(numElems);
-		setDensePointer(allocate(size));
 		// The "fill" kernel is called which treats the matrix "jcudaDensePtr" like a vector and fills it with value "v"
 		// If the fill value is 0, no need to call the special kernel, the allocate memsets the allocated region to 0
-		if (v != 0)
+		if (v != 0) {
+			setDensePointer(allocate(size, false));
 			getGPUContext().getKernels()
 			.launchKernel("fill", ExecutionConfig.getConfigForSimpleVectorOperations(numElems),
 					getDensePointer(), v, numElems);
+		}
+		else {
+			setDensePointer(allocate(size, true));
+		}
 	}
 
 	/**
@@ -608,7 +612,7 @@ public class GPUObject {
 		return transferred;
 	}
 
-	public boolean acquireDeviceModifyDense() {
+	public boolean acquireDeviceModifyDense(boolean forceMemset0) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : acquireDeviceModifyDense on " + this + ", GPUContext=" + getGPUContext());
 		}
@@ -619,7 +623,8 @@ public class GPUObject {
 				LOG.trace("GPU : data is not allocated, allocating a dense block, on " + this);
 			}
 			// Dense block, size = numRows * numCols
-			allocateDenseMatrixOnDevice();
+			// TODO: For now output are always zero-ed out
+			allocateDenseMatrixOnDevice(forceMemset0);
 			allocated = true;
 		}
 		dirty = true;
@@ -764,7 +769,7 @@ public class GPUObject {
 			throw new DMLRuntimeException("Attempting to release an output before allocating it");
 	}
 
-	void allocateDenseMatrixOnDevice() {
+	void allocateDenseMatrixOnDevice(boolean forceMemset0) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : allocateDenseMatrixOnDevice, on " + this + ", GPUContext=" + getGPUContext());
 		}
@@ -777,7 +782,7 @@ public class GPUObject {
 		if(cols <= 0)
 			throw new DMLRuntimeException("Internal error - invalid number of columns when allocating dense matrix:" + cols);
 		long size = getDatatypeSizeOf(rows * cols);
-		Pointer tmp = allocate(size);
+		Pointer tmp = allocate(size, forceMemset0);
 		setDensePointer(tmp);
 	}
 
@@ -924,7 +929,7 @@ public class GPUObject {
 			else if (data == null && tmp.getNonZeros() != 0)
 				throw new DMLRuntimeException("MatrixBlock is not allocated");
 			
-			allocateDenseMatrixOnDevice();
+			allocateDenseMatrixOnDevice(false);
 			
 			if (tmp.getNonZeros() == 0) {
 				// Minor optimization: No need to allocate empty error for CPU 

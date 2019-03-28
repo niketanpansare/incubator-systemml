@@ -57,6 +57,7 @@ public class GPUMemoryManager {
 	private static final int [] DEBUG_MEMORY_LEAK_STACKTRACE_DEPTH = {5, 6, 7, 8, 9, 10, 11}; // Avoids printing too much text while debugging
 	
 	private final boolean PRINT_GPU_MEMORY_INFO = ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.PRINT_GPU_MEMORY_INFO);
+	private final boolean GPU_FORCE_MEMSET_ZERO = ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.GPU_FORCE_MEMSET_ZERO);
 	
 	protected final GPUMemoryAllocator allocator;
 	/*****************************************************************************************/
@@ -243,9 +244,10 @@ public class GPUMemoryManager {
 	 * 
 	 * @param opcode instruction name
 	 * @param size size in bytes
+	 * @param forceMemset0 should force memset(0) of allocated memory
 	 * @return allocated pointer
 	 */
-	public Pointer malloc(String opcode, long size) {
+	public Pointer malloc(String opcode, long size, boolean forceMemset0) {
 		if(size <= 0) {
 			throw new DMLRuntimeException("Cannot allocate memory of size " + GPUStatistics.byteCountToDisplaySize(size));
 		}
@@ -361,9 +363,11 @@ public class GPUMemoryManager {
 					+ toString());
 		}
 		
-		long t0 = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
-		cudaMemset(A, 0, size);
-		addMiscTime(opcode, GPUStatistics.cudaMemSet0Time, GPUStatistics.cudaMemSet0Count, GPUInstruction.MISC_TIMER_SET_ZERO, t0);
+		if(GPU_FORCE_MEMSET_ZERO || forceMemset0) {
+			long t0 = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
+			cudaMemset(A, 0, size);
+			addMiscTime(opcode, GPUStatistics.cudaMemSet0Time, GPUStatistics.cudaMemSet0Count, GPUInstruction.MISC_TIMER_SET_ZERO, t0);
+		}
 		return A;
 	}
 	

@@ -205,16 +205,30 @@ public class GPUContext {
 		cudaSetDevice(deviceNum);
 		initializeCudaLibraryHandles();
 	}
-
+	
 	/**
-	 * Invokes memory manager's malloc method
+	 * Invokes memory manager's malloc method.
+	 * 
+	 * TODO: Eliminate thos method for performance
 	 *
 	 * @param instructionName name of instruction for which to record per instruction performance statistics, null if don't want to record
 	 * @param size            size of data (in bytes) to allocate
 	 * @return jcuda pointer
 	 */
 	public Pointer allocate(String instructionName, long size) {
-		return memoryManager.malloc(instructionName, size);
+		return memoryManager.malloc(instructionName, size, true);
+	}
+
+	/**
+	 * Invokes memory manager's malloc method
+	 *
+	 * @param instructionName name of instruction for which to record per instruction performance statistics, null if don't want to record
+	 * @param size            size of data (in bytes) to allocate
+	 * @param forceMemset0 should force memset(0) of allocated memory
+	 * @return jcuda pointer
+	 */
+	public Pointer allocate(String instructionName, long size, boolean forceMemset0) {
+		return memoryManager.malloc(instructionName, size, forceMemset0);
 	}
 
 	/**

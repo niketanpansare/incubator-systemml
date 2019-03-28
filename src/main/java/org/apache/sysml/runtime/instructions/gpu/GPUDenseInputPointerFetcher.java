@@ -73,16 +73,16 @@ public class GPUDenseInputPointerFetcher implements java.lang.AutoCloseable {
 	public long getInputNumColumns(String var) {
 		return getInputMatrixObject(var).getNumColumns();
 	}
-	public MatrixObject getOutputMatrixObject(long numRows, long numCols) {
+	public MatrixObject getOutputMatrixObject(long numRows, long numCols, boolean forceMemset0) {
 		boolean isFinegrainedStats = ConfigurationManager.isFinegrainedStatistics();
 		long t0 = isFinegrainedStats ? System.nanoTime() : 0;
-		Pair<MatrixObject, Boolean> mb = _ec.getDenseMatrixOutputForGPUInstruction(_output.getName(), numRows, numCols);
+		Pair<MatrixObject, Boolean> mb = _ec.getDenseMatrixOutputForGPUInstruction(_output.getName(), numRows, numCols, forceMemset0);
 		if (isFinegrainedStats && mb.getValue()) GPUStatistics.maintainCPMiscTimes(_instName,
 				GPUInstruction.MISC_TIMER_ALLOCATE_DENSE_OUTPUT, System.nanoTime() - t0);
 		return  mb.getKey();
 	}
-	public Pointer getOutputPointer(long numRows, long numCols) {
-		return LibMatrixCUDA.getDensePointer(_gCtx, getOutputMatrixObject(numRows, numCols), _instName);
+	public Pointer getOutputPointer(long numRows, long numCols, boolean forceMemset0) {
+		return LibMatrixCUDA.getDensePointer(_gCtx, getOutputMatrixObject(numRows, numCols, forceMemset0), _instName);
 	}
 	public MatrixObject getInputMatrixObject(String var) {
 		CPOperand in = _inputMatrices.get(var);

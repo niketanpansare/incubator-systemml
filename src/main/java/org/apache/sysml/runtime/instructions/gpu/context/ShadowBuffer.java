@@ -172,7 +172,7 @@ public class ShadowBuffer {
 	public void moveToDevice() {
 		long start = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
 		long numBytes = getNumBytesOfShadowBuffer();
-		gpuObj.jcudaDenseMatrixPtr = gpuObj.getGPUContext().allocate(null, numBytes);
+		gpuObj.jcudaDenseMatrixPtr = gpuObj.getGPUContext().allocate(null, numBytes, false);
 		cudaMemcpy(gpuObj.jcudaDenseMatrixPtr, getHostShadowPointer(), numBytes, jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice);
 		clearShadowPointer();
 		if (ConfigurationManager.isStatistics()) {

@@ -190,7 +190,7 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 			// -------------------------------------------------------------------------------------
 			// dense-sparse matrix multiplication
 			// Step 1: Allocate output => dense format
-			getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, outRLen, outCLen);
+			getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, outRLen, outCLen, false);
 
 			// Step 2: Get the handles to sparse/dense pointers for left, right
 			// and output
@@ -205,7 +205,7 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 			// -------------------------------------------------------------------------------------
 			// sparse-dense matrix multiplication
 			// Step 1: Allocate output => dense format
-			getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, outRLen, outCLen);
+			getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, outRLen, outCLen, false);
 
 			// Step 2: Get the handles to sparse/dense pointers for left, right
 			// and output
@@ -221,7 +221,7 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 			// -------------------------------------------------------------------------------------
 			// dense-dense matrix multiplication
 			// Step 1: Allocate output => dense format
-			getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, outRLen, outCLen);
+			getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, outRLen, outCLen, false);
 
 			// Step 2: Get the handles to sparse/dense pointers for left, right
 			// and output
@@ -277,7 +277,7 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 		// t(C) = t(B) %*% t(A)
 		Pointer output = null;
 		if (outRLen != 1 && outCLen != 1) {
-			output = gCtx.allocate(instName, outRLen * outCLen * sizeOfDataType);
+			output = gCtx.allocate(instName, outRLen * outCLen * sizeOfDataType, false);
 		} else {
 			// no transpose required for vector output
 			output = C;

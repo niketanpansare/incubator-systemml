@@ -123,7 +123,7 @@ public class CSRPointer {
 	 */
 	public Pointer getCooRowPointer(cusparseHandle handle, int rows) {
 		if(nnz > 0) {
-			Pointer cooRowInd = gpuContext.allocate(null, getIntSizeOf(nnz));
+			Pointer cooRowInd = gpuContext.allocate(null, getIntSizeOf(nnz), false);
 			cusparseXcsr2coo(handle, rowPtr, LibMatrixCUDA.toInt(nnz), rows, cooRowInd, CUSPARSE_INDEX_BASE_ZERO);
 			return cooRowInd;
 		}

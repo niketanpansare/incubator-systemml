@@ -308,17 +308,18 @@ public class ExecutionContext {
 		}
 		return Math.max(d1, d2);
 	}
-
+	
 	/**
 	 * Allocates a dense matrix on the GPU (for output)
 	 * @param varName	name of the output matrix (known by this {@link ExecutionContext})
 	 * @param numRows number of rows of matrix object
 	 * @param numCols number of columns of matrix object
+	 * @param forceMemset0 should force memset(0) of allocated memory
 	 * @return a pair containing the wrapping {@link MatrixObject} and a boolean indicating whether a cuda memory allocation took place (as opposed to the space already being allocated)
 	 */
-	public Pair<MatrixObject, Boolean> getDenseMatrixOutputForGPUInstruction(String varName, long numRows, long numCols) {
+	public Pair<MatrixObject, Boolean> getDenseMatrixOutputForGPUInstruction(String varName, long numRows, long numCols, boolean forceMemset0) {
 		MatrixObject mo = allocateGPUMatrixObject(varName, numRows, numCols);
-		boolean allocated = mo.getGPUObject(getGPUContext(0)).acquireDeviceModifyDense();
+		boolean allocated = mo.getGPUObject(getGPUContext(0)).acquireDeviceModifyDense(forceMemset0);
 		mo.getMatrixCharacteristics().setNonZeros(-1);
 		return new Pair<>(mo, allocated);
 	}

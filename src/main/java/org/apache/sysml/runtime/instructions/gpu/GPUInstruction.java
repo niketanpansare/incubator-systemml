@@ -233,11 +233,12 @@ public abstract class GPUInstruction extends Instruction {
 	 * @param name	name of input matrix (that the {@link ExecutionContext} is aware of)
 	 * @param numRows number of rows of matrix object
 	 * @param numCols number of columns of matrix object
+	 * @param forceMemset0 should force memset(0) of allocated memory
 	 * @return	the matrix object
 	 */
-	protected MatrixObject getDenseMatrixOutputForGPUInstruction(ExecutionContext ec, String name, long numRows, long numCols) {
+	protected MatrixObject getDenseMatrixOutputForGPUInstruction(ExecutionContext ec, String name, long numRows, long numCols, boolean forceMemset0) {
 		long t0 = ConfigurationManager.isFinegrainedStatistics() ? System.nanoTime() : 0;
-		Pair<MatrixObject, Boolean> mb = ec.getDenseMatrixOutputForGPUInstruction(name, numRows, numCols);
+		Pair<MatrixObject, Boolean> mb = ec.getDenseMatrixOutputForGPUInstruction(name, numRows, numCols, forceMemset0);
 		if (ConfigurationManager.isFinegrainedStatistics() && mb.getValue()) GPUStatistics.maintainCPMiscTimes(getExtendedOpcode(), GPUInstruction.MISC_TIMER_ALLOCATE_DENSE_OUTPUT, System.nanoTime() - t0);
 		return mb.getKey();
 	}

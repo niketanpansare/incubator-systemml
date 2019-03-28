@@ -174,7 +174,7 @@ public class SinglePrecisionCudaSupportFunctions implements CudaSupportFunctions
 		// during eviction: `evict -> devictToHost -> float2double -> allocate -> ensureFreeSpace -> evict`. 
 		// To avoid this recursion, it is necessary to perform this conversion in host.
 		if(gCtx.getMemoryManager().canAllocateWithoutEviction(instName, sizeOfDouble(dest.length)) && !isEviction) {
-			Pointer deviceDoubleData = gCtx.allocate(instName, sizeOfDouble(dest.length));
+			Pointer deviceDoubleData = gCtx.allocate(instName, sizeOfDouble(dest.length), false);
 			LibMatrixCUDA.float2double(gCtx, src, deviceDoubleData, dest.length);
 			cudaMemcpy(Pointer.to(dest), deviceDoubleData, sizeOfDouble(dest.length), cudaMemcpyDeviceToHost);
 			gCtx.cudaFreeHelper(instName, deviceDoubleData, gCtx.EAGER_CUDA_FREE);
@@ -202,7 +202,7 @@ public class SinglePrecisionCudaSupportFunctions implements CudaSupportFunctions
 		// TODO: Perform conversion on GPU using double2float and float2double kernels
 		long t0 = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
 		if(gCtx.getMemoryManager().canAllocateWithoutEviction(instName, sizeOfDouble(src.length))) {
-			Pointer deviceDoubleData = gCtx.allocate(instName, sizeOfDouble(src.length));
+			Pointer deviceDoubleData = gCtx.allocate(instName, sizeOfDouble(src.length), false);
 			cudaMemcpy(deviceDoubleData, Pointer.to(src), sizeOfDouble(src.length), cudaMemcpyHostToDevice);
 			LibMatrixCUDA.double2float(gCtx, deviceDoubleData, dest, src.length);
 			gCtx.cudaFreeHelper(instName, deviceDoubleData, gCtx.EAGER_CUDA_FREE);

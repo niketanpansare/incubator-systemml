@@ -90,7 +90,7 @@ public class AggregateTernaryGPUInstruction extends GPUInstruction {
 		int rlenOut = Math.max(rlenA, rlenB);
 		int clenOut = Math.max(clenA, clenB);
 		int sizeOfOutput =  rlenOut*clenOut;
-		Pointer out = gCtx.allocate(instName, sizeOfOutput*LibMatrixCUDA.sizeOfDataType);
+		Pointer out = gCtx.allocate(instName, sizeOfOutput*LibMatrixCUDA.sizeOfDataType, false);
 	
 		// out = in1 * in2
 		Pointer A = LibMatrixCUDA.getDensePointer(gCtx, in1, instName); 
@@ -120,7 +120,7 @@ public class AggregateTernaryGPUInstruction extends GPUInstruction {
 		else {
 			// colSum( in1*in2*in3 )
 			Pointer out1 = LibMatrixCUDA.getDensePointer(gCtx, 
-					LibMatrixCUDA.getDenseMatrixOutputForGPUInstruction(ec, instName, _output.getName(), 1, clenOut), instName);
+					LibMatrixCUDA.getDenseMatrixOutputForGPUInstruction(ec, instName, _output.getName(), 1, clenOut, false), instName);
 			LibMatrixCUDA.reduceCol(gCtx, instName, "reduce_col_sum", out, out1, rlenOut, clenOut);
 			ec.releaseMatrixOutputForGPUInstruction(_output.getName());
 		}

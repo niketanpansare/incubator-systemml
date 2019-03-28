@@ -396,7 +396,7 @@ public class LibMatrixCUDA {
 	public static void channelSums(GPUContext gCtx, String instName, Pointer imagePointer, Pointer outputPointer, long N, long C, long HW) {
 		int cols = toInt(C*HW);
 		// We can replace this with CuDNN tensor reduce
-		Pointer tmp = gCtx.allocate(instName, cols*sizeOfDataType);
+		Pointer tmp = gCtx.allocate(instName, cols*sizeOfDataType, false);
 		reduceCol(gCtx, instName, "reduce_col_sum", imagePointer, tmp, toInt(N), cols);
 		reduceRow(gCtx, instName, "reduce_row_sum", tmp, outputPointer, toInt(C), toInt(HW));
 		gCtx.cudaFreeHelper(instName, tmp, gCtx.EAGER_CUDA_FREE);
@@ -539,7 +539,7 @@ public class LibMatrixCUDA {
 		int k = toInt(isLeftTransposed ? left.getNumRows() : left.getNumColumns());
 
 		// For dense TSMM, exploit cublasDsyrk(...) and call custom kernel to flip the matrix
-		MatrixObject output = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, m, m);	// Allocated the dense output matrix
+		MatrixObject output = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, m, m, false);	// Allocated the dense output matrix
 
 		if(m == -1)
 			throw new DMLRuntimeException("Incorrect dimensions");
@@ -720,7 +720,7 @@ public class LibMatrixCUDA {
 		Pointer out = null;
 		if (reductionDirection == REDUCTION_COL || reductionDirection == REDUCTION_ROW) {
 			// Matrix output
-			MatrixObject out1 = getDenseMatrixOutputForGPUInstruction(ec, instName, output, outRLen, outCLen);
+			MatrixObject out1 = getDenseMatrixOutputForGPUInstruction(ec, instName, output, outRLen, outCLen, false);
 			out = getDensePointer(gCtx, out1, instName);
 		}
 
@@ -751,7 +751,7 @@ public class LibMatrixCUDA {
 		}
 		case OP_PLUS_SQ : {
 			// Calculate the squares in a temporary object tmp
-			Pointer tmp = gCtx.allocate(instName, size * sizeOfDataType);
+			Pointer tmp = gCtx.allocate(instName, size * sizeOfDataType, false);
 
 			squareMatrix(gCtx, instName, in, tmp, rlen, clen);
 			// Then do the sum on the temporary object and free it
@@ -855,8 +855,8 @@ public class LibMatrixCUDA {
 
 			case REDUCTION_ALL: {
 				// Temporary GPU array for
-				Pointer tmp = gCtx.allocate(instName, size * sizeOfDataType);
-				Pointer tmp2 = gCtx.allocate(instName, size * sizeOfDataType);
+				Pointer tmp = gCtx.allocate(instName, size * sizeOfDataType, false);
+				Pointer tmp2 = gCtx.allocate(instName, size * sizeOfDataType, false);
 				double result = reduceAll(gCtx, instName, "reduce_sum", in, size);
 				double mean = result / size;
 
@@ -918,8 +918,8 @@ public class LibMatrixCUDA {
 	
 	public static void colVars(GPUContext gCtx, String instName, Pointer in, Pointer out, int rlen, int clen) {
 		int size = rlen * clen;
-		Pointer tmp = gCtx.allocate(instName, size * sizeOfDataType);
-		Pointer tmp2 = gCtx.allocate(instName, size * sizeOfDataType);
+		Pointer tmp = gCtx.allocate(instName, size * sizeOfDataType, false);
+		Pointer tmp2 = gCtx.allocate(instName, size * sizeOfDataType, false);
 		reduceCol(gCtx, instName, "reduce_col_mean", in, out, rlen, clen);
 		// Subtract the columns-wise mean from every element in the matrix
 		BinaryOperator minusOp = new BinaryOperator(Minus.getMinusFnObject());
@@ -927,7 +927,7 @@ public class LibMatrixCUDA {
 
 		squareMatrix(gCtx, instName, tmp, tmp2, rlen, clen);
 
-		Pointer tmpCol = gCtx.allocate(instName, clen * sizeOfDataType);
+		Pointer tmpCol = gCtx.allocate(instName, clen * sizeOfDataType, false);
 		reduceCol(gCtx, instName, "reduce_col_sum", tmp2, tmpCol, rlen, clen);
 
 		ScalarOperator divideOp = new RightScalarOperator(Divide.getDivideFnObject(), rlen - 1);
@@ -940,8 +940,8 @@ public class LibMatrixCUDA {
 	
 	public static void rowVars(GPUContext gCtx, String instName, Pointer in, Pointer out, int rlen, int clen) {
 		int size = rlen * clen;
-		Pointer tmp = gCtx.allocate(instName, size * sizeOfDataType);
-		Pointer tmp2 = gCtx.allocate(instName, size * sizeOfDataType);
+		Pointer tmp = gCtx.allocate(instName, size * sizeOfDataType, false);
+		Pointer tmp2 = gCtx.allocate(instName, size * sizeOfDataType, false);
 		
 		reduceRow(gCtx, instName, "reduce_row_mean", in, out, rlen, clen);
 		// Subtract the row-wise mean from every element in the matrix
@@ -950,7 +950,7 @@ public class LibMatrixCUDA {
 
 		squareMatrix(gCtx, instName, tmp, tmp2, rlen, clen);
 
-		Pointer tmpRow = gCtx.allocate(instName, rlen * sizeOfDataType);
+		Pointer tmpRow = gCtx.allocate(instName, rlen * sizeOfDataType, false);
 		reduceRow(gCtx, instName, "reduce_row_sum", tmp2, tmpRow, rlen, clen);
 
 		ScalarOperator divideOp = new RightScalarOperator(Divide.getDivideFnObject(), clen - 1);
@@ -992,7 +992,7 @@ public class LibMatrixCUDA {
 		int[] tmp = getKernelParamsForReduceAll(gCtx, n);
 		int blocks = tmp[0], threads = tmp[1], sharedMem = tmp[2];
 
-		Pointer tempOut = gCtx.allocate(instName, n*sizeOfDataType); 
+		Pointer tempOut = gCtx.allocate(instName, n*sizeOfDataType, false); 
 
 		long t1=0,t2=0;
 
@@ -1376,7 +1376,7 @@ public class LibMatrixCUDA {
 			}
 			else {
 				// op(sparse input, scalar) -> dense output
-				MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, rlenA, clenA);	// Allocated the dense output matrix
+				MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, rlenA, clenA, false);	// Allocated the dense output matrix
 				Pointer C = getDensePointer(gCtx, out, instName);
 				setOutputToConstant(gCtx, instName, zeroVal, C, toInt(rlenA*clenA));
 				if(nnz > 0) {
@@ -1395,7 +1395,7 @@ public class LibMatrixCUDA {
 			// op(dense input, scalar) -> dense output
 			Pointer A = getDensePointer(gCtx, in, instName); 
 			// MatrixObject out = ec.getMatrixObject(outputName);
-			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, rlenA, clenA);	// Allocated the dense output matrix
+			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, rlenA, clenA, false);	// Allocated the dense output matrix
 			Pointer C = getDensePointer(gCtx, out, instName);
 			denseMatrixScalarOp(gCtx, instName, A, scalar, rlenA, clenA, C, op);
 		}
@@ -1489,7 +1489,7 @@ public class LibMatrixCUDA {
 			// Allocated the dense output matrix
 			MatrixObject out = null;
 			try {
-				out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, outRLen, outCLen);
+				out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, outRLen, outCLen, false);
 			} catch(DMLRuntimeException e) {
 				throw new DMLRuntimeException("Incorrect dimensions: dimA:[" + rlenA + "," + clenA + "]"
 						+ " dimB:[" + rlenB + "," + clenB + "] out:[" + outRLen + "," + outCLen + "]", e);
@@ -1603,7 +1603,7 @@ public class LibMatrixCUDA {
 	private static void deviceCopy(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject src, String outputName) {
 		Pointer srcPtr = getDensePointer(gCtx, src, instName); // TODO: FIXME: Implement sparse kernel
 		MatrixObject out = ec.getMatrixObject(outputName);
-		getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, toInt(src.getNumRows()), toInt(src.getNumColumns()));	// Allocated the dense output matrix
+		getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, toInt(src.getNumRows()), toInt(src.getNumColumns()), false);	// Allocated the dense output matrix
 		Pointer destPtr = getDensePointer(gCtx, out, instName);
 		deviceCopy(instName, srcPtr, destPtr, (int)src.getNumRows(), (int)src.getNumColumns());
 	}
@@ -1624,7 +1624,7 @@ public class LibMatrixCUDA {
 		if(constant == 0) {
 			getSparseMatrixOutputForGPUInstruction(ec, numRows, numCols, 0, instName, outputName);
 		} else {
-			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, numRows, numCols);   // Allocated the dense output matrix
+			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, numRows, numCols, false);   // Allocated the dense output matrix
 			Pointer A = getDensePointer(gCtx, out, instName);
 			int size = toInt(out.getNumRows() * out.getNumColumns());
 			setOutputToConstant(gCtx, instName, constant, A, size);
@@ -1816,7 +1816,7 @@ public class LibMatrixCUDA {
 
 			Pointer A = getDensePointer(gCtx, in1, instName);
 			Pointer B = getDensePointer(gCtx, in2, instName);
-			getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, outRLen, outCLen);	// Allocated the dense output matrix
+			getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, outRLen, outCLen, false);	// Allocated the dense output matrix
 			Pointer C = getDensePointer(gCtx, out, instName);
 
 			if (ConfigurationManager.isFinegrainedStatistics()) t0 = System.nanoTime();
@@ -1930,14 +1930,14 @@ public class LibMatrixCUDA {
 		int len1 = toInt(in1.getNumColumns());
 		if(isInSparseFormat(gCtx, in1)) {
 			// Input in1 is in sparse format and output is in dense format
-			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, ru - rl + 1, cu - cl + 1);
+			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, ru - rl + 1, cu - cl + 1, false);
 			CSRPointer inPointer = getSparsePointer(gCtx, in1, instName);
 			Pointer outPointer = getDensePointer(gCtx, out, instName);
 			sliceSparseDense(gCtx, instName, inPointer, outPointer, rl, ru, cl, cu, len1);
 		}
 		else {
 			// Input in1 is in dense format (see inPointer)
-			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, ru - rl + 1, cu - cl + 1);
+			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, ru - rl + 1, cu - cl + 1, false);
 
 			Pointer inPointer = getDensePointer(gCtx, in1, instName);
 			Pointer outPointer = getDensePointer(gCtx, out, instName);
@@ -2052,7 +2052,7 @@ public class LibMatrixCUDA {
 		}
 
 		// only Dense supported
-		MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, rowsA, colsA + colsB);
+		MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, rowsA, colsA + colsB, false);
 		Pointer C = getDensePointer(gCtx, out, instName);
 		Pointer A = getDensePointer(gCtx, in1, instName);
 		Pointer B = getDensePointer(gCtx, in2, instName);
@@ -2087,7 +2087,7 @@ public class LibMatrixCUDA {
 		}
 
 		// only Dense supported
-		MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, rowsA + rowsB, colsA);
+		MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, rowsA + rowsB, colsA, false);
 		Pointer C = getDensePointer(gCtx, out, instName);
 		Pointer A = getDensePointer(gCtx, in1, instName);
 		Pointer B = getDensePointer(gCtx, in2, instName);
@@ -2425,7 +2425,7 @@ public class LibMatrixCUDA {
 			out.getGPUObject(gCtx).allocateAndFillDense(sparseAndEmptyFillValue);
 		} else {
 			// Dense
-			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, in1.getNumRows(), in1.getNumColumns());
+			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, in1.getNumRows(), in1.getNumColumns(), false);
 			Pointer output = getDensePointer(gCtx, out, instName);
 			Pointer input = getDensePointer(gCtx, in1, instName);
 			int size = toInt(in1.getNumColumns() * in1.getNumRows());
@@ -2454,7 +2454,7 @@ public class LibMatrixCUDA {
 		Pointer A = getDensePointer(gCtx, in1, instName);
 		Pointer B = getDensePointer(gCtx, in2, instName);
 		MatrixObject out = ec.getMatrixObject(outputName);
-		getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, in1.getNumRows(), in1.getNumColumns());	// Allocated the dense output matrix
+		getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, in1.getNumRows(), in1.getNumColumns(), false);	// Allocated the dense output matrix
 		Pointer C = getDensePointer(gCtx, out, instName);
 
 		long t1=0, t2=0;
@@ -2566,8 +2566,8 @@ public class LibMatrixCUDA {
 		if (ConfigurationManager.isFinegrainedStatistics()) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_QR_BUFFER, System.nanoTime() - t0);
 
 		// step 4: compute QR factorization
-		Pointer work = gCtx.allocate(instName, lwork[0] * sizeOfDataType);
-		Pointer tau = gCtx.allocate(instName, m * sizeOfDataType);
+		Pointer work = gCtx.allocate(instName, lwork[0] * sizeOfDataType, false);
+		Pointer tau = gCtx.allocate(instName, m * sizeOfDataType, false);
 		Pointer devInfo = gCtx.allocate(instName, Sizeof.INT);
 		if (ConfigurationManager.isFinegrainedStatistics()) t0 = System.nanoTime();
 		cudaSupportFunctions.cusolverDngeqrf(gCtx.getCusolverDnHandle(), m, n, A, m, tau, work, lwork[0], devInfo);
@@ -2601,7 +2601,7 @@ public class LibMatrixCUDA {
 
 		// TODO  : Find a way to assign bTobj directly to the output and set the correct flags so as to not crash
 		// There is an avoidable copy happening here
-		MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, in1.getNumColumns(), 1);
+		MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, in1.getNumColumns(), 1, false);
 		cudaMemcpy(out.getGPUObject(gCtx).getDensePointer(), bTobj.getDensePointer(), n * 1 * sizeOfDataType, cudaMemcpyDeviceToDevice);
 
 		gCtx.cudaFreeHelper(instName, work, gCtx.EAGER_CUDA_FREE);
@@ -2624,12 +2624,13 @@ public class LibMatrixCUDA {
 	 * @param name	name of input matrix (that the {@link ExecutionContext} is aware of)
 	 * @param numRows number of rows of output matrix object
 	 * @param numCols number of columns of output matrix object
+	 * @param forceMemset0 should force memset(0) of allocated memory
 	 * @return	the matrix object
 	 */
-	public static MatrixObject getDenseMatrixOutputForGPUInstruction(ExecutionContext ec, String instName, String name, long numRows, long numCols) {
+	public static MatrixObject getDenseMatrixOutputForGPUInstruction(ExecutionContext ec, String instName, String name, long numRows, long numCols, boolean forceMemset0) {
 		long t0=0;
 		if (ConfigurationManager.isFinegrainedStatistics()) t0 = System.nanoTime();
-		Pair<MatrixObject, Boolean> mb = ec.getDenseMatrixOutputForGPUInstruction(name, numRows, numCols);
+		Pair<MatrixObject, Boolean> mb = ec.getDenseMatrixOutputForGPUInstruction(name, numRows, numCols, forceMemset0);
 		if (mb.getValue())
 			if (ConfigurationManager.isFinegrainedStatistics())
 				GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_ALLOCATE_DENSE_OUTPUT, System.nanoTime() - t0);
