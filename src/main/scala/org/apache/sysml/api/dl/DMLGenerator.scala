@@ -303,6 +303,11 @@ trait DMLGenerator extends SourceDMLGenerator with NextBatchGenerator {
       allLayers.filter(_.bias != null).map(l => tabDMLScript.append(readWeight(l.bias, l.param.getName + "_bias.mtx")))
     }
     net.getLayers.map(layer => solver.init(tabDMLScript, net.getCaffeLayer(layer)))
+    net.getLayers.map(net.getCaffeLayer(_)).filter(_.isInstanceOf[BatchNorm]).map(l => {
+      val l1 = l.asInstanceOf[BatchNorm]
+      tabDMLScript.append(l1.ema_mean + "_tmp = " + l1.ema_mean + "\n")
+      tabDMLScript.append(l1.ema_var + "_tmp = " + l1.ema_var + "\n")
+    })
   }
 
   def getLossLayers(net: CaffeNetwork): List[IsLossLayer] = {

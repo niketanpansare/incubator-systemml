@@ -593,6 +593,10 @@ class Caffe2DML(val sc: SparkContext,
     net.getLayers.map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => script.out(l.weight))
     net.getLayers.map(net.getCaffeLayer(_)).filter(_.extraWeight != null).map(l => script.out(l.extraWeight))
     net.getLayers.map(net.getCaffeLayer(_)).filter(_.bias != null).map(l => script.out(l.bias))
+    net.getLayers.map(net.getCaffeLayer(_)).filter(_.isInstanceOf[BatchNorm]).map(l => {
+      script.out(l.asInstanceOf[BatchNorm].ema_mean + "_tmp")
+      script.out(l.asInstanceOf[BatchNorm].ema_var + "_tmp")
+    })
     
     setDebugFlags(false)
     

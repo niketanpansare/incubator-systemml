@@ -332,7 +332,7 @@ class BatchNorm(val param: LayerParameter, val id: Int, val net: CaffeNetwork) e
    *  - dbeta: Gradient wrt `b`, of shape (C, 1).
    *
    */
-  def backward(dmlScript: StringBuilder, outSuffix: String): Unit =
+  def backward(dmlScript: StringBuilder, outSuffix: String): Unit = {
     invokeBackward(
       dmlScript,
       outSuffix,
@@ -347,6 +347,9 @@ class BatchNorm(val param: LayerParameter, val id: Int, val net: CaffeNetwork) e
       Win,
       eps
     )
+    dmlScript.append(ema_mean + "_tmp += " + ema_mean + "\n")
+    dmlScript.append(ema_var + "_tmp += " + ema_var + "\n")
+  }
 
   private def withSuffix(str: String): String = if (update_mean_var) str else getIgnoreVarName(str)
   override def weightShape(): Array[Int]      = Array(numChannels.toInt, 1)
