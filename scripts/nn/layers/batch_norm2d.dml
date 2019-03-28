@@ -120,6 +120,184 @@ forward = function(matrix[double] X, matrix[double] gamma, matrix[double] beta,
   out = bias_add(scaled, beta)  # shape (N, C*Hin*Win)
 }
 
+// Optimized forward for train: It has same signature as forward
+forward_train = function(matrix[double] X, matrix[double] gamma, matrix[double] beta,
+                   int C, int Hin, int Win, string mode,
+                   matrix[double] ema_mean, matrix[double] ema_var,
+                   double mu, double epsilon)
+    return (matrix[double] out, matrix[double] ema_mean_upd, matrix[double] ema_var_upd,
+            matrix[double] cache_mean, matrix[double] cache_inv_var) {
+  /*
+   * Computes the forward pass for a 2D (spatial) batch normalization
+   * layer.  The input data has N examples, each represented as a 3D
+   * volume unrolled into a single vector.
+   *
+   * A spatial batch normalization layer uses the per-channel sample
+   * mean and per-channel uncorrected sample variance during training
+   * to normalize each channel of the input data.  Additionally, it
+   * introduces learnable parameters (gamma, beta) to control the
+   * amount of normalization.
+   *
+   *   `y = ((x-mean) / sqrt(var+eps)) * gamma + beta`
+   *
+   * This implementation maintains exponential moving averages of the
+   * mean and variance during training for use during testing.
+   *
+   * Reference:
+   *  - Batch Normalization: Accelerating Deep Network Training by
+   *    Reducing Internal Covariate Shift, S. Ioffe & C. Szegedy, 2015
+   *    - https://arxiv.org/abs/1502.03167
+   *
+   * Inputs:
+   *  - X: Inputs, of shape (N, C*Hin*Win).
+   *  - gamma: Scale parameters, of shape (C, 1).
+   *  - beta: Shift parameters, of shape (C, 1).
+   *  - C: Number of input channels (dimensionality of input depth).
+   *  - Hin: Input height.
+   *  - Win: Input width.
+   *  - mode: 'train' or 'test' to indicate if the model is currently
+   *      being trained or tested.  During training, the current batch
+   *      mean and variance will be used to normalize the inputs, while
+   *      during testing, the exponential average of the mean and
+   *      variance over all previous batches will be used.
+   *  - ema_mean: Exponential moving average of the mean, of
+   *      shape (C, 1).
+   *  - ema_var: Exponential moving average of the variance, of
+   *      shape (C, 1).
+   *  - mu: Momentum value for moving averages.
+   *      Typical values are in the range of [0.9, 0.999].
+   *  - epsilon: Smoothing term to avoid divide by zero errors.
+   *      Typical values are in the range of [1e-5, 1e-3].
+   *
+   * Outputs:
+   *  - out: Outputs, of shape (N, C*Hin*Win).
+   *  - ema_mean_upd: Updated exponential moving average of the mean,
+   *      of shape (C, 1).
+   *  - ema_var_upd: Updated exponential moving average of the variance,
+   *      of shape (C, 1).
+   *  - cache_mean: Cache of the batch mean, of shape (C, 1).
+   *      Note: This is used for performance during training.
+   *  - cache_inv_var: Cache of the inverse variance, of shape (C, 1).
+   *      Note: This is used for performance during training.
+   */
+  N = nrow(X)
+  if(mode != 'train') {
+  	stop('Please use this function only for training.')
+  }
+
+  # Compute channel-wise mean and variance
+  # Since we don't have tensors, we will compute the means and variances in a piece-wise fashion.
+  #  - mean of total group is mean of subgroup means
+  #  - variance is the mean of the subgroup variances + the variance of the subgroup means
+  subgrp_means = matrix(colMeans(X), rows=C, cols=Hin*Win)
+  subgrp_vars = matrix(colVars(X) * ((N-1)/N), rows=C, cols=Hin*Win)  # uncorrected variances
+  mean = rowMeans(subgrp_means)  # shape (C, 1)
+  var = rowMeans(subgrp_vars) + rowVars(subgrp_means)*(((Hin*Win)-1)/(Hin*Win))  # shape (C, 1)
+  # Update moving averages
+  ema_mean_upd = mu*ema_mean + (1-mu)*mean
+  ema_var_upd = mu*ema_var + (1-mu)*var
+  
+  # Save variable for backward pass
+  cache_mean = mean
+  cache_inv_var = 1/sqrt(var+epsilon)
+  
+  # Normalize, shift, and scale
+  # norm = (X-mean)*(var+epsilon)^(-1/2)
+  #      = (X-mean) / sqrt(var+epsilon)
+  centered = bias_add(X, -mean)  # shape (N, C*Hin*Win)
+  norm = bias_multiply(centered, cache_inv_var)  # shape (N, C*Hin*Win)
+  # out = norm*gamma + beta
+  scaled = bias_multiply(norm, gamma)  # shape (N, C*Hin*Win)
+  out = bias_add(scaled, beta)  # shape (N, C*Hin*Win)
+}
+
+// Optimized forward for tess: It has same signature as forward
+forward_test = function(matrix[double] X, matrix[double] gamma, matrix[double] beta,
+                   int C, int Hin, int Win, string mode,
+                   matrix[double] ema_mean, matrix[double] ema_var,
+                   double mu, double epsilon)
+    return (matrix[double] out, matrix[double] ema_mean_upd, matrix[double] ema_var_upd,
+            matrix[double] cache_mean, matrix[double] cache_inv_var) {
+  /*
+   * Computes the forward pass for a 2D (spatial) batch normalization
+   * layer.  The input data has N examples, each represented as a 3D
+   * volume unrolled into a single vector.
+   *
+   * A spatial batch normalization layer uses the per-channel sample
+   * mean and per-channel uncorrected sample variance during training
+   * to normalize each channel of the input data.  Additionally, it
+   * introduces learnable parameters (gamma, beta) to control the
+   * amount of normalization.
+   *
+   *   `y = ((x-mean) / sqrt(var+eps)) * gamma + beta`
+   *
+   * This implementation maintains exponential moving averages of the
+   * mean and variance during training for use during testing.
+   *
+   * Reference:
+   *  - Batch Normalization: Accelerating Deep Network Training by
+   *    Reducing Internal Covariate Shift, S. Ioffe & C. Szegedy, 2015
+   *    - https://arxiv.org/abs/1502.03167
+   *
+   * Inputs:
+   *  - X: Inputs, of shape (N, C*Hin*Win).
+   *  - gamma: Scale parameters, of shape (C, 1).
+   *  - beta: Shift parameters, of shape (C, 1).
+   *  - C: Number of input channels (dimensionality of input depth).
+   *  - Hin: Input height.
+   *  - Win: Input width.
+   *  - mode: 'train' or 'test' to indicate if the model is currently
+   *      being trained or tested.  During training, the current batch
+   *      mean and variance will be used to normalize the inputs, while
+   *      during testing, the exponential average of the mean and
+   *      variance over all previous batches will be used.
+   *  - ema_mean: Exponential moving average of the mean, of
+   *      shape (C, 1).
+   *  - ema_var: Exponential moving average of the variance, of
+   *      shape (C, 1).
+   *  - mu: Momentum value for moving averages.
+   *      Typical values are in the range of [0.9, 0.999].
+   *  - epsilon: Smoothing term to avoid divide by zero errors.
+   *      Typical values are in the range of [1e-5, 1e-3].
+   *
+   * Outputs:
+   *  - out: Outputs, of shape (N, C*Hin*Win).
+   *  - ema_mean_upd: Updated exponential moving average of the mean,
+   *      of shape (C, 1).
+   *  - ema_var_upd: Updated exponential moving average of the variance,
+   *      of shape (C, 1).
+   *  - cache_mean: Cache of the batch mean, of shape (C, 1).
+   *      Note: This is used for performance during training.
+   *  - cache_inv_var: Cache of the inverse variance, of shape (C, 1).
+   *      Note: This is used for performance during training.
+   */
+  N = nrow(X)
+  if(mode == 'train') {
+  	stop('Please use this function only for testing.')
+  }
+
+  # Use moving averages of mean and variance during testing
+  mean = ema_mean
+  var = ema_var
+  ema_mean_upd = ema_mean
+  ema_var_upd = ema_var
+
+  # Save variable for backward pass
+  cache_mean = mean
+  cache_inv_var = 1/sqrt(var+epsilon)
+  
+  # Normalize, shift, and scale
+  # norm = (X-mean)*(var+epsilon)^(-1/2)
+  #      = (X-mean) / sqrt(var+epsilon)
+  centered = bias_add(X, -mean)  # shape (N, C*Hin*Win)
+  norm = bias_multiply(centered, cache_inv_var)  # shape (N, C*Hin*Win)
+  # out = norm*gamma + beta
+  scaled = bias_multiply(norm, gamma)  # shape (N, C*Hin*Win)
+  out = bias_add(scaled, beta)  # shape (N, C*Hin*Win)
+}
+
+
+
 backward = function(matrix[double] dout, 
                     matrix[double] cache_mean, matrix[double] cache_inv_var,
                     matrix[double] X, matrix[double] gamma, 

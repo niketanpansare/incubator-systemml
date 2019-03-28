@@ -289,21 +289,14 @@ class BatchNorm(val param: LayerParameter, val id: Int, val net: CaffeNetwork) e
    */
   def forward(dmlScript: StringBuilder, isPrediction: Boolean): Unit = {
     val mode = if (isPrediction) "\"test\"" else "\"train\""
-    invokeForward(
-      dmlScript,
-      List[String](out, withSuffix(ema_mean), withSuffix(ema_var), withSuffix(cache_mean), withSuffix(cache_var)),
-      X,
-      gamma,
-      beta,
-      numChannels,
-      Hin,
-      Win,
-      mode,
-      ema_mean,
-      ema_var,
-      ma_fraction,
-      eps
-    )
+    val returnVariables = List[String](out, withSuffix(ema_mean), withSuffix(ema_var), withSuffix(cache_mean), withSuffix(cache_var))
+    val arguments = List[String](X, gamma, beta, numChannels, Hin, Win, mode, ema_mean, ema_var, ma_fraction, eps)
+    if(isPrediction) {
+      invoke(dmlScript, sourceFileName + "::", returnVariables, "forward_test", arguments)
+    }
+    else {
+      invoke(dmlScript, sourceFileName + "::", returnVariables, "forward_train", arguments)
+    }
   }
   /*
    * Computes the backward pass for a 2D (spatial) batch normalization
