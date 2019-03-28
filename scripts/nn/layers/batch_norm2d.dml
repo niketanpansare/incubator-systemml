@@ -120,7 +120,7 @@ forward = function(matrix[double] X, matrix[double] gamma, matrix[double] beta,
   out = bias_add(scaled, beta)  # shape (N, C*Hin*Win)
 }
 
-// Optimized forward for train: It has same signature as forward
+# Optimized forward for train: It has same signature as forward
 forward_train = function(matrix[double] X, matrix[double] gamma, matrix[double] beta,
                    int C, int Hin, int Win, string mode,
                    matrix[double] ema_mean, matrix[double] ema_var,
@@ -211,7 +211,7 @@ forward_train = function(matrix[double] X, matrix[double] gamma, matrix[double] 
   out = bias_add(scaled, beta)  # shape (N, C*Hin*Win)
 }
 
-// Optimized forward for tess: It has same signature as forward
+# Optimized forward for test: It has same signature as forward
 forward_test = function(matrix[double] X, matrix[double] gamma, matrix[double] beta,
                    int C, int Hin, int Win, string mode,
                    matrix[double] ema_mean, matrix[double] ema_var,
