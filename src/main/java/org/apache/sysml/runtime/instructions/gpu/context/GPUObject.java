@@ -623,7 +623,6 @@ public class GPUObject {
 				LOG.trace("GPU : data is not allocated, allocating a dense block, on " + this);
 			}
 			// Dense block, size = numRows * numCols
-			// TODO: For now output are always zero-ed out
 			allocateDenseMatrixOnDevice(forceMemset0);
 			allocated = true;
 		}
