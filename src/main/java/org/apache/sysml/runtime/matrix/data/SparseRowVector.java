@@ -23,6 +23,7 @@ package org.apache.sysml.runtime.matrix.data;
 import java.io.Serializable;
 import java.util.Arrays;
 
+import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.util.SortUtils;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -35,7 +36,7 @@ public final class SparseRowVector extends SparseRow implements Serializable
 	public static final int initialCapacity = 4;
 	
 	private int estimatedNzs = initialCapacity;
-	private int maxNzs = Integer.MAX_VALUE;
+	private final int maxNzs = Integer.MAX_VALUE;
 	private int size = 0;
 	private double[] values = null;
 	private int[] indexes = null;
@@ -53,13 +54,14 @@ public final class SparseRowVector extends SparseRow implements Serializable
 	public SparseRowVector(int estnnz, int maxnnz) {
 		if( estnnz > initialCapacity )
 			estimatedNzs = estnnz;
-		maxNzs = maxnnz;
+		// This is not required, instead stick to conservative value. It can lead to newCapacity to return incorrect value if maxnns is not set correctly.
+		// maxNzs = maxnnz;
 		int capacity = ((estnnz<initialCapacity && estnnz>0) ? 
 				estnnz : initialCapacity);
 		values = new double[capacity];
 		indexes = new int[capacity];
 	}
-	
+
 	public SparseRowVector(SparseRow that) {
 		size = that.size();
 		int cap = Math.max(initialCapacity, that.size());
@@ -127,7 +129,8 @@ public final class SparseRowVector extends SparseRow implements Serializable
 	@Override
 	public void reset(int estnns, int maxnns) {
 		estimatedNzs = estnns;
-		maxNzs = maxnns;
+		// This is not required, instead stick to conservative value. It can lead to newCapacity to return incorrect value if maxnns is not set correctly.
+		// maxNzs = maxnns;
 		size = 0;
 	}
 
@@ -213,7 +216,7 @@ public final class SparseRowVector extends SparseRow implements Serializable
 		//early abort on zero 
 		if( v==0.0 )
 			return;
-		
+
 		//resize if required
 		if( size==values.length )
 			recap(newCapacity());
