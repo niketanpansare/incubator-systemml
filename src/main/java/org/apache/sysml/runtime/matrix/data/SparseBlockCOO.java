@@ -42,9 +42,9 @@ public class SparseBlockCOO extends SparseBlock
 	private static final long serialVersionUID = 7223478015917668745L;
 
 	private int _rlen = -1;
-	private int[] _rindexes = null;  //row index array (size: >=nnz)
-	private int[] _cindexes = null;  //column index array (size: >=nnz)
-	private double[] _values = null; //value array (size: >=nnz)
+	public int[] _rindexes = null;  //row index array (size: >=nnz)
+	public int[] _cindexes = null;  //column index array (size: >=nnz)
+	public double[] _values = null; //value array (size: >=nnz)
 	private int _size = 0;           //actual number of nnz
 	
 	public SparseBlockCOO(int rlen) {

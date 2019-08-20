@@ -56,6 +56,10 @@ public class PSRpcFactory {
 			conf.getTimeAsMs("spark.network.timeout", "120s");
 		String host = conf.get("spark.driver.host");
 		TransportContext context = createTransportContext(conf, new LocalParamServer());
-		return new SparkPSProxy(context.createClientFactory().createClient(host, port), rpcTimeout, aRPC);
+		try {
+			return new SparkPSProxy(context.createClientFactory().createClient(host, port), rpcTimeout, aRPC);
+		} catch(InterruptedException e) {
+			throw new IOException("Error occured when creating spark proxy", e);
+		}
 	}
 }

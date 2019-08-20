@@ -734,7 +734,7 @@ public class SparkExecutionContext extends ExecutionContext
 		return result;
 	}
 	
-	private static Tuple2<MatrixIndexes,MatrixBlock> createIndexedBlock(MatrixBlock mb, MatrixCharacteristics mc, long ix) {
+	public static Tuple2<MatrixIndexes,MatrixBlock> createIndexedBlock(MatrixBlock mb, MatrixCharacteristics mc, long ix) {
 		try {
 			//compute block indexes
 			long blockRow = ix / mc.getNumColBlocks();

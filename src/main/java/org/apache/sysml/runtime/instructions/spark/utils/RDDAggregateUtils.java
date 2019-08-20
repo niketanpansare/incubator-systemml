@@ -613,7 +613,7 @@ public class RDDAggregateUtils
 		}
 	}
 
-	private static class MergeBlocksFunction implements Function2<MatrixBlock, MatrixBlock, MatrixBlock> 
+	public static class MergeBlocksFunction implements Function2<MatrixBlock, MatrixBlock, MatrixBlock>
 	{		
 		private static final long serialVersionUID = -8881019027250258850L;
 		private boolean _deep = false;
