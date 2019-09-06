@@ -165,7 +165,7 @@ public class SparseBlockMCSR extends SparseBlock
 	
 	@Override
 	public boolean isAllocated(int r) {
-		return (_rows[r] != null);
+		return (_rows != null && _rows.length > r && _rows[r] != null);
 	}
 
 	@Override

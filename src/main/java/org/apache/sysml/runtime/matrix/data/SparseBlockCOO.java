@@ -58,6 +58,11 @@ public class SparseBlockCOO extends SparseBlock
 		_values = new double[capacity];
 		_size = 0;
 	}
+
+	public SparseBlockCOO(int rlen, int capacity, int nnz) {
+		this(rlen, capacity);
+		_size = nnz;
+	}
 	
 	/**
 	 * Copy constructor sparse block abstraction.
